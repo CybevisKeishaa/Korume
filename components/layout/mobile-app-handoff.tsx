@@ -30,10 +30,10 @@ export function MobileAppHandoff({
         <p className="text-body font-medium uppercase tracking-[0.18em] text-muted-foreground">
           {eyebrow}
         </p>
-        <h1 id="mobile-app-handoff-title" className="mt-4 font-display text-4xl font-semibold text-foreground">
+        <h1 id="mobile-app-handoff-title" className="mt-4 font-display text-title font-semibold text-foreground">
           {title}
         </h1>
-        <p className="mt-4 text-body-lg leading-7 text-muted-foreground">{body}</p>
+        <p className="mt-4 text-body-lg text-muted-foreground">{body}</p>
         <div className="mt-8 flex flex-col gap-3">
           <a
             className="rounded-lg bg-primary px-5 py-3 text-center font-medium text-primary-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"

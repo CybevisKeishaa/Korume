@@ -47,7 +47,7 @@ export function AppNav({
           className="flex h-screen w-sidebar flex-col gap-2xs border-r border-border bg-card p-md"
         >
           <div className="mb-md flex items-center justify-between gap-xs px-xs">
-            <Link href="/dashboard" className="font-jp text-lg font-bold">
+            <Link href="/dashboard" className="font-jp text-heading font-bold">
               {tCommon("appNameJp")}
             </Link>
             <NotificationBell />

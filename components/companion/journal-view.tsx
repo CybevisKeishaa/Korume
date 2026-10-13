@@ -52,7 +52,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
         <span aria-hidden="true">←</span> {t("backToDashboard")}
       </Link>
       <header className="flex items-end justify-between gap-4">
-        <h1 className="text-2xl font-bold">{t("journal.title")}</h1>
+        <h1 className="text-title font-bold">{t("journal.title")}</h1>
         {/* The Journal is where the Companion belongs: a reflective surface,
             never a learning loop (spec 1 §5.4). */}
         <CompanionAnchor surface="journal" pose="reading" />
@@ -66,7 +66,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
           {memories.map((m) => (
             <li key={m.id} className="rounded-lg border border-border p-4">
               <p className="font-medium">{resolvedTitle(m, t)}</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+              <p className="mt-1 text-body text-muted-foreground">
                 {format.dateTime(new Date(m.occurredAt), {
                   dateStyle: "long",
                 })}
@@ -78,11 +78,11 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
                 {m.kind === "gifted" ? <span aria-hidden="true"> ✎</span> : null}
               </p>
               {m.lineTextJp ? <p className="mt-2 font-jp">{m.lineTextJp}</p> : null}
-              {m.note ? <p className="mt-2 text-sm">{m.note}</p> : null}
+              {m.note ? <p className="mt-2 text-body">{m.note}</p> : null}
               {m.videoId && m.transcriptLineId ? (
                 <Link
                   href={`/shadowing/${m.videoId}?line=${m.transcriptLineId}`}
-                  className="mt-3 inline-block text-sm text-primary underline"
+                  className="mt-3 inline-block text-body text-primary underline"
                 >
                   {t("journal.returnToMoment")}
                 </Link>

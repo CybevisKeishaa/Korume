@@ -76,14 +76,14 @@ export function PlaylistComposer({ onCreated, className }: PlaylistComposerProps
             onChange={(e) => setDescription(e.target.value)}
             maxLength={500}
             rows={2}
-            className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+            className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
           />
         </div>
         <Button type="submit" size="sm" disabled={state.status === "submitting" || !name.trim()}>
           {state.status === "submitting" ? t("composer.creating") : t("composer.create")}
         </Button>
         {state.status === "error" && (
-          <p role="alert" className="text-sm text-danger-strong">
+          <p role="alert" className="text-body text-danger-strong">
             {state.message}
           </p>
         )}

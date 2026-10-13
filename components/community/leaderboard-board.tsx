@@ -38,14 +38,14 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
   return (
     <div className={className}>
       <section aria-labelledby="your-week-heading" className="rounded-lg border border-border bg-card p-4">
-        <h2 id="your-week-heading" className="text-lg font-semibold">
+        <h2 id="your-week-heading" className="text-heading font-semibold">
           {t("board.yourWeekHeading")}
         </h2>
-        <p className="mt-2 text-3xl font-bold">
-          {page.callerWeeklyXp} <span className="text-base font-normal text-muted-foreground">{t("board.xpThisWeek")}</span>
+        <p className="mt-2 text-display font-bold">
+          {page.callerWeeklyXp} <span className="text-body font-normal text-muted-foreground">{t("board.xpThisWeek")}</span>
         </p>
-        {page.callerWeeklyXp === 0 && <p className="mt-1 text-sm text-muted-foreground">{t("board.zeroXp")}</p>}
-        <p className="mt-1 text-sm text-muted-foreground">
+        {page.callerWeeklyXp === 0 && <p className="mt-1 text-body text-muted-foreground">{t("board.zeroXp")}</p>}
+        <p className="mt-1 text-body text-muted-foreground">
           {page.callerRank !== null ? t("board.rank", { rank: page.callerRank }) : t("board.notOptedInRank")}
         </p>
 
@@ -55,11 +55,11 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
       </section>
 
       <section aria-labelledby="community-heading" className="mt-6">
-        <h2 id="community-heading" className="mb-3 text-lg font-semibold">
+        <h2 id="community-heading" className="mb-3 text-heading font-semibold">
           {t("board.communityHeading")}
         </h2>
         {page.leaderboard.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("board.empty")}</p>
+          <p className="text-body text-muted-foreground">{t("board.empty")}</p>
         ) : (
           <ol className="space-y-2">
             {page.leaderboard.map((entry) => (
@@ -67,7 +67,7 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
                 key={entry.rank}
                 aria-current={entry.isMe ? "true" : undefined}
                 className={cn(
-                  "flex items-center justify-between gap-3 rounded-lg border p-3 text-sm",
+                  "flex items-center justify-between gap-3 rounded-lg border p-3 text-body",
                   entry.isMe ? "border-primary bg-primary/10" : "border-border bg-card",
                 )}
               >
@@ -75,7 +75,7 @@ export function LeaderboardBoard({ initialPage, initialOptIn, className }: Leade
                   <span className="w-6 text-right font-semibold text-muted-foreground">{entry.rank}</span>
                   <span className="font-medium">
                     {entry.name ?? t("board.deletedUser")}
-                    {entry.isMe && <span className="ml-1 text-xs text-primary-strong">{t("board.youSuffix")}</span>}
+                    {entry.isMe && <span className="ml-1 text-caption text-primary-strong">{t("board.youSuffix")}</span>}
                   </span>
                 </span>
                 <span className="font-semibold">

@@ -94,7 +94,7 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
                 aria-pressed={active}
                 onClick={() => handleTopicChange(chip.value)}
                 className={cn(
-                  "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+                  "rounded-full px-3 py-1 text-body font-medium transition-colors",
                   active
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -119,14 +119,14 @@ export function ForumBoard({ initialPage, className }: ForumBoardProps) {
 
       <div aria-live="polite" className="mt-2">
         {listState.status === "error" && (
-          <p role="alert" className="text-sm text-danger-strong">
+          <p role="alert" className="text-body text-danger-strong">
             {listState.message}
           </p>
         )}
       </div>
 
       {posts.length === 0 && listState.status !== "loading" ? (
-        <p className="mt-6 text-sm text-muted-foreground">{t("board.empty")}</p>
+        <p className="mt-6 text-body text-muted-foreground">{t("board.empty")}</p>
       ) : (
         <ul className="mt-4 space-y-3">
           {posts.map((p) => (

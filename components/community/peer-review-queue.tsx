@@ -91,11 +91,11 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
 
   return (
     <li className="rounded-lg border border-border bg-card p-4">
-      <p className="font-jp text-lg" lang="ja">
+      <p className="font-jp text-body-lg" lang="ja">
         {share.lineText}
       </p>
-      {share.note && <p className="mt-1 text-sm text-muted-foreground">{share.note}</p>}
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+      {share.note && <p className="mt-1 text-body text-muted-foreground">{share.note}</p>}
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
         <span>{share.sharedBy?.name ?? t("deletedUser")}</span>
         <span aria-hidden="true">·</span>
         <RelativeTime dateTime={share.createdAt} />
@@ -120,7 +120,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
         )}
         <div aria-live="polite">
           {audio.status === "error" && (
-            <p role="alert" className="mt-1 text-xs text-danger-strong">
+            <p role="alert" className="mt-1 text-caption text-danger-strong">
               {audio.message}
             </p>
           )}
@@ -128,16 +128,16 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
       </div>
 
       {share.alreadyReviewed ? (
-        <p className="mt-3 text-sm text-success-strong">{t("peerReviewQueue.alreadyReviewed")}</p>
+        <p className="mt-3 text-body text-success-strong">{t("peerReviewQueue.alreadyReviewed")}</p>
       ) : (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           <fieldset>
-            <legend className="text-sm font-medium">{t("peerReviewQueue.ratingLegend")}</legend>
+            <legend className="text-body font-medium">{t("peerReviewQueue.ratingLegend")}</legend>
             <div role="radiogroup" aria-label={t("peerReviewQueue.ratingLegend")} id={groupId} className="mt-1 flex gap-2">
               {RATINGS.map((value) => (
                 <label
                   key={value}
-                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-input text-sm has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
+                  className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-input text-body has-[:checked]:border-primary has-[:checked]:bg-primary has-[:checked]:text-primary-foreground"
                 >
                   <input
                     type="radio"
@@ -154,7 +154,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
           </fieldset>
 
           <div>
-            <label htmlFor={commentId} className="text-sm font-medium">
+            <label htmlFor={commentId} className="text-body font-medium">
               {t("peerReviewQueue.commentLabel")}
             </label>
             <textarea
@@ -163,7 +163,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
               onChange={(e) => setComment(e.target.value)}
               rows={2}
               maxLength={2000}
-              className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+              className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
             />
           </div>
 
@@ -176,7 +176,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
             {reviewState.status === "submitting" ? t("peerReviewQueue.submitting") : t("peerReviewQueue.submitReview")}
           </Button>
           {reviewState.status === "error" && (
-            <p role="alert" className="text-sm text-danger-strong">
+            <p role="alert" className="text-body text-danger-strong">
               {reviewState.message}
             </p>
           )}
@@ -230,7 +230,7 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
   return (
     <div className={className}>
       {shares.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("peerReviewQueue.empty")}</p>
+        <p className="text-body text-muted-foreground">{t("peerReviewQueue.empty")}</p>
       ) : (
         <ul className="space-y-4">
           {shares.map((share) => (
@@ -241,7 +241,7 @@ export function PeerReviewQueue({ initialPage, className }: PeerReviewQueueProps
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-2 text-sm text-danger-strong">
+          <p role="alert" className="mt-2 text-body text-danger-strong">
             {error}
           </p>
         )}

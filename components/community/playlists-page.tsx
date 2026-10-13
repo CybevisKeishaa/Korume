@@ -57,7 +57,7 @@ export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps
           aria-controls="playlists-panel-mine"
           onClick={() => setTab("mine")}
           className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+            "rounded-full px-3 py-1 text-body font-medium transition-colors",
             tab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
@@ -71,7 +71,7 @@ export function PlaylistsPage({ initialMine, initialPublic }: PlaylistsPageProps
           aria-controls="playlists-panel-public"
           onClick={() => setTab("public")}
           className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+            "rounded-full px-3 py-1 text-body font-medium transition-colors",
             tab === "public" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >

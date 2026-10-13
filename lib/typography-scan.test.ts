@@ -13,20 +13,11 @@ const ROOTS = ["components", "app/[locale]/(protected)/(app)", "app/[locale]/(pr
 const OUT_OF_SCOPE = ["components/admin/", "components/auth/", "components/marketing/", "components/vocabulary-print/", "components/style-guide/"];
 /** CSS rules out of scope: the printable worksheet, set in physical units. */
 const OUT_OF_SCOPE_SELECTOR = /^\.vp-/;
-/**
- * TEMPORARY (spec O5): clusters whose migration has not landed. A prefix is a file-path prefix, or `css:` plus
- * a selector prefix. Each migration task deletes its entries; Task 9 leaves it EMPTY and the test below then
- * forbids it from growing again.
- */
-export const PENDING_MIGRATION: readonly string[] = [
-  // Task 5 — Profile
-  // Task 9 — community and the rest
-  "components/community/", "components/companion/", "components/layout/", "components/ui/", "css:.app-footer__",
-  "app/[locale]/(protected)/(app)/community/", "app/[locale]/(protected)/(app)/leaderboard/",
-  "app/[locale]/(protected)/(app)/playlists/",
-];
+/** Spec O5 is complete: no cluster is pending. This stays empty — a new exclusion is an allowlist entry
+ *  (one element, one reason) or a migration, never a pending directory. */
+export const PENDING_MIGRATION: readonly string[] = [];
 
-const SIZE_CLASS = /(?<![\w-])(text-(?:xs|sm|base|lg|xl|[2-9]xl)|text-\[(?:\d|length:|calc\(|clamp\(|min\(|max\()[^\]]*\])(?![\w-])/g;
+const SIZE_CLASS = /(?<![\w-])(text-(?:xs|sm|base|lg|xl|[2-9]xl)|text-\[(?:\d|\.|length:|calc\(|clamp\(|min\(|max\()[^\]]*\])(?![\w-])/g;
 const LEADING_CLASS = /(?<![\w-])(leading-(?:none|tight|snug|normal|relaxed|loose|\d+)|leading-\[[^\]]+\])(?![\w-])/g;
 const INLINE = /\b(fontSize|lineHeight)\s*:/g;
 const TOKEN_VALUE = /^var\(--(?:text|leading)-[a-z-]+\)$/;
@@ -97,8 +88,8 @@ describe("typography scan (spec G1)", () => {
   });
 
   it("recognises what it must and nothing it must not", () => {
-    const hits = scanSource("x.tsx", 'a="md:text-sm text-xl/7 text-[13px] leading-7 leading-[1.2]" style={{ fontSize: 3 }}').map((v) => v.text);
-    expect(hits).toEqual(["text-sm", "text-xl", "text-[13px]", "leading-7", "leading-[1.2]", "fontSize:"]);
+    const hits = scanSource("x.tsx", 'a="md:text-sm text-xl/7 text-[13px] text-[.9rem] leading-7 leading-[1.2]" style={{ fontSize: 3 }}').map((v) => v.text);
+    expect(hits).toEqual(["text-sm", "text-xl", "text-[13px]", "text-[.9rem]", "leading-7", "leading-[1.2]", "fontSize:"]);
     const clean = 'a="text-body text-caption text-heading-lg text-muted-foreground text-[hsl(var(--x))] context-sm leading-body"';
     expect(scanSource("x.tsx", clean)).toEqual([]);
     const css = ".a { font-size: var(--text-body); line-height: var(--leading-body); }\n.b { font-size: calc(11 * var(--d)); }\n.vp-x { font-size: 9pt; }";
@@ -119,6 +110,10 @@ describe("typography scan (spec G1)", () => {
       expect(entry.match.trim().length, `${entry.id} needs a specific match`).toBeGreaterThan(3);
     }
     expect(new Set(TYPE_EXEMPTIONS.map((entry) => entry.id)).size).toBe(TYPE_EXEMPTIONS.length);
+  });
+
+  it("has nothing pending (spec §9: no out-of-list exclusion at merge)", () => {
+    expect(PENDING_MIGRATION).toEqual([]);
   });
 
   it("keeps PENDING_MIGRATION honest: every prefix still has work", () => {

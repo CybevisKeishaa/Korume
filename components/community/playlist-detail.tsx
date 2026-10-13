@@ -95,29 +95,29 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
     <div className={className}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold">{playlist.name}</h1>
+          <h1 className="text-title font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-1 text-muted-foreground">{playlist.description}</p>}
           {playlist.owner && (
-            <p className="mt-1 text-sm text-muted-foreground">
+            <p className="mt-1 text-body text-muted-foreground">
               {t("byOwner", { name: playlist.owner.name ?? t("deletedUser") })}
             </p>
           )}
         </div>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
           {playlist.isPublic ? t("detail.public") : t("detail.private")}
         </span>
       </div>
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-3 text-sm text-danger-strong">
+          <p role="alert" className="mt-3 text-body text-danger-strong">
             {error}
           </p>
         )}
       </div>
 
       {items.length === 0 ? (
-        <p className="mt-6 text-sm text-muted-foreground">{t("detail.empty")}</p>
+        <p className="mt-6 text-body text-muted-foreground">{t("detail.empty")}</p>
       ) : (
         <ul className="mt-6 space-y-3">
           {items.map((item, index) => (
@@ -137,7 +137,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     onClick={() => void move(index, -1)}
                     disabled={index === 0 || busy[item.videoId] === "busy"}
                     aria-label={t("detail.moveUpAriaLabel", { title: item.title })}
-                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-caption text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     {t("detail.moveUp")}
                   </button>
@@ -146,7 +146,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     onClick={() => void move(index, 1)}
                     disabled={index === items.length - 1 || busy[item.videoId] === "busy"}
                     aria-label={t("detail.moveDownAriaLabel", { title: item.title })}
-                    className="rounded-md px-2 py-1 text-xs text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-caption text-muted-foreground hover:bg-secondary hover:text-foreground disabled:pointer-events-none disabled:opacity-40"
                   >
                     {t("detail.moveDown")}
                   </button>
@@ -154,7 +154,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
                     type="button"
                     onClick={() => void removeItem(item.videoId)}
                     disabled={busy[item.videoId] === "busy"}
-                    className="rounded-md px-2 py-1 text-xs font-medium text-danger-strong hover:bg-danger/10 disabled:pointer-events-none disabled:opacity-40"
+                    className="rounded-md px-2 py-1 text-caption font-medium text-danger-strong hover:bg-danger/10 disabled:pointer-events-none disabled:opacity-40"
                   >
                     {t("detail.remove")}
                   </button>

@@ -93,4 +93,11 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     scope: "all",
     reason: "The reader's own Reading Settings size multiplier and line-height preference apply on top of the token rung, by design.",
   },
+  {
+    id: "footer-snore-z",
+    file: "app/globals.css",
+    match: ".app-footer__chip-z",
+    scope: "all",
+    reason: "Decorative snore glyph in the mascot chip, sized relative to its chip; art, not text.",
+  },
 ];

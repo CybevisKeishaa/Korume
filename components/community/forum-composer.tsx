@@ -91,7 +91,7 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
             id={topicId}
             value={topic}
             onChange={(e) => setTopic(e.target.value as ForumTopic)}
-            className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+            className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-body"
           >
             {TOPIC_OPTIONS.map((opt) => (
               <option key={opt.value} value={opt.value}>
@@ -110,7 +110,7 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
             maxLength={10_000}
             required
             rows={5}
-            className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm placeholder:text-muted-foreground"
+            className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-body placeholder:text-muted-foreground"
           />
         </div>
 
@@ -119,11 +119,11 @@ export function ForumComposer({ onCreated, className }: ForumComposerProps) {
             {state.status === "submitting" ? t("composer.posting") : t("composer.post")}
           </Button>
           <div aria-live="polite">
-            {state.status === "success" && <p className="text-sm text-success-strong">{t("composer.posted")}</p>}
+            {state.status === "success" && <p className="text-body text-success-strong">{t("composer.posted")}</p>}
           </div>
         </div>
         {state.status === "error" && (
-          <p role="alert" className="text-sm text-danger-strong">
+          <p role="alert" className="text-body text-danger-strong">
             {state.message}
           </p>
         )}

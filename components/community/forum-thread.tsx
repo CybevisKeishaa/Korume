@@ -202,13 +202,13 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
     <div className="space-y-8">
       <article>
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <h1 className="text-2xl font-bold">{post.title}</h1>
+          <h1 className="text-title font-bold">{post.title}</h1>
           {isOwnPost && !editingPost && (
             <div className="flex shrink-0 gap-2">
               <button
                 type="button"
                 onClick={startEditPost}
-                className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
               >
                 {t("thread.editPost")}
               </button>
@@ -217,7 +217,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
           )}
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-muted-foreground">
           <span>{post.author?.name ?? t("deletedUser")}</span>
           <span aria-hidden="true">·</span>
           <RelativeTime dateTime={post.createdAt} />
@@ -235,7 +235,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                 id={topicId}
                 value={editTopic}
                 onChange={(e) => setEditTopic(e.target.value as ForumTopic)}
-                className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-body"
               >
                 {TOPIC_OPTIONS.map((opt) => (
                   <option key={opt.value} value={opt.value}>
@@ -251,7 +251,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
                 rows={5}
-                className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
               />
             </div>
             <div className="flex items-center gap-2">
@@ -268,7 +268,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               </Button>
             </div>
             {postAction.status === "error" && (
-              <p role="alert" className="text-sm text-danger-strong">
+              <p role="alert" className="text-body text-danger-strong">
                 {postAction.message}
               </p>
             )}
@@ -277,7 +277,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
           <>
             <p className="whitespace-pre-line mt-4 text-foreground">{post.content}</p>
             {postAction.status === "error" && (
-              <p role="alert" className="mt-2 text-sm text-danger-strong">
+              <p role="alert" className="mt-2 text-body text-danger-strong">
                 {postAction.message}
               </p>
             )}
@@ -286,12 +286,12 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
       </article>
 
       <section aria-labelledby="comments-heading">
-        <h2 id="comments-heading" className="mb-3 text-lg font-semibold">
+        <h2 id="comments-heading" className="mb-3 text-heading font-semibold">
           {t("thread.commentsHeading")}
         </h2>
 
         {comments.length === 0 ? (
-          <p className="text-sm text-muted-foreground">{t("thread.noComments")}</p>
+          <p className="text-body text-muted-foreground">{t("thread.noComments")}</p>
         ) : (
           <ul className="space-y-3">
             {comments.map((comment) => {
@@ -300,7 +300,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               return (
                 <li key={comment.id} className="rounded-lg border border-border bg-card p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-x-2 text-sm text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
                       <span>{comment.author?.name ?? t("deletedUser")}</span>
                       <span aria-hidden="true">·</span>
                       <RelativeTime dateTime={comment.createdAt} />
@@ -310,7 +310,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         <button
                           type="button"
                           onClick={() => startEditComment(comment)}
-                          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+                          className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
                         >
                           {t("thread.editComment")}
                         </button>
@@ -330,7 +330,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         onChange={(e) => setEditCommentText(e.target.value)}
                         rows={3}
                         aria-label={t("thread.editCommentAriaLabel")}
-                        className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+                        className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
                       />
                       <div className="flex items-center gap-2">
                         <Button
@@ -346,13 +346,13 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
                         </Button>
                       </div>
                       {commentEditAction.status === "error" && (
-                        <p role="alert" className="text-sm text-danger-strong">
+                        <p role="alert" className="text-body text-danger-strong">
                           {commentEditAction.message}
                         </p>
                       )}
                     </div>
                   ) : (
-                    <p className="whitespace-pre-line mt-1 text-sm text-foreground">{comment.content}</p>
+                    <p className="whitespace-pre-line mt-1 text-body text-foreground">{comment.content}</p>
                   )}
                 </li>
               );
@@ -369,13 +369,13 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
             rows={3}
             maxLength={5000}
             placeholder={t("thread.commentPlaceholder")}
-            className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+            className="flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
           />
           <Button type="submit" size="sm" disabled={commentAction.status === "submitting" || !commentText.trim()}>
             {commentAction.status === "submitting" ? t("thread.posting") : t("thread.commentButton")}
           </Button>
           {commentAction.status === "error" && (
-            <p role="alert" className="text-sm text-danger-strong">
+            <p role="alert" className="text-body text-danger-strong">
               {commentAction.message}
             </p>
           )}

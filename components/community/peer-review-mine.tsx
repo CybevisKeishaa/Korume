@@ -38,14 +38,14 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
   }
 
   if (shares.length === 0) {
-    return <p className={className ?? "text-sm text-muted-foreground"}>{t("peerReviewMine.empty")}</p>;
+    return <p className={className ?? "text-body text-muted-foreground"}>{t("peerReviewMine.empty")}</p>;
   }
 
   return (
     <div className={className}>
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mb-2 text-sm text-danger-strong">
+          <p role="alert" className="mb-2 text-body text-danger-strong">
             {error}
           </p>
         )}
@@ -54,7 +54,7 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
         {shares.map((share) => (
           <li key={share.id} className="rounded-lg border border-border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <p className="font-jp text-lg" lang="ja">
+              <p className="font-jp text-body-lg" lang="ja">
                 {share.lineText}
               </p>
               <ConfirmButton
@@ -63,18 +63,18 @@ export function PeerReviewMine({ shares: initialShares, className }: PeerReviewM
                 onConfirm={() => void revoke(share.id)}
               />
             </div>
-            {share.note && <p className="mt-1 text-sm text-muted-foreground">{share.note}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">
+            {share.note && <p className="mt-1 text-body text-muted-foreground">{share.note}</p>}
+            <p className="mt-1 text-caption text-muted-foreground">
               {t("peerReviewMine.sharedPrefix")} <RelativeTime dateTime={share.createdAt} />
             </p>
 
             <div className="mt-3 border-t border-border pt-3">
               {share.reviews.length === 0 ? (
-                <p className="text-sm text-muted-foreground">{t("peerReviewMine.noReviews")}</p>
+                <p className="text-body text-muted-foreground">{t("peerReviewMine.noReviews")}</p>
               ) : (
                 <ul className="space-y-2">
                   {share.reviews.map((review) => (
-                    <li key={review.id} className="text-sm">
+                    <li key={review.id} className="text-body">
                       <div className="flex flex-wrap items-center gap-x-2 text-muted-foreground">
                         <span aria-label={t("peerReviewMine.starsAriaLabel", { rating: review.rating })}>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)}</span>
                         <span>{review.reviewer?.name ?? t("deletedUser")}</span>

@@ -45,7 +45,7 @@ export async function AppFooter() {
                 <span lang="ja" className="app-footer__word-tile-jp">{t("footer.wordmarkJp")}</span>
                 <span className="app-footer__word-tile-en">{t("appFooter.mascot.gloss")}</span>
               </span>
-              <span aria-hidden="true" className="app-footer__chip">z<span className="app-footer__chip-z">z</span></span>
+              <span aria-hidden="true" className="app-footer__chip">z<span data-type-exempt="footer-snore-z" className="app-footer__chip-z">z</span></span>
               <AppFooterIcon name="sparkles" className="app-footer__sparkle" />
             </Link>
           </div>
