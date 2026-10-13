@@ -1814,12 +1814,15 @@
 .app-footer__title { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: calc(24 * var(--f)); font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; color: hsl(var(--foreground)); }
 .app-footer__body { margin: calc(12 * var(--f)) 0 0; font-size: max(13px, calc(13 * var(--f))); }
 .app-footer__badges { display: flex; gap: calc(12 * var(--f)); margin-top: calc(20 * var(--f)); }
-.app-footer__badge { flex: 0 1 calc(164 * var(--f)); min-inline-size: 0; display: flex; align-items: center; gap: calc(12 * var(--f)); min-block-size: max(var(--hit-target-min), calc(56 * var(--f))); padding: calc(10 * var(--f)) calc(14 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: calc(14 * var(--f)); background: hsl(var(--card)); color: hsl(var(--foreground)); }
+/* 182px floor: "Download on the" at the 12px text floor needs 104px beside the chip; 164 * --f gives 94 at 1280 (T8). */
+.app-footer__badge { flex: 0 1 max(calc(164 * var(--f)), 182px); min-inline-size: 0; display: flex; align-items: center; gap: calc(12 * var(--f)); min-block-size: max(var(--hit-target-min), calc(56 * var(--f))); padding: calc(10 * var(--f)) calc(14 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: calc(14 * var(--f)); background: hsl(var(--card)); color: hsl(var(--foreground)); }
 .app-footer__badge:hover { border-color: hsl(var(--primary) / 0.4); }
 .app-footer__badge-chip { display: grid; place-items: center; flex: none; inline-size: calc(32 * var(--f)); block-size: calc(32 * var(--f)); border-radius: 9999px; background: hsl(var(--secondary)); font-size: max(12px, calc(14 * var(--f))); }
 .app-footer__badge-chip--play { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.15); }
 .app-footer__badge-text { display: flex; flex-direction: column; min-inline-size: 0; }
-.app-footer__badge-prefix { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; color: hsl(var(--muted-foreground)); }
+/* Case as in the frame: "Download on the" mixed, "GET IT ON" caps — both in caps overflow the badge at 1280 (T8). */
+.app-footer__badge-prefix { font-size: 12px; letter-spacing: 0.04em; white-space: nowrap; color: hsl(var(--muted-foreground)); }
+.app-footer__badge-prefix--caps { text-transform: uppercase; }
 .app-footer__badge-name { font-size: max(14px, calc(15 * var(--f))); font-weight: 700; white-space: nowrap; }
 .app-footer__rule { margin: calc(24 * var(--f)) 0; border: 0; border-top: 1px solid hsl(var(--border)); }
 .app-footer__newsletter-heading { margin: 0; font-size: max(13px, calc(13 * var(--f))); font-weight: 600; color: hsl(var(--foreground)); }

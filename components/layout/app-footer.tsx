@@ -88,7 +88,7 @@ export async function AppFooter() {
               <a href={PLAY_STORE_URL} target="_blank" rel="noreferrer noopener" className="app-footer__badge">
                 <span aria-hidden="true" className="app-footer__badge-chip app-footer__badge-chip--play">▶</span>
                 <span className="app-footer__badge-text">
-                  <span className="app-footer__badge-prefix">{t("footer.app.playStore.prefix")}</span>
+                  <span className="app-footer__badge-prefix app-footer__badge-prefix--caps">{t("footer.app.playStore.prefix")}</span>
                   <span className="app-footer__badge-name">{t("footer.app.playStore.name")}</span>
                 </span>
               </a>

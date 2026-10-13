@@ -32,8 +32,9 @@ marketing/legal pages, mail sending.
 | T4 `AppFooter`, islands, CSS, `<main id>` | complete after 1 fix round | `9d978674`, `6158b37f` |
 | T5 placement on 13 pages + static pin | complete, review clean | `5dedb52e` |
 | T6 Settings newsletter row | complete, review clean | `4a9a0be5` |
-| T7 E2E | **BLOCKED in fix round 1** (see Blockers) | `f6314d81` |
-| T8 Chrome measure, T9 whole-branch gate | not started | — |
+| T7 E2E + stale-cache product fix | complete after 1 fix round + review minors | `f6314d81`, `bdfe518d`, `9b0b378f` |
+| T8 measure + L2d pinned | complete (Playwright Chromium, Chrome extension offline) | this commit |
+| T9 whole-branch gate | not started | — |
 
 ## Contracts and decisions
 
@@ -58,7 +59,18 @@ Controller rulings during execution (full list with costs in the ledger):
 - Full vitest after T6's last edit: 661 files / 5531 tests green; typecheck clean; lint 0 errors.
 - E2E `tests/e2e/app-footer.spec.ts` at `f6314d81`: 2 passed. Neighbours: 29 pass; `pronunciation.spec` :201/:226
   need the `shadowing-explore.spec` seed (not footer-related); `settings.spec` :87 flaky (passed on rerun).
-- L2d values (footer width at floor, `--f` floor/ceiling, section widths, L2b used or not): **not measured yet** (T8).
+- **L2d (T8, measured 2026-10-13 in Playwright Chromium on a :3100 build — the claude-in-chrome extension was not
+  connected; the owner's Chrome look is the cross-check):** floor = 1280x529 nav expanded → footer **1056.9px**,
+  `--f` **1.039**; `--f` clamp kept `0.9px … 1.6px` (ceiling reached at 1920). Sections (L1 230:330:361 within ±1px
+  everywhere): 1280 exp 239/343/375 · 1280 coll 284/408/446 (f 1.235) · 1440 exp 270/387/423 (f 1.172) · 1440 coll
+  320/459/503 (f 1.392) · 1920 exp 379/544/595 · 1920 coll 435/624/683 (f 1.6, L2a). **L2b unused at the floor**
+  (0 reducible elements hidden). Every viewport + `vi` 1280 + a 70-char email: tops equal, overflow empty, no
+  one-line element wraps, badges side by side, smallest text 12px, no page scroll-x, email ellipsis with pill intact.
+- T8 fixes: (1) badge prefix case now follows the frame — "Download on the" mixed, only "GET IT ON" caps
+  (`--caps` modifier); both in caps were 126px in a 94px text column. (2) `.app-footer__badge` basis
+  `max(164 * --f, 182px)`: at the 12px text floor "Download on the" needs 104px; it now fits **exactly (104/104)** at
+  1280 nav expanded — zero slack, check by eye. 164f wins from `--f` ≈ 1.11 up, so 1440+ is unchanged.
+  (3) The empty always-mounted `role=status` adds **no gap** (margin collapses through: next element moves 0px).
 
 ## Working tree and environment
 
@@ -75,7 +87,11 @@ before any E2E.
 
 ## Blockers
 
-**T7 fix round 1 — possible product bug, root cause unknown.** Review found the flow test never exercised Review
+None. Resolved 2026-10-13 (history below): root cause measured — a client navigation discards an in-flight
+`router.refresh()` (Next 14.2 `action-queue.js`), so the pre-save prefetch entry is reused for 30s; fixed with the
+tab-writes pattern (`lib/newsletter-tab-writes.ts`, keyed by account email, forgotten on a failed save).
+
+**(History) T7 fix round 1 — possible product bug, root cause unknown.** Review found the flow test never exercised Review
 Focus 3 (stale router cache): `/en/shadowing` is entered by `page.goto`, so removing Settings' `router.refresh()`
 left it green. The fix seeds the cache by client navigation: subscribe in the footer → "Manage in Settings" →
 `/settings` (switch on) → click AppNav "Lessons" → expect the footer to say "saved". **That step is RED even
@@ -84,12 +100,8 @@ spec change is saved as `.superpowers/sdd/2026-10-13-app-footer/task-7-fix1-atte
 
 ## Next actions
 
-1. `superpowers:systematic-debugging` on that flow. Reproduce on a worktree build served at :3100 in a new Chrome
-   tab. Candidates to measure, not assume: a stale Next 14.2 client router-cache / prefetch entry for
-   `/shadowing` (the footer's own `router.refresh()` only refreshes the current page); the Supabase read in
-   `getNewsletterState` being cached by Next's fetch data cache. Fix at the root, with a unit/E2E that fails first.
-2. Re-apply the T7 patch; unmutated it must pass, and with Settings' `router.refresh()` commented out it must go
-   RED. Commit, scoped re-review.
-3. T8 (reseed demo learner, measure + pin L2d, check the empty `role=status` margin), then T9 (full gates,
-   whole-branch review on the most capable model, triage the ledger's deferred minors, lessons), then the owner's
-   Chrome look. Merge only on the owner's word.
+1. Owner's Chrome look at `http://localhost:3100/vi/shadowing` (demo learner) — in progress 2026-10-13; check the
+   App Store badge text at 1280 nav expanded (zero slack). Apply feedback as numbers within L1.
+2. T9: full gates (vitest, typecheck, lint, full E2E after the demo seed's `-- --cleanup`), whole-branch review on
+   the most capable model, triage the ledger's deferred minors (incl. deleting `marketing.appFooter.ariaLabel`),
+   lessons. Merge only on the owner's word.
