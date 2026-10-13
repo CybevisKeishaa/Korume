@@ -21,7 +21,8 @@ immersive, print sheet, navbar.
 | Task | Status | Commit |
 |---|---|---|
 | 1 | done | ca284bbe |
-| 3 | scan + allowlist committed (see below) | pending review |
+| 3 | accepted | c77628ab |
+| 4 | Dashboard on tokens + base text-body; committed, pending review | see git log |
 
 ## Baseline / measurements
 
@@ -33,5 +34,6 @@ immersive, print sheet, navbar.
 
 - Task 3 work list (lib/typography-scan.test.ts, step 3 red): 442 unique file:line violations (planning dry-run said 443; same tree) -> .superpowers/typography/work-list-v1.txt (git-ignored). 51 are app/globals.css rules; 391 are TSX. Every violation falls under a prefix of the brief PENDING list; none added, none deleted.
 - Task 3 mutation (settings-row.tsx text-body -> text-sm, file confirmed changed): red line `components/settings/settings-row.tsx:50  text-sm`; restored from .mutbak, green again.
+- Task 4: 16 Dashboard rules moved to tokens (roles per brief table; no unlisted hits). Mutation (dash-title -> calc(11 * var(--d)), grep count of that string 1 -> 2 so sed changed the file): red `app/globals.css:1695  .dashboard-layout .dash-title { font-size: calc(11 * var(--d)) }`; restored from .mutbak, green. Dashboard E2E 6/6 passed incl. the fold test at 1280x529 (no overshoot).
 
 ## Open owner calls

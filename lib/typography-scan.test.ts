@@ -19,8 +19,6 @@ const OUT_OF_SCOPE_SELECTOR = /^\.vp-/;
  * forbids it from growing again.
  */
 export const PENDING_MIGRATION: readonly string[] = [
-  // Task 4 — Dashboard
-  "css:.dashboard-",
   // Task 5 — Profile
   "components/profile/",
   // Task 6 — shadowing / player / summary / korume / mining
