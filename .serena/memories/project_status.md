@@ -1,6 +1,15 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 evening (supersedes every block below)
+>
+> ▶ **RESUME HERE: `type-normalization`** (worktree `.worktrees/type-normalization`, tip `4fa45c0d`, NOT merged,
+> no product code yet) — read `mem:type_normalization_run_state` first. Spec + plan (12 tasks) **owner-approved**;
+> **execution = subagent-driven**, start at Task 1 (baseline screenshots from master BEFORE any change). One type
+> scale (Settings' `--text-*` tokens) on every learner screen, uniform zoom 1.0 → 1.25 between 1440 and 1920,
+> scan + browser gate so Certification and later ports cannot drift. Then: navbar (waits for the owner's Figma),
+> Certification.
+>
+> ## (previous block) 2026-10-14
 >
 > ⭐ **`app-footer` MERGED → master `2d7a5a27`** (not pushed — the owner pushes). Owner approved after three Chrome
 > looks (spec §R: layout at the frame's scale, TYPE on the shared `--text-*` tokens, every frame label a link with
