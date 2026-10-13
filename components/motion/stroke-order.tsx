@@ -30,6 +30,7 @@ export function StrokeOrder({
       <div
         aria-hidden
         className="flex aspect-square w-full items-center justify-center rounded-lg border border-border bg-card font-jp text-7xl"
+        data-type-exempt="stroke-order-glyph"
       >
         {character}
       </div>

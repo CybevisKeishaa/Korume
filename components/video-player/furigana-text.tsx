@@ -51,7 +51,7 @@ export function FuriganaText({
           return (
             <ruby key={index}>
               {segment.text}
-              <rt>{segment.reading}</rt>
+              <rt data-type-exempt="furigana-rt-player">{segment.reading}</rt>
             </ruby>
           );
         }

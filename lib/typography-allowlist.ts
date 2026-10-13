@@ -15,4 +15,19 @@ export interface TypeExemption {
   reason: string;
 }
 
-export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [];
+export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
+  {
+    id: "furigana-rt-player",
+    file: "components/video-player/furigana-text.tsx",
+    match: "<rt data-type-exempt",
+    scope: "all",
+    reason: "Ruby annotation is smaller than its base text by definition (HTML <rt>); it is not interface type.",
+  },
+  {
+    id: "stroke-order-glyph",
+    file: "components/motion/stroke-order.tsx",
+    match: "font-jp text-7xl",
+    scope: "all",
+    reason: "Large kanji glyph shown as art in the stroke-order fallback tile; content presentation, not interface type.",
+  },
+];

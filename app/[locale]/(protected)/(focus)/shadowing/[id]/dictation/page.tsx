@@ -25,8 +25,8 @@ export default async function DictationPage({ params }: { params: { id: string }
 
   return (
     <Container className="py-8">
-      <h1 className="text-2xl font-bold">{video.title}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{t("title")}</p>
+      <h1 className="text-title font-bold">{video.title}</h1>
+      <p className="mt-1 text-body text-muted-foreground">{t("title")}</p>
 
       <div className="mt-6">
         <DictationView video={video} transcript={transcript} />

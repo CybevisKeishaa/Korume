@@ -117,7 +117,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
   if (done) {
     return (
       <div className="text-center" role="status">
-        <p className="text-2xl font-bold">{t("srs.complete")}</p>
+        <p className="text-heading-lg font-bold">{t("srs.complete")}</p>
         <p className="mt-2 text-muted-foreground">
           {tMining("review.reviewedCount", { count: reviewed })}
         </p>
@@ -130,12 +130,12 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
 
   return (
     <div>
-      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+      <p className="mb-4 text-center text-body text-muted-foreground" aria-live="polite">
         {t("srs.progress", { current: index + 1, total: items.length })}
       </p>
 
       <Card className="flex min-h-56 flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="font-jp text-2xl leading-relaxed">
+        <p className="font-jp text-heading-lg">
           {splitSentenceForEmphasis(current!.sentenceJp, current!.targetWord).map((segment, i) =>
             segment.emphasized ? (
               <strong key={i} className="text-primary-strong underline decoration-2 underline-offset-2">
@@ -156,15 +156,15 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
         {revealed && (
           <div className="border-t border-border pt-3" aria-live="polite">
             {current!.reading && (
-              <p className="font-jp text-lg text-muted-foreground">{current!.reading}</p>
+              <p className="font-jp text-body-lg text-muted-foreground">{current!.reading}</p>
             )}
-            {current!.translation && <p className="text-lg">{current!.translation}</p>}
+            {current!.translation && <p className="text-body-lg">{current!.translation}</p>}
           </div>
         )}
       </Card>
 
       {error && (
-        <p role="alert" className="mt-3 text-center text-sm text-danger-strong">
+        <p role="alert" className="mt-3 text-center text-body text-danger-strong">
           {error}
         </p>
       )}
@@ -172,7 +172,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
       <div className="mt-6">
         {!revealed ? (
           <Button size="lg" className="w-full" onClick={() => setRevealed(true)} autoFocus>
-            {t("srs.showAnswer")} <span className="ml-2 text-xs opacity-70">{t("srs.spaceHint")}</span>
+            {t("srs.showAnswer")} <span className="ml-2 text-caption opacity-70">{t("srs.spaceHint")}</span>
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -185,7 +185,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
                 disabled={submitting}
               >
                 {t(`srs.${g.labelKey}`)}
-                <span className="ml-1 text-xs opacity-70">{g.key}</span>
+                <span className="ml-1 text-caption opacity-70">{g.key}</span>
               </Button>
             ))}
           </div>

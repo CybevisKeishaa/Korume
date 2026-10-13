@@ -410,13 +410,13 @@ export function ShadowingRecorderPanel({
         >
           {isRecording ? t("recorder.toggle.stop") : t("recorder.toggle.record")}
         </Button>
-        <p role="status" className="text-xs text-muted-foreground">
+        <p role="status" className="text-caption text-muted-foreground">
           {statusMessage}
         </p>
         {recorder.state === "disabled-in-settings" && (
           // Nothing failed, so the panel offers the way to fix it rather than
           // a retry that would take the same blocked path.
-          <Link href="/settings#privacy" className="text-xs underline">
+          <Link href="/settings#privacy" className="text-body underline">
             {t("recorder.errors.disabledInSettingsAction")}
           </Link>
         )}
@@ -460,20 +460,20 @@ export function ShadowingRecorderPanel({
 
           <div aria-live="polite">
             {score.status === "unavailable" && (
-              <p className="text-xs text-muted-foreground">{scoreNotConfiguredMessage}</p>
+              <p className="text-caption text-muted-foreground">{scoreNotConfiguredMessage}</p>
             )}
             {score.status === "error" && (
-              <p role="alert" className="text-xs text-danger-strong">
+              <p role="alert" className="text-caption text-danger-strong">
                 {score.message}
               </p>
             )}
             {score.status === "ready" && (
-              <div className="space-y-2 text-sm">
+              <div className="space-y-2 text-body">
                 <div className="flex flex-wrap gap-3">
-                  <span className="rounded-full bg-accent/20 px-2 py-1 text-xs font-medium">
+                  <span className="rounded-full bg-accent/20 px-2 py-1 text-caption font-medium">
                     {t("recorder.score.pronunciationLabel")} {Math.round(score.result.pronunciationScore)}
                   </span>
-                  <span className="rounded-full bg-accent/20 px-2 py-1 text-xs font-medium">
+                  <span className="rounded-full bg-accent/20 px-2 py-1 text-caption font-medium">
                     {t("recorder.score.fluencyLabel")} {Math.round(score.result.fluencyScore)}
                   </span>
                 </div>
@@ -484,7 +484,7 @@ export function ShadowingRecorderPanel({
                         <span
                           title={`${t(WORD_ERROR_LABEL_KEY[w.errorType])} (${Math.round(w.accuracyScore)})`}
                           className={cn(
-                            "font-jp rounded px-1.5 py-0.5 text-xs",
+                            "font-jp rounded px-1.5 py-0.5 text-caption",
                             w.errorType === "None"
                               ? "bg-success/15 text-success-strong"
                               : "bg-danger/15 text-danger-strong",
@@ -506,7 +506,7 @@ export function ShadowingRecorderPanel({
         <div className="space-y-1.5 border-t border-border pt-2">
           {share.status === "shared" ? (
             <div className="flex flex-wrap items-center gap-2">
-              <p className="text-xs text-success-strong">{t("recorder.share.shared")}</p>
+              <p className="text-caption text-success-strong">{t("recorder.share.shared")}</p>
               <ConfirmButton
                 label={t("recorder.share.revoke")}
                 confirmLabel={t("recorder.share.revokeConfirm")}
@@ -524,13 +524,13 @@ export function ShadowingRecorderPanel({
               >
                 {share.status === "sharing" ? t("recorder.share.actionBusy") : t("recorder.share.action")}
               </Button>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 {t("recorder.share.explain")}
               </p>
             </>
           )}
           {share.status === "error" && (
-            <p role="alert" className="text-xs text-danger-strong">
+            <p role="alert" className="text-caption text-danger-strong">
               {share.message}
             </p>
           )}

@@ -160,9 +160,9 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
   return (
     <Card className={cn("p-4", className)} aria-label={t("summary.a11y.region")}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{t("summary.heading")}</h3>
+        <h3 className="text-body font-semibold">{t("summary.heading")}</h3>
         {state.status === "ready" && (
-          <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+          <span className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
             {t("summary.aiGenerated")}
           </span>
         )}
@@ -170,12 +170,12 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
 
       <div className="mt-2" aria-live="polite">
         {state.status === "loading" && (
-          <p className="text-sm text-muted-foreground">{tCommon("states.loading")}</p>
+          <p className="text-body text-muted-foreground">{tCommon("states.loading")}</p>
         )}
 
         {state.status === "missing" && (
           <div className="flex items-center gap-3">
-            <p className="text-sm text-muted-foreground">{t("summary.empty")}</p>
+            <p className="text-body text-muted-foreground">{t("summary.empty")}</p>
             <Button type="button" size="sm" onClick={generate}>
               {t("summary.generate")}
             </Button>
@@ -183,30 +183,30 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
         )}
 
         {state.status === "generating" && (
-          <p className="text-sm text-muted-foreground">{t("summary.generating")}</p>
+          <p className="text-body text-muted-foreground">{t("summary.generating")}</p>
         )}
 
         {state.status === "error" && (
-          <p role="alert" className="text-sm text-danger-strong">
+          <p role="alert" className="text-body text-danger-strong">
             {state.message}
           </p>
         )}
 
         {state.status === "ready" && (
           <div className="space-y-4">
-            <p className="text-sm">{state.data.summary}</p>
+            <p className="text-body">{state.data.summary}</p>
             {state.inputTruncated && (
-              <p className="text-xs text-muted-foreground">{t("summary.inputTruncated")}</p>
+              <p className="text-caption text-muted-foreground">{t("summary.inputTruncated")}</p>
             )}
 
             {state.data.key_vocab.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
                   {t("summary.keyVocab")}
                 </h4>
                 <ul className="mt-1 space-y-1">
                   {state.data.key_vocab.map((v, i) => (
-                    <li key={i} className="text-sm">
+                    <li key={i} className="text-body">
                       <span className="font-jp font-medium">{v.word}</span>{" "}
                       <span className="font-jp text-muted-foreground">{v.reading}</span> —{" "}
                       <span>{v.meaning}</span>
@@ -218,7 +218,7 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
 
             {state.data.key_grammar.length > 0 && (
               <div>
-                <h4 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <h4 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
                   {t("summary.keyGrammar")}
                 </h4>
                 <ul className="mt-1 flex flex-wrap gap-2">
@@ -226,7 +226,7 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
                     <li
                       key={i}
                       title={g.explanation}
-                      className="rounded-full bg-muted px-2 py-1 text-xs"
+                      className="rounded-full bg-muted px-2 py-1 text-caption"
                     >
                       <span className="font-jp font-medium">{g.pattern}</span>
                     </li>

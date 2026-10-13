@@ -27,7 +27,7 @@ export default async function MiningDeckPage() {
     <>
     <Container className="py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">{t("deck.title")}</h1>
+        <h1 className="text-title font-bold">{t("deck.title")}</h1>
         <Link href="/mining/review" className={buttonStyles()}>
           {t("deck.review")}
         </Link>

@@ -17,7 +17,7 @@ export function AnswerBlocks({ answer, grounding, onFollowup }: {
 }) {
   const entities = new Map(grounding.map((e) => [e.id, e]));
   return (
-    <div className="flex flex-col gap-md text-body-lg leading-relaxed">
+    <div className="flex flex-col gap-md text-body-lg">
       {answer.blocks.map((block, i) => <AnswerBlock key={i} block={block} entities={entities} onFollowup={onFollowup} />)}
     </div>
   );

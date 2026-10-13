@@ -23,7 +23,8 @@ immersive, print sheet, navbar.
 | 1 | done | ca284bbe |
 | 3 | accepted | c77628ab |
 | 4 | Dashboard on tokens + base text-body | `4f8e8c19` accepted |
-| 5 | Profile on tokens (spec M1); committed, pending review | see git log |
+| 5 | Profile on tokens (spec M1) | `a279dde0` + fix `775105bc` accepted |
+| 6 | Shadowing, player, summary, Korume, mining on tokens (spec M1) | see git log (pending review) |
 
 ## Baseline / measurements
 
@@ -39,3 +40,4 @@ immersive, print sheet, navbar.
 
 ## Open owner calls
 - Task 5 (Profile, owner-approved screen, 38 hits in 13 files): visible changes at 1440 (density unit 1): page H1 text-3xl 30 -> text-title 28 (profile-page, edit-profile); h2 text-2xl 24 -> text-heading 20 (korumeship, learning-journey, edit-profile form title); identity Name text-2xl 24 -> text-heading-lg 24 (same); avatar initial text-5xl 48 -> text-display 40; goal quote text-xl 20 / text-lg 18 + leading-relaxed -> text-body-lg 16 (personal-goal, edit-preview); edit-preview card titles text-xl 20 / text-lg 18 -> text-heading 20; today memory JP text-2xl 24 -> text-heading-lg 24, title text-lg 18 -> text-body-lg 16; Profile chips (achievements, favourite sources; CHIP in card-styles.ts) 14 -> 12 at 1440 (text-sm -> text-caption, spec M1 chips); other text-sm 14 -> text-body 14 (same); Ask owner: should the featured Japanese memory line (todays-memory-card, text-heading-lg 24, unchanged) stay heading-lg while the title branch is body-lg 16?; text-xs 12 -> text-caption 12 (same).
+- Task 6 (shadowing/player/mining, owner-approved shadowing screen; ~70 hits in 17 files), visible at 1440: text-sm 14 -> text-body 14 (same); text-xs 12 -> text-caption 12 (same); Japanese lines text-lg 18 / text-base 16 -> text-body-lg 16 (dictation result, mining deck list, review reading/translation; 18 -> 16); mining review card JP and completion text-2xl 24 -> text-heading-lg 24 (same, leading-relaxed dropped); page H1 mining deck text-2xl 24, mining review text-xl 20, dictation text-2xl 24 -> text-title 28 (bigger); dictation accuracy text-lg 18 -> text-body-lg 16; video-summary-panel h3 text-sm 14 -> text-body 14 (kept at body, not text-heading 20, to not bloat the compact side panel; ask owner); Korume answer blocks lost leading-relaxed (1.625 -> body-lg leading); lesson-summary hero lost leading-tight; allowlist: furigana-rt-player, stroke-order-glyph (text-7xl fallback tile).

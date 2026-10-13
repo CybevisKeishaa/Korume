@@ -232,7 +232,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
             onStateChange={(state) => setPlaying(state === YT_PLAYER_STATE.PLAYING)}
           />
         </div>
-        <div className="text-sm text-muted-foreground">
+        <div className="text-body text-muted-foreground">
           <p className="font-medium text-foreground">{t("noTranscript.title")}</p>
           <p className="mt-1">{t("noTranscript.body")}</p>
         </div>
@@ -255,7 +255,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {t("lineCount", { current: lineIndex + 1, total: lines.length })}
         </p>
         <div className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
           exercise. */}
       {revealed && currentLine && (
         <div className="flex items-start gap-1">
-          <p className="font-jp flex-1 rounded-md border border-border bg-muted px-3 py-2 text-base">
+          <p className="font-jp flex-1 rounded-md border border-border bg-muted px-3 py-2 text-body-lg">
             {currentLine.text_jp}
           </p>
           <PinLineControl line={currentLine} />
@@ -326,7 +326,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       )}
 
       {errorMessage && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {errorMessage}
         </p>
       )}
@@ -334,8 +334,8 @@ export function DictationView({ video, transcript }: DictationViewProps) {
       <div aria-live="polite">
         {result && (
           <div className="space-y-2 rounded-lg border border-border p-4">
-            <p className="text-lg font-semibold">{t("accuracy", { accuracy: result.accuracy })}</p>
-            <p className="font-jp text-lg leading-loose" lang="ja">
+            <p className="text-body-lg font-semibold">{t("accuracy", { accuracy: result.accuracy })}</p>
+            <p className="font-jp text-body-lg" lang="ja">
               {result.diff.map((item, index) => (
                 // Diff is a fixed, ordered character array from one scoring
                 // response — index is a stable and appropriate key here.
@@ -344,7 +344,7 @@ export function DictationView({ video, transcript }: DictationViewProps) {
               ))}
             </p>
             <p className="sr-only">{t("diff.summary", summarizeDiff(result.diff))}</p>
-            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+            <ul className="flex flex-wrap gap-x-4 gap-y-1 text-caption text-muted-foreground">
               <li>
                 <span aria-hidden="true">✕</span> {t("legend.wrong")}
               </li>

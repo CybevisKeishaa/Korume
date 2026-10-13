@@ -35,7 +35,7 @@ export function Hero({ title, thumbnailUrl, completed, jlptLevel, sentenceCount,
         <p id="summary-hero-eyebrow" className="text-caption font-semibold uppercase tracking-wide text-primary">
           {completed ? t("complete") : t("summary")}
         </p>
-        <p className="text-title font-bold leading-tight">{title}</p>
+        <p className="text-title font-bold">{title}</p>
         <div className="flex flex-wrap items-end justify-between gap-md">
           {meta && <p className="font-mono text-caption text-white/80">{meta}</p>}
           <div className="flex flex-wrap gap-sm">
