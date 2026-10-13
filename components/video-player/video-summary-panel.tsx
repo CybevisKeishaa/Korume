@@ -160,7 +160,7 @@ export function VideoSummaryPanel({ videoId, className }: VideoSummaryPanelProps
   return (
     <Card className={cn("p-4", className)} aria-label={t("summary.a11y.region")}>
       <div className="flex items-center justify-between">
-        <h3 className="text-body font-semibold">{t("summary.heading")}</h3>
+        <h3 className="text-heading font-semibold">{t("summary.heading")}</h3>
         {state.status === "ready" && (
           <span className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
             {t("summary.aiGenerated")}
