@@ -77,7 +77,8 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
             <button
               type="button"
               onClick={subscribe}
-              disabled={status === "pending"}
+              // aria-disabled, not disabled: focus stays on the button through pending into an error (subscribe() guards).
+              aria-disabled={status === "pending"}
               aria-busy={status === "pending"}
               aria-label={t("appFooter.newsletter.submit")}
               className="app-footer__send"
@@ -88,7 +89,7 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
           {status === "signedOut" ? (
             <p role="alert" className="app-footer__message">
               {t("appFooter.newsletter.signedOut")}{" "}
-              <button type="button" className="app-footer__link" onClick={() => window.location.reload()}>
+              <button type="button" className="app-footer__link app-footer__link--button" onClick={() => window.location.reload()}>
                 {t("appFooter.newsletter.signIn")}
               </button>
             </p>

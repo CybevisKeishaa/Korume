@@ -1773,7 +1773,7 @@
 
 /* App footer (spec docs/superpowers/specs/2026-10-13-app-footer-design.md). Figma `203:13813`. LAYOUT at the
    frame's own scale (L-051): `--f` is one Figma px at the frame's 1380px container, so the sections (374.66 :
-   456.11 : 293.23, 80 apart), three link columns and stacked badges keep the frame's ratios. TYPE on the app's
+   456.11 : 293.23, 40 apart since spec R4) and three link columns keep the frame's ratios; badges sit on one row (R5). TYPE on the app's
    shared tokens (owner 2026-10-13, second Chrome look): the footer is one component under every page, so it reads
    at the same sizes as the pages' own text at every width instead of its own scale. `--f` holds `cqi`, which
    resolves against `.app-footer`; nothing inside declares a container. Desktop only. */
@@ -1807,7 +1807,7 @@
 .app-footer__mascot-cta-icon { display: inline-block; inline-size: 1em; block-size: 1em; margin-inline-start: 0.2em; vertical-align: -0.125em; }
 .app-footer__word-tile { position: absolute; inset-inline-start: 6.7%; inset-block-end: 9%; inline-size: 61%; aspect-ratio: 190 / 70; display: flex; flex-direction: column; justify-content: space-between; padding: calc(12 * var(--f)) calc(14 * var(--f)); border: 1px solid hsl(var(--primary) / 0.35); border-radius: calc(10 * var(--f)); background: hsl(var(--primary) / 0.08); }
 .app-footer__word-tile-jp { font-family: var(--font-jp); font-size: var(--text-body-lg); color: hsl(var(--primary)); }
-.app-footer__word-tile-en { font-size: var(--text-caption); letter-spacing: 0.04em; color: hsl(var(--primary) / 0.7); }
+.app-footer__word-tile-en { font-size: var(--text-caption); letter-spacing: 0.04em; color: hsl(var(--muted-foreground)); }
 /* The sleeping mascot's snore, drifting up beside its head. */
 .app-footer__chip { position: absolute; inset-inline-start: 50%; inset-block-start: 9%; display: flex; align-items: flex-end; font-size: var(--text-body-lg); font-style: italic; font-weight: 700; line-height: 1; color: hsl(var(--primary) / 0.75); }
 .app-footer__chip-z { margin-inline-start: 0.1em; font-size: 0.7em; transform: translateY(-0.6em); }
@@ -1820,6 +1820,7 @@
 .app-footer__link { display: inline-flex; align-items: center; gap: calc(8 * var(--f)); min-block-size: max(24px, calc(28.5 * var(--f))); white-space: nowrap; font-size: var(--text-body); }
 .app-footer__link { color: hsl(var(--muted-foreground)); background: none; border: 0; padding: 0; cursor: pointer; }
 .app-footer__link:hover { color: hsl(var(--foreground)); }
+.app-footer__link--button { min-block-size: var(--hit-target-min); }
 .app-footer__link-icon { inline-size: 1.1em; block-size: 1.1em; flex: none; }
 .app-footer__note { max-inline-size: calc(160 * var(--f)); margin: calc(8 * var(--f)) 0 0; font-size: var(--text-caption); line-height: 1.8; }
 .app-footer__title { margin: calc(12 * var(--f)) 0 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading-lg); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: hsl(var(--foreground)); }
@@ -1845,7 +1846,7 @@
 /* The ONE ellipsis the footer allows (L3): the full address stays in the DOM and in `title`. */
 .app-footer__email { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-body); line-height: 1.3; color: hsl(var(--foreground)); }
 .app-footer__send { display: grid; place-items: center; flex: none; inline-size: var(--hit-target-min); block-size: var(--hit-target-min); border-radius: 9999px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
-.app-footer__send:disabled { opacity: 0.6; cursor: progress; }
+.app-footer__send[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
 .app-footer__send-icon { inline-size: var(--icon-sm); block-size: var(--icon-sm); }
 .app-footer__bottom { display: grid; justify-items: center; margin-top: calc(64 * var(--f)); padding-top: calc(32 * var(--f)); border-top: 1px solid hsl(var(--border)); text-align: center; }
 .app-footer__closing { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-body-lg); line-height: 1.5; white-space: nowrap; color: hsl(var(--foreground)); }

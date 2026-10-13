@@ -17,7 +17,6 @@ const PLACEHOLDER = "/";
  * `app-footer-placement.test.ts`). The frame's three sections and its three link columns: layout at the frame's own
  * scale (L-051), type on the app's shared tokens; sizes live in `app/globals.css` `.app-footer`. F3 (owner,
  * 2026-10-13): every frame label is rendered and is a link; one with no page of its own yet points at PLACEHOLDER.
- * `data-footer-reducible` marks the only content L2b may remove, in its fixed order.
  */
 export async function AppFooter() {
   const [t, newsletter] = await Promise.all([getTranslations("marketing"), getNewsletterState()]);
@@ -31,8 +30,8 @@ export async function AppFooter() {
               <span aria-hidden="true" className="app-footer__logo-tile">K</span>
               <span className="app-footer__wordmark">{t("footer.wordmark")}</span>
             </p>
-            <p className="app-footer__tagline" data-footer-reducible="2">{t("appFooter.tagline")}</p>
-            <Link href="/companion" aria-label={t("footer.mascot.cta")} className="app-footer__mascot" data-footer-reducible="3">
+            <p className="app-footer__tagline">{t("appFooter.tagline")}</p>
+            <Link href="/companion" aria-label={t("footer.mascot.cta")} aria-describedby="app-footer-word" className="app-footer__mascot">
               {/* Owner 2026-10-13: the card says where it goes, the tile teaches its word, the chip is the mascot's snore. */}
               <span aria-hidden="true" className="app-footer__mascot-cta">
                 {t("footer.mascot.cta")}
@@ -42,7 +41,7 @@ export async function AppFooter() {
                 {/* F6 + plan P4: the landing footer's own trimmed art, not the frame's captioned sheet crop. */}
                 <Image data-mascot src="/mascot/poses/sleeping.png" alt="" width={276} height={213} aria-hidden="true" unoptimized />
               </span>
-              <span className="app-footer__word-tile">
+              <span id="app-footer-word" className="app-footer__word-tile">
                 <span lang="ja" className="app-footer__word-tile-jp">{t("footer.wordmarkJp")}</span>
                 <span className="app-footer__word-tile-en">{t("appFooter.mascot.gloss")}</span>
               </span>
@@ -109,7 +108,7 @@ export async function AppFooter() {
           <div className="app-footer__app">
             <p className="app-footer__heading">{t("appFooter.app.eyebrow")}</p>
             <h2 className="app-footer__title">{t("appFooter.app.heading")}</h2>
-            <p className="app-footer__body" data-footer-reducible="1">{t("appFooter.app.body")}</p>
+            <p className="app-footer__body">{t("appFooter.app.body")}</p>
             {/* O1 (owner 2026-10-13): Korume is not published; these open the stores' front pages, as on the landing. */}
             <div className="app-footer__badges">
               <a href={APP_STORE_URL} target="_blank" rel="noreferrer noopener" className="app-footer__badge">

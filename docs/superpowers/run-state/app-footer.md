@@ -34,8 +34,8 @@ marketing/legal pages, mail sending.
 | T6 Settings newsletter row | complete, review clean | `4a9a0be5` |
 | T7 E2E + stale-cache product fix | complete after 1 fix round + review minors | `f6314d81`, `bdfe518d`, `9b0b378f` |
 | T8 measure + L2d pinned | complete (Playwright Chromium, Chrome extension offline) | `e966bbd0` |
-| Owner Chrome looks 1–3 (spec §R) | approved by the owner | next commit |
-| T9 whole-branch gate | not started | — |
+| Owner Chrome looks 1–3 (spec §R) | approved by the owner | `ffcd9afa` |
+| T9 whole-branch review + gates | review: 1 Important (gloss contrast 3.95:1) + 6 Minor, all fixed | next commit |
 
 ## Contracts and decisions
 
@@ -97,10 +97,21 @@ left it green. The fix seeds the cache by client navigation: subscribe in the fo
 without any mutation**: after the client navigation `/shadowing` shows the footer UNsubscribed. The attempted
 spec change is saved as `.superpowers/sdd/2026-10-13-app-footer/task-7-fix1-attempt.patch` (not committed).
 
+## T9 results (2026-10-14)
+
+- Whole-branch review (opus) at `ffcd9afa`: I1 word-tile gloss contrast 3.95:1 → `--muted-foreground`, measured in
+  the browser 4.76:1; M1 signed-out "Sign in" button keeps `--hit-target-min`; M2 send button `aria-disabled` (focus
+  survives pending → error); M3 dead `data-footer-reducible` markers + their test removed (L2b unused); M4 stale CSS
+  comment; M5 placement test asserts its layout list is non-empty; M6 mascot link `aria-describedby` the word tile
+  (test red without it). Deferred-minor triage: all KEEP-DEFERRED or CLOSED (ledger).
+- E2E full suite on a :3100 build of `ffcd9afa` (after the demo seed's `--cleanup`): 158 passed, 6 failed. Rerun on
+  a fresh server: settings :87 passed (known flaky). The other 4 — landing-page :287, :608, :700 (page.goto
+  timeouts) and summary :29 (expects the AI-off fallback; this worktree's `.env.local` has `AI_PROVIDER=gemini`) —
+  fail identically on a **master** build (`4d83ac6a`, temp worktree, :3200): pre-existing, not this branch.
+- Demo learner removed again by the `--cleanup` (reseed for any further Chrome look).
+
 ## Next actions
 
-1. T9: full gates (vitest, typecheck, lint, footer + full E2E after the demo seed's `-- --cleanup`), whole-branch
-   review on the most capable model, triage the ledger's deferred minors, then merge locally (owner: "finish the
-   remaining tasks", 2026-10-13). Never push.
+1. Merge `app-footer` into master locally (owner 2026-10-13: "finish the remaining tasks"). Never push.
 2. Owner calls still open (not blockers): §5 contentinfo landmark (layout-level slot); app-wide
    `staleTimes.dynamic: 0`; a type-normalization branch for the Dashboard + unported pages (L-052).

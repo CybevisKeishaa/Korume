@@ -49,7 +49,7 @@ describe("FooterNewsletter (spec N3/N3a)", () => {
     expect(refresh).toHaveBeenCalledTimes(1);
   });
 
-  it("disables the button while pending, so a double click is one request", async () => {
+  it("marks the button busy while pending, so a double click is one request", async () => {
     let resolve!: (r: Response) => void;
     const fetchMock = vi.fn(() => new Promise<Response>((r) => { resolve = r; }));
     vi.stubGlobal("fetch", fetchMock);
@@ -57,7 +57,7 @@ describe("FooterNewsletter (spec N3/N3a)", () => {
     const button = screen.getByRole("button", { name: copy.submit });
     fireEvent.click(button);
     fireEvent.click(button);
-    expect(button).toBeDisabled();
+    expect(button).toHaveAttribute("aria-disabled", "true");
     expect(button).toHaveAttribute("aria-busy", "true");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     resolve(new Response("{}", { status: 200 }));

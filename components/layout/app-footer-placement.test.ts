@@ -33,6 +33,7 @@ describe("AppFooter placement (spec F1/F2, T2 static)", () => {
     const layouts = readdirSync("app", { recursive: true, encoding: "utf8" })
       .map((rel) => posix(path.join("app", rel)))
       .filter((file) => file.endsWith("/layout.tsx"));
+    expect(layouts.length).toBeGreaterThan(0);
     for (const file of layouts) expect(/AppFooter/.test(readFileSync(file, "utf8")), file).toBe(false);
   });
 });

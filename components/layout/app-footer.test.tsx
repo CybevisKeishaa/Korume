@@ -69,13 +69,9 @@ describe("AppFooter (spec F3, L1, T1)", () => {
     expect(screen.getByRole("button", { name: new RegExp(f.backToTop) })).toBeInTheDocument();
   });
 
-  it("marks only the L2b-reducible elements, in their fixed order", async () => {
-    const { container } = await renderFooter({ email: "learner@example.com", optedIn: false });
-    const marked = [...container.querySelectorAll("[data-footer-reducible]")].map((el) => el.getAttribute("data-footer-reducible"));
-    expect(marked.sort()).toEqual(["1", "2", "3"]);
-    expect(container.querySelector('[data-footer-reducible="1"]')).toHaveTextContent(a.app.body);
-    expect(container.querySelector('[data-footer-reducible="2"]')).toHaveTextContent(a.tagline);
-    expect(container.querySelector('[data-footer-reducible="3"]')).toHaveAttribute("href", "/en/companion");
+  it("describes the mascot link with its word tile, so the gloss is not lost behind the aria-label", async () => {
+    await renderFooter({ email: "learner@example.com", optedIn: false });
+    expect(screen.getByRole("link", { name: f.mascot.cta })).toHaveAccessibleDescription(`${f.wordmarkJp} ${a.mascot.gloss}`);
   });
 
   it("omits the newsletter form when there is no signed-in user", async () => {
