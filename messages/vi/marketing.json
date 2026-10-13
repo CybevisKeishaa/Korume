@@ -334,9 +334,15 @@
     "backToTop": "Quay lại từ đầu"
   },
   "appFooter": {
-    "ariaLabel": "Chân trang",
     "tagline": "Góc yên tĩnh để bạn lớn lên cùng tiếng Nhật.",
+    "mascot": {
+      "gloss": "kotoba · từ ngữ"
+    },
     "closing": "Dù bạn ở đâu, chúng ta vẫn tiếp tục học cùng nhau.",
+    "note": {
+      "heading": "Một lời nhắn nhỏ",
+      "body": "Chúng mình dành chỗ cho việc học đều đặn và tò mò."
+    },
     "app": {
       "eyebrow": "Học tiếp ở bất cứ đâu",
       "heading": "Bước học tiếp theo, ở bất cứ đâu.",

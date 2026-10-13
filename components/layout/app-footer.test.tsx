@@ -15,20 +15,19 @@ vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
 const f = en.footer;
 const a = en.appFooter;
 
-/** Spec F3: interactive elements and their destinations. Home is /dashboard, not the landing. */
+/** Spec F3 (owner 2026-10-13): every frame label is a link. Home is /dashboard, not the landing. */
 const LINKS: ReadonlyArray<readonly [string, string]> = [
   [f.columns.explore.home, "/en/dashboard"],
   [f.columns.explore.roadmap, "/en/roadmap"],
   [f.columns.explore.contact, `mailto:${SUPPORT_EMAIL}`],
+  [SUPPORT_EMAIL, `mailto:${SUPPORT_EMAIL}`],
   [f.mascot.cta, "/en/companion"],
 ];
-/** Spec F3: kept as text. */
-const TEXT_ONLY = [f.columns.legal.privacy, f.columns.legal.terms] as const;
-/** Spec F3 round 3: not rendered at all. */
-const CUT = [
+/** No page of their own yet: the landing page until each exists. */
+const PLACEHOLDERS = [
   f.columns.explore.pricing, f.columns.explore.faq, f.columns.explore.blog, f.columns.explore.about,
   f.columns.explore.careers, f.columns.community.discord, f.columns.community.facebook,
-  f.columns.community.tiktok, f.columns.community.heading, SUPPORT_EMAIL,
+  f.columns.community.tiktok, f.columns.legal.privacy, f.columns.legal.terms,
 ] as const;
 
 async function renderFooter(state: Awaited<ReturnType<typeof getNewsletterState>>) {
@@ -37,24 +36,25 @@ async function renderFooter(state: Awaited<ReturnType<typeof getNewsletterState>
 }
 
 describe("AppFooter (spec F3, L1, T1)", () => {
-  it("links exactly the F3 destinations", async () => {
+  it("links every frame label to its F3 destination", async () => {
     await renderFooter({ email: "learner@example.com", optedIn: false });
     for (const [name, href] of LINKS) {
       expect(screen.getByRole("link", { name })).toHaveAttribute("href", href);
     }
+    for (const name of PLACEHOLDERS) {
+      expect(screen.getByRole("link", { name })).toHaveAttribute("href", "/en");
+    }
     expect(screen.getByRole("link", { name: new RegExp(en.footer.app.appStore.name) })).toHaveAttribute("href", APP_STORE_URL);
     expect(screen.getByRole("link", { name: new RegExp(en.footer.app.playStore.name) })).toHaveAttribute("href", PLAY_STORE_URL);
-    // Exact: no link outside F3 (the cut labels, the settings link of a subscribed learner) is rendered.
-    expect(screen.getAllByRole("link")).toHaveLength(LINKS.length + 2);
+    // Exact: nothing else (e.g. the settings link of a subscribed learner) is rendered.
+    expect(screen.getAllByRole("link")).toHaveLength(LINKS.length + PLACEHOLDERS.length + 2);
   });
 
-  it("keeps Legal as text and renders none of the cut labels", async () => {
+  it("keeps the frame's small note as text", async () => {
     await renderFooter({ email: "learner@example.com", optedIn: false });
-    for (const label of TEXT_ONLY) {
-      expect(screen.getByText(label)).toBeInTheDocument();
-      expect(screen.queryByRole("link", { name: label })).toBeNull();
-    }
-    for (const label of CUT) expect(screen.queryByText(label)).toBeNull();
+    expect(screen.getByRole("heading", { level: 2, name: a.note.heading })).toBeInTheDocument();
+    expect(screen.getByText(a.note.body)).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: a.note.body })).toBeNull();
   });
 
   it("has three sections and the frame's bottom band", async () => {
@@ -62,7 +62,7 @@ describe("AppFooter (spec F3, L1, T1)", () => {
     const footer = container.querySelector("footer[data-app-footer]");
     expect(footer).not.toHaveAttribute("aria-label");
     expect(footer?.querySelectorAll(".app-footer__row > *")).toHaveLength(3);
-    for (const heading of [f.columns.explore.heading, f.columns.support.heading, f.columns.legal.heading]) {
+    for (const heading of [f.columns.explore.heading, f.columns.community.heading, f.columns.support.heading, f.columns.legal.heading]) {
       expect(screen.getByRole("heading", { level: 2, name: heading })).toBeInTheDocument();
     }
     expect(screen.getByText(a.closing)).toBeInTheDocument();

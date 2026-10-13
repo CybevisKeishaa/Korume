@@ -6,7 +6,8 @@
   O1 resolved by the owner (§8). Round 2 (owner): always one row. Round 3 (owner): no wide/compact variants —
   one composition with the frame's sections and space reallocated (L1: 24 · 230 · 24 · 330 · 24 · 361 · 24 at
   1017), Links in two sub-columns, functionless labels cut except Legal (kept as text), reduction only if measured
-  (L2b), empty `search_path`, email-ellipsis exemption in T6. Awaiting the owner's approval before `writing-plans`.
+  (L2b), empty `search_path`, email-ellipsis exemption in T6. Approved, planned and built; **§R records the
+  owner's three Chrome-look revisions after implementation, which supersede the rulings they name.**
 - **Branch:** `app-footer`, worktree `.worktrees/app-footer`, base `master` at **`44fc84f0`**.
 - **Frame:** Footer `203:13813` — file `IwFHZDZdHW7qsSFiNbWrkd`
   (`figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Korume?node-id=203-13813`), 1536x733.
@@ -16,6 +17,38 @@
 Decision IDs (F, N, L, T) are stable. Plans, reviews and commits cite them.
 
 ---
+
+## R. Owner Chrome-look revisions (2026-10-13, after implementation) — supersede the rulings they name
+
+Three looks at the built footer on a :3100 build; the owner approved the result of the third. Where these differ
+from §1–§2, these win. Measured in `docs/superpowers/run-state/app-footer.md` (L2d).
+
+- **R1 — Scale (supersedes L1's 1017 design width, L2's 12/14px floors).** Look 1: "the type is very, very big
+  against the page". Measured: footer links 14.5px against 11–12.4px page body at 1280 (≈1.3x), because `--f` was
+  one design px at an invented 1017px footer, not the frame's (L-051). LAYOUT now scales at the frame's own size:
+  `--f = clamp(0.7px, 100cqi / 1380, 1.4px)` (the frame's 1380px container), sections `374.66fr : 456.11fr :
+  293.23fr`, the frame's paddings, three link columns, the frame's link pitch (`max(24px, 28.5 * --f)`, WCAG 2.2
+  target size; links no longer carry `--hit-target-min`, buttons still do).
+- **R2 — Type on the app's shared tokens (supersedes every font size in L1–L3).** Look 2: "too small, much smaller
+  on a big screen; the screens do not share one type scale, and a footer reused under all of them will be off".
+  Type uses `--text-caption / body / body-lg / heading / heading-lg` (on `--density-unit`), so footer text equals the
+  pages' own body at every width (12.4px at 1280, 14px from 1440). Only layout and the mascot card's art scale.
+- **R3 — Every frame label is a link (supersedes F3's cuts and "Legal as text").** Owner: "if there is no page yet,
+  link the home page or a placeholder". Explore (Home `/dashboard`, Pricing, FAQ, Blog, Roadmap `/roadmap`, About,
+  Careers, Contact `mailto:`), Community (Discord, Facebook, TikTok, with the frame's Lucide glyphs), Support (the
+  `SUPPORT_EMAIL` address, `mailto:`), Legal (Privacy Policy, Terms of Service), and the frame's "A small note"
+  text (`appFooter.note.*`). A label without a page links `PLACEHOLDER = "/"`; each becomes its real href later.
+- **R4 — Fit (refines L2).** Links and app tracks never go below their one-line content (`minmax(min-content, fr)`);
+  the brand gives way first. Section gap `40 * --f` (frame: 80) so the brand keeps ≥ ~210px at the vi floor. The
+  account email pill is `contain: inline-size`, so no address length widens a column (it ellipsizes, L3).
+- **R5 — Store badges on one row (supersedes the frame's stacked pair).** Look 3: "put them on one row; stacked
+  makes the column long". Equal widths, never below 164 * `--f`, badge prefix case as in the frame ("Download on
+  the" mixed, "GET IT ON" caps).
+- **R6 — Mascot card filled (refines F6).** Look 3: "fill the Korume card; I do not understand the square chip,
+  design it". The card now says where it goes (visible "Say hello to Korume ↗", the link's own name), the word tile
+  teaches its word (`ことば` + `appFooter.mascot.gloss` "kotoba · word"), and the `▣` chip is replaced by a "zᶻ"
+  snore beside the sleeping mascot (decorative, `aria-hidden`).
+- **R7 — `appFooter.ariaLabel` deleted** (unused since the footer sits inside `<main>`, §5).
 
 ## 0. Authority
 

@@ -334,9 +334,15 @@
     "backToTop": "Back to the beginning"
   },
   "appFooter": {
-    "ariaLabel": "Site footer",
     "tagline": "Your quiet place to grow with Japanese.",
+    "mascot": {
+      "gloss": "kotoba · word"
+    },
     "closing": "Wherever you are, we'll keep learning together.",
+    "note": {
+      "heading": "A small note",
+      "body": "We make space for steady, curious learning."
+    },
     "app": {
       "eyebrow": "Continue learning anywhere",
       "heading": "Take your next small step with you.",

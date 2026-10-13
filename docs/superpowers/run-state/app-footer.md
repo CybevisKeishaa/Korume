@@ -33,7 +33,8 @@ marketing/legal pages, mail sending.
 | T5 placement on 13 pages + static pin | complete, review clean | `5dedb52e` |
 | T6 Settings newsletter row | complete, review clean | `4a9a0be5` |
 | T7 E2E + stale-cache product fix | complete after 1 fix round + review minors | `f6314d81`, `bdfe518d`, `9b0b378f` |
-| T8 measure + L2d pinned | complete (Playwright Chromium, Chrome extension offline) | this commit |
+| T8 measure + L2d pinned | complete (Playwright Chromium, Chrome extension offline) | `e966bbd0` |
+| Owner Chrome looks 1–3 (spec §R) | approved by the owner | next commit |
 | T9 whole-branch gate | not started | — |
 
 ## Contracts and decisions
@@ -59,18 +60,16 @@ Controller rulings during execution (full list with costs in the ledger):
 - Full vitest after T6's last edit: 661 files / 5531 tests green; typecheck clean; lint 0 errors.
 - E2E `tests/e2e/app-footer.spec.ts` at `f6314d81`: 2 passed. Neighbours: 29 pass; `pronunciation.spec` :201/:226
   need the `shadowing-explore.spec` seed (not footer-related); `settings.spec` :87 flaky (passed on rerun).
-- **L2d (T8, measured 2026-10-13 in Playwright Chromium on a :3100 build — the claude-in-chrome extension was not
-  connected; the owner's Chrome look is the cross-check):** floor = 1280x529 nav expanded → footer **1056.9px**,
-  `--f` **1.039**; `--f` clamp kept `0.9px … 1.6px` (ceiling reached at 1920). Sections (L1 230:330:361 within ±1px
-  everywhere): 1280 exp 239/343/375 · 1280 coll 284/408/446 (f 1.235) · 1440 exp 270/387/423 (f 1.172) · 1440 coll
-  320/459/503 (f 1.392) · 1920 exp 379/544/595 · 1920 coll 435/624/683 (f 1.6, L2a). **L2b unused at the floor**
-  (0 reducible elements hidden). Every viewport + `vi` 1280 + a 70-char email: tops equal, overflow empty, no
-  one-line element wraps, badges side by side, smallest text 12px, no page scroll-x, email ellipsis with pill intact.
-- T8 fixes: (1) badge prefix case now follows the frame — "Download on the" mixed, only "GET IT ON" caps
-  (`--caps` modifier); both in caps were 126px in a 94px text column. (2) `.app-footer__badge` basis
-  `max(164 * --f, 182px)`: at the 12px text floor "Download on the" needs 104px; it now fits **exactly (104/104)** at
-  1280 nav expanded — zero slack, check by eye. 164f wins from `--f` ≈ 1.11 up, so 1440+ is unchanged.
-  (3) The empty always-mounted `role=status` adds **no gap** (margin collapses through: next element moves 0px).
+- **L2d — FINAL after the owner's three Chrome looks (spec §R, owner approved look 3, 2026-10-13).** Measured in
+  Playwright Chromium on a :3100 build (claude-in-chrome extension offline; the owner looked in their own Chrome).
+  `--f = clamp(0.7px, 100cqi / 1380, 1.4px)` (frame's container); sections `374.66fr : 456.11fr : 293.23fr`, links
+  and app `minmax(min-content, fr)`, section gap `40 * --f`. Type on shared tokens: footer link = page body at every
+  width (12.4px at 1280, 14px at 1440 and 1920). Section widths (brand/links/app): en 1280 exp 252/378/292 · vi 1280
+  exp 210/444/268 · en 1440 exp 291/424/325 · en 1920 coll 535/652/467. Footer height 636 (1280) … 858 (1920 coll).
+  At every width (1280/1440/1920, nav expanded + collapsed, en + vi, a 70-char account email): one row (tops equal),
+  no overflow, no element escapes its column, no page scroll-x. L2b unused. The T8 badge fixes (182px floor, prefix
+  case) are superseded by §R5 (content-sized equal badges on one row).
+- Superseded history: T8's first L2d (1017-based `--f`, footer links 14.5px) is in commit `e966bbd0`.
 
 ## Working tree and environment
 
@@ -100,8 +99,8 @@ spec change is saved as `.superpowers/sdd/2026-10-13-app-footer/task-7-fix1-atte
 
 ## Next actions
 
-1. Owner's Chrome look at `http://localhost:3100/vi/shadowing` (demo learner) — in progress 2026-10-13; check the
-   App Store badge text at 1280 nav expanded (zero slack). Apply feedback as numbers within L1.
-2. T9: full gates (vitest, typecheck, lint, full E2E after the demo seed's `-- --cleanup`), whole-branch review on
-   the most capable model, triage the ledger's deferred minors (incl. deleting `marketing.appFooter.ariaLabel`),
-   lessons. Merge only on the owner's word.
+1. T9: full gates (vitest, typecheck, lint, footer + full E2E after the demo seed's `-- --cleanup`), whole-branch
+   review on the most capable model, triage the ledger's deferred minors, then merge locally (owner: "finish the
+   remaining tasks", 2026-10-13). Never push.
+2. Owner calls still open (not blockers): §5 contentinfo landmark (layout-level slot); app-wide
+   `staleTimes.dynamic: 0`; a type-normalization branch for the Dashboard + unported pages (L-052).
