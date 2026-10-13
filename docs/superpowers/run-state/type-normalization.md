@@ -27,6 +27,7 @@ immersive, print sheet, navbar.
 - Master baseline build: `.worktrees/type-baseline` @ c648bff0, served on :3101 (`E2E_ROUTE_ERROR=1`), left running for Task 11.
 - Capture `.superpowers/typography/baseline-v1/`: 144 PNG (132 route + 3 nav-collapsed + 9 out-of-scope), `ratios.json`, `log.txt`.
 - log.txt: `every route captured`
+- baseline-v1 was captured before CAPTURE_TIME became required (it used the real clock); Task 11 recaptures both sides with one CAPTURE_TIME.
 - Cleanup confirmed: 0 `e2e_typography` users left in auth.users.
 
 ## Open owner calls

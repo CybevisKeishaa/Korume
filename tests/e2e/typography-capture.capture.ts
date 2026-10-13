@@ -10,12 +10,15 @@ import { readRatios } from "./typography/measure";
 /**
  * Spec V1–V4. Writes `<CAPTURE_OUT>/<route>__<viewport>[__nav-collapsed].png`, `ratios.json` and `log.txt`
  * (every route that could not be captured, with its reason — never skipped silently).
- * CAPTURE_TIME (ISO) pins the browser clock so two runs compare; server-rendered dates follow real time,
+ * CAPTURE_TIME (ISO, REQUIRED) pins the browser clock so two runs compare; server-rendered dates follow real time,
  * which is why Task 11 captures baseline and branch back to back with the same CAPTURE_TIME.
  */
 const OUT = process.env.CAPTURE_OUT;
 if (!OUT) throw new Error("set CAPTURE_OUT to the output directory");
-const TIME = new Date(process.env.CAPTURE_TIME ?? Date.now());
+const TIME = new Date(process.env.CAPTURE_TIME ?? "");
+if (!process.env.CAPTURE_TIME || Number.isNaN(TIME.getTime())) {
+  throw new Error("set CAPTURE_TIME to an ISO instant (e.g. 2026-10-14T09:00:00Z); baseline and branch captures must share it");
+}
 const slug = (label: string) => label.replace(/[()[\]]/g, "").replace(/[^\w-]+/g, "-").replace(/^-|-$/g, "");
 
 async function settle(page: Page) {
