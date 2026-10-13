@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { Link, useRouter } from "@/lib/i18n/navigation";
 import { AppFooterIcon } from "./app-footer-icon";
@@ -18,6 +18,19 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
   const t = useTranslations("marketing");
   const router = useRouter();
   const [status, setStatus] = useState<Status>(initialOptedIn ? "subscribed" : "idle");
+  // Adjust state when the server prop changes (router.refresh, Settings): React's render-phase pattern.
+  const [seenOptedIn, setSeenOptedIn] = useState(initialOptedIn);
+  if (seenOptedIn !== initialOptedIn) {
+    setSeenOptedIn(initialOptedIn);
+    setStatus(initialOptedIn ? "subscribed" : "idle");
+  }
+  // Focus moves to "Manage" only on a pending -> subscribed transition, never on mount.
+  const manageRef = useRef<HTMLAnchorElement>(null);
+  const wasPending = useRef(false);
+  useEffect(() => {
+    if (wasPending.current && status === "subscribed") manageRef.current?.focus();
+    wasPending.current = status === "pending";
+  }, [status]);
 
   async function subscribe() {
     if (status === "pending") return;
@@ -40,12 +53,16 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
   return (
     <div className="app-footer__newsletter">
       <p className="app-footer__newsletter-heading">{t("appFooter.newsletter.heading")}</p>
-      {status === "subscribed" ? (
-        <p role="status" className="app-footer__newsletter-done">
-          {t("appFooter.newsletter.subscribed")}{" "}
-          <Link href="/settings#newsletter" className="app-footer__link">{t("appFooter.newsletter.manage")}</Link>
-        </p>
-      ) : (
+      {/* Always mounted, so a screen reader announces the text appearing (spec §5). */}
+      <p role="status" className="app-footer__newsletter-done">
+        {status === "subscribed" ? (
+          <>
+            {t("appFooter.newsletter.subscribed")}{" "}
+            <Link ref={manageRef} href="/settings#newsletter" className="app-footer__link">{t("appFooter.newsletter.manage")}</Link>
+          </>
+        ) : null}
+      </p>
+      {status === "subscribed" ? null : (
         <>
           <p className="app-footer__purpose">{t("appFooter.newsletter.purpose")}</p>
           <div className="app-footer__field">

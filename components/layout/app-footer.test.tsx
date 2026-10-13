@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@/test/render";
+import { cleanup, render, screen } from "@/test/render";
 import { AppFooter } from "./app-footer";
 import { getNewsletterState } from "@/lib/data/newsletter";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -44,6 +44,8 @@ describe("AppFooter (spec F3, L1, T1)", () => {
     }
     expect(screen.getByRole("link", { name: new RegExp(en.footer.app.appStore.name) })).toHaveAttribute("href", APP_STORE_URL);
     expect(screen.getByRole("link", { name: new RegExp(en.footer.app.playStore.name) })).toHaveAttribute("href", PLAY_STORE_URL);
+    // Exact: no link outside F3 (the cut labels, the settings link of a subscribed learner) is rendered.
+    expect(screen.getAllByRole("link")).toHaveLength(LINKS.length + 2);
   });
 
   it("keeps Legal as text and renders none of the cut labels", async () => {
@@ -58,10 +60,10 @@ describe("AppFooter (spec F3, L1, T1)", () => {
   it("has three sections and the frame's bottom band", async () => {
     const { container } = await renderFooter({ email: "learner@example.com", optedIn: false });
     const footer = container.querySelector("footer[data-app-footer]");
-    expect(footer).toHaveAttribute("aria-label", a.ariaLabel);
+    expect(footer).not.toHaveAttribute("aria-label");
     expect(footer?.querySelectorAll(".app-footer__row > *")).toHaveLength(3);
     for (const heading of [f.columns.explore.heading, f.columns.support.heading, f.columns.legal.heading]) {
-      expect(screen.getByRole("heading", { name: heading })).toBeInTheDocument();
+      expect(screen.getByRole("heading", { level: 2, name: heading })).toBeInTheDocument();
     }
     expect(screen.getByText(a.closing)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: new RegExp(f.backToTop) })).toBeInTheDocument();
@@ -77,6 +79,9 @@ describe("AppFooter (spec F3, L1, T1)", () => {
   });
 
   it("omits the newsletter form when there is no signed-in user", async () => {
+    await renderFooter({ email: "learner@example.com", optedIn: false });
+    expect(screen.getByRole("button", { name: a.newsletter.submit })).toBeInTheDocument();
+    cleanup();
     await renderFooter(null);
     expect(screen.queryByRole("button", { name: a.newsletter.submit })).toBeNull();
   });

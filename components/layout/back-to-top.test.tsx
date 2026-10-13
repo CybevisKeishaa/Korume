@@ -17,7 +17,7 @@ function mountMain() {
 describe("BackToTop (spec F3)", () => {
   it("scrolls the window to the top smoothly and focuses <main>", () => {
     vi.mocked(motionEnabled).mockReturnValue(true);
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     const main = mountMain();
     render(<BackToTop label="Back to the beginning" />);
     fireEvent.click(screen.getByRole("button", { name: "Back to the beginning" }));
@@ -28,7 +28,7 @@ describe("BackToTop (spec F3)", () => {
 
   it("jumps without animation when motion is reduced", () => {
     vi.mocked(motionEnabled).mockReturnValue(false);
-    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
+    const scrollTo = vi.spyOn(window, "scrollTo").mockImplementation(() => undefined);
     render(<BackToTop label="Back to the beginning" />);
     fireEvent.click(screen.getByRole("button", { name: "Back to the beginning" }));
     expect(scrollTo).toHaveBeenCalledWith({ top: 0, behavior: "auto" });

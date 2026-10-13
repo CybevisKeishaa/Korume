@@ -19,7 +19,7 @@ export async function AppFooter() {
   const [t, newsletter] = await Promise.all([getTranslations("marketing"), getNewsletterState()]);
 
   return (
-    <footer data-app-footer aria-label={t("appFooter.ariaLabel")} className="app-footer">
+    <footer data-app-footer className="app-footer">
       <div className="app-footer__inner">
         <div className="app-footer__row">
           <div className="app-footer__brand">
@@ -95,8 +95,8 @@ export async function AppFooter() {
             </div>
             <hr className="app-footer__rule" />
             {newsletter ? (
-              // Keyed on the server value (plan P2): a router.refresh() that changes it resets the island.
-              <FooterNewsletter key={String(newsletter.optedIn)} email={newsletter.email} initialOptedIn={newsletter.optedIn} />
+              // The island re-syncs from the server value when a router.refresh() changes it (plan P2).
+              <FooterNewsletter email={newsletter.email} initialOptedIn={newsletter.optedIn} />
             ) : null}
           </div>
         </div>

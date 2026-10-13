@@ -87,4 +87,33 @@ describe("FooterNewsletter (spec N3/N3a)", () => {
     expect(screen.getByText(copy.subscribed)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: copy.submit })).toBeNull();
   });
+
+  it("keeps an always-mounted status region, empty before saving", () => {
+    render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
+
+  it("moves focus to the Manage link after a confirmed save", async () => {
+    respond(200);
+    render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    fireEvent.click(screen.getByRole("button", { name: copy.submit }));
+    const manage = await screen.findByRole("link", { name: copy.manage });
+    await waitFor(() => expect(document.activeElement).toBe(manage));
+    expect(screen.getByRole("status")).toHaveTextContent(copy.subscribed);
+  });
+
+  it("does not steal focus when mounted already subscribed", () => {
+    render(<FooterNewsletter email={EMAIL} initialOptedIn />);
+    expect(document.activeElement).toBe(document.body);
+  });
+
+  it("re-syncs from the server prop without a remount", () => {
+    const { rerender } = render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    rerender(<FooterNewsletter email={EMAIL} initialOptedIn />);
+    expect(screen.getByText(copy.subscribed)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: copy.submit })).toBeNull();
+    rerender(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    expect(screen.getByRole("button", { name: copy.submit })).toBeInTheDocument();
+    expect(screen.getByRole("status")).toBeEmptyDOMElement();
+  });
 });

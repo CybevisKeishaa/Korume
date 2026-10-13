@@ -1835,7 +1835,7 @@
 .app-footer__bottom { display: grid; justify-items: center; gap: calc(6 * var(--f)); margin-top: calc(40 * var(--f)); padding-top: calc(28 * var(--f)); border-top: 1px solid hsl(var(--border)); text-align: center; }
 .app-footer__closing { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: max(14px, calc(16 * var(--f))); white-space: nowrap; color: hsl(var(--foreground)); }
 .app-footer__copyright { margin: 0; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
-.app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: max(12px, calc(12 * var(--f))); font-weight: 600; color: hsl(var(--primary)); }
+.app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: max(14px, calc(14 * var(--f))); font-weight: 600; color: hsl(var(--primary)); }
 .app-footer__top-icon { inline-size: calc(11 * var(--f)); block-size: calc(11 * var(--f)); }
 .app-footer a:focus-visible, .app-footer button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 
