@@ -78,7 +78,7 @@ const SCANNED_DIRS = [
   // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
   { dir: "components/shadowing-workspace", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 45 },
-  { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 9 },
+  { dir: "components/layout", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 13 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: [...FORBIDDEN, DEFAULT_TYPE_UTILITY], sources: 2 },
   // Ask Korume's shared chat core (Task 8): every viewport renders through it.
