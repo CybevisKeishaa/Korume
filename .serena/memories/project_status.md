@@ -1,11 +1,16 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 late (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 night (supersedes every block below)
 >
-> ▶ **RESUME HERE: `app-footer`** (worktree `.worktrees/app-footer`, tip `b149c63e`, NOT merged) — read
-> `mem:app_footer_run_state` first. Owner reordered: app chrome (footer + navbar) BEFORE Certification. Footer spec
-> approved (3 review rounds); plan written (9 tasks), awaiting owner review + execution method. Navbar: content list
-> given, owner is getting Figma to draw it → later branch `app-chrome-refresh`. Then Certification as planned.
+> ▶ **RESUME HERE: `app-footer`** (worktree `.worktrees/app-footer`, tip `19c1e7b4`, NOT merged) — read
+> `mem:app_footer_run_state` first. Plan approved, running subagent-driven: T1–T6 done and reviewed; T7 (E2E)
+> blocked on a probable product bug (footer shows unsubscribed after footer-subscribe → Settings → client nav
+> back). Next: systematic debugging, then T8 Chrome measure, T9 whole-branch review, owner look. Navbar waits for
+> the owner's Figma → `app-chrome-refresh`. Then Certification as planned.
+>
+> ## (previous block) 2026-10-13 late
+>
+> Footer spec approved, plan written (9 tasks) awaiting owner review — superseded above.
 >
 > ## (previous block) 2026-10-13
 >
