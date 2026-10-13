@@ -1,7 +1,9 @@
 # Type Normalization — design
 
 - **Status:** design approved in conversation by the owner on 2026-10-14, section by section (1/4 scale, 2/4
-  migration, 3/4 guards, 4/4 order), with the owner's additions folded in. Awaiting written-spec review.
+  migration, 3/4 guards, 4/4 order), with the owner's additions folded in. Written spec approved 2026-10-14 with
+  two additions: out-of-scope changes from shared primitives go to the owner (M4/V5); the Dashboard is gated with
+  the nav collapsed too (G4).
 - **Branch:** `type-normalization`, worktree `.worktrees/type-normalization`, base `master` at **`c648bff0`**.
 - **Why:** lesson L-052 found three type systems in one app — shared `--text-*` tokens (Settings, Shadowing,
   Pronunciation, footer), fixed Tailwind sizes on unported pages, and the Dashboard's own `--d` scale. The owner
@@ -103,7 +105,8 @@ Decision IDs (S, M, G, V, P, R, O) are stable. Plans, reviews and commits cite t
 - **M4 — Shared primitives.** `components/ui` is in scope and also renders on out-of-scope surfaces. At
   reference density the sizes are identical (`text-sm` 14 = `text-body` 14, `text-xs` 12 = `caption` 12,
   `text-base` 16 = `body-lg` 16), but line-heights change (e.g. 20 → 22). V1 therefore also captures the
-  landing, login and one admin page, so that side effect is shown rather than assumed.
+  landing, login and one admin page, so that side effect is shown rather than assumed. A noticeable change on
+  any of them is **not** an accepted side effect: it goes to the owner under V5 like an approved learner screen.
 
 - **M5 — Order.** One commit per cluster, scan re-run after each: Dashboard → Profile →
   shadowing / shadowing-workspace / pronunciation / video / video-player / speech / lesson-summary →
@@ -147,6 +150,8 @@ Decision IDs (S, M, G, V, P, R, O) are stable. Plans, reviews and commits cite t
      `aria-label`.
   A page that cannot be reached or measured (auth, missing data, route error) fails the run with its reason; it
   is never skipped silently.
+  **Collapsed nav:** the Dashboard runs checks 1–3 a second time with the nav collapsed, at all three viewports
+  (its `--d` layout widens with the freed column while type stays on the tokens).
 
 ## 5. Visual review (V)
 
@@ -161,8 +166,8 @@ Decision IDs (S, M, G, V, P, R, O) are stable. Plans, reviews and commits cite t
 - **V4 — Ratio table (report, not a self-graded gate).** On Dashboard and Settings at 1440 and 1920: body
   font-size against card inline-size, icon size, control block-size and card padding. The numbers go to the
   owner; no threshold is set by the implementer.
-- **V5 — Owner decides.** Any approved screen whose layout changed noticeably is listed with its measurements and
-  images. The owner rules; the implementer does not adjust a design or shrink type to make a diff smaller.
+- **V5 — Owner decides.** Any approved screen — and any out-of-scope page captured under M4 (landing, login,
+  admin) — whose layout changed noticeably is listed with its measurements and images. The owner rules; the implementer does not adjust a design or shrink type to make a diff smaller.
 
 ## 6. Pages (P)
 
