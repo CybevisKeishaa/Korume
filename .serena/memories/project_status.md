@@ -1,6 +1,17 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 night (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 (supersedes every block below)
+>
+> ⭐ **`app-footer` MERGED → master `2d7a5a27`** (not pushed — the owner pushes). Owner approved after three Chrome
+> looks (spec §R: layout at the frame's scale, TYPE on the shared `--text-*` tokens, every frame label a link with
+> a "/" placeholder, badges on one row, mascot card filled). T7 product bug fixed (client nav discards an in-flight
+> `router.refresh()`; tab-writes in `lib/newsletter-tab-writes.ts`). New lesson **L-052**: shared components use the
+> app's type tokens. Open owner calls: §5 contentinfo landmark; app-wide `staleTimes.dynamic: 0`; a
+> **type-normalization branch** (Dashboard's own `--d` reads 10px at 1280; unported pages fixed 14px).
+> ▶ Next: navbar waits for the owner's Figma (`app-chrome-refresh`); then **Certification** per the agreed order.
+> Pre-existing E2E reds on master too: landing-page :287/:608/:700, summary :29 (AI-on `.env.local`).
+>
+> ## (previous block) 2026-10-13 night
 >
 > ▶ **RESUME HERE: `app-footer`** (worktree `.worktrees/app-footer`, tip `19c1e7b4`, NOT merged) — read
 > `mem:app_footer_run_state` first. Plan approved, running subagent-driven: T1–T6 done and reviewed; T7 (E2E)

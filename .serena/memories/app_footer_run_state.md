@@ -1,30 +1,21 @@
-# app-footer — run state pointer (2026-10-13, session paused)
+# app-footer — run state pointer (HISTORY: merged 2026-10-14)
 
-▶ **RESUME HERE next session.** Branch `app-footer`, worktree `.worktrees/app-footer`, base master `44fc84f0`,
-tip `19c1e7b4`. NOT merged. Owner: Claude (Codex is gone). Execution: subagent-driven (owner's choice).
+⭐ **MERGED → master `2d7a5a27`** (branch tip `38f3ff50`, base `44fc84f0`; not pushed — the owner pushes). Branch
+and worktree `.worktrees/app-footer` kept. Owner approved the footer in Chrome after three looks.
 
-Read in this order: this file → branch run state `docs/superpowers/run-state/app-footer.md` (accepted commits,
-rulings, blocker, next actions) → SDD ledger `.superpowers/sdd/2026-10-13-app-footer/progress.md` (git-ignored;
-every ruling + deferred minor; resume at the first task without a `complete` line) → spec + plan only as needed.
+Full record: branch run state `docs/superpowers/run-state/app-footer.md` (commits, rulings, L2d, T9 results) and the
+spec `docs/superpowers/specs/2026-10-13-app-footer-design.md` §R (owner revisions superseding L1/L2/F3/F6/O1). SDD
+ledger `.superpowers/sdd/2026-10-13-app-footer/progress.md` (git-ignored, in the worktree).
 
-## Where it stands
-- T1–T6 complete and reviewed: migration `...046` (`users.newsletter_opt_in_at`, definer RPC
-  `set_newsletter_opt_in`, `verify:db:footer`), data layer + `PATCH /api/user/newsletter`, copy, `AppFooter` +
-  islands + CSS, placement on 13 pages, Settings row `#newsletter`. Full vitest 5531/5531 green after T6.
-- **T7 E2E BLOCKED in fix round 1.** Committed spec `f6314d81` passes 2/2 but does not exercise Review Focus 3.
-  The cache-seeding fix (footer subscribe → Manage → /settings → AppNav "Lessons" client nav) shows the footer
-  UNSUBSCRIBED on /shadowing even unmutated → probable product bug, root cause unknown. Attempt saved as
-  `.superpowers/sdd/2026-10-13-app-footer/task-7-fix1-attempt.patch`.
+## What shipped
+- `users.newsletter_opt_in_at` + definer RPC + `verify:db:footer`; `PATCH /api/user/newsletter`; Settings row.
+- `AppFooter` on the 13 outer app pages: layout `--f = 100cqi / 1380`, type on `--text-*` tokens, every frame
+  label a link (`PLACEHOLDER = "/"` until each page exists), badges on one row, mascot card (CTA, ことば gloss, snore).
+- T7: a client navigation discards an in-flight `router.refresh()` (Next 14.2 action-queue) → stale prefetch entry
+  for 30s; fixed with email-keyed tab writes (`lib/newsletter-tab-writes.ts`), forgotten on a failed save.
 
-## Next
-1. systematic-debugging of the stale footer after client nav (worktree build on :3100, new Chrome tab). Candidates
-   to MEASURE: stale Next 14.2 router-cache/prefetch entry for /shadowing; Next fetch data cache on
-   `getNewsletterState`'s Supabase read.
-2. Re-apply the T7 patch; must pass unmutated and go RED with Settings' `router.refresh()` removed.
-3. T8 Chrome measure (reseed demo learner first — the `--cleanup` before T7 DELETED it), T9 gates + whole-branch
-   review, owner's Chrome look, merge only on the owner's word.
-
-## Owner decisions pending (surface at the end)
-- Spec §5 "one contentinfo per page" is unmet: the footer sits inside `<main>`, so it has no aria-label (ARIA
-  prohibits it there). A real landmark needs a layout-level slot (F2 change).
-- Navbar: waiting for the owner's Figma frame → branch `app-chrome-refresh`.
+## Open owner calls (not blockers)
+- Spec §5 "one contentinfo per page" unmet (footer inside `<main>`; needs a layout-level slot).
+- App-wide `experimental.staleTimes.dynamic: 0` (Next 15 default) would close the stale-cache class everywhere.
+- Type-normalization branch (L-052): Dashboard `--d` and the unported fixed-14px pages.
+- Navbar → `app-chrome-refresh` once the owner's Figma frame exists.
