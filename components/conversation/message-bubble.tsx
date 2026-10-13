@@ -109,7 +109,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
               onClick={handlePlay}
               disabled={playState === "loading" || playState === "unavailable"}
               title={playState === "unavailable" ? t("messageBubble.notConfigured") : undefined}
-              className="h-7 px-2 text-caption"
+              className="h-7 px-2 text-body"
             >
               {playState === "loading" ? tCommon("states.loading") : t("messageBubble.play")}
             </Button>

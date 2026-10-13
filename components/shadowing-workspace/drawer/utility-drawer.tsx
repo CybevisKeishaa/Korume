@@ -62,6 +62,7 @@ export function UtilityDrawer({ workspaceRef, headerRef }: {
                   text={target?.span ? line.textJp.slice(target.span.start, target.span.end) : line.textJp}
                   mode={preferences.readingFurigana}
                   override={undefined}
+                  typeExempt="reading-jp-body-lg"
                   className="reading-jp-body-lg reading-foreground"
                 />
               )}

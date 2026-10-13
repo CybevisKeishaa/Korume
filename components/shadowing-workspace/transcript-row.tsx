@@ -66,8 +66,10 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
   const textId = `transcript-line-text-${line.id}`;
   // Reading Settings size, leading and Text colour preset (globals.css `.reading-*`); the gap after the current
   // line ends is softened by colour, never by opacity (contrast is gated on these exact tokens).
+  const japaneseSize = full ? "reading-jp-heading" : "reading-jp-body-lg"; // also the data-type-exempt id
+  const translationSize = full ? "reading-latin-body" : "reading-latin-caption"; // likewise
   const japaneseClass = cn(
-    full ? "reading-jp-heading" : "reading-jp-body-lg",
+    japaneseSize,
     current ? cn("font-semibold", spoken ? "reading-foreground" : "reading-muted") : state === "past" ? "reading-muted" : "reading-foreground",
   );
 
@@ -113,13 +115,13 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
             className="relative cursor-pointer outline-none"
           >
             {full || furiganaOverride !== undefined ? (
-              <RubySentence as="span" segments={line.furigana} text={line.textJp} mode={furiganaMode} override={furiganaOverride} className={cn("block", japaneseClass)} />
+              <RubySentence as="span" segments={line.furigana} text={line.textJp} mode={furiganaMode} override={furiganaOverride} typeExempt={japaneseSize} className={cn("block", japaneseClass)} />
             ) : (
-              <span lang="ja" className={cn("block font-jp [&_rt]:select-none", japaneseClass)}>{line.textJp}</span>
+              <span lang="ja" data-type-exempt={japaneseSize} className={cn("block font-jp [&_rt]:select-none", japaneseClass)}>{line.textJp}</span>
             )}
           </div>
           {line.textTranslation !== null && translation === "shown" && (
-            <p className={cn("relative", full ? "reading-latin-body" : "reading-latin-caption", current ? "reading-foreground" : "reading-muted")}>{line.textTranslation}</p>
+            <p data-type-exempt={translationSize} className={cn("relative", translationSize, current ? "reading-foreground" : "reading-muted")}>{line.textTranslation}</p>
           )}
           {line.textTranslation !== null && translation === "covered" && (
             <button
