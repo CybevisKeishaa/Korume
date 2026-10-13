@@ -136,18 +136,23 @@ Three columns on one row: **Brand · Essential links · Newsletter**. No section
 - Pending, subscribed, session-expired and error states must not overflow horizontally; the footer may grow in
   height with its state, never by adding a row for a main section.
 
-**L2c — Further reduction, in a fixed order** (only if measurement shows a supported width still does not fit
-compact mode): (1) the Roadmap link, (2) the compact heading (purpose line stays), (3) the wordmark text (the `K`
-tile stays, with "Korume" as its accessible name). Never a second row. The **supported floor** is the footer's width
-at a 1280 viewport with the nav open (≈1017px, measured and pinned); narrower is outside the desktop contract.
+**L2c — Compact-reduced mode, only if measured necessary.** If L2d shows the full L2b set does not fit at the
+supported floor, a third mode `compact-reduced` exists below its own measured breakpoint `--footer-compact`, and it
+removes, in this fixed order and only as far as needed: (1) the Roadmap link, (2) `newsletter.headingCompact` (the
+purpose line stays), (3) the wordmark text (the `K` tile stays, with "Korume" as its accessible name). Never a
+second row. If L2b fits at the floor, `compact-reduced` does not exist and this clause is recorded as unused. The
+**supported floor** is the footer's width at a 1280 viewport with the nav open (≈1017px, measured and pinned);
+narrower is outside the desktop contract.
 
 **L2d — Measured, then locked.** `--footer-wide` is the smallest container width at which the full L2a composition
-fits at its floor sizes without overflow or unintended wraps, measured from rendered content. It, the compact
-column targets and any L2c step taken are pinned in the run state and a test only after that measurement.
+fits at its floor sizes without overflow or unintended wraps, measured from rendered content; `--footer-compact`
+likewise for L2b, if needed. The modes that exist, their breakpoints, the compact column widths and the exact
+content set of each mode are pinned in the run state and in T1/T6 only after that measurement.
 
 **L2e — Bottom row.** The divider, closing line, copyright and "Back to the beginning" sit below the three sections
-in both modes (the frame's own second band, not a main section). In compact mode the closing line may wrap; the
-copyright and the button stay on one line each.
+in every mode (the frame's own second band, not a main section). Closing line, copyright and button each stay on
+one line: the closing line is ≈322px at 1536 and ≈the same at its 12px+ floor, well inside a ≈1017px footer, so no
+compact copy is needed (T6 verifies).
 
 **L3 — Overflow and text integrity.**
 
@@ -165,8 +170,9 @@ copyright and the button stay on one line each.
 by account erasure, so both include the new column with no extra code — T4 proves it.
 
 **N2 — Write path.** One function `set_newsletter_opt_in(p_opt_in boolean) returns timestamptz`, `language plpgsql
-security definer set search_path = public` (empty-search-path hijack closed; every reference schema-qualified or
-resolved in `public`). It raises `insufficient_privilege` when `auth.uid()` is null, and only ever updates
+security definer set search_path = ''`, every reference schema-qualified (`public.users`, `auth.uid()`,
+`pg_catalog.now()`) — the stricter of the repo's two conventions, as in `20260820000029_account_deletion.sql`, which
+also writes `users`. It raises `insufficient_privilege` when `auth.uid()` is null, and only ever updates
 `where id = auth.uid()`: `true` sets `now()` only if currently null (idempotent, keeps the first consent instant),
 `false` sets null. It returns the stored value. `revoke execute ... from public, anon`; `grant execute ... to
 authenticated` (`supabase-anon-execute-default`). **No** column update grant: the client can never write an
@@ -240,9 +246,10 @@ focus ring. Back-to-top respects reduce-motion.
 
 ## 6. Tests and gates
 
-- **T1 — Component.** Two content sets, checked separately. Wide set: every frame label; exactly the F3 elements
-  are interactive, with their hrefs; the rest are text. Compact set: exactly the L2b "Shows" column, nothing else
-  marked compact-visible; compact never requires a frame label it hides. jsdom cannot evaluate container queries, so
+- **T1 — Component.** One content set per mode that exists after L2d, checked separately. Wide set: every frame
+  label; exactly the F3 elements are interactive, with their hrefs; the rest are text. Compact set: exactly the L2b
+  "Shows" column. `compact-reduced` set (only if L2c is used): the compact set minus the pinned L2c steps, nothing
+  else. A mode never requires a frame label it hides. jsdom cannot evaluate container queries, so
   T1 asserts each element's mode membership (its wide-only / compact-only / both marker); what is actually visible is
   T6's job. Mutation: turn one text label into a link → red; mark a hidden label compact-visible → red.
 - **T2 — Placement pin.** A test scans every `page.tsx` under `app/[locale]` and compares the set rendering
@@ -251,7 +258,7 @@ focus ring. Back-to-top respects reduce-motion.
 - **T3 — Opt-in.** Unit: action states (idle, pending, subscribed, session expired, error); the action takes no
   email argument; both surfaces revalidate. SQL (`verify:db` style, live local DB): `set_newsletter_opt_in` idempotent
   on `true` (first instant kept), clears on `false`, raises with no `auth.uid()`, `anon` has no EXECUTE, cannot
-  touch another user; `authenticated` has no column update grant; the function's `search_path` is pinned
+  touch another user; `authenticated` has no column update grant; the function's `search_path` is pinned to empty
   (`pg_proc.proconfig`).
 - **T4 — Data rights.** Export includes `newsletter_opt_in_at`; erasure leaves no row.
 - **T5 — E2E.** Signed-in learner on `/shadowing`: subscribe in the footer → confirmation; Settings toggle shows on
@@ -263,8 +270,12 @@ focus ring. Back-to-top respects reduce-motion.
   - the visible content set is exactly that mode's set (T1), and hidden elements are out of the focus order;
   - wide mode: sections within ±5% of the frame ratios (374.7 : 456.1 : 293.2, gaps 80 on 1284);
   - no horizontal scroll; for **every** footer element (columns, headings, link labels, badges, newsletter pill and
-    button, each N3a state) `scrollWidth <= clientWidth` and its box stays inside its column; no clipping except
-    the email ellipsis; one-line elements (L3) render one line;
+    button, each N3a state) `scrollWidth <= clientWidth` and its box stays inside its column; one-line elements
+    (L3) render one line;
+  - **the one exemption:** the email text element (`data-footer-email`) may have `scrollWidth > clientWidth` when
+    ellipsized. For it instead: its computed `text-overflow` is `ellipsis`, its pill and column do satisfy
+    `scrollWidth <= clientWidth`, its `textContent` and `title` equal the full account address, and no other
+    element uses ellipsis;
   - smallest rendered text ≥ 12px; every control keeps its accessible name and a hit target ≥ `min-h-hit-target`.
   Recorded in the run state.
 - Full vitest after the last edit (L-044), `npm run verify:protocol`, code-reviewer on the whole branch.
