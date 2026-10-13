@@ -20,8 +20,6 @@ const OUT_OF_SCOPE_SELECTOR = /^\.vp-/;
  */
 export const PENDING_MIGRATION: readonly string[] = [
   // Task 5 — Profile
-  // Task 7 — JLPT / certification / learning
-  "components/jlpt/", "components/learning/", "app/[locale]/(protected)/(app)/certification/",
   // Task 8 — reading / conversation / kanji / vocab / grammar
   "components/reading/", "components/conversation/", "css:.reading-", "app/[locale]/(protected)/(app)/reading/",
   "app/[locale]/(protected)/(app)/conversation/", "app/[locale]/(protected)/(app)/kanji/",

@@ -97,7 +97,7 @@ export function JlptListeningPlayButton({ text, className }: JlptListeningPlayBu
       {/* eslint-disable-next-line jsx-a11y/media-has-caption -- short synthesized speech clip, no captions to add */}
       <audio ref={audioRef} onEnded={() => setPlayState("idle")} aria-hidden="true" className="hidden" />
       {error && (
-        <p role="status" className="mt-1 text-xs text-muted-foreground">
+        <p role="status" className="mt-1 text-caption text-muted-foreground">
           {error}
         </p>
       )}

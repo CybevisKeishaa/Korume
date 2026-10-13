@@ -34,11 +34,11 @@ export function JlptPreStartPanel({
   return (
     <div className="mx-auto max-w-xl space-y-6 py-8">
       <div>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
           {level}
         </span>
-        <h1 className="font-jp mt-2 text-2xl font-bold">{title}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="font-jp mt-2 text-title font-bold">{title}</h1>
+        <p className="mt-1 text-body text-muted-foreground">
           {mode === "full"
             ? t("preStart.fullMockDescription")
             : t("preStart.sectionPracticeDescription", {
@@ -48,19 +48,19 @@ export function JlptPreStartPanel({
       </div>
 
       <Card className="p-5">
-        <dl className="grid grid-cols-2 gap-4 text-sm">
+        <dl className="grid grid-cols-2 gap-4 text-body">
           <div>
             <dt className="text-muted-foreground">{t("preStart.questionsLabel")}</dt>
-            <dd className="text-lg font-semibold">{questionCount}</dd>
+            <dd className="text-heading font-semibold">{questionCount}</dd>
           </div>
           <div>
             <dt className="text-muted-foreground">{t("preStart.timeLimitLabel")}</dt>
-            <dd className="text-lg font-semibold">{t("preStart.durationMinutes", { minutes: durationMinutes })}</dd>
+            <dd className="text-heading font-semibold">{t("preStart.durationMinutes", { minutes: durationMinutes })}</dd>
           </div>
         </dl>
       </Card>
 
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         {t("preStart.instructions")}
       </p>
 

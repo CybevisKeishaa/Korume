@@ -68,7 +68,7 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
       <h2
         ref={headingRef}
         tabIndex={-1}
-        className="font-jp text-base font-semibold outline-none"
+        className="font-jp text-heading font-semibold outline-none"
       >
         {t("questionCard.heading", { index: index + 1, total })}
       </h2>
@@ -76,16 +76,16 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
       {passage &&
         (passage.length > PASSAGE_COLLAPSE_THRESHOLD ? (
           <details className="rounded-md border border-border p-3">
-            <summary className="cursor-pointer text-sm font-medium">{t("questionCard.readingPassage")}</summary>
-            <p className="font-jp mt-2 whitespace-pre-wrap text-base leading-relaxed">{passage}</p>
+            <summary className="cursor-pointer text-body font-medium">{t("questionCard.readingPassage")}</summary>
+            <p className="font-jp mt-2 whitespace-pre-wrap text-body-lg">{passage}</p>
           </details>
         ) : (
           <div className="rounded-md border border-border bg-muted/40 p-3">
-            <p className="font-jp whitespace-pre-wrap text-base leading-relaxed">{passage}</p>
+            <p className="font-jp whitespace-pre-wrap text-body-lg">{passage}</p>
           </div>
         ))}
 
-      <p className="font-jp text-base">{stem}</p>
+      <p className="font-jp text-body-lg">{stem}</p>
 
       {audio_text && <JlptListeningPlayButton text={audio_text} />}
 
@@ -111,14 +111,14 @@ export function JlptQuestionCard({ question, index, total, selected, onSelect }:
               tabIndex={tabIndex}
               onClick={() => onSelect(value)}
               className={cn(
-                "flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left text-sm transition-colors",
+                "flex w-full items-start gap-3 rounded-md border px-4 py-3 text-left text-body transition-colors",
                 checked ? "border-primary bg-primary/10" : "border-border hover:bg-secondary",
               )}
             >
               <span
                 aria-hidden="true"
                 className={cn(
-                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-xs font-semibold",
+                  "mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border text-caption font-semibold",
                   checked
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border text-muted-foreground",

@@ -136,7 +136,7 @@ export function VocabExamplesPanel({
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold">{t("examplesHeading")}</h3>
+        <h3 className="text-heading font-semibold">{t("examplesHeading")}</h3>
         <Button
           type="button"
           variant="outline"
@@ -149,23 +149,23 @@ export function VocabExamplesPanel({
       </div>
 
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {state.message}
         </p>
       )}
 
       {examples.length === 0 ? (
-        <p className="text-sm text-muted-foreground">{t("noExamples")}</p>
+        <p className="text-body text-muted-foreground">{t("noExamples")}</p>
       ) : (
         <ul className="space-y-3">
           {examples.map((example) => (
-            <li key={example.id} className="rounded-lg border border-border p-3 text-sm">
+            <li key={example.id} className="rounded-lg border border-border p-3 text-body">
               <p className="font-jp">{example.sentence_jp}</p>
               {example.sentence_translation && (
                 <p className="mt-1 text-muted-foreground">{example.sentence_translation}</p>
               )}
               {example.source === "ai_generated" && (
-                <p className="mt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                <p className="mt-1 text-caption font-medium uppercase tracking-wide text-muted-foreground">
                   {t("aiGenerated")}
                 </p>
               )}

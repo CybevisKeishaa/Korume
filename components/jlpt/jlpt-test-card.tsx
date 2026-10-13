@@ -21,14 +21,14 @@ export function JlptTestCard({ test }: JlptTestCardProps) {
   return (
     <Card className="flex h-full flex-col gap-4 p-5">
       <div>
-        <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
           {test.level}
         </span>
-        <h3 className="font-jp mt-2 text-lg font-semibold">{test.title}</h3>
+        <h3 className="font-jp mt-2 text-heading font-semibold">{test.title}</h3>
       </div>
 
       {sections.length > 0 && (
-        <ul className="space-y-1 text-sm text-muted-foreground">
+        <ul className="space-y-1 text-body text-muted-foreground">
           {sections.map((s) => (
             <li key={s.section} className="flex items-center justify-between gap-4">
               <span>{t(`sections.${s.section}`)}</span>

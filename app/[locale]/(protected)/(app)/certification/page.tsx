@@ -45,8 +45,8 @@ export default async function JlptPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-title font-bold">{t("title")}</h1>
+          <p className="mt-1 text-body text-muted-foreground">
             {t("subtitleCount", { count: tests.length })}
             {level ? ` · ${level}` : ""}
           </p>
@@ -57,7 +57,7 @@ export default async function JlptPage({
       <JlptTestList tests={tests} />
 
       <section className="mt-10" aria-label={t("recentAttempts")}>
-        <h2 className="mb-3 text-lg font-semibold">{t("recentAttempts")}</h2>
+        <h2 className="mb-3 text-heading font-semibold">{t("recentAttempts")}</h2>
         <JlptAttemptList attempts={attempts} testsById={testsById} />
       </section>
     </Container>

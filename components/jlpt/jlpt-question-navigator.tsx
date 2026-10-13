@@ -41,7 +41,7 @@ export function JlptQuestionNavigator({
             aria-current={current ? "true" : undefined}
             aria-label={ariaLabel}
             className={cn(
-              "flex h-9 w-9 items-center justify-center rounded-md border text-sm font-medium transition-colors",
+              "flex h-9 w-9 items-center justify-center rounded-md border text-body font-medium transition-colors",
               current
                 ? "border-primary bg-primary text-primary-foreground"
                 : answered
