@@ -12,6 +12,10 @@
     "title": "Help improve Korume's models",
     "body": "Let us use your recordings and learning data to improve our models. Off unless you turn it on. Your Companion remembers your learning either way — that is not model training."
   },
+  "newsletter": {
+    "title": "Newsletter",
+    "body": "Save your sign-up for Korume's occasional note at {email}. Nothing is sent yet."
+  },
   "dangerZone": {
     "eyebrow": "DANGER ZONE",
     "title": "Control your Korume data",

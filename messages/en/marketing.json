@@ -332,5 +332,26 @@
     },
     "closing": "Wherever you are, whether you learned a lot or just a little today, there's always another small step.",
     "backToTop": "Back to the beginning"
+  },
+  "appFooter": {
+    "ariaLabel": "Site footer",
+    "tagline": "Your quiet place to grow with Japanese.",
+    "closing": "Wherever you are, we'll keep learning together.",
+    "app": {
+      "eyebrow": "Continue learning anywhere",
+      "heading": "Take your next small step with you.",
+      "body": "Sync your learning across every device, and come back whenever the day leaves a little room."
+    },
+    "newsletter": {
+      "heading": "A gentle note, once in a while.",
+      "purpose": "Sign up for occasional notes on new lessons and study tips, once Korume starts sending them. Unsubscribe anytime in Settings.",
+      "emailLabel": "Account email",
+      "submit": "Subscribe",
+      "subscribed": "Your newsletter sign-up is saved.",
+      "manage": "Manage in Settings",
+      "signedOut": "Your session has ended. Sign in again to save this.",
+      "signIn": "Sign in",
+      "error": "Couldn't save that. Please try again."
+    }
   }
 }

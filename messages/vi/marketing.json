@@ -332,5 +332,26 @@
     },
     "closing": "Dù hôm nay học được nhiều hay chỉ một chút, mình vẫn còn có thể học tiếp.",
     "backToTop": "Quay lại từ đầu"
+  },
+  "appFooter": {
+    "ariaLabel": "Chân trang",
+    "tagline": "Góc yên tĩnh để bạn lớn lên cùng tiếng Nhật.",
+    "closing": "Dù bạn ở đâu, chúng ta vẫn tiếp tục học cùng nhau.",
+    "app": {
+      "eyebrow": "Học tiếp ở bất cứ đâu",
+      "heading": "Bước học tiếp theo, ở bất cứ đâu.",
+      "body": "Đồng bộ việc học trên mọi thiết bị, và quay lại bất cứ khi nào ngày còn chút khoảng trống."
+    },
+    "newsletter": {
+      "heading": "Thỉnh thoảng, một lá thư nhẹ nhàng.",
+      "purpose": "Đăng ký để nhận thư về bài học mới và mẹo học khi Korume bắt đầu gửi. Hủy bất cứ lúc nào trong Cài đặt.",
+      "emailLabel": "Email tài khoản",
+      "submit": "Đăng ký nhận thư",
+      "subscribed": "Đã lưu đăng ký nhận thư của bạn.",
+      "manage": "Quản lý trong Cài đặt",
+      "signedOut": "Phiên đăng nhập đã hết. Đăng nhập lại để lưu nhé.",
+      "signIn": "Đăng nhập",
+      "error": "Chưa lưu được. Bạn thử lại nhé."
+    }
   }
 }
