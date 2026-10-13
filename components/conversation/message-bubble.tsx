@@ -92,7 +92,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
   return (
     <div
       className={cn(
-        "max-w-[85%] rounded-lg px-4 py-2 text-sm",
+        "max-w-[85%] rounded-lg px-4 py-2 text-body",
         isAi ? "self-start bg-secondary text-foreground" : "self-end bg-primary/10 text-foreground",
         className,
       )}
@@ -109,7 +109,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
               onClick={handlePlay}
               disabled={playState === "loading" || playState === "unavailable"}
               title={playState === "unavailable" ? t("messageBubble.notConfigured") : undefined}
-              className="h-7 px-2 text-xs"
+              className="h-7 px-2 text-caption"
             >
               {playState === "loading" ? tCommon("states.loading") : t("messageBubble.play")}
             </Button>
@@ -125,7 +125,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
 
         {!isAi && message.pronunciation_score !== null && (
           <span
-            className="rounded-full bg-accent/20 px-2 py-0.5 text-xs font-medium text-accent-strong"
+            className="rounded-full bg-accent/20 px-2 py-0.5 text-caption font-medium text-accent-strong"
             title={t("messageBubble.pronunciationScoreTitle")}
           >
             {t("messageBubble.pronunciationLabel")} {Math.round(message.pronunciation_score)}
@@ -134,7 +134,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
       </div>
 
       {error && (
-        <p role="status" className="mt-1 text-xs text-muted-foreground">
+        <p role="status" className="mt-1 text-caption text-muted-foreground">
           {error}
         </p>
       )}

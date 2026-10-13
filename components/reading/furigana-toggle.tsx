@@ -27,7 +27,7 @@ export function FuriganaToggle({ pressed, onToggle, disabled, className }: Furig
       onClick={onToggle}
       title={disabled ? t("furigana.unavailableTitle") : undefined}
       className={cn(
-        "rounded-md border border-border px-3 py-1.5 text-sm font-medium transition-colors",
+        "rounded-md border border-border px-3 py-1.5 text-body font-medium transition-colors",
         pressed
           ? "bg-primary text-primary-foreground"
           : "bg-transparent text-foreground hover:bg-secondary",

@@ -38,7 +38,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
   return (
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold text-muted-foreground">{t("body.heading")}</h2>
+        <h2 className="text-heading font-semibold text-muted-foreground">{t("body.heading")}</h2>
         <FuriganaToggle
           pressed={hasFurigana && showFurigana}
           onToggle={() => setShowFurigana((v) => !v)}
@@ -46,7 +46,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
         />
       </div>
 
-      <p className="font-jp text-lg leading-loose" lang="ja">
+      <p className="font-jp text-body-lg" lang="ja">
         {hasFurigana
           ? segments.map((segment, index) =>
               isLookupable(segment.text) ? (
@@ -54,7 +54,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
                   {showFurigana && segment.reading ? (
                     <ruby>
                       {segment.text}
-                      <rt>{segment.reading}</rt>
+                      <rt data-type-exempt="furigana-rt-reading">{segment.reading}</rt>
                     </ruby>
                   ) : (
                     segment.text
@@ -78,7 +78,7 @@ export function ReadingBody({ bodyJp, furiganaJson }: ReadingBodyProps) {
       </p>
 
       {!hasFurigana && (
-        <p className="text-xs text-muted-foreground">{t("body.noFurigana")}</p>
+        <p className="text-caption text-muted-foreground">{t("body.noFurigana")}</p>
       )}
     </div>
   );

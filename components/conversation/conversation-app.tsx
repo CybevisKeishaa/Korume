@@ -359,21 +359,21 @@ export function ConversationApp() {
     return (
       <div className="space-y-10">
         <section aria-label={t("app.startHeading")} className="space-y-4">
-          <h2 className="text-lg font-semibold">{t("app.startHeading")}</h2>
+          <h2 className="text-heading font-semibold">{t("app.startHeading")}</h2>
           <ScenarioPicker onStart={startSession} />
           {pickerError && (
-            <p role="alert" className="text-sm text-danger-strong">
+            <p role="alert" className="text-body text-danger-strong">
               {pickerError}
             </p>
           )}
         </section>
 
         <section aria-label={t("app.pastSessionsHeading")} className="space-y-4">
-          <h2 className="text-lg font-semibold">{t("app.pastSessionsHeading")}</h2>
+          <h2 className="text-heading font-semibold">{t("app.pastSessionsHeading")}</h2>
           {sessionsLoaded ? (
             <SessionHistoryList sessions={sessions} onSelect={openHistorySession} />
           ) : (
-            <p className="text-sm text-muted-foreground">{tCommon("states.loading")}</p>
+            <p className="text-body text-muted-foreground">{tCommon("states.loading")}</p>
           )}
         </section>
       </div>
@@ -383,7 +383,7 @@ export function ConversationApp() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="font-jp text-lg font-semibold">{scenarioLabel(t, activeScenario)}</h2>
+        <h2 className="font-jp text-heading font-semibold">{scenarioLabel(t, activeScenario)}</h2>
         <Button type="button" variant="ghost" size="sm" onClick={resetToPicker}>
           {t("app.back")}
         </Button>
@@ -394,7 +394,7 @@ export function ConversationApp() {
         className="flex min-h-[320px] flex-col gap-2 rounded-lg border border-border p-4"
       >
         {messages.length === 0 && (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {readOnly ? t("app.noMessagesReadOnly") : t("app.noMessagesStart")}
           </p>
         )}
@@ -404,7 +404,7 @@ export function ConversationApp() {
       </div>
 
       {truncatedNotice && (
-        <p role="status" className="text-xs text-muted-foreground">
+        <p role="status" className="text-caption text-muted-foreground">
           {t("app.truncatedNotice")}
         </p>
       )}
@@ -426,7 +426,7 @@ export function ConversationApp() {
               rows={2}
               disabled={sending}
               placeholder={t("app.messagePlaceholder")}
-              className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50"
+              className="flex-1 rounded-md border border-input bg-card px-3 py-2 text-body disabled:cursor-not-allowed disabled:opacity-50"
             />
             <VoiceRecorderButton onTranscribed={handleTranscribed} disabled={sending} />
             <Button
@@ -437,10 +437,10 @@ export function ConversationApp() {
             </Button>
           </div>
           {pendingVoice && (
-            <p className="text-xs text-muted-foreground">{t("app.voicePendingNotice")}</p>
+            <p className="text-caption text-muted-foreground">{t("app.voicePendingNotice")}</p>
           )}
           {sendError && (
-            <p role="alert" className="text-sm text-danger-strong">
+            <p role="alert" className="text-body text-danger-strong">
               {sendError.message}
             </p>
           )}

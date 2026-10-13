@@ -17,7 +17,7 @@ export function SessionHistoryList({ sessions, onSelect, className }: SessionHis
 
   if (sessions.length === 0) {
     return (
-      <p className={cn("text-sm text-muted-foreground", className)}>{t("history.empty")}</p>
+      <p className={cn("text-body text-muted-foreground", className)}>{t("history.empty")}</p>
     );
   }
 
@@ -28,10 +28,10 @@ export function SessionHistoryList({ sessions, onSelect, className }: SessionHis
           <button
             type="button"
             onClick={() => onSelect(session.id)}
-            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-sm hover:bg-secondary"
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left text-body hover:bg-secondary"
           >
             <span className="font-jp">{scenarioLabel(t, session.scenario_type)}</span>
-            <span className="shrink-0 text-xs text-muted-foreground">
+            <span className="shrink-0 text-caption text-muted-foreground">
               {session.ended_at ? t("history.ended") : t("history.inProgress")} ·{" "}
               {new Date(session.started_at).toLocaleDateString()}
             </span>

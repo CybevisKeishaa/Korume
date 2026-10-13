@@ -34,8 +34,8 @@ export default async function KanjiPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-title font-bold">{t("title")}</h1>
+          <p className="mt-1 text-body text-muted-foreground">
             {t("subtitleCount", { count: kanji.length })}
             {level ? ` · ${level}` : ""}
           </p>
@@ -58,8 +58,8 @@ export default async function KanjiPage({
               href={`/kanji/${encodeURIComponent(k.character)}`}
               className="flex h-full flex-col items-center rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary"
             >
-              <span className="font-jp text-4xl leading-none">{k.character}</span>
-              <span className="mt-2 text-xs text-muted-foreground">
+              <span className="font-jp text-display">{k.character}</span>
+              <span className="mt-2 text-caption text-muted-foreground">
                 {k.meaning_en}
               </span>
             </Link>

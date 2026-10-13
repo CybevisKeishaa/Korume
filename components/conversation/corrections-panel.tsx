@@ -25,7 +25,7 @@ export function CorrectionsPanel({ result, className }: CorrectionsPanelProps) {
 
   return (
     <div className={cn("space-y-4", className)} aria-label={t("corrections.resultsAriaLabel")}>
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+      <p className="text-caption font-medium uppercase tracking-wide text-muted-foreground">
         {t("corrections.aiGenerated")}
       </p>
 
@@ -34,13 +34,13 @@ export function CorrectionsPanel({ result, className }: CorrectionsPanelProps) {
       </Card>
 
       <div>
-        <h3 className="text-sm font-semibold">{t("corrections.heading")}</h3>
+        <h3 className="text-heading font-semibold">{t("corrections.heading")}</h3>
         {result.corrections.length === 0 ? (
-          <p className="mt-2 text-sm text-muted-foreground">{t("corrections.empty")}</p>
+          <p className="mt-2 text-body text-muted-foreground">{t("corrections.empty")}</p>
         ) : (
           <ul className="mt-2 space-y-3">
             {result.corrections.map((c, i) => (
-              <li key={i} className="rounded-lg border border-border p-3 text-sm">
+              <li key={i} className="rounded-lg border border-border p-3 text-body">
                 <p className="font-jp text-danger-strong line-through decoration-danger/60">
                   {c.original}
                 </p>

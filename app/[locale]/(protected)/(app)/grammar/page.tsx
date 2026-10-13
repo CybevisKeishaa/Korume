@@ -32,8 +32,8 @@ export default async function GrammarPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-title font-bold">{t("title")}</h1>
+          <p className="mt-1 text-body text-muted-foreground">
             {t("subtitleCount", { count: grammar.length })}
             {level ? ` · ${level}` : ""}
           </p>
@@ -49,21 +49,21 @@ export default async function GrammarPage({
               <div className="flex items-center justify-between gap-4">
                 <CardTitle className="font-jp">{g.title}</CardTitle>
                 {g.jlpt_level && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-caption text-muted-foreground">
                     {g.jlpt_level}
                   </span>
                 )}
               </div>
               {g.structure_pattern && (
-                <p className="font-jp text-sm text-primary-strong">{g.structure_pattern}</p>
+                <p className="font-jp text-body text-primary-strong">{g.structure_pattern}</p>
               )}
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm">{g.explanation}</p>
+              <p className="text-body">{g.explanation}</p>
               {g.example_sentences?.length > 0 && (
                 <ul className="space-y-1 border-l-2 border-border pl-3">
                   {g.example_sentences.map((ex, i) => (
-                    <li key={i} className="text-sm">
+                    <li key={i} className="text-body">
                       <span className="font-jp">{ex.jp}</span>
                       <span className="ml-2 text-muted-foreground">{ex.en}</span>
                     </li>

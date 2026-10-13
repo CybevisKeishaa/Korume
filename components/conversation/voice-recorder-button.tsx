@@ -170,7 +170,7 @@ export function VoiceRecorderButton({
       >
         {isRecording ? t("voiceRecorder.stopRecording") : t("voiceRecorder.recordVoiceMessage")}
       </Button>
-      <p role="status" className="text-xs text-muted-foreground">
+      <p role="status" className="text-caption text-muted-foreground">
         {statusMessage}
       </p>
     </div>

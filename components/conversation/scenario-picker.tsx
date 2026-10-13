@@ -61,7 +61,7 @@ export function ScenarioPicker({ onStart, className }: ScenarioPickerProps) {
           id={levelId}
           value={level}
           onChange={(e) => setLevel(e.target.value as JlptLevel | "")}
-          className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+          className="mt-1 flex h-10 w-full rounded-md border border-input bg-card px-3 py-2 text-body"
         >
           <option value="">{t("picker.useProfileLevel")}</option>
           {JLPT_LEVELS.map((l) => (
@@ -82,7 +82,7 @@ export function ScenarioPicker({ onStart, className }: ScenarioPickerProps) {
             >
               <Card className="h-full p-4 text-left transition-colors hover:bg-secondary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary">
                 <p className="font-jp font-semibold">{t(`scenarios.${id}.label`)}</p>
-                <p className="mt-1 text-sm text-muted-foreground">
+                <p className="mt-1 text-body text-muted-foreground">
                   {t(`scenarios.${id}.description`)}
                 </p>
               </Card>
