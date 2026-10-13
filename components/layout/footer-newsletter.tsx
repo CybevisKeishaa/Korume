@@ -19,7 +19,7 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
   const t = useTranslations("marketing");
   const router = useRouter();
   // The prop can come from a router-cache payload older than this tab's last save (see newsletter-tab-writes).
-  const optedIn = newsletterOptIn(initialOptedIn);
+  const optedIn = newsletterOptIn(email, initialOptedIn);
   const [status, setStatus] = useState<Status>(optedIn ? "subscribed" : "idle");
   // Adjust state when the server prop changes (router.refresh, Settings): React's render-phase pattern.
   const [seenOptedIn, setSeenOptedIn] = useState(optedIn);
@@ -46,7 +46,7 @@ export function FooterNewsletter({ email, initialOptedIn }: { email: string; ini
       });
       if (response.status === 401) return setStatus("signedOut");
       if (!response.ok) return setStatus("error");
-      recordNewsletterWrite(true);
+      recordNewsletterWrite(email, true);
       setStatus("subscribed");
       router.refresh();
     } catch {

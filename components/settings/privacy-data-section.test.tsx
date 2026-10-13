@@ -7,7 +7,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { NewsletterState } from "@/lib/validation/newsletter";
 import en from "@/messages/en/settings.json";
 import { PrivacyDataSection } from "./privacy-data-section";
-import { resetNewsletterWritesForTests } from "@/lib/newsletter-tab-writes";
+import { forgetNewsletterWrite, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 
 const refresh = vi.fn();
 vi.mock("@/lib/i18n/navigation", async (importOriginal) => ({
@@ -31,7 +31,7 @@ describe("PrivacyDataSection newsletter row (spec N4)", () => {
   beforeEach(() => vi.clearAllMocks());
   afterEach(() => {
     vi.unstubAllGlobals();
-    resetNewsletterWritesForTests();
+    forgetNewsletterWrite();
   });
 
   it("shows the full account email and the saved state, anchored #newsletter", () => {
@@ -86,6 +86,18 @@ describe("PrivacyDataSection newsletter row (spec N4)", () => {
     unmount();
     renderSection({ email: "learner@example.com", optedIn: true });
     expect(screen.getByRole("switch", { name: en.newsletter.title })).toBeChecked();
+  });
+
+  it("a failed save drops an earlier tab write, so the server decides the next mount", async () => {
+    recordNewsletterWrite("learner@example.com", true);
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("{}", { status: 500 })));
+    const { unmount } = renderSection({ email: "learner@example.com", optedIn: true });
+    const toggle = screen.getByRole("switch", { name: en.newsletter.title });
+    fireEvent.click(toggle);
+    await waitFor(() => expect(toggle).toBeChecked());
+    unmount();
+    renderSection({ email: "learner@example.com", optedIn: false });
+    expect(screen.getByRole("switch", { name: en.newsletter.title })).not.toBeChecked();
   });
 
   it("renders no row without a signed-in state", () => {

@@ -6,7 +6,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import { Switch } from "@/components/ui/switch";
 import { usePreferences } from "@/components/providers/preferences-provider";
 import type { NewsletterState } from "@/lib/validation/newsletter";
-import { newsletterOptIn, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
+import { forgetNewsletterWrite, newsletterOptIn, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 import { SettingsSection } from "./settings-section";
 import { SettingsRow } from "./settings-row";
 import { usePreferenceSave } from "./use-preference-save";
@@ -185,7 +185,7 @@ function AiTrainingRow({ id, initialConsent }: { id: string; initialConsent: boo
 function NewsletterRow({ id, initial }: { id: string; initial: NewsletterState }) {
   const t = useTranslations("settings");
   const router = useRouter();
-  const [optedIn, setOptedIn] = useState(() => newsletterOptIn(initial.optedIn));
+  const [optedIn, setOptedIn] = useState(() => newsletterOptIn(initial.email, initial.optedIn));
   const save = usePreferenceSave("newsletter", "/api/user/newsletter");
 
   return (
@@ -203,9 +203,12 @@ function NewsletterRow({ id, initial }: { id: string; initial: NewsletterState }
               const previous = optedIn;
               setOptedIn(checked);
               void save.save({ optIn: checked }, {}).then((outcome) => {
-                if (outcome === "failed") setOptedIn(previous);
+                if (outcome === "failed") {
+                  setOptedIn(previous);
+                  forgetNewsletterWrite();
+                }
                 if (outcome !== "saved") return;
-                recordNewsletterWrite(checked);
+                recordNewsletterWrite(initial.email, checked);
                 router.refresh();
               });
             }}

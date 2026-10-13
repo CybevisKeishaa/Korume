@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@/test/render";
 import { FooterNewsletter } from "./footer-newsletter";
-import { resetNewsletterWritesForTests } from "@/lib/newsletter-tab-writes";
+import { forgetNewsletterWrite, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 import en from "@/messages/en/marketing.json";
 
 const refresh = vi.fn();
@@ -16,7 +16,7 @@ const EMAIL = "a.very.long.learner.address.for.the.footer.test@korume-example.co
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => {
   vi.unstubAllGlobals();
-  resetNewsletterWritesForTests();
+  forgetNewsletterWrite();
 });
 
 function respond(status: number) {
@@ -139,6 +139,12 @@ describe("FooterNewsletter (spec N3/N3a)", () => {
     fireEvent.click(screen.getByRole("button", { name: copy.submit }));
     await screen.findByRole("alert");
     unmount();
+    render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
+    expect(screen.getByRole("button", { name: copy.submit })).toBeInTheDocument();
+  });
+
+  it("ignores a tab write made for another account (session changed in another tab)", () => {
+    recordNewsletterWrite("someone.else@example.com", true);
     render(<FooterNewsletter email={EMAIL} initialOptedIn={false} />);
     expect(screen.getByRole("button", { name: copy.submit })).toBeInTheDocument();
   });
