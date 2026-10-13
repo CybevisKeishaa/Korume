@@ -1,6 +1,13 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-13 late (supersedes every block below)
+>
+> ▶ **RESUME HERE: `app-footer`** (worktree `.worktrees/app-footer`, tip `b149c63e`, NOT merged) — read
+> `mem:app_footer_run_state` first. Owner reordered: app chrome (footer + navbar) BEFORE Certification. Footer spec
+> approved (3 review rounds); plan written (9 tasks), awaiting owner review + execution method. Navbar: content list
+> given, owner is getting Figma to draw it → later branch `app-chrome-refresh`. Then Certification as planned.
+>
+> ## (previous block) 2026-10-13
 >
 > ⭐ **`port-dashboard` MERGED → master `7c0b49e8`; owner feedback branch `dashboard-polish` MERGED → `1f7bb466`**
 > (not pushed — the owner pushes). **Owner approved the Dashboard in Chrome 2026-10-13.** Claude executes alone, no Codex.
