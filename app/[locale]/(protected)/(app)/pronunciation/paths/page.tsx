@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
@@ -20,6 +21,7 @@ export default async function LearningPathsPage() {
   const labels = pathCardLabels(t);
 
   return (
+    <>
     <TwoColumnShell railLabel={t("hub.paths.pageTitle")} className="py-2xl">
       <Link href="/pronunciation" className="text-body text-primary-strong hover:underline">{t("hub.backToPronunciation")}</Link>
       <header className="mt-md">
@@ -45,5 +47,7 @@ export default async function LearningPathsPage() {
         />
       </div>
     </TwoColumnShell>
+    <AppFooter />
+    </>
   );
 }

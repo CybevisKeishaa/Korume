@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import { useTranslations, type Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { Container } from "@/components/ui/container";
@@ -16,6 +17,7 @@ export async function generateMetadata({
 export default function ConversationPage() {
   const t = useTranslations("conversation");
   return (
+    <>
     <Container className="py-10">
       <div className="mb-6">
         <h1 className="text-2xl font-bold">{t("page.heading")}</h1>
@@ -24,5 +26,7 @@ export default function ConversationPage() {
 
       <ConversationApp />
     </Container>
+    <AppFooter />
+    </>
   );
 }

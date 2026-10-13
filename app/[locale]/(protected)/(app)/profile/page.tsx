@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { redirect } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
@@ -18,5 +19,10 @@ export default async function ProfileRoute({ params }: { params: { locale: Local
   if (!result.ok) redirect({ href: "/login", locale: params.locale });
   // `redirect` throws, but its type is not `never` here; narrow explicitly.
   if (!result.ok) return null;
-  return <ProfilePage view={result.data} />;
+  return (
+    <>
+      <ProfilePage view={result.data} />
+      <AppFooter />
+    </>
+  );
 }

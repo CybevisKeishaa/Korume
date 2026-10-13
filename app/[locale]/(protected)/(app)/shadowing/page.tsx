@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
@@ -44,6 +45,7 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
 
   const hub = result.data;
   return (
+    <>
     <TwoColumnShell
       railLabel={tHub("hub.railLabel")}
       rail={<HubCompanionRail rail={hub.rail} dailyGoalMinutes={preferences?.dailyMinutes ?? null} labels={{
@@ -157,5 +159,7 @@ export default async function VideosPage({ searchParams }: { searchParams?: Reco
         />
       </div>
     </TwoColumnShell>
+    <AppFooter />
+    </>
   );
 }

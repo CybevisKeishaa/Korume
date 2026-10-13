@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import { AppFooter } from "@/components/layout/app-footer";
 import { getTranslations } from "@/lib/i18n/server";
 import { Link } from "@/lib/i18n/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -21,6 +22,7 @@ export default async function PlaylistDetailPage({ params }: { params: { id: str
   const isOwner = user?.id !== undefined && playlist.owner?.id === user.id;
 
   return (
+    <>
     <Container className="py-8">
       <Link href="/playlists" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
         {t("detailPage.back")}
@@ -30,5 +32,7 @@ export default async function PlaylistDetailPage({ params }: { params: { id: str
         <PlaylistDetail playlist={playlist} isOwner={isOwner} />
       </div>
     </Container>
+    <AppFooter />
+    </>
   );
 }

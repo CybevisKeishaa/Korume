@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { ReactNode } from "react";
 import type { Locale } from "@/lib/i18n";
 import { getPathname, redirect } from "@/lib/i18n/navigation";
@@ -364,6 +365,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
   );
 
   return (
+    <>
     <TwoColumnShell
       railLabel={t("hub.rail.label")}
       className="py-2xl"
@@ -471,5 +473,7 @@ export default async function PronunciationPage({ searchParams }: { searchParams
       </div>
       </> : null}
     </TwoColumnShell>
+    <AppFooter />
+    </>
   );
 }

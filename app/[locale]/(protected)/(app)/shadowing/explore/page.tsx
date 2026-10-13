@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { getPathname, redirect } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
@@ -70,6 +71,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
   ));
 
   return (
+    <>
     <TwoColumnShell railLabel="" className="py-2xl">
       <div className="space-y-2xl">
         <header>
@@ -160,5 +162,7 @@ export default async function ExplorePage({ searchParams }: { searchParams?: Rec
         }} />
       </div>
     </TwoColumnShell>
+    <AppFooter />
+    </>
   );
 }

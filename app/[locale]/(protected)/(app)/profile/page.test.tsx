@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+vi.mock("@/components/layout/app-footer", () => ({ AppFooter: () => null }));
 import { makeView } from "@/components/profile/view-fixture";
 
 const getProfile = vi.fn();
@@ -25,7 +26,8 @@ describe("/profile route", () => {
     const view = makeView();
     getProfile.mockResolvedValue({ ok: true, data: view });
     const element = await ProfileRoute({ params: { locale: "en" } });
-    const passed = (element as { props: { view: unknown } }).props.view;
+    // The route returns <>{ProfilePage}{AppFooter}</>: the view rides on the first child.
+    const passed = (element as { props: { children: { props: { view: unknown } }[] } }).props.children[0]?.props.view;
     expect(passed).toEqual(JSON.parse(JSON.stringify(passed)));
     expect(passed).toEqual(view);
   });

@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
+vi.mock("@/components/layout/app-footer", () => ({ AppFooter: () => null }));
 import { render, screen, within } from "@/test/render";
 import pronunciationCopy from "@/messages/en/pronunciation.json";
 
