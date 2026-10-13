@@ -33,7 +33,7 @@ function mount() {
     <ThemeProvider>
       <ToastProvider>
         <PreferencesProvider initial={DEFAULT_PREFERENCES}>
-          <SettingsPage initialAiTrainingConsent={false} pending={null} version="1.2.3" />
+          <SettingsPage initialAiTrainingConsent={false} initialNewsletter={null} pending={null} version="1.2.3" />
         </PreferencesProvider>
       </ToastProvider>
     </ThemeProvider>,
