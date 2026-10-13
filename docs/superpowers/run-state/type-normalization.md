@@ -20,6 +20,7 @@ immersive, print sheet, navbar.
 
 | Task | Status | Commit |
 |---|---|---|
+| 1 | done | ca284bbe |
 
 ## Baseline / measurements
 
