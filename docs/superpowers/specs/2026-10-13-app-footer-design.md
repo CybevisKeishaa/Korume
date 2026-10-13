@@ -3,7 +3,7 @@
 - **Status:** design approved in conversation by the owner on 2026-10-13 (rulings F1–F6 below). Written-spec review
   round 1 (2026-10-13) folded in: Home → `/dashboard`, back-to-top target, three sections, legibility-first scale with
   a measured compact mode (L2a/L2b), newsletter honesty + session/sync + SQL hardening (N2–N3b), copy, T2/T3/T6.
-  **Open: O1 (§8).** Then the owner's approval before `writing-plans`.
+  O1 resolved by the owner (§8). Awaiting the owner's approval before `writing-plans`.
 - **Branch:** `app-footer`, worktree `.worktrees/app-footer`, base `master` at **`44fc84f0`**.
 - **Frame:** Footer `203:13813` — file `IwFHZDZdHW7qsSFiNbWrkd`
   (`figma.com/design/IwFHZDZdHW7qsSFiNbWrkd/Korume?node-id=203-13813`), 1536x733.
@@ -57,7 +57,7 @@ pathname; no new route group. A test pins the exact set of page files that rende
 | Contact | `mailto:` `SUPPORT_EMAIL` (`lib/contact.ts`) |
 | Support address (`admin@almostgone.vn` in the frame) | `mailto:` `SUPPORT_EMAIL` — the repo constant wins over the frame's literal |
 | Mascot card ("Say hello to Korume", `203:13856`) | link `/companion` |
-| App Store / Google Play badges | **open — O1 (§8).** Fact: Korume is not published on either store; `lib/app-stores.ts` points at the stores' front pages by the owner's 2026-08-28 ruling for the landing |
+| App Store / Google Play badges | external links `APP_STORE_URL` / `PLAY_STORE_URL` (`lib/app-stores.ts`): the stores' front pages, Korume not being published — the owner's 2026-08-28 landing ruling, **re-confirmed for the app footer on 2026-10-13 (O1)** with that fact stated. Frame copy kept as is |
 | "Back to the beginning" | a real button: `window.scrollTo({ top: 0 })` — the `(app)` layout has no scroll container, the window scrolls — smooth unless reduce-motion is on; then focus moves to the `(app)` layout's `<main>`, which gains `id="main-content"` and `tabIndex={-1}`, so it works on a page with no `h1` |
 | Pricing, FAQ, Blog, About, Careers, Privacy Policy, Terms of Service, Discord, Facebook, TikTok | text, no link. Adding the page later is one `href` |
 
@@ -180,7 +180,7 @@ sender reads; when sending starts, that branch revisits the copy.
 | `closing` | Wherever you are, we'll keep learning together. | Dù bạn ở đâu, chúng ta vẫn tiếp tục học cùng nhau. |
 | `ariaLabel` | Site footer | Chân trang |
 
-The `app.*` rows depend on the open question O1 (§8).
+The `app.*` rows ship as written (O1, §8).
 
 Settings row copy (`settings.newsletter.title` / `.body`): "Newsletter" / "Save your sign-up for Korume's occasional
 note at your account email. Nothing is sent yet." — "Thư từ Korume" / "Lưu đăng ký nhận thư thỉnh thoảng từ Korume
@@ -222,8 +222,9 @@ focus ring. Back-to-top respects reduce-motion.
 App navbar (separate branch); any new page for Pricing/FAQ/Blog/About/Careers/legal; social URLs; sending
 newsletter mail; changes to the landing footer.
 
-## 8. Open questions
+## 8. Resolved questions
 
-**O1 — App promotion block while no app is published.** Korume has no App Store / Google Play listing. The frame's
-app block (eyebrow, "sync across every device" body, two store badges) therefore promises something that does not
-exist yet. Decision needed from the owner before `writing-plans`; F3's badge row and §4's `app.*` rows follow it.
+**O1 — App promotion block while no app is published (owner, 2026-10-13).** Asked with the fact stated (no App
+Store / Google Play listing) and three options (keep with "coming soon", same as landing, hide). Ruling: **same as
+the landing** — badges link to the stores' front pages, frame copy unchanged. When Korume ships, the two constants
+in `lib/app-stores.ts` become listing URLs and both footers follow.
