@@ -12,6 +12,10 @@
     "title": "Giúp Korume cải thiện mô hình",
     "body": "Cho phép dùng bản ghi âm và dữ liệu học của bạn để cải thiện mô hình. Mặc định tắt, chỉ bật khi bạn muốn. Người bạn đồng hành vẫn ghi nhớ việc học của bạn dù bật hay tắt — đó không phải là huấn luyện mô hình."
   },
+  "newsletter": {
+    "title": "Thư từ Korume",
+    "body": "Lưu đăng ký nhận thư thỉnh thoảng từ Korume qua {email}. Hiện chưa gửi thư nào."
+  },
   "dangerZone": {
     "eyebrow": "VÙNG NGUY HIỂM",
     "title": "Kiểm soát dữ liệu Korume của bạn",

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
@@ -29,6 +30,7 @@ export default async function KanjiPage({
   const kanji = await getKanjiList(level);
 
   return (
+    <>
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -69,5 +71,7 @@ export default async function KanjiPage({
         <p className="text-muted-foreground">{t("empty")}</p>
       )}
     </Container>
+    <AppFooter />
+    </>
   );
 }

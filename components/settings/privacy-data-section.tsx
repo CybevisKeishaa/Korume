@@ -2,8 +2,11 @@
 
 import { useId, useState } from "react";
 import { useTranslations } from "@/lib/i18n";
+import { useRouter } from "@/lib/i18n/navigation";
 import { Switch } from "@/components/ui/switch";
 import { usePreferences } from "@/components/providers/preferences-provider";
+import type { NewsletterState } from "@/lib/validation/newsletter";
+import { forgetNewsletterWrite, newsletterOptIn, recordNewsletterWrite } from "@/lib/newsletter-tab-writes";
 import { SettingsSection } from "./settings-section";
 import { SettingsRow } from "./settings-row";
 import { usePreferenceSave } from "./use-preference-save";
@@ -29,7 +32,13 @@ import { usePreferenceSave } from "./use-preference-save";
  * in a `Partial<UserPreferences>`-shaped patch that the provider ignores —
  * hence the separate `useState` and the explicit rollback below.
  */
-export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrainingConsent: boolean }) {
+export function PrivacyDataSection({
+  initialAiTrainingConsent,
+  initialNewsletter,
+}: {
+  initialAiTrainingConsent: boolean;
+  initialNewsletter: NewsletterState | null;
+}) {
   const t = useTranslations("settings");
   const { preferences } = usePreferences();
   const microphone = usePreferenceSave("microphoneEnabled");
@@ -40,6 +49,7 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
   const cameraId = useId();
   const companionId = useId();
   const aiId = useId();
+  const newsletterId = useId();
 
   return (
     <SettingsSection
@@ -96,6 +106,8 @@ export function PrivacyDataSection({ initialAiTrainingConsent }: { initialAiTrai
       />
 
       <AiTrainingRow id={aiId} initialConsent={initialAiTrainingConsent} />
+
+      {initialNewsletter ? <NewsletterRow id={newsletterId} initial={initialNewsletter} /> : null}
 
       <DownloadRow
         icon="export"
@@ -160,6 +172,50 @@ function AiTrainingRow({ id, initialConsent }: { id: string; initialConsent: boo
         />
       }
     />
+  );
+}
+
+/**
+ * App-footer spec N4: the same `users.newsletter_opt_in_at` the footer writes, through the same route. Like AI
+ * Training it is not a `user_preferences` column, so it keeps local state and rolls back only on `"failed"`
+ * (see `AiTrainingRow`). A confirmed save refreshes the router so the footer re-reads it (plan P2), and is
+ * recorded for the tab, since a navigation can discard that refresh (`newsletter-tab-writes`). The body
+ * names the full address: this row is where the footer's ellipsized email is read whole (L3).
+ */
+function NewsletterRow({ id, initial }: { id: string; initial: NewsletterState }) {
+  const t = useTranslations("settings");
+  const router = useRouter();
+  const [optedIn, setOptedIn] = useState(() => newsletterOptIn(initial.email, initial.optedIn));
+  const save = usePreferenceSave("newsletter", "/api/user/newsletter");
+
+  return (
+    <div id="newsletter">
+      <SettingsRow
+        icon="mail"
+        label={t("newsletter.title")}
+        description={t("newsletter.body", { email: initial.email })}
+        htmlFor={id}
+        control={
+          <Switch
+            id={id}
+            checked={optedIn}
+            onCheckedChange={(checked) => {
+              const previous = optedIn;
+              setOptedIn(checked);
+              void save.save({ optIn: checked }, {}).then((outcome) => {
+                if (outcome === "failed") {
+                  setOptedIn(previous);
+                  forgetNewsletterWrite();
+                }
+                if (outcome !== "saved") return;
+                recordNewsletterWrite(initial.email, checked);
+                router.refresh();
+              });
+            }}
+          />
+        }
+      />
+    </div>
   );
 }
 

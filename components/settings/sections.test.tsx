@@ -296,13 +296,13 @@ describe("PrivacyDataSection", () => {
   beforeEach(() => stubMatchMedia());
 
   it("is the #privacy anchor the Danger Zone returns to", () => {
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
     expect(screen.getByRole("region", { name: copy.privacy.title })).toHaveAttribute("id", "privacy");
   });
 
   it("saves the microphone switch on its own", async () => {
     const user = userEvent.setup();
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
 
     await user.click(screen.getByRole("switch", { name: copy.microphone.label }));
 
@@ -311,7 +311,7 @@ describe("PrivacyDataSection", () => {
 
   it("saves the Korume switch on its own, checked from the preference", async () => {
     const user = userEvent.setup();
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
 
     const korume = screen.getByRole("switch", { name: copy.companion.label });
     expect(korume).toBeChecked();
@@ -322,7 +322,7 @@ describe("PrivacyDataSection", () => {
 
   it("sends AI Training to its own endpoint, not the preferences one", async () => {
     const user = userEvent.setup();
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
 
     await user.click(screen.getByRole("switch", { name: /Help improve Korume/ }));
 
@@ -342,7 +342,7 @@ describe("PrivacyDataSection", () => {
     fetchMock.mockResolvedValue(
       new Response(JSON.stringify({ error: "x" }), { status: 500 }) as Response,
     );
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
     const toggle = screen.getByRole("switch", { name: /Help improve Korume/ });
 
     await user.click(toggle);
@@ -377,7 +377,7 @@ describe("PrivacyDataSection", () => {
       // correct component fails. Cost half an hour of debugging here.
       .mockImplementation(async () => new Response(JSON.stringify({}), { status: 200 }) as Response);
 
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
     const toggle = screen.getByRole("switch", { name: /Help improve Korume/ });
 
     await user.click(toggle); // -> true, held open
@@ -390,7 +390,7 @@ describe("PrivacyDataSection", () => {
   });
 
   it("offers both downloads as real links the browser handles", () => {
-    mount(<PrivacyDataSection initialAiTrainingConsent={false} />);
+    mount(<PrivacyDataSection initialAiTrainingConsent={false} initialNewsletter={null} />);
 
     expect(screen.getByRole("link", { name: copy.exportData.action })).toHaveAttribute(
       "href",

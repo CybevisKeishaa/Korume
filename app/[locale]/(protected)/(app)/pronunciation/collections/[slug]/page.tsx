@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import { notFound } from "next/navigation";
 import { Link } from "@/lib/i18n/navigation";
 import { getLocale, getTranslations } from "@/lib/i18n/server";
@@ -37,6 +38,7 @@ export default async function CollectionPage({ params }: { params: { slug: strin
   });
 
   return (
+    <>
     <TwoColumnShell railLabel={collection.title} className="py-2xl">
       <Link href="/pronunciation" className="text-body text-primary-strong hover:underline">{t("hub.backToPronunciation")}</Link>
       <header className="mt-md">
@@ -70,5 +72,7 @@ export default async function CollectionPage({ params }: { params: { slug: strin
         <p className="mt-xl text-body text-muted-foreground">{t("hub.emptyCollection")}</p>
       )}
     </TwoColumnShell>
+    <AppFooter />
+    </>
   );
 }

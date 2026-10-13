@@ -1771,6 +1771,90 @@
   .dashboard-row--three { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
+/* App footer (spec docs/superpowers/specs/2026-10-13-app-footer-design.md). Figma `203:13813`. LAYOUT at the
+   frame's own scale (L-051): `--f` is one Figma px at the frame's 1380px container, so the sections (374.66 :
+   456.11 : 293.23, 40 apart since spec R4) and three link columns keep the frame's ratios; badges sit on one row (R5). TYPE on the app's
+   shared tokens (owner 2026-10-13, second Chrome look): the footer is one component under every page, so it reads
+   at the same sizes as the pages' own text at every width instead of its own scale. `--f` holds `cqi`, which
+   resolves against `.app-footer`; nothing inside declares a container. Desktop only. */
+.app-footer { container: app-footer / inline-size; border-top: 1px solid hsl(var(--border)); }
+.app-footer__inner {
+  --f: clamp(0.7px, calc(100cqi / 1380), 1.4px);
+  padding: calc(80 * var(--f)) calc(48 * var(--f)) calc(40 * var(--f));
+  font-size: var(--text-body);
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+.app-footer__row {
+  display: grid;
+  /* Links and app never go below their one-line content (at the 1280 floor the type tokens need ~390px of the
+     frame's 349 for the links); the brand gives way first. Otherwise the frame's ratio. */
+  grid-template-columns: minmax(0, 374.66fr) minmax(min-content, 456.11fr) minmax(min-content, 293.23fr);
+  column-gap: calc(40 * var(--f));
+  align-items: start;
+}
+.app-footer__heading { margin: 0 0 calc(8 * var(--f)); font-size: var(--text-caption); line-height: 1.5; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; color: hsl(var(--primary)); }
+.app-footer__logo { display: flex; align-items: center; gap: calc(8 * var(--f)); margin: 0; }
+.app-footer__logo-tile { display: grid; place-items: center; inline-size: calc(36 * var(--f)); block-size: calc(36 * var(--f)); border-radius: calc(11 * var(--f)); background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 800; font-size: var(--text-caption); }
+.app-footer__wordmark { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading); font-weight: 700; letter-spacing: -0.04em; white-space: nowrap; color: hsl(var(--foreground)); }
+.app-footer__tagline { margin: calc(20 * var(--f)) 0 0; font-size: var(--text-body-lg); }
+.app-footer__mascot { position: relative; display: block; inline-size: min(100%, calc(310 * var(--f))); margin-top: calc(32 * var(--f)); aspect-ratio: 310 / 190; border: 1px solid hsl(var(--border)); border-radius: calc(22 * var(--f)); background: hsl(var(--card)); }
+.app-footer__mascot:hover { border-color: hsl(var(--primary) / 0.4); }
+.app-footer__mascot-art { position: absolute; inset-block-start: 8.5%; inset-inline-end: 4%; inline-size: 50%; }
+.app-footer__mascot-art img { inline-size: 100%; block-size: auto; }
+/* Kept left of the art (which starts at 46%): it wraps rather than run under the mascot (2 lines at the vi floor). */
+.app-footer__mascot-cta { position: absolute; inset-inline-start: 6.7%; inset-block-start: 9%; max-inline-size: 42%; font-size: var(--text-caption); font-weight: 600; line-height: 1.3; color: hsl(var(--primary)); }
+.app-footer__mascot-cta-icon { display: inline-block; inline-size: 1em; block-size: 1em; margin-inline-start: 0.2em; vertical-align: -0.125em; }
+.app-footer__word-tile { position: absolute; inset-inline-start: 6.7%; inset-block-end: 9%; inline-size: 61%; aspect-ratio: 190 / 70; display: flex; flex-direction: column; justify-content: space-between; padding: calc(12 * var(--f)) calc(14 * var(--f)); border: 1px solid hsl(var(--primary) / 0.35); border-radius: calc(10 * var(--f)); background: hsl(var(--primary) / 0.08); }
+.app-footer__word-tile-jp { font-family: var(--font-jp); font-size: var(--text-body-lg); color: hsl(var(--primary)); }
+.app-footer__word-tile-en { font-size: var(--text-caption); letter-spacing: 0.04em; color: hsl(var(--muted-foreground)); }
+/* The sleeping mascot's snore, drifting up beside its head. */
+.app-footer__chip { position: absolute; inset-inline-start: 50%; inset-block-start: 9%; display: flex; align-items: flex-end; font-size: var(--text-body-lg); font-style: italic; font-weight: 700; line-height: 1; color: hsl(var(--primary) / 0.75); }
+.app-footer__chip-z { margin-inline-start: 0.1em; font-size: 0.7em; transform: translateY(-0.6em); }
+.app-footer__sparkle { position: absolute; inset-inline-end: 5%; inset-block-start: 8%; inline-size: calc(13 * var(--f)); block-size: calc(13 * var(--f)); color: hsl(var(--primary)); }
+/* The frame's three columns spread across the section, each as wide as its longest label. */
+.app-footer__links { display: grid; grid-template-columns: repeat(3, max-content); justify-content: space-between; column-gap: calc(24 * var(--f)); }
+.app-footer__stack { display: grid; row-gap: calc(24 * var(--f)); align-content: start; }
+.app-footer__list { margin: 0; padding: 0; list-style: none; }
+/* The frame's 28.5px link pitch, as on the landing footer's text-body links; never below WCAG 2.2's 24px target. */
+.app-footer__link { display: inline-flex; align-items: center; gap: calc(8 * var(--f)); min-block-size: max(24px, calc(28.5 * var(--f))); white-space: nowrap; font-size: var(--text-body); }
+.app-footer__link { color: hsl(var(--muted-foreground)); background: none; border: 0; padding: 0; cursor: pointer; }
+.app-footer__link:hover { color: hsl(var(--foreground)); }
+.app-footer__link--button { min-block-size: var(--hit-target-min); }
+.app-footer__link-icon { inline-size: 1.1em; block-size: 1.1em; flex: none; }
+.app-footer__note { max-inline-size: calc(160 * var(--f)); margin: calc(8 * var(--f)) 0 0; font-size: var(--text-caption); line-height: 1.8; }
+.app-footer__title { margin: calc(12 * var(--f)) 0 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading-lg); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: hsl(var(--foreground)); }
+.app-footer__body { margin: calc(16 * var(--f)) 0 0; font-size: var(--text-body); line-height: 1.8; }
+/* Owner 2026-10-13: the two badges on one row (the frame stacks them), equally wide, never below the frame's 164. */
+.app-footer__badges { display: inline-grid; grid-template-columns: repeat(2, minmax(max-content, 1fr)); gap: calc(12 * var(--f)); margin-top: calc(28 * var(--f)); }
+.app-footer__badge { min-inline-size: calc(164 * var(--f)); display: flex; align-items: center; gap: calc(12 * var(--f)); min-block-size: max(var(--hit-target-min), calc(57.6 * var(--f))); padding: calc(12 * var(--f)) calc(16 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: calc(16 * var(--f)); background: hsl(var(--card)); color: hsl(var(--foreground)); }
+.app-footer__badge:hover { border-color: hsl(var(--primary) / 0.4); }
+.app-footer__badge-chip { display: grid; place-items: center; flex: none; inline-size: calc(32 * var(--f)); block-size: calc(32 * var(--f)); border-radius: 9999px; background: hsl(var(--secondary)); font-size: var(--text-body); }
+.app-footer__badge-chip--play { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.15); }
+.app-footer__badge-text { display: flex; flex-direction: column; min-inline-size: 0; }
+/* Case as in the frame: "Download on the" mixed, only "GET IT ON" in caps. */
+.app-footer__badge-prefix { font-size: var(--text-caption); font-weight: 500; line-height: 1.5; white-space: nowrap; color: hsl(var(--muted-foreground)); }
+.app-footer__badge-prefix--caps { text-transform: uppercase; }
+.app-footer__badge-name { font-size: var(--text-body); font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.app-footer__rule { margin: calc(36 * var(--f)) 0 calc(24 * var(--f)); border: 0; border-top: 1px solid hsl(var(--border)); }
+.app-footer__newsletter-heading { margin: 0; font-size: var(--text-caption); font-weight: 600; color: hsl(var(--foreground)); }
+.app-footer__purpose, .app-footer__message, .app-footer__newsletter-done { margin: calc(4 * var(--f)) 0 0; font-size: var(--text-caption); }
+.app-footer__field { display: flex; align-items: center; gap: calc(8 * var(--f)); margin-top: calc(12 * var(--f)); }
+/* `contain`: the account email (any length) must never widen the app column; it ellipsizes instead (L3). */
+.app-footer__pill { flex: 1 1 auto; min-inline-size: 0; contain: inline-size; display: flex; flex-direction: column; justify-content: center; min-block-size: var(--hit-target-min); padding: calc(4 * var(--f)) calc(12 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: 9999px; background: hsl(var(--card)); }
+.app-footer__pill-label { font-size: var(--text-caption); line-height: 1.2; }
+/* The ONE ellipsis the footer allows (L3): the full address stays in the DOM and in `title`. */
+.app-footer__email { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-body); line-height: 1.3; color: hsl(var(--foreground)); }
+.app-footer__send { display: grid; place-items: center; flex: none; inline-size: var(--hit-target-min); block-size: var(--hit-target-min); border-radius: 9999px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
+.app-footer__send[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
+.app-footer__send-icon { inline-size: var(--icon-sm); block-size: var(--icon-sm); }
+.app-footer__bottom { display: grid; justify-items: center; margin-top: calc(64 * var(--f)); padding-top: calc(32 * var(--f)); border-top: 1px solid hsl(var(--border)); text-align: center; }
+.app-footer__closing { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-body-lg); line-height: 1.5; white-space: nowrap; color: hsl(var(--foreground)); }
+.app-footer__copyright { margin: calc(12 * var(--f)) 0 0; font-size: var(--text-caption); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: var(--text-caption); font-weight: 700; color: hsl(var(--primary)); }
+.app-footer__top-icon { inline-size: 1em; block-size: 1em; }
+.app-footer a:focus-visible, .app-footer button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
 .profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
 .profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }
 .profile-pair { grid-template-columns: minmax(0, 1fr); }

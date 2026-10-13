@@ -51,7 +51,7 @@ export function SettingsRow({
           >
             {label}
           </Label>
-          <p id={descriptionId} className="mt-2xs text-caption text-muted-foreground">
+          <p id={descriptionId} className="mt-2xs text-caption text-muted-foreground [overflow-wrap:anywhere]">
             {description}
           </p>
         </div>

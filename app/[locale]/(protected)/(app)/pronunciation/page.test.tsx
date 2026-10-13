@@ -1,4 +1,5 @@
 import userEvent from "@testing-library/user-event";
+vi.mock("@/components/layout/app-footer", () => ({ AppFooter: () => null }));
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, screen, within } from "@/test/render";
 import commonCopy from "@/messages/en/common.json";

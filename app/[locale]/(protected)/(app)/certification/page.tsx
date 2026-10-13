@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { listJlptAttempts, listJlptTests } from "@/lib/data/jlpt";
@@ -40,6 +41,7 @@ export default async function JlptPage({
   const tests = level ? allTests.filter((t) => t.level === level) : allTests;
 
   return (
+    <>
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -59,5 +61,7 @@ export default async function JlptPage({
         <JlptAttemptList attempts={attempts} testsById={testsById} />
       </section>
     </Container>
+    <AppFooter />
+    </>
   );
 }

@@ -4,6 +4,7 @@ import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { Container } from "@/components/ui/container";
 import { MascotPose } from "@/components/mascot/mascot-pose";
+import type { NewsletterState } from "@/lib/validation/newsletter";
 import type { PendingDeletionRead } from "@/lib/data/account-deletion";
 import { SettingsSection } from "./settings-section";
 import { SettingsRow } from "./settings-row";
@@ -15,6 +16,8 @@ import { DeletionControls } from "./deletion-controls";
 export interface SettingsPageProps {
   /** Server-read (`getModelTrainingConsent`) — see `AiTrainingToggle`. */
   initialAiTrainingConsent: boolean;
+  /** Server-read (`getNewsletterState`) — null when signed out; see `NewsletterRow`. */
+  initialNewsletter: NewsletterState | null;
   /** Server-read (`readPendingDeletionSafe`) — see `DeletionControls`. */
   pending: PendingDeletionRead;
   /** `package.json`'s `version`, read server-side. */
@@ -38,7 +41,7 @@ export interface SettingsPageProps {
  * that have no destination in this repo (spec §1.7). A row that goes nowhere
  * is worse than an absent row: it looks finished.
  */
-export function SettingsPage({ initialAiTrainingConsent, pending, version }: SettingsPageProps) {
+export function SettingsPage({ initialAiTrainingConsent, initialNewsletter, pending, version }: SettingsPageProps) {
   const t = useTranslations("settings");
 
   return (
@@ -57,7 +60,10 @@ export function SettingsPage({ initialAiTrainingConsent, pending, version }: Set
 
         <LearningSection />
         <AppearanceSection />
-        <PrivacyDataSection initialAiTrainingConsent={initialAiTrainingConsent} />
+        <PrivacyDataSection
+          initialAiTrainingConsent={initialAiTrainingConsent}
+          initialNewsletter={initialNewsletter}
+        />
 
         {/* The same Danger Zone `/settings/privacy` shows — one component, so
             the two pages cannot drift apart on a destructive surface. */}

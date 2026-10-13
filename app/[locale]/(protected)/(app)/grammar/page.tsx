@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { getGrammarList } from "@/lib/data/content";
@@ -27,6 +28,7 @@ export default async function GrammarPage({
   const grammar = await getGrammarList(level);
 
   return (
+    <>
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
@@ -77,5 +79,7 @@ export default async function GrammarPage({
         <p className="text-muted-foreground">{t("empty")}</p>
       )}
     </Container>
+    <AppFooter />
+    </>
   );
 }

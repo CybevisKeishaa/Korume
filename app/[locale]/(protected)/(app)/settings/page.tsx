@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
 import { getModelTrainingConsent } from "@/lib/data/model-training-consent";
+import { getNewsletterState } from "@/lib/data/newsletter";
 import { readPendingDeletionSafe } from "@/lib/data/account-deletion";
 import { SettingsPage } from "@/components/settings/settings-page";
 import { version } from "@/package.json";
@@ -18,7 +19,7 @@ export async function generateMetadata({
 /**
  * Figma Global settings `220:16032`.
  *
- * Only two server reads happen here. The preferences themselves are NOT among
+ * Only three server reads happen here. The preferences themselves are NOT among
  * them: `PreferencesProvider` in the `(protected)` layout already holds them
  * for the whole session, and reading them again would hand the page a second
  * copy that the save hook's optimistic updates would immediately contradict.
@@ -28,12 +29,18 @@ export async function generateMetadata({
  * every load to learn something the bundle already knows.
  */
 export default async function SettingsRoute() {
-  const [{ consent }, pending] = await Promise.all([
+  const [{ consent }, pending, newsletter] = await Promise.all([
     getModelTrainingConsent(),
     readPendingDeletionSafe(),
+    getNewsletterState(),
   ]);
 
   return (
-    <SettingsPage initialAiTrainingConsent={consent} pending={pending} version={version} />
+    <SettingsPage
+      initialAiTrainingConsent={consent}
+      initialNewsletter={newsletter}
+      pending={pending}
+      version={version}
+    />
   );
 }

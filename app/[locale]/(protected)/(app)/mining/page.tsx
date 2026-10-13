@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AppFooter } from "@/components/layout/app-footer";
 import type { Locale } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
 import { getTranslations } from "@/lib/i18n/server";
@@ -23,6 +24,7 @@ export default async function MiningDeckPage() {
   const cards = result.ok ? result.data : [];
 
   return (
+    <>
     <Container className="py-8">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold">{t("deck.title")}</h1>
@@ -35,5 +37,7 @@ export default async function MiningDeckPage() {
         <MiningDeckList cards={cards} />
       </div>
     </Container>
+    <AppFooter />
+    </>
   );
 }
