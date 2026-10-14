@@ -16,6 +16,7 @@ import { CircleHelp, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
+import { AccountMenu } from "@/components/layout/account-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { NavIcon } from "@/components/layout/nav-icons";
 import { useNavSummary } from "@/components/layout/use-nav-summary";
@@ -139,8 +140,7 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
           <CircleHelp aria-hidden="true" className="app-nav__icon" />
           <span className="app-nav__label">{t("help")}</span>
         </Link>
-        {/* account — Task 7 replaces this placeholder with <AccountMenu …/> */}
-        <span data-account-slot hidden>{userEmail}{accountItems.length}</span>
+        <AccountMenu summary={summary} email={userEmail} items={accountItems} collapsed={collapsed} />
       </div>
     </nav>
   );

@@ -316,9 +316,20 @@ describe("AppNav", () => {
     }
     expect(screen.getByRole("link", { name: "Review, 32 due" })).toBeInTheDocument();
   });
-  // Task 7 turns these two back into `it` once the AccountMenu trigger exists.
-  it.todo("truncates a long name with the full name in title");
-  it.todo("hides the plan chip when the plan is unknown, and shows PLUS for plus");
+  it("truncates a long name with the full name in title", () => {
+    const name = "Bartholomew Maximilian Fitzgerald-Montgomery the Third";
+    renderNav({ summary: { ...SUMMARY, name } });
+    const el = screen.getByText(name, { selector: ".app-nav__account-name" });
+    expect(el).toHaveAttribute("title", name);
+  });
+  it("hides the plan chip when the plan is unknown, and shows PLUS for plus", () => {
+    const { unmount } = renderNav({ summary: { ...SUMMARY, plan: null } });
+    expect(screen.queryByText("FREE")).toBeNull();
+    expect(screen.queryByText("PLUS")).toBeNull();
+    unmount();
+    renderNav({ summary: { ...SUMMARY, plan: "plus" } });
+    expect(screen.getByText("PLUS")).toBeInTheDocument();
+  });
   it("shows no personal data when the summary is cleared", () => {
     renderNav({ summary: null });
     expect(screen.queryByText("Yuki Tanaka")).toBeNull();
