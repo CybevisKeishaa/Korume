@@ -1959,7 +1959,9 @@
 .account-menu__item { display: flex; align-items: center; gap: calc(11 * var(--nav-u)); inline-size: 100%; min-block-size: var(--hit-target-min);
   padding-inline: calc(10 * var(--nav-u)); border-radius: var(--radius-sm); color: hsl(var(--foreground)); font-size: var(--text-body);
   line-height: var(--leading-body); text-align: left; }
-.account-menu__item:hover, .account-menu__item:focus-visible { background: hsl(var(--secondary)); outline: none; }
+.account-menu__item:hover, .account-menu__item:focus-visible { background: hsl(var(--secondary)); }
+/* The background shift alone is 1.12:1: an inset ring (inside the menu's padding, never clipped) marks the roving item. */
+.account-menu__item:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: -2px; }
 .account-menu__item--danger { color: hsl(var(--coral-300)); }
 .account-menu__divider { block-size: 1px; margin: calc(6 * var(--nav-u)) 0; background: hsl(var(--border)); }
 .account-menu__switch { margin-inline-start: auto; inline-size: calc(28 * var(--nav-u)); block-size: calc(16 * var(--nav-u)); border-radius: 999px;
@@ -1976,9 +1978,6 @@
   font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 600; white-space: nowrap;
   box-shadow: 0 calc(8 * var(--nav-u)) calc(24 * var(--nav-u)) hsl(0 0% 0% / 0.4); }
 .nav-tooltip::before { content: ""; position: absolute; inset-block: -1px; inset-inline-end: 100%; inline-size: calc(var(--tip-gap) + 1px); }
-@media (prefers-reduced-motion: reduce) { .app-nav, .app-nav *, .account-menu, .account-menu * { transition: none !important; } }
-:root[data-reduce-motion="true"] .app-nav, :root[data-reduce-motion="true"] .app-nav *,
-:root[data-reduce-motion="true"] .account-menu, :root[data-reduce-motion="true"] .account-menu * { transition: none !important; }
 
 .profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
 .profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }

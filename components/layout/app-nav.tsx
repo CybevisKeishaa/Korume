@@ -97,9 +97,11 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
     <nav aria-label={t("ariaLabel")} className="app-nav" data-collapsed={collapsed}>
       <div className="app-nav__header">
         <Link href="/dashboard" className="app-nav__brand" aria-label={t("brand")}>
+          {/* width/height = the rendered size at 1920 (38u / 40u at nav-u 1.40625px) so the srcset asks for that, not the
+              720px source; CSS still sizes both. */}
           {collapsed
-            ? <Image src="/mascot/logo/nav-emblem.png" alt="" width={192} height={192} className="app-nav__emblem" priority />
-            : <Image src="/mascot/logo/nav-wordmark.png" alt="" width={720} height={240} className="app-nav__wordmark" priority />}
+            ? <Image src="/mascot/logo/nav-emblem.png" alt="" width={56} height={56} className="app-nav__emblem" priority />
+            : <Image src="/mascot/logo/nav-wordmark.png" alt="" width={160} height={53} className="app-nav__wordmark" priority />}
         </Link>
         <div className="app-nav__header-actions">
           <NotificationBell />
