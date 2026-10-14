@@ -36,9 +36,13 @@ describe("useNavSummary", () => {
   });
   it("on 401 clears every personal field before reloading once", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue(new Response("", { status: 401 })));
+    // What the page shows at the instant the reload starts: the name must already be gone, not merely scheduled.
+    const seenAtReload: (NavSummary | null)[] = [];
+    reload.mockImplementation(() => { seenAtReload.push(result.current); });
     const { result } = renderHook(() => useNavSummary(first));
-    await waitFor(() => expect(result.current).toBeNull());
-    expect(reload).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(reload).toHaveBeenCalledTimes(1));
+    expect(seenAtReload).toEqual([null]);
+    expect(result.current).toBeNull();
   });
   it("refetches when a review is saved, without a route change", async () => {
     const fetchMock = vi.fn().mockResolvedValueOnce(ok(first)).mockResolvedValueOnce(ok(next));

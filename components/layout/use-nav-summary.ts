@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import { usePathname } from "@/lib/i18n/navigation";
 import { REVIEW_SUBMITTED_EVENT, type NavSummary } from "@/lib/nav/nav-state";
 
@@ -43,7 +44,9 @@ export function useNavSummary(initial: NavSummary | null): NavSummary | null {
     }
     if (controller.signal.aborted) return;
     if (res.status === 401) {
-      setSummary(null);
+      // Commit the cleared nav before the reload starts: a plain setState is only scheduled, so the name and avatar
+      // stayed on screen for as long as the reload took (final review I2b).
+      flushSync(() => setSummary(null));
       reloadForSignIn();
       return;
     }

@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import { seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data";
+import { REVIEW_SUBMITTED_EVENT } from "@/lib/nav/nav-state";
 
 /**
  * The learner sidebar in a real Chromium build (spec docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md
@@ -212,11 +213,21 @@ test("E6 an expired session clears personal data and lands on sign-in", async ({
   await register(page);
   await expect(nav(page).getByText("Nav Learner")).toBeVisible();
   const names = (await context.cookies()).map((c) => c.name);
-  console.log(`[E6] cookies before expiry: ${names.join(", ")}`);
   expect(names.filter((name) => name.startsWith("sb-")).length).toBeGreaterThan(0);
   await context.clearCookies({ name: /^sb-/ });
-  await nav(page).getByRole("link", { name: "Kanji", exact: true }).click();
-  await expect(page).toHaveURL(/\/en\/login\?redirectTo=%2Fen%2F/, { timeout: 15_000 });
+  // Drive useNavSummary itself, not a navigation: a link click would be redirected by the middleware before the hook
+  // ever saw a 401 (final review I2). The probe records what the nav showed as the page went away.
+  await page.evaluate((event) => {
+    addEventListener("pagehide", () => {
+      const main = document.querySelector('nav[aria-label="Main"]');
+      sessionStorage.setItem("e6-name-at-unload", main?.textContent?.includes("Nav Learner") ? "present" : "gone");
+    });
+    dispatchEvent(new Event(event));
+  }, REVIEW_SUBMITTED_EVENT);
+  // Only the hook's reload can get here: nothing else started a navigation, and the middleware sends the reloaded
+  // signed-out request to sign-in with this page as redirectTo.
+  await expect(page).toHaveURL(/\/en\/login\?redirectTo=%2Fen%2Fdashboard$/, { timeout: 15_000 });
+  expect(await page.evaluate(() => sessionStorage.getItem("e6-name-at-unload"))).toBe("gone");
   await expect(page.getByText("Nav Learner")).toHaveCount(0);
   await expect(page.getByRole("button", { name: /'s account$/ })).toHaveCount(0);
 });
