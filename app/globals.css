@@ -1876,7 +1876,7 @@
   radial-gradient(calc(220 * var(--nav-u)) calc(140 * var(--nav-u)) at 0 0, hsl(var(--primary) / 0.06), transparent 70%), hsl(var(--muted));
   transition: inline-size 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
 .app-nav[data-collapsed="true"] { inline-size: var(--layout-sidebar-collapsed); }
-.app-nav__header { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: calc(8 * var(--nav-u));
+.app-nav__header { display: grid; grid-template-columns: 1fr auto; justify-items: start; align-items: center; gap: calc(8 * var(--nav-u));
   padding: calc(13 * var(--nav-u)) calc(12 * var(--nav-u)) calc(8 * var(--nav-u)); border-bottom: 1px solid hsl(var(--border)); }
 .app-nav[data-collapsed="true"] .app-nav__header { grid-template-columns: 1fr; justify-items: center; gap: calc(4 * var(--nav-u)); padding-inline: 0; }
 .app-nav__brand { display: flex; align-items: center; gap: calc(10 * var(--nav-u)); min-block-size: var(--hit-target-min); border-radius: var(--radius-sm); }
@@ -1884,7 +1884,9 @@
   box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25); }
 .app-nav__wordmark { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading); line-height: var(--leading-heading);
   font-weight: 700; letter-spacing: -0.04em; color: hsl(var(--foreground)); white-space: nowrap; }
-.app-nav__header-actions { grid-column: 3 / 5; display: flex; gap: calc(4 * var(--nav-u)); }
+/* Two tracks, not "auto 1fr auto auto": the empty spacer track cost a third 8u gap, and at 1280 the 44px hit-target
+   buttons left the brand 107px for its 110px (Task 9, typography G4 clip). */
+.app-nav__header-actions { grid-column: 2; display: flex; gap: calc(4 * var(--nav-u)); }
 .app-nav[data-collapsed="true"] .app-nav__header-actions { grid-column: auto; flex-direction: column; align-items: center; }
 .app-nav__icon-button { display: grid; place-items: center; min-inline-size: var(--hit-target-min); min-block-size: var(--hit-target-min);
   border-radius: 999px; color: hsl(var(--muted-foreground)); transition: background-color 150ms, color 150ms; }
