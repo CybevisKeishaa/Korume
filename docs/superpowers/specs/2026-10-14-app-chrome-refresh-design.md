@@ -35,6 +35,10 @@ dead ends, no fake numbers), it is fully usable by keyboard, and the owner appro
 | D11 | Type stays on the shared `--text-*` tokens (L-052); no navbar-local type scale. |
 | D12 | Rail tooltips show the full label on hover and on keyboard focus, outside the scroll region. |
 
+> **Superseded 2026-10-15 (D3, logo half):** the logo is the owner's art, not `public/korume.png` —
+> `public/mascot/logo/nav-wordmark.png` (3:1 wordmark pill) expanded, `public/mascot/logo/nav-emblem.png` (round
+> emblem) collapsed (commit `dd002af7`). The `lucide-react` half stands.
+
 ## 2. Size: Figma 240/72 at 1280 against the density scale
 
 The app's layout unit is `--density-unit` (`app/globals.css`): **0.889px at 1280**, 1px at 1440, 1.25px at 1920
@@ -133,6 +137,11 @@ against the current `reviewHref`. Active matching across all items is **longest 
 response header `Cache-Control: private, no-store`; all reads go through RLS / `security invoker` RPCs as the user.
 Returns only the summary fields.
 
+> **Superseded 2026-10-15 (§3.3):** the avatar is `resolveAvatarUrl({ avatarPath: avatar_path, avatarUrl: avatar_url })`
+> (`lib/profile/avatar-url.ts`) — an uploaded photo, signed, outranks the OAuth picture, the same resolver Dashboard
+> and Profile use (final review I1). Not every read is "as the user": the plan reads through the repo's single
+> plan-tier source `getActivePlanTier`, a service-client read filtered by the auth-derived user id (ruling R8).
+
 ### 3.4 Refresh (client)
 
 `useNavSummary(initial)` refetches on every pathname change and on the window event `korume:review-submitted`,
@@ -166,12 +175,20 @@ after a review save returns `res.ok` (not before, not on failure).
 - Keyboard: Enter/Space/↓ opens and focuses the first item, ↑ opens on the last; ↑/↓ move, Home/End; Esc closes and
   returns focus to the trigger; Tab closes; click outside closes.
 
+> **Superseded 2026-10-15 (§3.5):** the menu is `position: fixed`, placed from the trigger's rect (plan P3), not the
+> native Popover API; the outcome — never clipped by the nav's overflow, on top of page content — is unchanged and
+> measured by E4.
+
 ### 3.6 Tooltip (rail)
 
 One `role="tooltip"` element per `AppNav`, rendered in the top layer (popover) or `position: fixed` outside the
 scroll region, positioned beside the hovered/focused rail item. Shows on hover and on `:focus-visible` focus, hides
 on blur, pointer leave, Esc and scroll. Linked with `aria-describedby`. Content: the item label (Ôn tập adds
 "· 32"). Rail links also carry `aria-label`.
+
+> **Superseded 2026-10-15 (§3.6):** it hides only on a scroll that moved its item, not on every scroll — Chrome
+> dispatches the scroll event of a Tab scroll-into-view after the focus event (Task 9 R10, commit `3688e747`). It is
+> also hoverable (WCAG 1.4.13): the pointer can cross from the item onto the tooltip without hiding it (final review M7).
 
 ### 3.7 Unchanged
 
@@ -192,6 +209,8 @@ warm accent.
   corner warmth without a new colour.
 - **Brand.** `korume.png` 36 on a rounded tile with a 1px ember/25% ring; wordmark "Korume" in the display face,
   700, `-0.04em`, `--text-heading`.
+  > **Superseded 2026-10-15:** the brand is the owner's logo art — `nav-wordmark.png` expanded, `nav-emblem.png`
+  > collapsed (commit `dd002af7`); no tile and no text wordmark.
 - **Group labels.** `--text-caption`, 600, uppercase, `0.16em` tracking, `muted-foreground`; extra space above each
   group instead of the frame's cramped 9px.
 - **Items.** Lucide icon 18 (stroke 1.75) + label `--text-body` 500, radius `--radius-sm`. Hover: void-800 fill,
@@ -236,6 +255,9 @@ header button, menu item ≥ 44px tall (asserted on the rendered class/token, me
 - E6 expired session: signed in on `/dashboard` with the account name visible → clear the context's auth cookies →
   trigger a refetch (client navigation) → the old name, avatar initial, plan chip and badge are gone from the DOM,
   and the page ends on `/<locale>/login?redirectTo=…/dashboard`.
+  > **Superseded 2026-10-15 (E6 recipe):** the refetch is triggered by dispatching the review-submitted event
+  > (`REVIEW_SUBMITTED_EVENT`), not by a client navigation — the middleware redirects a navigation before the hook
+  > sees the 401, so the old recipe never exercised it (final review I2).
 - E7 every nav row, header button, Help row, account trigger and menu item measures ≥ 44px tall at 1280×529.
 
 **Chrome measure (A1).** At exactly **1280×529, 1440×900 and 1920×1080** (Playwright Chromium viewports; 1920
