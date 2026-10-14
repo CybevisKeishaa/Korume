@@ -74,8 +74,8 @@ for (const viewport of VIEWPORTS) {
     const { context, page } = await open(browser, viewport.width, viewport.height);
     await page.goto("/vi/dashboard");
     await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
-    await page.getByRole("button", { name: nav.toggle.hide }).click();
-    await expect(page.getByRole("button", { name: nav.toggle.show })).toBeVisible();
+    await page.getByRole("button", { name: nav.toggle.collapse }).click();
+    await expect(page.getByRole("button", { name: nav.toggle.expand })).toBeVisible();
     const findings = await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt, unclipped });
     await context.close();
     expect(findings.map((f) => show("dashboard (nav collapsed)", f))).toEqual([]);

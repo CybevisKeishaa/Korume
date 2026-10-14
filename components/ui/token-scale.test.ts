@@ -70,7 +70,7 @@ const SCANNED_DIRS = [
   { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 45 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh Task 4: + use-nav-summary.
-  { dir: "components/layout", rules: FORBIDDEN, sources: 14 },
+  { dir: "components/layout", rules: FORBIDDEN, sources: 15 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: FORBIDDEN, sources: 2 },
   // Ask Korume's shared chat core (Task 8): every viewport renders through it.

@@ -227,8 +227,10 @@
      namespace is complete without a new value entering the system. Spec D5/D8. */
   /* The rail is inside the density rule; the former fixed-control carve-out is
      revoked. Only its interactive targets hold their own minimum. */
-  --layout-sidebar-width: calc(224 * var(--density-unit));
-  --layout-sidebar-collapsed: calc(68 * var(--density-unit));
+  /* App chrome refresh §2: Figma 655:2 is drawn AT 1280, where 1 Figma px = 1 rendered px = 1.125 density units. */
+  --nav-u: calc(1.125 * var(--density-unit));
+  --layout-sidebar-width: calc(240 * var(--nav-u));
+  --layout-sidebar-collapsed: calc(72 * var(--nav-u));
   --layout-content-max: calc(1240 * var(--density-unit));
   /* The companion rail. A SHARE of the shell, not a constant: frame 149:2
      draws it 339 wide inside a 1240 container (27.3%), and shipping the
@@ -466,8 +468,10 @@
   --space-2xl: calc(48 * var(--density-unit));
   --space-3xl: calc(64 * var(--density-unit));
   --space-md-lg: calc(20 * var(--density-unit));
-  --layout-sidebar-width: calc(224 * var(--density-unit));
-  --layout-sidebar-collapsed: calc(68 * var(--density-unit));
+  /* App chrome refresh §2: Figma 655:2 is drawn AT 1280, where 1 Figma px = 1 rendered px = 1.125 density units. */
+  --nav-u: calc(1.125 * var(--density-unit));
+  --layout-sidebar-width: calc(240 * var(--nav-u));
+  --layout-sidebar-collapsed: calc(72 * var(--nav-u));
   --layout-content-max: calc(1240 * var(--density-unit));
   --layout-companion-width: clamp( calc(240 * var(--density-unit)), 27.5%, calc(340 * var(--density-unit)) );
   --layout-header-height: calc(64 * var(--density-unit));
@@ -1864,6 +1868,65 @@
 .app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 700; color: hsl(var(--primary)); }
 .app-footer__top-icon { inline-size: 1em; block-size: 1em; }
 .app-footer a:focus-visible, .app-footer button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+
+/* App navigation (spec docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md). Figma 655:2 structure; visual
+   finish §4 on existing tokens. LAYOUT on --nav-u, TYPE on --text-*, every target >= --hit-target-min. */
+.app-nav { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; flex-shrink: 0; block-size: 100vh;
+  inline-size: var(--layout-sidebar-width); border-right: 1px solid hsl(var(--border)); background:
+  radial-gradient(calc(220 * var(--nav-u)) calc(140 * var(--nav-u)) at 0 0, hsl(var(--primary) / 0.06), transparent 70%), hsl(var(--muted));
+  transition: inline-size 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+.app-nav[data-collapsed="true"] { inline-size: var(--layout-sidebar-collapsed); }
+.app-nav__header { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: calc(8 * var(--nav-u));
+  padding: calc(13 * var(--nav-u)) calc(12 * var(--nav-u)) calc(8 * var(--nav-u)); border-bottom: 1px solid hsl(var(--border)); }
+.app-nav[data-collapsed="true"] .app-nav__header { grid-template-columns: 1fr; justify-items: center; gap: calc(4 * var(--nav-u)); padding-inline: 0; }
+.app-nav__brand { display: flex; align-items: center; gap: calc(10 * var(--nav-u)); min-block-size: var(--hit-target-min); border-radius: var(--radius-sm); }
+.app-nav__logo { inline-size: calc(36 * var(--nav-u)); block-size: calc(36 * var(--nav-u)); border-radius: calc(10 * var(--nav-u));
+  box-shadow: 0 0 0 1px hsl(var(--primary) / 0.25); }
+.app-nav__wordmark { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading); line-height: var(--leading-heading);
+  font-weight: 700; letter-spacing: -0.04em; color: hsl(var(--foreground)); white-space: nowrap; }
+.app-nav__header-actions { grid-column: 3 / 5; display: flex; gap: calc(4 * var(--nav-u)); }
+.app-nav[data-collapsed="true"] .app-nav__header-actions { grid-column: auto; flex-direction: column; align-items: center; }
+.app-nav__icon-button { display: grid; place-items: center; min-inline-size: var(--hit-target-min); min-block-size: var(--hit-target-min);
+  border-radius: 999px; color: hsl(var(--muted-foreground)); transition: background-color 150ms, color 150ms; }
+.app-nav__icon-button:hover { background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
+.app-nav__scroll { position: relative; flex: 1 1 auto; min-block-size: 0; overflow-y: auto;
+  padding: calc(8 * var(--nav-u)) calc(12 * var(--nav-u));
+  mask-image: linear-gradient(to bottom, transparent 0, #000 calc(12 * var(--nav-u)), #000 calc(100% - 12 * var(--nav-u)), transparent 100%); }
+.app-nav[data-collapsed="true"] .app-nav__scroll { padding-inline: calc(9 * var(--nav-u)); }
+.app-nav__group + .app-nav__group { margin-top: calc(14 * var(--nav-u)); }
+.app-nav__group-label { margin: 0; padding: calc(6 * var(--nav-u)) calc(11 * var(--nav-u)); font-size: var(--text-caption);
+  line-height: var(--leading-caption); font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; color: hsl(var(--muted-foreground)); }
+.app-nav[data-collapsed="true"] .app-nav__group-label { block-size: 1px; padding: 0; margin: calc(6 * var(--nav-u)) calc(6 * var(--nav-u));
+  overflow: hidden; color: transparent; background: hsl(var(--border)); }
+.app-nav__list { display: flex; flex-direction: column; gap: calc(4 * var(--nav-u)); margin: 0; padding: 0; list-style: none; }
+.app-nav__item { position: relative; display: flex; align-items: center; gap: calc(12 * var(--nav-u)); min-block-size: max(var(--hit-target-min), calc(34 * var(--nav-u)));
+  padding-inline: calc(13 * var(--nav-u)); border-radius: var(--radius-sm); color: hsl(var(--muted-foreground));
+  font-size: var(--text-body); line-height: var(--leading-body); font-weight: 500; transition: background-color 150ms, color 150ms; }
+.app-nav[data-collapsed="true"] .app-nav__item { justify-content: center; padding-inline: 0; }
+.app-nav__item:hover { background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
+.app-nav__item[aria-current="page"] { background: hsl(var(--primary) / 0.12); color: hsl(var(--ember-300)); }
+.app-nav__item[aria-current="page"]::before { content: ""; position: absolute; inset-block: calc(8 * var(--nav-u)); inset-inline-start: 0;
+  inline-size: 3px; border-radius: 3px; background: hsl(var(--primary)); box-shadow: 0 0 calc(10 * var(--nav-u)) hsl(var(--primary) / 0.6); }
+.app-nav__item:focus-visible, .app-nav__icon-button:focus-visible, .app-nav__help:focus-visible, .app-nav__brand:focus-visible {
+  outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
+.app-nav__icon { inline-size: calc(18 * var(--nav-u)); block-size: calc(18 * var(--nav-u)); flex-shrink: 0; }
+.app-nav__glyph { inline-size: calc(18 * var(--nav-u)); text-align: center; font-size: var(--text-body-lg); line-height: var(--leading-body-lg); flex-shrink: 0; }
+.app-nav__label { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.app-nav[data-collapsed="true"] .app-nav__label { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+.app-nav__badge { margin-inline-start: auto; min-inline-size: calc(24 * var(--nav-u)); padding: 0 calc(7 * var(--nav-u)); border-radius: 999px;
+  background: hsl(var(--primary) / 0.16); color: hsl(var(--ember-300)); font-size: var(--text-caption); line-height: var(--leading-caption);
+  font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+.app-nav__dot { position: absolute; inset-block-start: calc(8 * var(--nav-u)); inset-inline-end: calc(14 * var(--nav-u));
+  inline-size: 6px; block-size: 6px; border-radius: 999px; background: hsl(var(--primary)); }
+.app-nav__footer { display: flex; flex-direction: column; gap: calc(6 * var(--nav-u)); padding: calc(6 * var(--nav-u)) calc(12 * var(--nav-u)) calc(8 * var(--nav-u));
+  border-top: 1px solid hsl(var(--border)); }
+.app-nav[data-collapsed="true"] .app-nav__footer { padding-inline: calc(9 * var(--nav-u)); align-items: stretch; }
+.app-nav__help { display: flex; align-items: center; gap: calc(12 * var(--nav-u)); min-block-size: var(--hit-target-min); padding-inline: calc(13 * var(--nav-u));
+  border-radius: var(--radius-sm); color: hsl(var(--muted-foreground)); font-size: var(--text-body); line-height: var(--leading-body); }
+.app-nav[data-collapsed="true"] .app-nav__help { justify-content: center; padding-inline: 0; }
+.app-nav__help:hover { background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
+@media (prefers-reduced-motion: reduce) { .app-nav, .app-nav * { transition: none !important; } }
+:root[data-reduce-motion="true"] .app-nav, :root[data-reduce-motion="true"] .app-nav * { transition: none !important; }
 
 .profile-grid { display: grid; gap: var(--space-md); grid-template-columns: minmax(0, 1fr); }
 .profile-rail, .profile-main, .profile-pair { display: grid; gap: var(--space-md); align-content: start; }

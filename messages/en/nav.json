@@ -21,8 +21,10 @@
   "companion-home": "Companion",
   "profile": "Profile",
   "settings": "Settings",
-  "toggle": {
-    "show": "Show navigation",
-    "hide": "Hide navigation"
-  }
+  "toggle": { "expand": "Expand navigation", "collapse": "Collapse navigation" },
+  "help": "Help",
+  "reviewDue": "{count} due",
+  "plan": { "free": "FREE", "plus": "PLUS" },
+  "account": { "menu": "Account", "trigger": "{name}'s account", "reduceMotion": "Reduce motion" },
+  "brand": "Korume — go to Dashboard"
 }

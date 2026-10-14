@@ -190,7 +190,7 @@ export function NotificationBell() {
         aria-haspopup="dialog"
         aria-controls={open ? panelId : undefined}
         aria-label={`Notifications, ${unreadCount} unread`}
-        className="relative rounded-md p-2 text-muted-foreground hover:bg-secondary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        className="app-nav__icon-button relative"
       >
         <BellIcon />
         {unreadCount > 0 && (
@@ -214,7 +214,7 @@ export function NotificationBell() {
           id={panelId}
           role="dialog"
           aria-labelledby={headingId}
-          className="panel-in absolute right-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-overlay"
+          className="panel-in absolute left-0 top-full z-30 mt-2 w-80 max-w-[90vw] rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <div className="flex items-center justify-between gap-2">
             <h2 id={headingId} className="text-body font-semibold">

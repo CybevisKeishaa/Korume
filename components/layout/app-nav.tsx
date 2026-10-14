@@ -1,154 +1,115 @@
 "use client";
 
-import { useState } from "react";
+/**
+ * The learner sidebar (spec docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md). Figma 655:2 structure:
+ * fixed header, independently scrolling destinations, fixed footer; expanded or rail. Holds no nav data of its own —
+ * groups arrive from the registry via the server layouts.
+ *
+ * ⛔ Do not import `SCREEN_REGISTRY` or `NAV_GROUPS` here: this is a client module, and a module-scope import of the
+ * registry ships all 78 entries to the browser — private Figma node ids, unshipped screen names,
+ * `repoOnlyReason`/`figmaCheckedAt` survey observations. `lib/product/nav-groups.ts` explains it in full;
+ * `deriveNavGroups` is called in the server layouts that mount this component (final whole-branch review FIX 3).
+ * The type import below is erased at compile time and pulls nothing into the client graph.
+ */
+import Image from "next/image";
+import { CircleHelp, PanelLeftClose, PanelLeftOpen } from "lucide-react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
-import { cn } from "@/lib/utils";
-import { ReduceMotionToggle } from "@/components/ui/reduce-motion-toggle";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { NavIcon } from "@/components/layout/nav-icons";
+import { useNavSummary } from "@/components/layout/use-nav-summary";
 import type { NavGroup } from "@/lib/product/nav-derivation";
+import { activeKey, dueLabel, navCookieValue, readNavCookie, REVIEW_FALLBACK_HREF, REVIEW_ROUTES, type NavSummary } from "@/lib/nav/nav-state";
 
-/**
- * Presentation only. The registry owns nav membership and order (R4), and
- * `groups` arrives already derived from it.
- *
- * ⛔ **Do not import `SCREEN_REGISTRY` or `NAV_GROUPS` here.** This is a
- * `"use client"` module: a module-scope import of the registry ships all 78
- * entries to the browser — private Figma node ids, unshipped screen names,
- * `repoOnlyReason`/`figmaCheckedAt` survey observations.
- * `lib/product/nav-groups.ts` explains it in full;
- * `deriveNavGroups` is called in the server layouts that mount this component
- * (final whole-branch review FIX 3). The type import below is erased at
- * compile time and pulls nothing into the client graph.
- */
-export function AppNav({
-  userEmail,
-  groups,
-  defaultVisible = true,
-}: {
-  userEmail: string;
+const useIsoLayoutEffect = typeof window === "undefined" ? useEffect : useLayoutEffect;
+
+export function AppNav({ groups, userEmail, initialSummary, mode, initialCollapsed }: {
   groups: readonly NavGroup[];
-  defaultVisible?: boolean;
+  userEmail: string;
+  initialSummary: NavSummary | null;
+  mode: "app" | "focus";
+  initialCollapsed: boolean;
 }) {
   const pathname = usePathname();
   const t = useTranslations("nav");
-  const tCommon = useTranslations("common");
-  // Not persisted: session-scoped state. It survives client-side navigation
-  // WITHIN a chrome group, because AppNav lives in that group's layout —
-  // crossing into another group is a chrome change, and resetting to the new
-  // group's default is the intended behaviour, not a bug.
-  const [visible, setVisible] = useState(defaultVisible);
+  const summary = useNavSummary(initialSummary);
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+
+  // Next 14.2's router cache can replay an (app) layout rendered before the last toggle (app-footer T7): the cookie
+  // is the learner's latest choice, so adopt it before paint. (focus) never reads it (spec 3.2).
+  useIsoLayoutEffect(() => {
+    if (mode !== "app") return;
+    const stored = readNavCookie(document.cookie);
+    if (stored !== null) setCollapsed(stored);
+  }, [mode]);
+
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    if (mode === "app") document.cookie = navCookieValue(next);
+  };
+
+  const listed = groups.filter((group) => group.key !== "account");
+  const accountItems = groups.find((group) => group.key === "account")?.items ?? [];
+  const reviewHref = summary?.reviewHref ?? REVIEW_FALLBACK_HREF;
+  const current = activeKey(pathname, listed.flatMap((group) => group.items).map((item) => ({
+    key: item.key, prefixes: item.key === "review" ? REVIEW_ROUTES : [item.href],
+  })));
+  const due = summary?.reviewDue ?? 0;
 
   return (
-    <div className="flex h-screen shrink-0 flex-row">
-      {visible ? (
-        <nav
-          aria-label={t("ariaLabel")}
-          className="flex h-screen w-sidebar flex-col gap-2xs border-r border-border bg-card p-md"
-        >
-          <div className="mb-md flex items-center justify-between gap-xs px-xs">
-            <Link href="/dashboard" className="font-jp text-heading font-bold">
-              {tCommon("appNameJp")}
-            </Link>
-            <NotificationBell />
-          </div>
-
-          <div data-nav-scroll className="flex-1 overflow-y-auto">
-            {groups.map((group) => (
-              <div key={group.key} className="mb-xs">
-                <p
-                  id={`app-nav-group-${group.key}`}
-                  className="block px-sm pb-2xs pt-xs text-caption font-semibold uppercase tracking-wide text-muted-foreground"
-                >
-                  {t(`groups.${group.key}`)}
-                </p>
-                <ul
-                  aria-labelledby={`app-nav-group-${group.key}`}
-                  className="flex flex-col gap-2xs"
-                >
-                  {group.items.map((item) => {
-                    const active =
-                      pathname === item.href || pathname.startsWith(`${item.href}/`);
-                    return (
-                      <li key={item.href}>
-                        <Link
-                          href={item.href}
-                          aria-current={active ? "page" : undefined}
-                          className={cn(
-                            "block min-h-hit-target rounded-md px-sm py-xs text-body font-medium transition-colors",
-                            active
-                              ? "bg-primary/10 text-primary-strong"
-                              : "text-muted-foreground hover:bg-secondary hover:text-foreground",
-                          )}
-                        >
-                          {/* item.key was a 22-literal union while NAV_GROUPS
-                              was a `const` literal; deriving it from the
-                              registry widens the type to `string` (R4). Same
-                              cast precedent as journal-view.tsx. Catalog-key
-                              coverage is enforced at runtime by
-                              app-nav.test.tsx's "pinned label for every nav
-                              destination" and "catalog's destination key set"
-                              tests. */}
-                          {t(item.key as Parameters<typeof t>[0])}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </div>
-            ))}
-          </div>
-
-          <div className="mt-md space-y-sm border-t border-border pt-md">
-            <p className="truncate px-2xs text-caption text-muted-foreground" title={userEmail}>
-              {userEmail}
-            </p>
-            <form action="/auth/signout" method="post">
-              <button
-                type="submit"
-                className="min-h-hit-target w-full rounded-md px-sm py-xs text-left text-body text-muted-foreground hover:bg-secondary hover:text-foreground"
-              >
-                {tCommon("auth.signOut")}
-              </button>
-            </form>
-          </div>
-        </nav>
-      ) : null}
-      {/*
-        Deliberately OUTSIDE the `visible` conditional above (final
-        whole-branch review F1, 2026-08-07): this is the only edge-chrome
-        rail (button + reduce-motion control) `(focus)` routes render when
-        `defaultVisible={false}`, and CLAUDE.md §2 rule 4 requires the
-        reduce-motion control to be globally reachable — including on
-        Shadowing/Dictation, the app's heaviest repeated study loops. A plain
-        <div>, not a second <nav>: `route-group-provider-identity.spec.ts`
-        asserts `getByRole("navigation")` stays at 0 on chrome-less surfaces,
-        and this rail must not become a second landmark on `(app)` either.
-
-        `w-6` is restored here (NB-1, 2026-08-07, final whole-branch
-        review round 2): `(focus)` exists precisely so navigation recedes to
-        a narrow strip during focused study, and the first F1 pass widened
-        this rail to ~130px by rendering `ReduceMotionToggle`'s caption
-        on-screen. `compact` keeps the control mounted and reachable (still
-        the point of F1) without re-widening the rail — see
-        `reduce-motion-toggle.tsx`.
-      */}
-      <div className="flex h-screen w-6 flex-col items-center gap-xs border-r border-border bg-card py-sm">
-        <button
-          type="button"
-          aria-expanded={visible}
-          onClick={() => setVisible((current) => !current)}
-          className="flex min-h-hit-target items-center justify-center rounded py-2xs text-caption text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-        >
-          <span aria-hidden="true">{visible ? "‹" : "›"}</span>
-          <span className="sr-only">
-            {visible ? t("toggle.hide") : t("toggle.show")}
-          </span>
-        </button>
-        <div className="border-t border-border pt-xs text-muted-foreground">
-          <ReduceMotionToggle compact />
+    <nav aria-label={t("ariaLabel")} className="app-nav" data-collapsed={collapsed}>
+      <div className="app-nav__header">
+        <Link href="/dashboard" className="app-nav__brand" aria-label={t("brand")}>
+          <Image src="/korume.png" alt="" width={36} height={36} className="app-nav__logo" priority />
+          {!collapsed && <span className="app-nav__wordmark" aria-hidden="true">Korume</span>}
+        </Link>
+        <div className="app-nav__header-actions">
+          <NotificationBell />
+          <button type="button" className="app-nav__icon-button" aria-expanded={!collapsed} onClick={toggle}
+            aria-label={collapsed ? t("toggle.expand") : t("toggle.collapse")}>
+            {collapsed ? <PanelLeftOpen aria-hidden="true" className="app-nav__icon" /> : <PanelLeftClose aria-hidden="true" className="app-nav__icon" />}
+          </button>
         </div>
       </div>
-    </div>
+
+      <div className="app-nav__scroll" data-nav-scroll>
+        {listed.map((group) => (
+          <div key={group.key} className="app-nav__group">
+            <p id={`app-nav-group-${group.key}`} className="app-nav__group-label">{t(`groups.${group.key}`)}</p>
+            <ul aria-labelledby={`app-nav-group-${group.key}`} className="app-nav__list">
+              {group.items.map((item) => {
+                const isReview = item.key === "review";
+                // item.key is `string` once derived from the registry (R4); catalog coverage is pinned by the tests.
+                const label = t(item.key as Parameters<typeof t>[0]);
+                const name = isReview && due > 0 ? `${label}, ${t("reviewDue", { count: due })}` : label;
+                return (
+                  <li key={item.key}>
+                    <Link href={isReview ? reviewHref : item.href} className="app-nav__item" aria-label={name}
+                      aria-current={current === item.key ? "page" : undefined}>
+                      <NavIcon navKey={item.key} />
+                      <span className="app-nav__label">{label}</span>
+                      {isReview && due > 0 && (collapsed
+                        ? <span className="app-nav__dot" aria-hidden="true" />
+                        : <span className="app-nav__badge" aria-hidden="true">{dueLabel(due)}</span>)}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        ))}
+      </div>
+
+      <div className="app-nav__footer">
+        <Link href="/help" className="app-nav__help" aria-label={t("help")}>
+          <CircleHelp aria-hidden="true" className="app-nav__icon" />
+          <span className="app-nav__label">{t("help")}</span>
+        </Link>
+        {/* account — Task 7 replaces this placeholder with <AccountMenu …/> */}
+        <span data-account-slot hidden>{userEmail}{accountItems.length}</span>
+      </div>
+    </nav>
   );
 }

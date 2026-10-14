@@ -26,7 +26,7 @@ import { cn } from "@/lib/utils";
  * 1256 is what reproduces that: at 1280 the box is 1256 (12px each side), plus
  * `Container`'s own `lg:px-8` gutter, so content starts 44px in and is 1192
  * wide against the old 1088. The odd-looking number is the house style, not an
- * accident — `--layout-sidebar-width` is 224px and `--layout-content-max` is
+ * accident — `--layout-sidebar-width` is 240 nav units (240px at 1280) and `--layout-content-max` is
  * 1240px, both measured off frames the same way.
  *
  * ⚠️ It is deliberately NOT `--layout-content-max`, which is the SHADOWING

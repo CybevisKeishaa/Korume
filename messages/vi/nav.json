@@ -21,8 +21,10 @@
   "companion-home": "Linh thú của tôi",
   "profile": "Hồ sơ",
   "settings": "Cài đặt",
-  "toggle": {
-    "show": "Hiện điều hướng",
-    "hide": "Ẩn điều hướng"
-  }
+  "toggle": { "expand": "Mở rộng điều hướng", "collapse": "Thu gọn điều hướng" },
+  "help": "Trợ giúp",
+  "reviewDue": "{count} thẻ đến hạn",
+  "plan": { "free": "FREE", "plus": "PLUS" },
+  "account": { "menu": "Tài khoản", "trigger": "Tài khoản của {name}", "reduceMotion": "Giảm chuyển động" },
+  "brand": "Korume — về Tổng quan"
 }
