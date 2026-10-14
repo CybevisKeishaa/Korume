@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -56,6 +56,22 @@ describe("AccountMenu", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("menu")).toBeNull();
     expect(trigger).toHaveFocus();
+  });
+  it("moves focus into the menu only once it is placed, never while it is still visibility: hidden", async () => {
+    // A browser refuses focus to a visibility: hidden element (jsdom does not), so focusing before placement left
+    // focus on the trigger and Escape dead in Chromium (Task 9 E4). Record the menu's visibility at each focus call.
+    const seen: string[] = [];
+    const focus = vi.spyOn(HTMLElement.prototype, "focus").mockImplementation(function (this: HTMLElement) {
+      const menu = this.closest<HTMLElement>('[role="menu"]');
+      if (menu) seen.push(menu.style.visibility || "visible");
+    });
+    try {
+      const { user, trigger } = setup();
+      await user.click(trigger);
+    } finally {
+      focus.mockRestore();
+    }
+    expect(seen).toEqual(["visible"]);
   });
   it("Tab and an outside click close it", async () => {
     const { user, trigger } = setup();

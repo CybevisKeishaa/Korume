@@ -38,9 +38,16 @@ export function AccountMenu({ summary, email, items, collapsed }: {
     const anchor = triggerRef.current.getBoundingClientRect();
     const box = menuRef.current.getBoundingClientRect();
     setPosition(placeMenu(anchor, { width: box.width, height: box.height }, { width: window.innerWidth, height: window.innerHeight }, collapsed ? "right" : "above"));
+  }, [open, collapsed]);
+
+  // Focus only once the menu is placed: until then it renders `visibility: hidden`, and a browser silently refuses
+  // focus to a hidden element (jsdom does not), which left focus on the trigger and Escape/arrows dead (Task 9 E4).
+  const placed = position !== null;
+  useLayoutEffect(() => {
+    if (!open || !placed) return;
     const list = itemsIn();
     (focusOn === "first" ? list[0] : list[list.length - 1])?.focus();
-  }, [open, collapsed, focusOn]);
+  }, [open, placed, focusOn]);
 
   useEffect(() => {
     if (!open) return;
