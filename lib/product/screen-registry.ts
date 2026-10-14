@@ -1490,6 +1490,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     navOrder: null,
     specRef: null,
   },
+  // app-chrome-refresh P1: the sidebar's Help row lands here until FAQ/QuickStart are built.
   {
     screenId: "faq",
     name: "FAQ",
@@ -1498,9 +1499,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "75:1424",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
-    route: null,
-    chrome: null,
-    impl: "none",
+    route: "/help",
+    chrome: "app",
+    impl: "placeholder",
     navGroup: null,
     navOrder: null,
     specRef: null,

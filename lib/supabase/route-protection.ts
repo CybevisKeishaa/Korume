@@ -54,6 +54,8 @@ export const PROTECTED_PREFIXES = [
   // Inert e2e trigger under `(protected)/(app)/` (404 unless E2E_ROUTE_ERROR=1),
   // covered for the same redirectTo reason as the placeholder routes above.
   "/e2e-route-error",
+  // Sidebar Help row's placeholder (app-chrome-refresh P1), a real protected route under `(protected)/(app)/`.
+  "/help",
 ] as const;
 
 export const AUTH_ROUTES = ["/login", "/register", "/verify-email", "/forgot-password"] as const;

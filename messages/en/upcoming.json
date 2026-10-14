@@ -39,5 +39,10 @@
     "title": "Companion",
     "body": "One place for the companion studying alongside you — its diary, what it remembers of your sessions, and where it thinks you are growing.",
     "unlocks": "The Diary already exists — open it from your companion on the Dashboard until this hub gathers it in. The rest arrives with the hub."
+  },
+  "help": {
+    "title": "Help",
+    "body": "The FAQ and the quick-start guide are being written — how to learn with Korume, how review works, and tips for each screen.",
+    "unlocks": "Meanwhile, you can ask Korume inside any lesson at any time."
   }
 }
