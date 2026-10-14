@@ -143,7 +143,8 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
           <CircleHelp aria-hidden="true" className="app-nav__icon" />
           <span className="app-nav__label">{t("help")}</span>
         </Link>
-        <AccountMenu summary={summary} email={userEmail} items={accountItems} collapsed={collapsed} />
+        {/* The email is personal data too: it leaves with the summary when the session does (spec 3.4). */}
+        <AccountMenu summary={summary} email={summary ? userEmail : ""} items={accountItems} collapsed={collapsed} />
       </div>
       {tooltip}
     </nav>

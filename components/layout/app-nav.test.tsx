@@ -344,6 +344,15 @@ describe("AppNav", () => {
     expect(screen.queryByText("Yuki Tanaka")).toBeNull();
     expect(screen.queryByText("FREE")).toBeNull();
   });
+  it("drops the email from the account menu once the summary is cleared (session gone)", () => {
+    const { unmount } = renderNav();
+    fireEvent.click(screen.getByRole("button", { name: /'s account$/ }));
+    expect(screen.getByRole("menu")).toHaveTextContent("learner@example.com");
+    unmount();
+    renderNav({ summary: null });
+    fireEvent.click(screen.getByRole("button", { name: /'s account$/ }));
+    expect(screen.getByRole("menu")).not.toHaveTextContent("learner@example.com");
+  });
   it("fades the scroll edges only while there is more to scroll", () => {
     renderNav();
     const scroll = document.querySelector("[data-nav-scroll]") as HTMLElement;
