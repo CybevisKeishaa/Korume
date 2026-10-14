@@ -97,8 +97,9 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
     <nav aria-label={t("ariaLabel")} className="app-nav" data-collapsed={collapsed}>
       <div className="app-nav__header">
         <Link href="/dashboard" className="app-nav__brand" aria-label={t("brand")}>
-          <Image src="/korume.png" alt="" width={36} height={36} className="app-nav__logo" priority />
-          {!collapsed && <span className="app-nav__wordmark" aria-hidden="true">Korume</span>}
+          {collapsed
+            ? <Image src="/mascot/logo/nav-emblem.png" alt="" width={192} height={192} className="app-nav__emblem" priority />
+            : <Image src="/mascot/logo/nav-wordmark.png" alt="" width={720} height={240} className="app-nav__wordmark" priority />}
         </Link>
         <div className="app-nav__header-actions">
           <NotificationBell />
