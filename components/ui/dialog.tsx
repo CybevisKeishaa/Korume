@@ -89,7 +89,7 @@ export function Dialog({
           className={cn(
             "motion-dialog fixed left-1/2 top-1/2 z-overlay max-h-[90vh] w-[calc(100%-2rem)] max-w-lg",
             "-translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-lg border border-border",
-            "bg-overlay p-md text-foreground shadow-floating",
+            "bg-overlay p-md text-body text-foreground shadow-floating",
             className,
           )}
         >

@@ -91,7 +91,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
             {passage.jlpt_level}
           </span>
         </div>
-        <p className="mt-1 text-body text-muted-foreground">
+        <p className="mt-1 text-caption text-muted-foreground">
           {passage.word_count != null
             ? t("wordCount", { count: passage.word_count })
             : t("wordCountUnknown")}

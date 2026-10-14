@@ -160,7 +160,7 @@ export function VocabExamplesPanel({
         <ul className="space-y-3">
           {examples.map((example) => (
             <li key={example.id} className="rounded-lg border border-border p-3 text-body">
-              <p className="font-jp">{example.sentence_jp}</p>
+              <p className="font-jp text-body-lg">{example.sentence_jp}</p>
               {example.sentence_translation && (
                 <p className="mt-1 text-muted-foreground">{example.sentence_translation}</p>
               )}

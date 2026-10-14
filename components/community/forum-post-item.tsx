@@ -52,7 +52,7 @@ export function ForumPostItem({ post }: ForumPostItemProps) {
           {topicLabel(t, post.topic)}
         </span>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-muted-foreground">
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
         <span>{post.author?.name ?? t("deletedUser")}</span>
         <span aria-hidden="true">·</span>
         <RelativeTime dateTime={post.createdAt} />

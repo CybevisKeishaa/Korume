@@ -66,7 +66,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
           {memories.map((m) => (
             <li key={m.id} className="rounded-lg border border-border p-4">
               <p className="font-medium">{resolvedTitle(m, t)}</p>
-              <p className="mt-1 text-body text-muted-foreground">
+              <p className="mt-1 text-caption text-muted-foreground">
                 {format.dateTime(new Date(m.occurredAt), {
                   dateStyle: "long",
                 })}
@@ -77,7 +77,7 @@ export function JournalView({ memories }: { memories: CompanionMemory[] }) {
                 </span>
                 {m.kind === "gifted" ? <span aria-hidden="true"> ✎</span> : null}
               </p>
-              {m.lineTextJp ? <p className="mt-2 font-jp">{m.lineTextJp}</p> : null}
+              {m.lineTextJp ? <p className="mt-2 font-jp text-body-lg">{m.lineTextJp}</p> : null}
               {m.note ? <p className="mt-2 text-body">{m.note}</p> : null}
               {m.videoId && m.transcriptLineId ? (
                 <Link

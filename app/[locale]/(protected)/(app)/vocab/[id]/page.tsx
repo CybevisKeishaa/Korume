@@ -26,7 +26,7 @@ export default async function VocabDetailPage({ params }: { params: { id: string
           <p className="font-jp mt-1 text-body-lg text-muted-foreground">{vocab.reading}</p>
         )}
         <p className="mt-2 text-body-lg">{vocab.meaning_en}</p>
-        <p className="mt-1 text-body text-muted-foreground">
+        <p className="mt-1 text-caption text-muted-foreground">
           {vocab.part_of_speech}
           {vocab.jlpt_level ? ` · ${vocab.jlpt_level}` : ""}
         </p>

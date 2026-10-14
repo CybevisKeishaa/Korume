@@ -31,7 +31,7 @@ function LevelFilter({
         aria-pressed={!active}
         onClick={() => onChange(undefined)}
         className={cn(
-          "rounded-full px-4 py-1.5 text-caption font-medium transition-colors",
+          "rounded-full px-4 py-1.5 text-body font-medium transition-colors",
           !active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
         )}
       >
@@ -44,7 +44,7 @@ function LevelFilter({
           aria-pressed={active === level}
           onClick={() => onChange(level)}
           className={cn(
-            "rounded-full px-4 py-1.5 text-caption font-medium transition-colors",
+            "rounded-full px-4 py-1.5 text-body font-medium transition-colors",
             active === level
               ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground hover:text-foreground",
@@ -125,7 +125,7 @@ export function ReadingList() {
                     {passage.jlpt_level}
                   </span>
                 </div>
-                <p className="text-body text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   {passage.word_count != null
                     ? t("wordCount", { count: passage.word_count })
                     : t("wordCountUnknown")}

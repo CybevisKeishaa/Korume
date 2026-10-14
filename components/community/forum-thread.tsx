@@ -217,7 +217,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
           )}
         </div>
 
-        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-body text-muted-foreground">
+        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
           <span>{post.author?.name ?? t("deletedUser")}</span>
           <span aria-hidden="true">·</span>
           <RelativeTime dateTime={post.createdAt} />
@@ -300,7 +300,7 @@ export function ForumThread({ post: initialPost, currentUserId }: ForumThreadPro
               return (
                 <li key={comment.id} className="rounded-lg border border-border bg-card p-3">
                   <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div className="flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
+                    <div className="flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground">
                       <span>{comment.author?.name ?? t("deletedUser")}</span>
                       <span aria-hidden="true">·</span>
                       <RelativeTime dateTime={comment.createdAt} />

@@ -12,6 +12,8 @@ export interface TypeExemption {
   file: string;
   match: string;
   scope: "all" | "line-height";
+  /** `false` opts the element out of the gate's clip check (G4); omit it and clipping is still detected. */
+  clip?: false;
   reason: string;
 }
 
@@ -98,6 +100,7 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     file: "components/vocabulary-print/worksheet.tsx",
     match: "data-type-exempt=\"vocab-print-sheet\"",
     scope: "all",
+    clip: false,
     reason: "The printable worksheet is set in physical units for paper (spec P1: the sheet is an allowlist entry); only the page chrome is interface type.",
   },
   {

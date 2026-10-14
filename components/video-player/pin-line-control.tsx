@@ -93,7 +93,7 @@ export function PinLineControl({ line }: PinLineControlProps) {
         title={t("pin.dialogTitle")}
         closeLabel={tCommon("actions.cancel")}
       >
-        <p className="font-jp" lang="ja">
+        <p className="font-jp text-body-lg" lang="ja">
           {line.text_jp}
         </p>
         <label htmlFor={noteId} className="mt-3 block text-body">

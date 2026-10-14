@@ -1,5 +1,7 @@
 import { expect, test, type Browser, type BrowserContext } from "@playwright/test";
 import nav from "../../messages/vi/nav.json";
+import errors from "../../messages/vi/errors.json";
+import companion from "../../messages/vi/companion.json";
 import { TYPE_EXEMPTIONS } from "../../lib/typography-allowlist";
 import { SCALE, TOKENS, TOLERANCE, VIEWPORTS } from "./typography/scale";
 import { inspectPage, readTokens, type TypeFinding } from "./typography/measure";
@@ -13,6 +15,7 @@ import { seedLearner, type Learner } from "./typography/learner";
  */
 test.describe.configure({ mode: "serial" });
 const exempt = Object.fromEntries(TYPE_EXEMPTIONS.map((entry) => [entry.id, entry.scope]));
+const unclipped = TYPE_EXEMPTIONS.filter((entry) => entry.clip === false).map((entry) => entry.id);
 let learner: Learner;
 let routes: RouteTarget[];
 let session: Awaited<ReturnType<BrowserContext["storageState"]>>;
@@ -56,8 +59,12 @@ for (const viewport of VIEWPORTS) {
       await page.evaluate(() => document.fonts.ready);
       if (page.url().includes("/login")) { report.push(`${route.label} · NOT MEASURED · redirected to login`); continue; }
       const status = response?.status() ?? 0;
+      // Without E2E_ROUTE_ERROR=1 the route is a 404 and would be measured as if it were the panel.
+      if (route.label === "e2e-route-error") {
+        await expect(page.getByRole("heading", { name: errors.routeError.heading }), "start the server with E2E_ROUTE_ERROR=1").toBeVisible();
+      }
       if (route.label !== "e2e-route-error" && status >= 400) { report.push(`${route.label} · NOT MEASURED · HTTP ${status}`); continue; }
-      for (const finding of await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt })) report.push(show(route.label, finding));
+      for (const finding of await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt, unclipped })) report.push(show(route.label, finding));
     }
     await context.close();
     expect(report, report.join("\n")).toEqual([]);
@@ -69,7 +76,7 @@ for (const viewport of VIEWPORTS) {
     await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
     await page.getByRole("button", { name: nav.toggle.hide }).click();
     await expect(page.getByRole("button", { name: nav.toggle.show })).toBeVisible();
-    const findings = await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt });
+    const findings = await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt, unclipped });
     await context.close();
     expect(findings.map((f) => show("dashboard (nav collapsed)", f))).toEqual([]);
   });
@@ -81,14 +88,35 @@ test("extra-large display scale at 1920 keeps Dashboard and Settings whole (Revi
   const set = await page.request.patch("/api/user/preferences", { data: { displayScale: "extra_large" } });
   expect(set.status()).toBe(200);
   const report: string[] = [];
+  await page.goto("/vi/dashboard");
+  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
+  // A vacuous pass is the risk: prove the scale applied (21.875 = 17.5 x 1.25) before judging clipping.
+  const [bodySize] = (await page.evaluate(readTokens, ["body"])).body;
+  expect(Math.abs(bodySize - 21.875), `body renders ${bodySize}px, expected 21.875px`).toBeLessThanOrEqual(TOLERANCE);
   for (const route of ["dashboard", "settings"]) {
     await page.goto(`/vi/${route}`);
     await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => undefined);
     // Type sizes are 1.25x the table here by design; only clipping and horizontal scroll are asserted.
-    const findings = await page.evaluate(inspectPage, { pairs: [], tolerance: TOLERANCE, exempt });
+    const findings = await page.evaluate(inspectPage, { pairs: [], tolerance: TOLERANCE, exempt, unclipped });
     report.push(...findings.filter((f) => f.kind !== "type").map((f) => show(route, f)));
   }
   await page.request.patch("/api/user/preferences", { data: { displayScale: "normal" } });
   await context.close();
   expect(report, report.join("\n")).toEqual([]);
+});
+
+test("a dialog's content sits on the type scale (overlays render in a portal)", async ({ browser }) => {
+  const viewport = VIEWPORTS[1];
+  const pairs = TOKENS.map((token) => SCALE[viewport.name][token]);
+  const { context, page } = await open(browser, viewport.width, viewport.height);
+  const video = routes.find((r) => r.label === "(focus) shadowing/[id]");
+  if (!video || "unavailable" in video) throw new Error("shadowing route unavailable, cannot open the pin dialog");
+  await page.goto(`/vi/${video.path}`);
+  await page.getByRole("button", { name: companion.pin.trigger }).first().dispatchEvent("click"); // a real click is intercepted by the sentence text in the seeded row (probe), the handler is what matters here
+  const dialog = page.getByRole("dialog");
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("p[lang=ja]")).toBeVisible();
+  const findings = await page.evaluate(inspectPage, { pairs, tolerance: TOLERANCE, exempt, unclipped });
+  await context.close();
+  expect(findings.map((f) => show("shadowing pin dialog", f))).toEqual([]);
 });

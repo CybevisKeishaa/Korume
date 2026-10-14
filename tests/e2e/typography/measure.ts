@@ -17,8 +17,8 @@ export function readTokens(tokens: readonly string[]): Record<string, [number, n
 }
 
 /** Spec G4 checks 2 and 3 on the current page. */
-export function inspectPage(args: { pairs: Array<readonly [number, number]>; tolerance: number; exempt: Record<string, "all" | "line-height"> }): TypeFinding[] {
-  const { pairs, tolerance, exempt } = args;
+export function inspectPage(args: { pairs: Array<readonly [number, number]>; tolerance: number; exempt: Record<string, "all" | "line-height">; unclipped?: string[] }): TypeFinding[] {
+  const { pairs, tolerance, exempt, unclipped = [] } = args;
   const findings: TypeFinding[] = [];
   const near = (a: number, b: number) => Math.abs(a - b) <= tolerance;
   const label = (el: Element) => {
@@ -33,6 +33,7 @@ export function inspectPage(args: { pairs: Array<readonly [number, number]>; tol
     const holder = el.closest("[data-type-exempt]");
     return holder ? exempt[holder.getAttribute("data-type-exempt") ?? ""] : undefined;
   };
+  const clipSkipped = (el: Element) => unclipped.includes(el.closest("[data-type-exempt]")?.getAttribute("data-type-exempt") ?? "");
   const checkType = (el: Element) => {
     const scope = scopeOf(el);
     if (scope === "all") return;
@@ -58,8 +59,8 @@ export function inspectPage(args: { pairs: Array<readonly [number, number]>; tol
   for (const el of fields) if (shown(el)) checkType(el);
 
   for (const el of document.querySelectorAll('button, [role="button"], nav a, [lang="ja"]')) {
-    // Spec G2: an element under a scope-`all` marker is skipped by the gate (e.g. the print sheet's physical-unit tiles).
-    if (!(el instanceof HTMLElement) || el.clientWidth === 0 || !shown(el) || scopeOf(el) === "all") continue;
+    // Only an allowlist entry with `clip: false` (the print sheet's physical-unit tiles) skips the clip check.
+    if (!(el instanceof HTMLElement) || el.clientWidth === 0 || !shown(el) || clipSkipped(el)) continue;
     const full = (el.textContent ?? "").trim();
     if (!full) continue;
     const style = getComputedStyle(el);

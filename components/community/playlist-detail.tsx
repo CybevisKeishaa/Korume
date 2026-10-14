@@ -98,7 +98,7 @@ export function PlaylistDetail({ playlist, isOwner, className }: PlaylistDetailP
           <h1 className="text-title font-bold">{playlist.name}</h1>
           {playlist.description && <p className="mt-1 text-muted-foreground">{playlist.description}</p>}
           {playlist.owner && (
-            <p className="mt-1 text-body text-muted-foreground">
+            <p className="mt-1 text-caption text-muted-foreground">
               {t("byOwner", { name: playlist.owner.name ?? t("deletedUser") })}
             </p>
           )}

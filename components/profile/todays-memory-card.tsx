@@ -9,7 +9,7 @@ export function TodaysMemoryCard({ memory }: { memory: NonNullable<ProfileView["
   return (
     <section className={CARD_WARM} aria-labelledby="profile-memory">
       <h2 id="profile-memory" className={EYEBROW}>{t("memory.eyebrow")}</h2>
-      <p className="mt-sm text-body text-muted-foreground">
+      <p className="mt-sm text-caption text-muted-foreground">
         {format.dateTime(new Date(memory.occurredAt), { day: "numeric", month: "long", year: "numeric" })}
       </p>
       {memory.lineTextJp ? (

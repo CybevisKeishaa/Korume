@@ -95,7 +95,7 @@ function ShareRow({ share, onReviewed }: { share: PeerReviewShareListItem; onRev
         {share.lineText}
       </p>
       {share.note && <p className="mt-1 text-body text-muted-foreground">{share.note}</p>}
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 text-body text-muted-foreground">
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 text-caption text-muted-foreground">
         <span>{share.sharedBy?.name ?? t("deletedUser")}</span>
         <span aria-hidden="true">·</span>
         <RelativeTime dateTime={share.createdAt} />

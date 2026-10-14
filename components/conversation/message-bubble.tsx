@@ -97,7 +97,7 @@ export function MessageBubble({ message, className }: MessageBubbleProps) {
         className,
       )}
     >
-      <p className="font-jp whitespace-pre-wrap">{message.content}</p>
+      <p className="font-jp text-body-lg whitespace-pre-wrap">{message.content}</p>
 
       <div className="mt-1 flex flex-wrap items-center gap-2">
         {isAi && (

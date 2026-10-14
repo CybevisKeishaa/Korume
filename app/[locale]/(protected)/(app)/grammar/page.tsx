@@ -64,7 +64,7 @@ export default async function GrammarPage({
                 <ul className="space-y-1 border-l-2 border-border pl-3">
                   {g.example_sentences.map((ex, i) => (
                     <li key={i} className="text-body">
-                      <span className="font-jp">{ex.jp}</span>
+                      <span className="font-jp text-body-lg">{ex.jp}</span>
                       <span className="ml-2 text-muted-foreground">{ex.en}</span>
                     </li>
                   ))}
