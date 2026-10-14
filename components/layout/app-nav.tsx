@@ -19,6 +19,7 @@ import { useTranslations } from "@/lib/i18n";
 import { AccountMenu } from "@/components/layout/account-menu";
 import { NotificationBell } from "@/components/layout/notification-bell";
 import { NavIcon } from "@/components/layout/nav-icons";
+import { useNavTooltip } from "@/components/layout/nav-tooltip";
 import { useNavSummary } from "@/components/layout/use-nav-summary";
 import type { NavGroup } from "@/lib/product/nav-derivation";
 import { activeKey, dueLabel, navCookieValue, readNavCookie, REVIEW_FALLBACK_HREF, REVIEW_ROUTES, type NavSummary } from "@/lib/nav/nav-state";
@@ -36,6 +37,7 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
   const t = useTranslations("nav");
   const summary = useNavSummary(initialSummary);
   const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const { tooltip, bind } = useNavTooltip(collapsed);
 
   // Next 14.2's router cache can replay an (app) layout rendered before the last toggle (app-footer T7): the cookie
   // is the learner's latest choice, so adopt it before paint. (focus) never reads it (spec 3.2).
@@ -119,7 +121,7 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
                 const name = isReview && due > 0 ? `${label}, ${t("reviewDue", { count: due })}` : label;
                 return (
                   <li key={item.key}>
-                    <Link href={isReview ? reviewHref : item.href} className="app-nav__item" aria-label={name}
+                    <Link href={isReview ? reviewHref : item.href} className="app-nav__item" aria-label={name} {...bind(isReview && due > 0 ? `${label} · ${dueLabel(due)}` : label)}
                       aria-current={current === item.key ? "page" : undefined}>
                       <NavIcon navKey={item.key} />
                       <span className="app-nav__label">{label}</span>
@@ -136,12 +138,13 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
       </div>
 
       <div className="app-nav__footer">
-        <Link href="/help" className="app-nav__help" aria-label={t("help")}>
+        <Link href="/help" className="app-nav__help" aria-label={t("help")} {...bind(t("help"))}>
           <CircleHelp aria-hidden="true" className="app-nav__icon" />
           <span className="app-nav__label">{t("help")}</span>
         </Link>
         <AccountMenu summary={summary} email={userEmail} items={accountItems} collapsed={collapsed} />
       </div>
+      {tooltip}
     </nav>
   );
 }

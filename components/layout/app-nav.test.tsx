@@ -316,6 +316,15 @@ describe("AppNav", () => {
     }
     expect(screen.getByRole("link", { name: "Review, 32 due" })).toBeInTheDocument();
   });
+  it("in rail mode, focusing a link shows its tooltip; expanded shows none", () => {
+    const { unmount } = renderNav({ collapsed: true });
+    fireEvent.focus(screen.getByRole("link", { name: "Kanji" }));
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Kanji");
+    unmount();
+    renderNav({ collapsed: false });
+    fireEvent.focus(screen.getByRole("link", { name: "Kanji" }));
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
   it("truncates a long name with the full name in title", () => {
     const name = "Bartholomew Maximilian Fitzgerald-Montgomery the Third";
     renderNav({ summary: { ...SUMMARY, name } });
