@@ -1,8 +1,15 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 evening (supersedes every block below)
+> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 night (supersedes every block below)
 >
-> ▶ **RESUME HERE: `type-normalization`** (worktree `.worktrees/type-normalization`, tip `4fa45c0d`, NOT merged,
+> ▶ **RESUME HERE: `app-chrome-refresh`** (worktree `.worktrees/app-chrome-refresh`, tip `c47a95db`, NOT merged, no
+> product code yet) — read `mem:app_chrome_refresh_run_state` first. Navbar from Figma page `655:2`; spec + plan
+> (10 tasks) **owner-approved**; owner chose **subagent-driven**; start at Task 1. `type-normalization` is MERGED →
+> master `365def8a` (the block below is history). After the navbar: Certification.
+>
+> ## (previous block) 2026-10-14 evening
+>
+> ▶ ~~RESUME HERE~~ (now merged): **`type-normalization`** (worktree `.worktrees/type-normalization`, tip `4fa45c0d`, NOT merged,
 > no product code yet) — read `mem:type_normalization_run_state` first. Spec + plan (12 tasks) **owner-approved**;
 > **execution = subagent-driven**, start at Task 1 (baseline screenshots from master BEFORE any change). One type
 > scale (Settings' `--text-*` tokens) on every learner screen, uniform zoom 1.0 → 1.25 between 1440 and 1920,
