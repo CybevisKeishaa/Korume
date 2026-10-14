@@ -10,7 +10,7 @@ Port the learner sidebar from Figma page `655:2` (structure) with Claude's visua
 ## Authorities
 
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
-- Spec `docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md` — awaiting owner review.
+- Spec `docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md` — approved by the owner 2026-10-14 (two review rounds).
 
 ## Accepted commits
 
@@ -33,8 +33,8 @@ Port the learner sidebar from Figma page `655:2` (structure) with Claude's visua
 
 ## Blockers
 
-- Owner review of the spec.
+- None.
 
 ## Next actions
 
-- On spec approval: writing-plans → owner picks the execution method → Task 1.
+- Write the plan (writing-plans) → owner approves it and picks the execution method → Task 1.

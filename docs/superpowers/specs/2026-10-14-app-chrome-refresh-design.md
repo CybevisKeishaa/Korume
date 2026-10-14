@@ -4,8 +4,8 @@
 - Figma: file `IwFHZDZdHW7qsSFiNbWrkd`, page `655:2` "App Navigation · Proposal" — frames `656:2` (Expanded /
   Free), `656:84` (Collapsed / Free), `656:147` (Expanded / Plus / user menu, menu `656:213`), `656:242` (Collapsed
   / Plus / focused). All four are drawn at 1280×529.
-- Status: brainstormed with the owner 2026-10-14; this spec awaits the owner's review. No product code before it
-  is approved and a plan exists.
+- Status: **approved by the owner 2026-10-14** after two review rounds (zero-due destination, 401 path, 1920 measure
+  and hit-target deviation folded in). No product code before the plan is approved.
 
 ## 0. Intent
 
@@ -52,8 +52,16 @@ dimension is `calc(<figma px> * var(--nav-u))`. Type is NOT on `--nav-u` (D11).
 | `--nav-u` | 1.000px | 1.125px | 1.406px |
 | expanded width (240) | **240px** | 270px | 337.5px |
 | rail width (72) | **72px** | 81px | 101.25px |
-| item row height (34) | 34px | 38.25px | 47.8px |
+| item row height (Figma 34 → `max(44px, 34u)`, see below) | **44px** | 44px | 47.8px |
 | share of viewport (expanded) | 18.75% | 18.75% | 17.6% |
+
+**Hit target vs the frame's 34px rows (owner review).** The repo's floor `--hit-target-min` is a fixed 44px
+(`2.75rem`, deliberately unscaled — `app/globals.css`), and the current nav rows already sit on it. The frame's 34px
+row with a 4px gap cannot hold a 44px non-overlapping target, so **interaction wins**: every nav row, Help row,
+account trigger, header button and menu item is at least 44px tall; the visual pill fills the row. Deviation from the
+frame at 1280, stated for the owner's look: row pitch 38 → 48px; the 12-row list grows from 544 to about 664px (it
+scrolls inside its region either way, ~6–7 rows visible at 529 tall); the footer grows from 86 to about 100px; the
+rail header (logo + bell + toggle stacked, D4) is about 150px instead of 96. Widths are unaffected.
 
 `--layout-sidebar-width` / `--layout-sidebar-collapsed` are redefined as `calc(240 * var(--nav-u))` /
 `calc(72 * var(--nav-u))`. Consumers today (grepped 2026-10-14): `app-nav.tsx` (`w-sidebar`), the two declarations
@@ -104,11 +112,18 @@ Three reads in parallel, each with its own fallback:
   badge and the Dashboard Review tile always show the same number. Read error → `reviewDue: null` (badge hidden),
   `reviewHref` = the zero-due destination below.
 
-**Zero due (owner point 1).** `reviewDestination()` today sends a learner with 0 due to the most recently reviewed
-deck — for mining that is an empty session. Fix it in the shared function (one place, all callers): when the summed
-due is 0 the destination is `/kanji/review`, whose queue also serves new kanji, so it is a real session; when every
-kanji is learned it shows its own honest empty state. This changes the Dashboard Review tile at 0 due the same way;
-the plan pins the new branch with a test.
+**Zero due (owner review, round 2).** `reviewDestination()` today sends a learner with 0 due to the most recently
+reviewed deck — for mining that is an empty session. Fixed in the shared function (one place, all callers), with no
+new query — it already holds `due` and `lastReviewedAt` per deck:
+
+| Case | Destination |
+|---|---|
+| summed due > 0 | the deck with most due (then recency, then registry order) — unchanged |
+| due = 0 and nothing ever reviewed (new learner) | `/kanji/review` — every kanji is new, so its queue is a real session (unchanged branch) |
+| due = 0 and something reviewed before | **`/kanji`**, the real library — never a review session that may be empty |
+
+This changes the Dashboard Review tile in the third case the same way (it went to the last-reviewed deck); the plan
+pins all three branches with tests.
 
 **Active state of "Ôn tập"** is matched against the fixed set `/review`, `/kanji/review`, `/mining/review` — not
 against the current `reviewHref`. Active matching across all items is **longest prefix wins**, so
@@ -127,9 +142,15 @@ after a review save returns `res.ok` (not before, not on failure).
 - Each fetch aborts the previous one (`AbortController`) so a late response cannot overwrite a newer one.
 - 2xx → replace the whole summary (never merge).
 - Network error / 5xx → keep the last good summary, no flicker.
-- **401 (owner point 2)** → clear every personal field at once (name, avatar, plan, badge show nothing) and call
-  `router.refresh()`, which re-runs the protected layout's auth guard and lands on sign-in. Switching accounts goes
-  through sign-out (a full POST navigation), so a new account always mounts with its own server summary.
+- **401 (owner review, rounds 1–2)** → first, synchronously clear every personal field (name, avatar, plan, badge
+  render nothing; the account trigger shows a neutral placeholder). Then a **full-page** `window.location.reload()`
+  — not `router.refresh()`, which a concurrent client navigation can discard (app-footer T7). The full load passes
+  the middleware, which already redirects a signed-out request on a protected path to
+  `/<locale>/login?redirectTo=<locale-prefixed path>` (`lib/supabase/middleware.ts`), so the learner lands on
+  sign-in and returns to the same page afterwards; no locale or URL logic in the nav. Loop guard: if a reload for
+  401 already happened in this tab within the last 10s (`sessionStorage` timestamp, read/write in try/catch), do not
+  reload again — stay cleared. Switching accounts goes through sign-out (a full POST navigation), so a new account
+  always mounts with its own server summary.
 
 ### 3.5 Account menu
 
@@ -179,7 +200,7 @@ warm accent.
   Focus-visible: 2px ember ring with offset (frame 04).
 - **Due badge.** Pill, `tabular-nums`, ember 16% fill + `ember-300` text, "99+" cap, hidden at 0. Rail: a 6px ember
   dot on the Ôn tập icon when due > 0 (the count lives in the tooltip and the accessible name).
-- **Header buttons.** Bell and toggle as 32 ghost icon buttons; toggle uses `PanelLeftClose` / `PanelLeftOpen`
+- **Header buttons.** Bell and toggle as ghost icon buttons — 32 visual circle inside a 44px hit area (§2); toggle uses `PanelLeftClose` / `PanelLeftOpen`
   instead of ‹ ›.
 - **Scroll list.** Thin styled scrollbar; soft fade masks at the top/bottom edges only while there is more to scroll
   (signals the scroll at 529px tall).
@@ -199,9 +220,10 @@ Every number above is a default the owner can overrule at the Chrome look; none 
 review routes; badge hidden at 0 / "99+" / accessible name with count; cookie written only when `mode="app"`;
 mount-time cookie re-read. AccountMenu: open keys, ↑/↓/Home/End, Esc returns focus, Tab and outside click close,
 `aria-checked` follows and toggles the real reduce-motion state. Tooltip: hover, focus-visible, Esc. useNavSummary:
-replace on 2xx, keep on network error/5xx, clear + refresh on 401, abort of the stale request, refetch on the event.
-`getNavSummary` fallbacks; API 401 and `no-store`; review sessions dispatch the event only on `res.ok`;
-`reviewDestination` zero-due branch. One mutation per non-trivial branch (lesson: Codex tests need mutation).
+replace on 2xx, keep on network error/5xx, on 401 clear before reload + exactly one reload + no second reload within
+10s, abort of the stale request, refetch on the event. `getNavSummary` fallbacks; API 401 and `no-store`; review
+sessions dispatch the event only on `res.ok`; `reviewDestination` — all three zero-due/due branches. Every nav row,
+header button, menu item ≥ 44px tall (asserted on the rendered class/token, measured in E2E). One mutation per non-trivial branch (lesson: Codex tests need mutation).
 `app-nav.test.tsx` expected counts updated (no `account` group in the list).
 
 **E2E (Playwright).**
@@ -211,10 +233,16 @@ replace on 2xx, keep on network error/5xx, clear + refresh on 401, abort of the 
 - E3 review one kanji card on `/kanji/review` → badge decrements without a route change.
 - E4 account menu and rail tooltip: topmost at their centre (`elementFromPoint`) and fully inside 1280×529.
 - E5 `typography.spec.ts` and `route-group-provider-identity.spec.ts` green.
+- E6 expired session: signed in on `/dashboard` with the account name visible → clear the context's auth cookies →
+  trigger a refetch (client navigation) → the old name, avatar initial, plan chip and badge are gone from the DOM,
+  and the page ends on `/<locale>/login?redirectTo=…/dashboard`.
+- E7 every nav row, header button, Help row, account trigger and menu item measures ≥ 44px tall at 1280×529.
 
-**Chrome measure (A1).** 1280×529 and 1440×900, expanded and rail, plus a width wider than the screen
-(same-origin iframe): widths and row height per §2, header/footer fixed while the list scrolls, no horizontal
-scroll. Then the owner's look; merge only on the owner's approval.
+**Chrome measure (A1).** At exactly **1280×529, 1440×900 and 1920×1080** (Playwright Chromium viewports; 1920
+cannot be shown on the owner's screen, so it is measured there, not eyeballed), in expanded and rail mode, assert
+the §2 table: expanded width 240 / 270 / 337.5px, rail 72 / 81 / 101.25px (±0.5px), row height 44 / 44 / 47.8px;
+header and footer stay fixed while the list scrolls; no horizontal scroll. Results go in the run state. Then the
+owner's look in their Chrome at 1280×529; merge only on the owner's approval.
 
 ## 6. Out of scope
 
