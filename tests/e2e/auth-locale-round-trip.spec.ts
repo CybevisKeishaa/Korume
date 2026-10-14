@@ -27,11 +27,13 @@ test("register -> sign out -> sign in bounces back to /en/dashboard, not double-
 
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15000 });
 
-  // Sign out via the nav's sign-out form (posts to /auth/signout, which
+  // Sign out via the account menu's sign-out form (posts to /auth/signout, which
   // redirects to unprefixed "/" — the intl middleware then negotiates it
   // back to /en, since Playwright's Chrome sends Accept-Language: en-US and
   // the config also pins locale: "en").
-  await page.getByRole("button", { name: /sign out/i }).click();
+  // Sign out lives in the nav's account menu: open it, then pick the item.
+  await page.getByRole("button", { name: /account/i }).click();
+  await page.getByRole("menuitem", { name: /sign out/i }).click();
   await expect(page).toHaveURL(/\/en\/?$/, { timeout: 15000 });
 
   // Visiting a protected route while signed out triggers the middleware's
