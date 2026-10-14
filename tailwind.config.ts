@@ -95,10 +95,6 @@ const config: Config = {
         "2xl": "var(--space-2xl)",
         "3xl": "var(--space-3xl)",
       },
-      width: {
-        sidebar: "var(--layout-sidebar-width)",
-        "sidebar-collapsed": "var(--layout-sidebar-collapsed)",
-      },
       height: {
         header: "var(--layout-header-height)",
         "control-sm": "var(--control-sm)",

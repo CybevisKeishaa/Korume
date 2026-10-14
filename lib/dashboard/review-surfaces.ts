@@ -1,3 +1,4 @@
+import { REVIEW_FALLBACK_HREF } from "@/lib/nav/nav-state";
 import { SCREEN_REGISTRY } from "@/lib/product/screen-registry";
 import type { ScreenEntry } from "@/lib/product/screen-registry-types";
 
@@ -13,6 +14,8 @@ const REVIEW_SURFACES: readonly ReviewSurface[] = [
   { deck: "vocab", reviewHref: "/vocab/review" },
 ];
 const NEW_LEARNER_HREF = "/kanji/review";
+/** Zero due with a review history: the real kanji library, never a review session that may be empty (app-chrome-refresh §3.3). */
+export const KANJI_LIBRARY_HREF = REVIEW_FALLBACK_HREF;
 
 /** The one review-surface registry (D12): a deck is exposed while its screen is in the nav (vocab is hidden by A10).
  * Quick Access, the due aggregate and the mission candidates all read this. */
@@ -21,14 +24,15 @@ export function exposedReviewSurfaces(registry: readonly ScreenEntry[] = SCREEN_
   return REVIEW_SURFACES.filter((surface) => inNav.has(surface.deck));
 }
 
-/** Where the Review tile goes (D10/D12): most due → most recently reviewed → registry order; nothing ever reviewed
- * → kanji review (a real empty state, never a fake session). `due` sums the exposed decks only. */
+/** most due → most recently reviewed (ties) → registry order; nothing due: kanji review for a brand-new learner, else the kanji library.
+ * `due` sums the exposed decks only. */
 export function reviewDestination(summaries: readonly DeckSummary[], surfaces: readonly ReviewSurface[]): { href: string; due: number } {
   const ranked = surfaces
     .map((surface, order) => ({ surface, order, summary: summaries.find((row) => row.deck === surface.deck) }))
     .map(({ surface, order, summary }) => ({ surface, order, due: summary?.due ?? 0, at: summary?.lastReviewedAt ?? null }));
   const due = ranked.reduce((sum, row) => sum + row.due, 0);
   if (due === 0 && ranked.every((row) => row.at === null)) return { href: NEW_LEARNER_HREF, due };
+  if (due === 0) return { href: KANJI_LIBRARY_HREF, due };
   ranked.sort((a, b) =>
     b.due - a.due
     || (b.at === null ? 0 : Date.parse(b.at)) - (a.at === null ? 0 : Date.parse(a.at))

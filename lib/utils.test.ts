@@ -93,7 +93,6 @@ describe("cn (tailwind-merge custom token config)", () => {
   it("does not strip the new layout and spacing scales", () => {
     expect(cn("gap-md", "gap-md-lg")).toBe("gap-md-lg");
     expect(cn("max-w-6xl", "max-w-content")).toBe("max-w-content");
-    expect(cn("w-60", "w-sidebar")).toBe("w-sidebar");
   });
 
   it("resolves the header-height scale, so a consumer can override the anchor clearance", () => {

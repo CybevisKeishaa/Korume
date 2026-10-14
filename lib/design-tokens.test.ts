@@ -590,7 +590,6 @@ describe("desktop density scale", () => {
       ["--text-heading-lg", 24], ["--leading-heading-lg", 32],
       ["--text-title", 28], ["--leading-title", 36],
       ["--text-display", 40], ["--leading-display", 48],
-      ["--layout-sidebar-width", 224], ["--layout-sidebar-collapsed", 68],
       ["--layout-content-max", 1240], ["--layout-header-height", 64],
       ["--control-sm", 36], ["--control-md", 40], ["--control-lg", 44],
       ["--icon-xs", 12], ["--icon-sm", 16], ["--icon-md", 24], ["--icon-lg", 28],
@@ -600,6 +599,12 @@ describe("desktop density scale", () => {
         !new RegExp(`${name}:\\s*calc\\(${n}\\s*\\*\\s*var\\(--density-unit\\)\\)`).test(css),
     );
     expect(missing.map(([name]) => name)).toEqual([]);
+  });
+
+  it("derives the sidebar widths from --nav-u (app chrome refresh section 2)", () => {
+    expect(css).toMatch(/--nav-u:\s*calc\(1\.125\s*\*\s*var\(--density-unit\)\)/);
+    expect(css).toMatch(/--layout-sidebar-width:\s*calc\(240\s*\*\s*var\(--nav-u\)\)/);
+    expect(css).toMatch(/--layout-sidebar-collapsed:\s*calc\(72\s*\*\s*var\(--nav-u\)\)/);
   });
 
   it("floors caption with max(), not with a clamp bound on the unit", () => {

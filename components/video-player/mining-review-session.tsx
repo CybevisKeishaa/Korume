@@ -9,6 +9,7 @@ import type { MiningQueueItem } from "@/lib/mining-types";
 import { splitSentenceForEmphasis } from "@/lib/mining-format";
 import { MiningClipPlayer } from "./mining-clip-player";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
+import { REVIEW_SUBMITTED_EVENT } from "@/lib/nav/nav-state";
 
 /**
  * Anki-style grades mapped to SM-2 quality (0–5) — mirrors
@@ -64,6 +65,7 @@ export function MiningReviewSession({ items }: MiningReviewSessionProps) {
           body: JSON.stringify({ cardId: current.id, quality }),
         });
         if (!res.ok) throw new Error(`Review failed (${res.status})`);
+        window.dispatchEvent(new Event(REVIEW_SUBMITTED_EVENT));
         setReviewed((n) => n + 1);
         setRevealed(false);
         setIndex((i) => i + 1);

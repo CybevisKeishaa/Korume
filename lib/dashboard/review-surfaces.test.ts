@@ -34,9 +34,11 @@ describe("reviewDestination (D10/D12)", () => {
     expect(reviewDestination([summary("mining", 4), summary("kanji", 4)], surfaces).href).toBe("/mining/review");
   });
 
-  it("with nothing due, opens the most recently reviewed deck", () => {
+  it("with nothing due but a review history, opens the kanji library — never a possibly-empty session", () => {
     expect(reviewDestination([summary("mining", 0, "2026-10-07T00:00:00Z"), summary("kanji", 0, "2026-10-01T00:00:00Z")], surfaces))
-      .toEqual({ href: "/mining/review", due: 0 });
+      .toEqual({ href: "/kanji", due: 0 });
+    expect(reviewDestination([summary("mining", 0, "2026-10-07T00:00:00Z")], surfaces))
+      .toEqual({ href: "/kanji", due: 0 });
   });
 
   it("a brand-new learner lands on kanji review", () => {

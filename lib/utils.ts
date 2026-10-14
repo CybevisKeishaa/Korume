@@ -26,7 +26,7 @@ const twMerge = extendTailwindMerge({
       ease: [{ ease: ["standard", "out-expo"] }],
       z: [{ z: ["nav", "overlay", "popover", "toast"] }],
       "max-w": [{ "max-w": ["content", "marketing"] }],
-      w: [{ w: ["sidebar", "sidebar-collapsed", "companion"] }],
+      w: [{ w: ["companion"] }],
       h: [{ h: ["header"] }],
       "scroll-mt": [{ "scroll-mt": ["header"] }],
     },

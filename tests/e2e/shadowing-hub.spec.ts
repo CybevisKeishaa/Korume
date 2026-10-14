@@ -91,8 +91,8 @@ test("at 1024px, the Hub rail follows its resolved track through nav collapse", 
   await expect(rail).toBeVisible();
   const beforeRailWidth = await expectRailMatchesShellTrack(rail);
 
-  await page.getByRole("button", { name: "Hide navigation" }).click();
-  await expect(page.getByRole("button", { name: "Show navigation" })).toBeVisible();
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
+  await expect(page.getByRole("button", { name: "Expand navigation" })).toBeVisible();
   const afterRailWidth = await expectRailMatchesShellTrack(rail);
   expect(afterRailWidth).toBeGreaterThanOrEqual(beforeRailWidth);
 });
@@ -105,8 +105,8 @@ test("at 1280px, navigation rows keep the 44px hit-target floor", async ({ page 
 
   const rows = [
     page.getByRole("navigation").getByRole("list").first().getByRole("link").first(),
-    page.getByRole("button", { name: "Sign out" }),
-    page.getByRole("button", { name: "Hide navigation" }),
+    page.getByRole("link", { name: "Help" }),
+    page.getByRole("button", { name: "Collapse navigation" }),
   ];
 
   for (const row of rows) {
@@ -176,8 +176,8 @@ test("at desktop widths, the Hub keeps every truthful region and a fluid rail th
   expectSideBySide(beforeMain, beforeRail);
   await assertNoHorizontalOverflow(page);
 
-  await page.getByRole("button", { name: "Hide navigation" }).click();
-  await expect(page.getByRole("button", { name: "Show navigation" })).toBeVisible();
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
+  await expect(page.getByRole("button", { name: "Expand navigation" })).toBeVisible();
 
   const afterMain = await hubColumn.boundingBox();
   const afterRail = await rail.boundingBox();

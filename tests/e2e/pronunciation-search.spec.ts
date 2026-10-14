@@ -48,7 +48,7 @@ test("All previews one real row per group under counted tabs; the rest leave the
   await expect(lessons.getByRole("link", { name: new RegExp(`^${seeded.prefix} Ramen`) })).toHaveCount(count);
 });
 
-test("the grid reflows from 3 to 4 columns when the AppNav hides, cards stay 200-235 px, nothing overflows", async ({ page }) => {
+test("the grid reflows from 3 to 4 columns when the AppNav collapses to the rail, cards stay on the track minimum, nothing overflows", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 529 });
   await registerLearner(page);
   await page.goto(`/en/pronunciation?q=${seeded.prefix}&type=lessons`);
@@ -61,11 +61,15 @@ test("the grid reflows from 3 to 4 columns when the AppNav hides, cards stay 200
   }
   expect(await noHorizontalOverflow(page)).toBe(true);
 
-  await page.getByRole("button", { name: "Hide navigation" }).click();
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
   // Without reload: the container query and the auto-fill grid follow the pane.
   await expect.poll(() => columns(grid)).toBe(4);
+  // Since app-chrome-refresh "collapse" is the 72px rail, not a hidden nav: it frees 168px, not the whole column, so
+  // the 4 columns measure ~196px instead of the ~208px the 2026-10-01 spec measured with the nav gone. The owner chose
+  // columns over width there; what the grid itself guarantees is its track minimum, minmax(12rem, 1fr).
+  const minTrack = await page.evaluate(() => 12 * parseFloat(getComputedStyle(document.documentElement).fontSize));
   for (const width of await visibleCardWidths(grid)) {
-    expect(width).toBeGreaterThanOrEqual(200);
+    expect(width).toBeGreaterThanOrEqual(minTrack);
     expect(width).toBeLessThanOrEqual(235);
   }
   expect(await noHorizontalOverflow(page)).toBe(true);

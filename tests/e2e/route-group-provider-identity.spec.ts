@@ -109,11 +109,12 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
  * Spec §8.1's other crossing: `(app) -> (focus)`. This is the one a learner
  * actually takes entering a lesson (Lessons -> a video -> Shadowing), and the
  * one where Companion pending-contexts matter most — unlike `(immersive)`,
- * `(focus)` keeps the Nav Column mounted, just hidden by default
- * (`app-nav.tsx` `defaultVisible={false}`), so this also exercises the F1 fix
- * (final whole-branch review, 2026-08-07): the reduce-motion control must
- * still be reachable, and the show/hide toggle must recover the column
- * without ever registering as a second `<nav>` landmark.
+ * `(focus)` keeps the Main nav mounted, as the 72px rail since
+ * app-chrome-refresh (`mode="focus"`, `initialCollapsed`), so this also
+ * exercises the F1 fix (final whole-branch review, 2026-08-07): the
+ * reduce-motion control must still be reachable (now in the account menu),
+ * and the expand toggle must widen the nav without ever registering a second
+ * `<nav>` landmark.
  *
  * Reaching a real `(focus)/shadowing/[id]` route needs a real video
  * row: `getVideo()` 404s (and, since no `not-found.tsx` exists anywhere in
@@ -129,7 +130,7 @@ test("Companion state survives the (app) <-> (immersive) boundary", async ({ pag
  * library_access, so any authenticated user can read it under
  * `videos_read`), rather than inventing a fixture inline here.
  */
-test("Companion state survives the (app) -> (focus) boundary, and the hidden nav stays recoverable", async ({
+test("Companion state survives the (app) -> (focus) boundary, and the rail nav stays expandable", async ({
   page,
 }) => {
   const email = uniqueEmail("e2e_group_focus");
@@ -174,29 +175,22 @@ test("Companion state survives the (app) -> (focus) boundary, and the hidden nav
   await page.waitForLoadState("networkidle");
   expect(statsRequests).toBe(1);
 
-  // 3. The (focus) chrome contract: nav mounted but hidden by default. No
-  //    <nav> landmark yet, but the show/hide affordance IS present — this is
-  //    "hidden", not "not mounted" (that's (immersive), covered above).
-  //    Since 2026-10-04 the lesson header carries the Learning-modes bar (Shadowing · Summary), a <nav> of its
-  //    own; the contract here is about the app's Main nav, so the count is scoped to it.
-  await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(0);
+  // 3. The (focus) chrome contract since app-chrome-refresh: the Main nav is mounted as the rail (spec D5).
+  const main = page.getByRole("navigation", { name: "Main" });
+  await expect(main).toHaveCount(1);
+  await expect(main).toHaveAttribute("data-collapsed", "true");
   await expect(page.getByRole("navigation", { name: "Learning modes" })).toHaveCount(1);
-  const showNav = page.getByRole("button", { name: /show navigation/i });
-  await expect(showNav).toBeVisible();
-  await expect(showNav).toHaveAttribute("aria-expanded", "false");
+  const expand = page.getByRole("button", { name: /expand navigation/i });
+  await expect(expand).toHaveAttribute("aria-expanded", "false");
 
-  // 4. F1: the reduce-motion control survives the hidden state — it must not
-  //    have been silently dropped along with the rest of the nav column.
-  await expect(page.getByRole("checkbox", { name: /reduce motion/i })).toBeVisible();
+  // 4. Reduce motion stays reachable: through the account menu, as a real checkbox item.
+  await page.getByRole("button", { name: /'s account$/ }).click();
+  await expect(page.getByRole("menuitemcheckbox", { name: /reduce motion/i })).toBeVisible();
+  await page.keyboard.press("Escape");
 
-  // 5. Activating the toggle recovers the column, and it is a real <nav>
-  //    landmark once shown.
-  await showNav.click();
-  await expect(page.getByRole("navigation", { name: "Main" })).toHaveCount(1);
-  await expect(page.getByRole("button", { name: /hide navigation/i })).toHaveAttribute(
-    "aria-expanded",
-    "true",
-  );
+  // 5. Expanding works in place.
+  await expand.click();
+  await expect(main).toHaveAttribute("data-collapsed", "false");
 
   // 6. The boundary is symmetric: crossing back preserves both signals too.
   await page.getByRole("link", { name: "Dashboard", exact: true }).click();

@@ -24,7 +24,8 @@ interface ThemeContextValue {
   reduceMotion: boolean;
   /**
    * The ACCOUNT's own answer, which is a different question and has exactly
-   * one consumer: `ReduceMotionToggle`'s `checked`.
+   * two consumers, both a control's checked state: `ReduceMotionToggle`'s
+   * `checked` and `AccountMenu`'s reduce-motion `aria-checked`.
    *
    * ⚠️ Binding that checkbox to `reduceMotion` looks right and is not: on a
    * machine whose OS asks for reduced motion, unchecking it recomputes to
@@ -95,7 +96,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
    * Three destinations, and they deliberately do NOT all get the same value.
    *
    * - **`localStorage` and `accountReduceMotion` get the ACCOUNT's own
-   *   choice.** That state drives `ReduceMotionToggle`'s `checked`, and a
+   *   choice.** That state drives `ReduceMotionToggle`'s `checked` (and `AccountMenu`'s switch), and a
    *   control that does not follow the person operating it is broken: handing
    *   it the OR'd value made the box snap straight back to checked, for ever,
    *   with no explanation, on any machine whose OS asks for reduced motion.

@@ -64,8 +64,8 @@ test("capture every in-scope page (spec V1-V4)", async ({ browser }) => {
         await page.goto("/vi/dashboard");
         await settle(page);
       }
-      await page.getByRole("button", { name: nav.toggle.hide }).click();
-      await expect(page.getByRole("button", { name: nav.toggle.show })).toBeVisible();
+      await page.getByRole("button", { name: nav.toggle.collapse }).click();
+      await expect(page.getByRole("button", { name: nav.toggle.expand })).toBeVisible();
       await page.screenshot({ path: path.join(OUT, `dashboard__${viewport.name}__nav-collapsed.png`), fullPage: true });
       await context.close();
     }
