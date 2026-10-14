@@ -13,7 +13,7 @@
  */
 import Image from "next/image";
 import { CircleHelp, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { useEffect, useLayoutEffect, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link, usePathname } from "@/lib/i18n/navigation";
 import { useTranslations } from "@/lib/i18n";
 import { NotificationBell } from "@/components/layout/notification-bell";
@@ -43,6 +43,31 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
     const stored = readNavCookie(document.cookie);
     if (stored !== null) setCollapsed(stored);
   }, [mode]);
+
+  // Fade masks only while there is more to scroll (spec 4): top once scrolled, bottom while content remains below.
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [fade, setFade] = useState({ top: false, bottom: false });
+  const measureFade = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const top = el.scrollTop > 0;
+    const bottom = el.scrollTop + el.clientHeight < el.scrollHeight - 1;
+    setFade((prev) => (prev.top === top && prev.bottom === bottom ? prev : { top, bottom }));
+  }, []);
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    measureFade();
+    el.addEventListener("scroll", measureFade, { passive: true });
+    window.addEventListener("resize", measureFade);
+    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measureFade);
+    observer?.observe(el);
+    return () => {
+      el.removeEventListener("scroll", measureFade);
+      window.removeEventListener("resize", measureFade);
+      observer?.disconnect();
+    };
+  }, [measureFade]);
 
   const toggle = () => {
     const next = !collapsed;
@@ -74,7 +99,7 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
         </div>
       </div>
 
-      <div className="app-nav__scroll" data-nav-scroll>
+      <div ref={scrollRef} className="app-nav__scroll" data-nav-scroll data-fade-top={fade.top} data-fade-bottom={fade.bottom}>
         {listed.map((group) => (
           <div key={group.key} className="app-nav__group">
             <p id={`app-nav-group-${group.key}`} className="app-nav__group-label">{t(`groups.${group.key}`)}</p>

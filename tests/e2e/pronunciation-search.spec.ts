@@ -61,7 +61,7 @@ test("the grid reflows from 3 to 4 columns when the AppNav hides, cards stay 200
   }
   expect(await noHorizontalOverflow(page)).toBe(true);
 
-  await page.getByRole("button", { name: "Hide navigation" }).click();
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
   // Without reload: the container query and the auto-fill grid follow the pane.
   await expect.poll(() => columns(grid)).toBe(4);
   for (const width of await visibleCardWidths(grid)) {

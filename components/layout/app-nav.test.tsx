@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { within } from "@testing-library/react";
+import { act, fireEvent, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { render, screen } from "@/test/render";
 import { ThemeProvider } from "@/components/providers/theme-provider";
@@ -112,6 +112,7 @@ function renderNav(opts: { mode?: "app" | "focus"; collapsed?: boolean; summary?
 
 afterEach(() => {
   mockPath = "/dashboard";
+  document.cookie = "korume_nav=; max-age=0; path=/";
 });
 
 describe("AppNav", () => {
@@ -322,6 +323,26 @@ describe("AppNav", () => {
     renderNav({ summary: null });
     expect(screen.queryByText("Yuki Tanaka")).toBeNull();
     expect(screen.queryByText("FREE")).toBeNull();
+  });
+  it("fades the scroll edges only while there is more to scroll", () => {
+    renderNav();
+    const scroll = document.querySelector("[data-nav-scroll]") as HTMLElement;
+    const dims = (scrollTop: number) => {
+      Object.defineProperty(scroll, "scrollTop", { configurable: true, value: scrollTop });
+      Object.defineProperty(scroll, "clientHeight", { configurable: true, value: 400 });
+      Object.defineProperty(scroll, "scrollHeight", { configurable: true, value: 700 });
+      act(() => { fireEvent.scroll(scroll); });
+    };
+    expect(scroll).toHaveAttribute("data-fade-top", "false");
+    dims(0);
+    expect(scroll).toHaveAttribute("data-fade-top", "false");
+    expect(scroll).toHaveAttribute("data-fade-bottom", "true");
+    dims(120);
+    expect(scroll).toHaveAttribute("data-fade-top", "true");
+    expect(scroll).toHaveAttribute("data-fade-bottom", "true");
+    dims(300);
+    expect(scroll).toHaveAttribute("data-fade-top", "true");
+    expect(scroll).toHaveAttribute("data-fade-bottom", "false");
   });
   it("keeps every interactive row on the hit-target floor", () => {
     const { container } = renderNav();

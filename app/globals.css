@@ -1871,7 +1871,7 @@
 
 /* App navigation (spec docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md). Figma 655:2 structure; visual
    finish §4 on existing tokens. LAYOUT on --nav-u, TYPE on --text-*, every target >= --hit-target-min. */
-.app-nav { position: sticky; top: 0; z-index: 20; display: flex; flex-direction: column; flex-shrink: 0; block-size: 100vh;
+.app-nav { position: sticky; top: 0; z-index: var(--z-nav); display: flex; flex-direction: column; flex-shrink: 0; block-size: 100vh;
   inline-size: var(--layout-sidebar-width); border-right: 1px solid hsl(var(--border)); background:
   radial-gradient(calc(220 * var(--nav-u)) calc(140 * var(--nav-u)) at 0 0, hsl(var(--primary) / 0.06), transparent 70%), hsl(var(--muted));
   transition: inline-size 200ms cubic-bezier(0.2, 0.8, 0.2, 1); }
@@ -1890,8 +1890,12 @@
   border-radius: 999px; color: hsl(var(--muted-foreground)); transition: background-color 150ms, color 150ms; }
 .app-nav__icon-button:hover { background: hsl(var(--secondary)); color: hsl(var(--foreground)); }
 .app-nav__scroll { position: relative; flex: 1 1 auto; min-block-size: 0; overflow-y: auto;
-  padding: calc(8 * var(--nav-u)) calc(12 * var(--nav-u));
-  mask-image: linear-gradient(to bottom, transparent 0, #000 calc(12 * var(--nav-u)), #000 calc(100% - 12 * var(--nav-u)), transparent 100%); }
+  padding: calc(8 * var(--nav-u)) calc(12 * var(--nav-u)); --fade-top: 0px; --fade-bottom: 0px;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%); }
+.app-nav__scroll[data-fade-top="true"] { --fade-top: calc(12 * var(--nav-u)); }
+.app-nav__scroll[data-fade-bottom="true"] { --fade-bottom: calc(12 * var(--nav-u)); }
+/* Rail items are 44-wide centred icon buttons (spec 4): the global 12px scrollbar would eat 12px of the 72 rail. */
+.app-nav[data-collapsed="true"] .app-nav__scroll::-webkit-scrollbar { inline-size: 0; block-size: 0; }
 .app-nav[data-collapsed="true"] .app-nav__scroll { padding-inline: calc(9 * var(--nav-u)); }
 .app-nav__group + .app-nav__group { margin-top: calc(14 * var(--nav-u)); }
 .app-nav__group-label { margin: 0; padding: calc(6 * var(--nav-u)) calc(11 * var(--nav-u)); font-size: var(--text-caption);
