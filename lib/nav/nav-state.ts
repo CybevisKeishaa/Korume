@@ -15,8 +15,10 @@ export function parseNavCookie(value: string | undefined): boolean | null {
   return null;
 }
 
+const NAV_COOKIE_PATTERN = new RegExp(`(?:^|;\\s*)${NAV_COOKIE}=([^;]*)`);
+
 export function readNavCookie(cookieHeader: string): boolean | null {
-  const match = cookieHeader.match(/(?:^|;\s*)korume_nav=([^;]*)/);
+  const match = cookieHeader.match(NAV_COOKIE_PATTERN);
   return parseNavCookie(match?.[1]);
 }
 

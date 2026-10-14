@@ -1,3 +1,4 @@
+import { REVIEW_FALLBACK_HREF } from "@/lib/nav/nav-state";
 import { SCREEN_REGISTRY } from "@/lib/product/screen-registry";
 import type { ScreenEntry } from "@/lib/product/screen-registry-types";
 
@@ -14,7 +15,7 @@ const REVIEW_SURFACES: readonly ReviewSurface[] = [
 ];
 const NEW_LEARNER_HREF = "/kanji/review";
 /** Zero due with a review history: the real kanji library, never a review session that may be empty (app-chrome-refresh §3.3). */
-export const KANJI_LIBRARY_HREF = "/kanji";
+export const KANJI_LIBRARY_HREF = REVIEW_FALLBACK_HREF;
 
 /** The one review-surface registry (D12): a deck is exposed while its screen is in the nav (vocab is hidden by A10).
  * Quick Access, the due aggregate and the mission candidates all read this. */

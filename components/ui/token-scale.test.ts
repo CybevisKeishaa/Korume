@@ -69,7 +69,7 @@ const SCANNED_DIRS = [
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
   { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 45 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
-  // app-chrome-refresh Task 4: + use-nav-summary.
+  // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },
   // Part 1b Task 12: + kanji-quick-inspect.
   { dir: "components/kanji", rules: FORBIDDEN, sources: 2 },
