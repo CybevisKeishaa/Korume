@@ -344,6 +344,20 @@ describe("AppNav", () => {
     expect(scroll).toHaveAttribute("data-fade-top", "true");
     expect(scroll).toHaveAttribute("data-fade-bottom", "false");
   });
+  it("re-measures the fade when collapsing changes the content height", async () => {
+    const user = userEvent.setup();
+    renderNav();
+    const scroll = document.querySelector("[data-nav-scroll]") as HTMLElement;
+    let scrollHeight = 700;
+    Object.defineProperty(scroll, "scrollTop", { configurable: true, value: 0 });
+    Object.defineProperty(scroll, "clientHeight", { configurable: true, value: 400 });
+    Object.defineProperty(scroll, "scrollHeight", { configurable: true, get: () => scrollHeight });
+    await user.click(screen.getByRole("button", { name: "Collapse navigation" }));
+    expect(scroll).toHaveAttribute("data-fade-bottom", "true");
+    scrollHeight = 380; // the rail's content fits: no scroll, no scroll event, no box resize
+    await user.click(screen.getByRole("button", { name: "Expand navigation" }));
+    expect(scroll).toHaveAttribute("data-fade-bottom", "false");
+  });
   it("keeps every interactive row on the hit-target floor", () => {
     const { container } = renderNav();
     const rows = container.querySelectorAll(".app-nav__item, .app-nav__icon-button, .app-nav__help");

@@ -69,6 +69,13 @@ export function AppNav({ groups, userEmail, initialSummary, mode, initialCollaps
     };
   }, [measureFade]);
 
+  // Collapsing shrinks the group labels and the review badge changes the row, so scrollHeight moves while the scroll
+  // element's own box (what the ResizeObserver sees) does not: re-measure on those inputs too.
+  const dueForFade = summary?.reviewDue ?? 0;
+  useEffect(() => {
+    measureFade();
+  }, [collapsed, dueForFade, measureFade]);
+
   const toggle = () => {
     const next = !collapsed;
     setCollapsed(next);
