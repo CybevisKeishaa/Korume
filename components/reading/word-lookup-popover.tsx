@@ -93,10 +93,10 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
           className="absolute left-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
           <span className="flex items-start justify-between gap-2">
-            <span className="font-jp block text-base" lang="ja">
+            <span className="font-jp block text-body-lg" lang="ja">
               {word}
               {reading && (
-                <span className="ml-2 text-sm text-muted-foreground">{reading}</span>
+                <span className="ml-2 text-body text-muted-foreground">{reading}</span>
               )}
             </span>
             <button
@@ -117,11 +117,11 @@ export function WordLookupPopover({ word, reading, children, className }: WordLo
             <button
               type="button"
               disabled
-              className="w-full rounded-md bg-muted px-2 py-1.5 text-sm font-medium text-muted-foreground disabled:cursor-not-allowed"
+              className="w-full rounded-md bg-muted px-2 py-1.5 text-body font-medium text-muted-foreground disabled:cursor-not-allowed"
             >
               {t("wordLookup.addToFlashcard")}
             </button>
-            <span className="mt-1 block text-xs text-muted-foreground">
+            <span className="mt-1 block text-caption text-muted-foreground">
               {t("wordLookup.addToFlashcardExplanation")}
             </span>
           </span>

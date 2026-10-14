@@ -29,7 +29,7 @@ function PillarBar({ pillar, t }: { pillar: PillarScore; t: ReturnType<typeof us
 
   return (
     <div>
-      <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-body">
         <span className="font-medium">{pillarLabel}</span>
         <span className="text-muted-foreground">
           {pillar.scaledScore} / {pillar.scaleMax}{" "}
@@ -73,8 +73,8 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold">{t("resultsPanel.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <h1 className="text-title font-bold">{t("resultsPanel.title")}</h1>
+        <p className="mt-1 text-body text-muted-foreground">
           {t("resultsPanel.scoreLine", {
             correct: result.totalCorrect,
             total: result.totalQuestions,
@@ -86,18 +86,18 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
       <section aria-label={t("resultsPanel.passEstimateAria")} className="rounded-lg border border-border p-5">
         {result.scaledTotal != null && result.pillars ? (
           <>
-            <p className="text-sm text-muted-foreground">{t("resultsPanel.estimatedScaledScore")}</p>
-            <p className="text-3xl font-bold">
+            <p className="text-body text-muted-foreground">{t("resultsPanel.estimatedScaledScore")}</p>
+            <p className="text-heading-lg font-bold">
               {result.scaledTotal}{" "}
-              <span className="text-base font-normal text-muted-foreground">/ {result.scaledTotalMax}</span>
+              <span className="text-body-lg font-normal text-muted-foreground">/ {result.scaledTotalMax}</span>
             </p>
-            <p className="mt-1 text-sm">
+            <p className="mt-1 text-body">
               {result.passed ? (
                 <span className="font-medium text-success-strong">{t("resultsPanel.resultPass")}</span>
               ) : (
                 <span className="font-medium text-danger-strong">{t("resultsPanel.resultNotPassed")}</span>
               )}
-              <span className="ml-2 text-xs text-muted-foreground">
+              <span className="ml-2 text-caption text-muted-foreground">
                 {t("resultsPanel.unofficialEstimate")}
               </span>
             </p>
@@ -108,7 +108,7 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
             </div>
           </>
         ) : (
-          <p className="text-sm text-muted-foreground">
+          <p className="text-body text-muted-foreground">
             {t("resultsPanel.passUnavailable")}
             {/* `result.passUnavailableReason` is controlled business copy authored in
                 `lib/jlpt/score.ts` (one of 3 fixed variants, one with an interpolated
@@ -121,10 +121,10 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
       </section>
 
       <section aria-label={t("resultsPanel.sectionScores")}>
-        <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.sectionScores")}</h2>
+        <h2 className="mb-3 text-heading font-semibold">{t("resultsPanel.sectionScores")}</h2>
         <ul className="grid gap-3 sm:grid-cols-2">
           {result.sections.map((s) => (
-            <li key={s.section} className="rounded-md border border-border p-3 text-sm">
+            <li key={s.section} className="rounded-md border border-border p-3 text-body">
               <p className="font-medium">{t(`sections.${s.section}`)}</p>
               <p className="text-muted-foreground">
                 {t("resultsPanel.sectionScoreLine", { correct: s.correct, total: s.total, percent: s.percent })}
@@ -136,12 +136,12 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
 
       {weakness.length > 0 && (
         <section aria-label={t("resultsPanel.weaknessBreakdownAria")}>
-          <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.whereToFocus")}</h2>
+          <h2 className="mb-3 text-heading font-semibold">{t("resultsPanel.whereToFocus")}</h2>
           <ul className="space-y-2">
             {weakness.map((w) => (
               <li
                 key={`${w.section}-${w.questionType}`}
-                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3 text-sm"
+                className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3 text-body"
               >
                 <div>
                   <p className="font-medium">{w.questionType}</p>
@@ -167,7 +167,7 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
       )}
 
       <section aria-label={t("resultsPanel.questionReview")}>
-        <h2 className="mb-3 text-lg font-semibold">{t("resultsPanel.questionReview")}</h2>
+        <h2 className="mb-3 text-heading font-semibold">{t("resultsPanel.questionReview")}</h2>
         <ol className="space-y-4">
           {perQuestion.map((pq, i) => {
             const q = questionsById.get(pq.id);
@@ -177,9 +177,9 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
             const correctAnswerText = q ? q.question_data.choices[Number(pq.correctAnswer)] : undefined;
             return (
               <li key={pq.id} className="rounded-md border border-border p-4">
-                <p className="text-xs text-muted-foreground">{t("resultsPanel.questionNumber", { index: i + 1 })}</p>
-                {q && <p className="font-jp mt-1 text-sm">{q.question_data.stem}</p>}
-                <p className="mt-2 text-sm">
+                <p className="text-caption text-muted-foreground">{t("resultsPanel.questionNumber", { index: i + 1 })}</p>
+                {q && <p className="font-jp mt-1 text-body-lg">{q.question_data.stem}</p>}
+                <p className="mt-2 text-body">
                   <span aria-hidden="true">{pq.correct ? "✓" : "✕"}</span>
                   <span className="sr-only">
                     {pq.correct ? t("resultsPanel.correct") : t("resultsPanel.incorrect")}
@@ -187,11 +187,11 @@ export function JlptResultsPanel({ submitResult, questions, answers, level }: Jl
                   {t("resultsPanel.yourAnswer", { answer: yourAnswerText ?? t("resultsPanel.notAnswered") })}
                 </p>
                 {!pq.correct && (
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-body text-muted-foreground">
                     {t("resultsPanel.correctAnswer", { answer: correctAnswerText ?? "—" })}
                   </p>
                 )}
-                {pq.explanation && <p className="mt-2 text-sm text-muted-foreground">{pq.explanation}</p>}
+                {pq.explanation && <p className="mt-2 text-body text-muted-foreground">{pq.explanation}</p>}
               </li>
             );
           })}

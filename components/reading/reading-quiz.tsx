@@ -102,7 +102,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
   }
 
   if (questions.length === 0) {
-    return <p className="text-sm text-muted-foreground">{t("quiz.noQuestions")}</p>;
+    return <p className="text-body text-muted-foreground">{t("quiz.noQuestions")}</p>;
   }
 
   const resultById =
@@ -115,7 +115,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
           const result = resultById?.get(question.id) ?? null;
           return (
             <fieldset key={question.id} className="space-y-2 rounded-lg border border-border p-4">
-              <legend className="px-1 text-sm font-medium">
+              <legend className="px-1 text-body font-medium">
                 {t("quiz.questionLabel", { index: qIndex + 1 })} {question.question}
               </legend>
               <div
@@ -135,7 +135,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                       key={value}
                       htmlFor={inputId}
                       className={cn(
-                        "flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-sm hover:bg-secondary",
+                        "flex cursor-pointer items-center gap-2 rounded-md border border-transparent px-2 py-1.5 text-body hover:bg-secondary",
                         result && isCorrectChoice && "border-success bg-success/10",
                       )}
                     >
@@ -157,7 +157,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
                       />
                       <span className="font-jp">{option}</span>
                       {result && isCorrectChoice && (
-                        <span className="text-xs font-medium text-success-strong">
+                        <span className="text-caption font-medium text-success-strong">
                           {t("quiz.correctAnswerBadge")}
                         </span>
                       )}
@@ -169,7 +169,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
               {result && (
                 <p
                   className={cn(
-                    "text-sm font-medium",
+                    "text-body font-medium",
                     result.correct ? "text-success-strong" : "text-danger-strong",
                   )}
                 >
@@ -190,7 +190,7 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
             <Button type="submit" disabled={state.status === "submitting"}>
               {state.status === "submitting" ? t("quiz.submitting") : t("quiz.submit")}
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-body text-muted-foreground">
               {t("quiz.answeredCount", { answered: answeredCount, total: questions.length })}
             </p>
           </div>
@@ -198,14 +198,14 @@ export function ReadingQuiz({ passageId, questions }: ReadingQuizProps) {
       </form>
 
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {state.message}
         </p>
       )}
 
       <div aria-live="polite">
         {state.status === "done" && (
-          <p className="text-lg font-semibold">
+          <p className="text-body-lg font-semibold">
             {t("quiz.resultSummary", {
               correct: state.result.correct,
               total: state.result.total,

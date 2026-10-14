@@ -32,8 +32,8 @@ export default async function VocabPage({
     <Container className="py-10">
       <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">{t("title")}</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
+          <h1 className="text-title font-bold">{t("title")}</h1>
+          <p className="mt-1 text-body text-muted-foreground">
             {t("subtitleCount", { count: vocab.length })}
             {level ? ` · ${level}` : ""}
           </p>
@@ -57,15 +57,15 @@ export default async function VocabPage({
               className="flex items-baseline justify-between gap-4 p-4 hover:bg-secondary"
             >
               <div>
-                <span className="font-jp text-lg">{v.word}</span>
+                <span className="font-jp text-body-lg">{v.word}</span>
                 {v.reading && (
-                  <span className="ml-2 font-jp text-sm text-muted-foreground">
+                  <span className="ml-2 font-jp text-body text-muted-foreground">
                     {v.reading}
                   </span>
                 )}
-                <p className="text-sm text-muted-foreground">{v.meaning_en}</p>
+                <p className="text-body text-muted-foreground">{v.meaning_en}</p>
               </div>
-              <span className="shrink-0 text-xs text-muted-foreground">
+              <span className="shrink-0 text-caption text-muted-foreground">
                 {v.part_of_speech}
               </span>
             </Link>

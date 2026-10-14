@@ -9,12 +9,12 @@ export function PersonalGoal({ goal, className }: { goal: string | null; classNa
       <h2 id="profile-goal" className={EYEBROW}>{t("goal.eyebrow")}</h2>
       {goal ? (
         <>
-          <blockquote className="mt-sm text-xl leading-relaxed [overflow-wrap:anywhere]">“{goal}”</blockquote>
-          <p className="mt-sm text-xs text-muted-foreground">{t("goal.caption")}</p>
+          <blockquote className="mt-sm text-body-lg [overflow-wrap:anywhere]">“{goal}”</blockquote>
+          <p className="mt-sm text-caption text-muted-foreground">{t("goal.caption")}</p>
         </>
       ) : (
         <>
-          <p className="mt-sm text-sm text-muted-foreground">{t("goal.empty")}</p>
+          <p className="mt-sm text-body text-muted-foreground">{t("goal.empty")}</p>
           <Link href="/profile/edit" className={`${LINK} mt-xs inline-block`}>{t("goal.emptyCta")}</Link>
         </>
       )}

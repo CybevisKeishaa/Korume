@@ -19,8 +19,8 @@ export function TranslationDisclosure({ translation }: TranslationDisclosureProp
 
   return (
     <details className="rounded-md border border-border p-3">
-      <summary className="cursor-pointer text-sm font-medium">{t("translation.show")}</summary>
-      <p className="mt-2 text-sm text-muted-foreground">{translation}</p>
+      <summary className="cursor-pointer text-body font-medium">{t("translation.show")}</summary>
+      <p className="mt-2 text-body text-muted-foreground">{translation}</p>
     </details>
   );
 }

@@ -42,7 +42,7 @@ export function PublicPlaylistList({ initialPage, className }: PublicPlaylistLis
   }
 
   if (playlists.length === 0) {
-    return <p className={className ?? "text-sm text-muted-foreground"}>{t("publicList.empty")}</p>;
+    return <p className={className ?? "text-body text-muted-foreground"}>{t("publicList.empty")}</p>;
   }
 
   return (
@@ -53,8 +53,8 @@ export function PublicPlaylistList({ initialPage, className }: PublicPlaylistLis
             <Link href={`/playlists/${playlist.id}`} className="font-medium text-foreground hover:underline">
               {playlist.name}
             </Link>
-            {playlist.description && <p className="mt-1 text-sm text-muted-foreground">{playlist.description}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">
+            {playlist.description && <p className="mt-1 text-body text-muted-foreground">{playlist.description}</p>}
+            <p className="mt-1 text-caption text-muted-foreground">
               {t("byOwner", { name: playlist.owner?.name ?? t("deletedUser") })} · {t("itemCount", { count: playlist.itemCount })}
             </p>
           </li>
@@ -63,7 +63,7 @@ export function PublicPlaylistList({ initialPage, className }: PublicPlaylistLis
 
       <div aria-live="polite">
         {error && (
-          <p role="alert" className="mt-2 text-sm text-danger-strong">
+          <p role="alert" className="mt-2 text-body text-danger-strong">
             {error}
           </p>
         )}

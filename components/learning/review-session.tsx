@@ -121,7 +121,7 @@ export function ReviewSession({
   if (done) {
     return (
       <div className="text-center" role="status">
-        <p className="text-2xl font-bold">{t("srs.complete")}</p>
+        <p className="text-heading-lg font-bold">{t("srs.complete")}</p>
         <p className="mt-2 text-muted-foreground">
           {t("srs.reviewedCount", { count: reviewed })}
         </p>
@@ -134,24 +134,24 @@ export function ReviewSession({
 
   return (
     <div>
-      <p className="mb-4 text-center text-sm text-muted-foreground" aria-live="polite">
+      <p className="mb-4 text-center text-body text-muted-foreground" aria-live="polite">
         {t("srs.progress", { current: index + 1, total: items.length })}
       </p>
 
       <Card className="flex min-h-56 flex-col items-center justify-center gap-3 p-8 text-center">
-        <p className="font-jp text-4xl">{current!.front}</p>
+        <p className="font-jp text-display">{current!.front}</p>
         {revealed && (
           <div className="border-t border-border pt-3" aria-live="polite">
             {current!.sub && (
-              <p className="font-jp text-lg text-muted-foreground">{current!.sub}</p>
+              <p className="font-jp text-body-lg text-muted-foreground">{current!.sub}</p>
             )}
-            <p className="text-lg">{current!.back}</p>
+            <p className="text-body-lg">{current!.back}</p>
           </div>
         )}
       </Card>
 
       {error && (
-        <p role="alert" className="mt-3 text-center text-sm text-danger-strong">
+        <p role="alert" className="mt-3 text-center text-body text-danger-strong">
           {error}
         </p>
       )}
@@ -164,7 +164,7 @@ export function ReviewSession({
             onClick={() => setRevealed(true)}
             autoFocus
           >
-            {t("srs.showAnswer")} <span className="ml-2 text-xs opacity-70">{t("srs.spaceHint")}</span>
+            {t("srs.showAnswer")} <span className="ml-2 text-caption opacity-70">{t("srs.spaceHint")}</span>
           </Button>
         ) : (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -177,7 +177,7 @@ export function ReviewSession({
                 disabled={submitting}
               >
                 {t(`srs.${g.labelKey}`)}
-                <span className="ml-1 text-xs opacity-70">{g.key}</span>
+                <span className="ml-1 text-caption opacity-70">{g.key}</span>
               </Button>
             ))}
           </div>

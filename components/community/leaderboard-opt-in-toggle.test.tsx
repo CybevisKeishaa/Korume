@@ -34,7 +34,7 @@ describe("LeaderboardOptInToggle", () => {
     mockFetchOnce({ ok: true, status: 200 });
     const { container } = render(<LeaderboardOptInToggle initialOptIn={false} onChanged={vi.fn()} />);
     expect(container.querySelector(".font-medium")).toHaveTextContent("Appear on the leaderboard?");
-    expect(container.querySelector(".text-xs.text-muted-foreground")).toHaveTextContent(
+    expect(container.querySelector(".text-caption.text-muted-foreground")).toHaveTextContent(
       "Your name and weekly XP will be visible to other users.",
     );
   });

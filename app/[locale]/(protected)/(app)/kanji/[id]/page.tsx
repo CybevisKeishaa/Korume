@@ -33,14 +33,14 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
   return (
     <Container className="py-10">
       <StudyPresence surface="kanji" contextId={kanji.curatedKanjiId} enabled={kanji.curatedKanjiId !== null} />
-      <Link href="/kanji" className="text-sm text-muted-foreground hover:text-foreground">
+      <Link href="/kanji" className="text-body text-muted-foreground hover:text-foreground">
         {t("backToList")}
       </Link>
 
       <div className="mt-6 grid gap-8 md:grid-cols-[240px_1fr]">
         <div className="w-full max-w-[240px]">
           <StrokeOrder character={kanji.literal} paths={kanji.strokePaths} />
-          <p className="mt-2 text-center text-xs text-muted-foreground">
+          <p className="mt-2 text-center text-caption text-muted-foreground">
             {t("strokeCount", { count: kanji.strokeCount })}
             {kanji.jlpt ? ` · ${kanji.jlpt}` : ""}
             {kanji.grade !== null ? ` · ${t("grade", { grade: kanji.grade })}` : ""}
@@ -49,13 +49,13 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
         </div>
 
         <div>
-          <h1 className="font-jp text-5xl leading-none">{kanji.literal}</h1>
-          <p className="mt-3 text-lg">
+          <h1 data-type-exempt="kanji-detail-glyph" className="font-jp text-5xl leading-none">{kanji.literal}</h1>
+          <p className="mt-3 text-body-lg">
             {kanji.meaningsEn.join(", ")}
             {kanji.meaningVi && <span className="text-muted-foreground"> · {kanji.meaningVi}</span>}
           </p>
 
-          <dl className="mt-6 space-y-2 text-sm">
+          <dl className="mt-6 space-y-2 text-body">
             <div className="flex gap-3">
               <dt className="w-16 shrink-0 text-muted-foreground">{t("onReading")}</dt>
               <dd className="font-jp">{kanji.onReadings.length ? kanji.onReadings.join("、") : "—"}</dd>
@@ -68,15 +68,15 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
 
           {kanji.mnemonic && (
             <div className="mt-6 rounded-lg bg-muted p-4">
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("mnemonic")}</p>
-              <p className="mt-1 text-sm">{kanji.mnemonic}</p>
+              <p className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{t("mnemonic")}</p>
+              <p className="mt-1 text-body">{kanji.mnemonic}</p>
             </div>
           )}
 
           {kanji.commonWords.length > 0 && (
             <section className="mt-6">
-              <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{t("commonWords")}</h2>
-              <ul className="mt-2 space-y-1 text-sm">
+              <h2 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{t("commonWords")}</h2>
+              <ul className="mt-2 space-y-1 text-body">
                 {kanji.commonWords.map((word) => (
                   <li key={word.entSeq} className="flex flex-wrap gap-x-3">
                     <span className="font-jp">{word.headword}</span>

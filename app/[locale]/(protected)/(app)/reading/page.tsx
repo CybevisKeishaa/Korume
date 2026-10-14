@@ -18,8 +18,8 @@ export default async function ReadingPage() {
   return (
     <Container className="py-10">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold">{t("page.title")}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{t("page.subtitle")}</p>
+        <h1 className="text-title font-bold">{t("page.title")}</h1>
+        <p className="mt-1 text-body text-muted-foreground">{t("page.subtitle")}</p>
       </div>
 
       <ReadingList />

@@ -25,8 +25,8 @@ export default async function PlaylistsRoutePage() {
   return (
     <>
     <Container className="py-8">
-      <h1 className="text-2xl font-bold">{t("page.heading")}</h1>
-      <p className="mt-1 text-sm text-muted-foreground">{t("page.subtitle")}</p>
+      <h1 className="text-title font-bold">{t("page.heading")}</h1>
+      <p className="mt-1 text-body text-muted-foreground">{t("page.subtitle")}</p>
 
       <div className="mt-6">
         <PlaylistsPageView initialMine={initialMine} initialPublic={publicPage} />

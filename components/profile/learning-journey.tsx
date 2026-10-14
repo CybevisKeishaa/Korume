@@ -24,11 +24,11 @@ export function LearningJourney({ items, className }: { items: ProfileView["jour
     const label = item.kind === "badge_earned" && item.label ? badge.name(item.label) : item.label;
     return (
       <li key={`${i}-${item.kind}-${item.at}`} aria-current={i === 0 ? "step" : undefined} className={`${ITEM} ${last ? "pb-0 after:hidden" : ""}`}>
-        <p className="text-xs text-primary-strong">
+        <p className="text-caption text-primary-strong">
           {format.dateTime(new Date(item.at), { month: "short", year: "numeric" })}
         </p>
         <p className="font-medium">{t(`journey.kind.${item.kind}`)}</p>
-        <p className="text-sm text-muted-foreground [overflow-wrap:anywhere]">
+        <p className="text-body text-muted-foreground [overflow-wrap:anywhere]">
           {t(`journey.line.${item.kind}`, { hasLabel: label ? "yes" : "no", label: label ?? "" })}
         </p>
       </li>
@@ -37,10 +37,10 @@ export function LearningJourney({ items, className }: { items: ProfileView["jour
   return (
     <section className={`${CARD} ${className ?? ""}`} aria-labelledby="profile-journey">
       <p className={EYEBROW}>{t("journey.eyebrow")}</p>
-      <h2 id="profile-journey" className="mt-xs text-2xl font-bold">{t("journey.title")}</h2>
+      <h2 id="profile-journey" className="mt-xs text-heading font-bold">{t("journey.title")}</h2>
       {known.length === 0 ? (
         <div className="mt-md">
-          <p className="text-sm text-muted-foreground">{t("journey.empty")}</p>
+          <p className="text-body text-muted-foreground">{t("journey.empty")}</p>
           <Link href="/shadowing" className={`${LINK} mt-xs inline-block`}>{t("journey.emptyCta")}</Link>
         </div>
       ) : (

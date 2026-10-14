@@ -123,10 +123,10 @@ export function Waveform({ blob, label, className, height = 64 }: WaveformProps)
   return (
     <div className={cn("text-primary", className)}>
       {status === "decoding" && (
-        <p className="text-xs text-muted-foreground">{t("player.processingRecording")}</p>
+        <p className="text-caption text-muted-foreground">{t("player.processingRecording")}</p>
       )}
       {status === "unsupported" && (
-        <p className="text-xs text-muted-foreground">{t("player.waveformUnavailable")}</p>
+        <p className="text-caption text-muted-foreground">{t("player.waveformUnavailable")}</p>
       )}
       {status === "ready" && (
         <canvas

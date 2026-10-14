@@ -31,7 +31,7 @@ export function PeerReviewTabs({ initialQueue, initialMine }: PeerReviewTabsProp
           aria-controls="peer-review-panel-queue"
           onClick={() => setTab("queue")}
           className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+            "rounded-full px-3 py-1 text-body font-medium transition-colors",
             tab === "queue" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >
@@ -45,7 +45,7 @@ export function PeerReviewTabs({ initialQueue, initialMine }: PeerReviewTabsProp
           aria-controls="peer-review-panel-mine"
           onClick={() => setTab("mine")}
           className={cn(
-            "rounded-full px-3 py-1 text-sm font-medium transition-colors",
+            "rounded-full px-3 py-1 text-body font-medium transition-colors",
             tab === "mine" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
           )}
         >

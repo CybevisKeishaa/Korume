@@ -19,7 +19,7 @@ export function QuickStats({ stats }: { stats: ProfileView["stats"] }) {
   const hint = stats.trackedSince
     ? t("stats.trackedSince", { date: format.dateTime(new Date(stats.trackedSince), { day: "numeric", month: "short", year: "numeric" }) })
     : t("stats.trackingStarts");
-  const row = "flex items-baseline justify-between gap-sm text-sm";
+  const row = "flex items-baseline justify-between gap-sm text-body";
   return (
     <section className={CARD} aria-labelledby="profile-stats">
       <h2 id="profile-stats" className={EYEBROW}>{t("stats.title")}</h2>

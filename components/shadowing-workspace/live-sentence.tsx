@@ -73,17 +73,18 @@ export function LiveSentence() {
               // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
               hidden={hidden}
               // Softened between sentences by colour, never by opacity on already-muted text (contrast).
+              typeExempt={JAPANESE}
               className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
             />
           </div>
         ) : (
-          <p aria-hidden="true" className={cn(JAPANESE, "invisible")}>&nbsp;</p>
+          <p aria-hidden="true" data-type-exempt={JAPANESE} className={cn(JAPANESE, "invisible")}>&nbsp;</p>
         )}
         {line?.textTranslation != null && translationMode === "always" && (
-          <p className={cn(TRANSLATION, "reading-muted")}>{line.textTranslation}</p>
+          <p data-type-exempt={TRANSLATION} className={cn(TRANSLATION, "reading-muted")}>{line.textTranslation}</p>
         )}
         {line?.textTranslation != null && translationMode === "reveal" && (revealed ? (
-          <p className={cn(TRANSLATION, "reading-muted")}>{line.textTranslation}</p>
+          <p data-type-exempt={TRANSLATION} className={cn(TRANSLATION, "reading-muted")}>{line.textTranslation}</p>
         ) : (
           <button
             type="button"

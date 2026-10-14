@@ -93,10 +93,10 @@ export function PinLineControl({ line }: PinLineControlProps) {
         title={t("pin.dialogTitle")}
         closeLabel={tCommon("actions.cancel")}
       >
-        <p className="font-jp" lang="ja">
+        <p className="font-jp text-body-lg" lang="ja">
           {line.text_jp}
         </p>
-        <label htmlFor={noteId} className="mt-3 block text-sm">
+        <label htmlFor={noteId} className="mt-3 block text-body">
           {t("pin.noteLabel")}
         </label>
         <textarea
@@ -105,13 +105,13 @@ export function PinLineControl({ line }: PinLineControlProps) {
           onChange={(event) => setNote(event.target.value)}
           maxLength={500}
           rows={3}
-          className="mt-1 w-full rounded-md border border-border bg-transparent p-2 text-sm"
+          className="mt-1 w-full rounded-md border border-border bg-transparent p-2 text-body"
         />
         <div className="mt-4 flex justify-end gap-2">
           <button
             type="button"
             onClick={() => setOpen(false)}
-            className="rounded-md px-3 py-2 text-sm"
+            className="rounded-md px-3 py-2 text-body"
           >
             {tCommon("actions.cancel")}
           </button>
@@ -119,12 +119,12 @@ export function PinLineControl({ line }: PinLineControlProps) {
             type="button"
             onClick={() => void submit()}
             disabled={status === "submitting"}
-            className="rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
+            className="rounded-md bg-primary px-3 py-2 text-body text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
           >
             {tCommon("actions.save")}
           </button>
         </div>
-        <p role="status" className="mt-2 min-h-5 text-sm">
+        <p role="status" className="mt-2 min-h-5 text-body">
           {status === "success" ? t("pin.success") : null}
           {status === "alreadyKept" ? t("pin.alreadyKept") : null}
           {status === "error" ? tCommon("errors.network") : null}

@@ -24,7 +24,7 @@ export default async function PlaylistDetailPage({ params }: { params: { id: str
   return (
     <>
     <Container className="py-8">
-      <Link href="/playlists" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+      <Link href="/playlists" className="text-body text-muted-foreground hover:text-foreground hover:underline">
         {t("detailPage.back")}
       </Link>
 

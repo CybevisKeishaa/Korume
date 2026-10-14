@@ -19,7 +19,7 @@ export default async function AppChromeLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="flex min-h-screen flex-row">
+    <div className="flex min-h-screen flex-row text-body">
       <AppNav userEmail={user?.email ?? ""} groups={NAV_GROUPS} />
       {/* `id` + `tabIndex={-1}`: the app footer's back-to-top button moves focus here (app-footer spec F3), so it
           works on a page with no h1. Programmatic focus only — never in the tab order. */}

@@ -33,7 +33,7 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
 
   if (recommendations.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         {t.rich("recommendations.empty", {
           link: (chunks) => (
             <Link href="/shadowing" className="underline underline-offset-2 hover:text-foreground">
@@ -63,24 +63,24 @@ export function RecommendationRail({ recommendations }: RecommendationRailProps)
                   className="object-cover"
                 />
               ) : (
-                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                <div className="flex h-full items-center justify-center text-body text-muted-foreground">
                   {t("noThumbnail")}
                 </div>
               )}
             </div>
             <div className="flex flex-1 flex-col gap-2 p-4">
-              <p className="line-clamp-2 text-sm font-medium text-foreground">{rec.title}</p>
+              <p className="line-clamp-2 text-body font-medium text-foreground">{rec.title}</p>
               <div className="mt-auto flex flex-wrap items-center gap-1.5">
                 {rec.jlptLevelEstimate && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-caption text-muted-foreground">
                     {rec.jlptLevelEstimate}
                   </span>
                 )}
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary-strong">
+                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-caption font-medium text-primary-strong">
                   {t(BAND_LABEL_KEY[rec.band])}
                 </span>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 {t("recommendations.knownWords", { percent: Math.round(rec.knownRatio * 100) })}
               </p>
             </div>

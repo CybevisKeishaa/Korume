@@ -27,7 +27,7 @@ export default async function KanjiReviewPage({
 
   return (
     <Container className="max-w-xl py-12">
-      <h1 className="mb-6 text-center text-xl font-bold">{t("reviewTitle")}</h1>
+      <h1 className="mb-6 text-center text-title font-bold">{t("reviewTitle")}</h1>
       <ReviewSession
         itemType="kanji"
         items={items}

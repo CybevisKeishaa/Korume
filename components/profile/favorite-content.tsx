@@ -12,7 +12,7 @@ export function FavoriteContent({ sources, className }: { sources: string[] | nu
     <section className={`${CARD} ${className ?? ""}`} aria-labelledby="profile-favorite">
       <h2 id="profile-favorite" className={EYEBROW}>{t("favorite.title")}</h2>
       {known.length === 0 ? (
-        <p className="mt-sm text-sm text-muted-foreground">{t("favorite.empty")}</p>
+        <p className="mt-sm text-body text-muted-foreground">{t("favorite.empty")}</p>
       ) : (
         <ul className="mt-sm flex flex-wrap gap-xs">
           {known.map((s) => <li key={s} className={CHIP}>{t(`favorite.source.${s}`)}</li>)}

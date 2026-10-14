@@ -22,7 +22,7 @@ export default async function MiningReviewPage() {
 
   return (
     <Container className="max-w-xl py-12">
-      <h1 className="mb-6 text-center text-xl font-bold">{t("review.title")}</h1>
+      <h1 className="mb-6 text-center text-title font-bold">{t("review.title")}</h1>
       <MiningReviewSession items={items} />
     </Container>
   );

@@ -33,22 +33,22 @@ export function EditPreview({
         {companionEnabled && (
           <section className={CARD_WARM} aria-labelledby="profile-edit-current-korume">
             <h2 id="profile-edit-current-korume" className={EYEBROW}>{t("edit.currentKorume.eyebrow")}</h2>
-            <p className="mt-xs text-xl font-semibold">{t("edit.currentKorume.title")}</p>
-            <p className="mt-2xs text-sm text-muted-foreground">{t("edit.currentKorume.body")}</p>
+            <p className="mt-xs text-heading font-semibold">{t("edit.currentKorume.title")}</p>
+            <p className="mt-2xs text-body text-muted-foreground">{t("edit.currentKorume.body")}</p>
           </section>
         )}
         {goal && (
           <section className={CARD} aria-labelledby="profile-edit-goal-preview">
             <h2 id="profile-edit-goal-preview" className={EYEBROW}>{t("goal.eyebrow")}</h2>
-            <blockquote className="mt-sm text-lg leading-relaxed [overflow-wrap:anywhere]">“{goal}”</blockquote>
+            <blockquote className="mt-sm text-body-lg [overflow-wrap:anywhere]">“{goal}”</blockquote>
           </section>
         )}
         {companionEnabled && (
           <section className={`${CARD} flex items-center justify-between gap-sm`} aria-labelledby="profile-edit-relationship">
             <div>
               <h2 id="profile-edit-relationship" className={EYEBROW}>{t("edit.relationship.eyebrow")}</h2>
-              <p className="mt-xs text-lg font-semibold">{t("edit.relationship.title")}</p>
-              <p className="mt-2xs text-sm text-muted-foreground">
+              <p className="mt-xs text-heading font-semibold">{t("edit.relationship.title")}</p>
+              <p className="mt-2xs text-body text-muted-foreground">
                 {since ? t("korume.together", { months: wholeMonths(since, identity.timeZone) }) : t("korume.fresh")}
               </p>
             </div>

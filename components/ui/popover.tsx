@@ -60,7 +60,7 @@ export function Popover({
           onOpenAutoFocus={onOpenAutoFocus}
           onCloseAutoFocus={onCloseAutoFocus}
           className={cn(
-            "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay",
+            "motion-popover z-popover rounded-md border border-border bg-overlay p-md text-body text-foreground shadow-overlay",
             className,
           )}
         >
@@ -110,7 +110,7 @@ export function AnchoredPopover({
           onOpenAutoFocus={onOpenAutoFocus}
           onCloseAutoFocus={onCloseAutoFocus}
           {...data}
-          className={cn("motion-popover z-popover rounded-md border border-border bg-overlay p-md text-foreground shadow-overlay", className)}
+          className={cn("motion-popover z-popover rounded-md border border-border bg-overlay p-md text-body text-foreground shadow-overlay", className)}
         >
           {children}
         </RadixPopover.Content>

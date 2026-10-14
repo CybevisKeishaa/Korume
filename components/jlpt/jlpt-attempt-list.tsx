@@ -19,7 +19,7 @@ export function JlptAttemptList({ attempts, testsById }: JlptAttemptListProps) {
 
   if (attempts.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">
+      <p className="text-body text-muted-foreground">
         {t("attemptList.empty")}
       </p>
     );
@@ -30,13 +30,13 @@ export function JlptAttemptList({ attempts, testsById }: JlptAttemptListProps) {
       {attempts.map((attempt) => {
         const test = testsById[attempt.test_id];
         return (
-          <li key={attempt.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-sm">
+          <li key={attempt.id} className="flex flex-wrap items-center justify-between gap-2 p-3 text-body">
             <Link href={`/certification/${attempt.test_id}`} className="hover:underline">
               <p className="font-jp font-medium">
                 {test?.title ?? t("attemptList.unknownTest")}
-                {test && <span className="ml-2 text-xs text-muted-foreground">{test.level}</span>}
+                {test && <span className="ml-2 text-caption text-muted-foreground">{test.level}</span>}
               </p>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-caption text-muted-foreground">
                 {attempt.mode === "full"
                   ? t("attemptList.fullMock")
                   : t("attemptList.sectionLabel", {

@@ -3,6 +3,7 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { REVEAL_FAILSAFE_ATTR } from "@/components/motion/reveal-failsafe";
 import { DISPLAY_SCALE_FACTOR } from "@/lib/preferences/options";
+import { SCALE, TOKENS, VIEWPORTS } from "../tests/e2e/typography/scale";
 
 /**
  * The token system's automated contract (spec §2.9: architectural invariants
@@ -414,38 +415,53 @@ describe("design tokens", () => {
 });
 
 describe("desktop density scale", () => {
-  it("declares the density unit with both bounds in rem, never in px", () => {
-    // Spec §5.2: a vw-derived unit ignores the reader's own font-size
-    // preference and fails WCAG 1.4.4. rem bounds rise above the vw term
-    // when the reader raises their default size, so type still grows.
-    expect(css).toMatch(
-      /--density-unit:\s*calc\(\s*clamp\(\s*0\.0555556rem\s*,\s*calc\(100vw\s*\/\s*1440\)\s*,\s*0\.0625rem\s*\)\s*\*\s*var\(--display-scale,\s*1\)\s*\)/,
-    );
+  // Spec S1 (type-normalization, 2026-10-14): 0.889 at 1280, 1.0 at 1440, a gentler line to 1.25 at 1920, held.
+  const CURVE = /--density-unit:\s*calc\(\s*clamp\(\s*([\d.]+)rem\s*,\s*min\(\s*100vw\s*\/\s*(\d+)\s*,\s*([\d.]+)rem\s*\+\s*100vw\s*\/\s*(\d+)\s*\)\s*,\s*([\d.]+)rem\s*\)\s*\*\s*var\(--display-scale,\s*1\)\s*\)/;
+
+  it("declares the density unit with every bound in rem", () => {
+    // Spec §5.2 of the density spec: a vw-derived unit ignores the reader's own font size (WCAG 1.4.4); rem
+    // bounds AND the rem intercept rise when the reader raises their default size.
+    expect(css).toMatch(CURVE);
     const declaration = css.match(/--density-unit:[^;]+;/)?.[0] ?? "";
     expect(declaration).not.toMatch(/\d+px/);
   });
 
-  it("bounds the rule to 1280-1440 and to nothing else", () => {
-    // Ruling 3.5: 1440 = 1.0, 1280 = 0.889, held at both ends.
-    //
-    // The bounds are READ OUT OF THE STYLESHEET, not copied into this file.
-    // Asserting `0.0555556 * 16 ≈ 1280/1440` proves arithmetic about two
-    // literals and would keep passing while the CSS said something else
-    // entirely — a check that measures nothing, which is exactly how the
-    // density defect survived a branch.
-    const bounds = css.match(
-      /--density-unit:\s*calc\(\s*clamp\(\s*([\d.]+)rem\s*,\s*calc\(100vw\s*\/\s*(\d+)\)\s*,\s*([\d.]+)rem\s*\)/,
-    );
-    expect(bounds).not.toBeNull();
-    const [, lower, reference, upper] = bounds!;
-    expect(Number(reference)).toBe(1440);
-    expect(Number(upper) * 16).toBe(1); // 1px at the reference viewport
-    expect(Number(lower) * 16).toBeCloseTo(1280 / 1440, 4); // 0.889 at 1280
+  it("puts 1280, 1440 and 1920 exactly where spec S1 says, held beyond", () => {
+    // Read OUT OF THE STYLESHEET, not copied: a pin on two literals would keep passing while the CSS changed.
+    const match = css.match(CURVE);
+    expect(match).not.toBeNull();
+    const [lower, steep, intercept, gentle, upper] = match!.slice(1).map(Number) as [number, number, number, number, number];
+    const unit = (vw: number) => Math.min(Math.max(lower * 16, Math.min(vw / steep, intercept * 16 + vw / gentle)), upper * 16);
+    expect(unit(1280)).toBeCloseTo(1280 / 1440, 4);
+    expect(unit(1440)).toBeCloseTo(1, 6);
+    expect(unit(1680)).toBeCloseTo(1.125, 6);
+    expect(unit(1920)).toBeCloseTo(1.25, 6);
+    expect(unit(2560)).toBeCloseTo(1.25, 6);
+    expect(unit(1200)).toBeCloseTo(1280 / 1440, 4);
+  });
+
+  it("resolves every type token to the approved table (spec S2)", () => {
+    const match = css.match(CURVE)!;
+    const [lower, steep, intercept, gentle, upper] = match.slice(1).map(Number) as [number, number, number, number, number];
+    const unit = (vw: number) => Math.min(Math.max(lower * 16, Math.min(vw / steep, intercept * 16 + vw / gentle)), upper * 16);
+    const resolve = (name: string, vw: number) => {
+      const decl = css.match(new RegExp(`--${name}:\\s*(?:max\\(\\s*([\\d.]+)rem\\s*,\\s*)?calc\\((\\d+)\\s*\\*\\s*var\\(--density-unit\\)\\)`));
+      expect(decl, `--${name}`).not.toBeNull();
+      const floor = decl![1] ? Number(decl![1]) * 16 : 0;
+      return Math.max(floor, Number(decl![2]) * unit(vw));
+    };
+    for (const viewport of VIEWPORTS) {
+      for (const token of TOKENS) {
+        const [size, leading] = SCALE[viewport.name][token];
+        expect(Math.abs(resolve(`text-${token}`, viewport.width) - size), `${token} size @${viewport.name}`).toBeLessThanOrEqual(0.05);
+        expect(Math.abs(resolve(`leading-${token}`, viewport.width) - leading), `${token} leading @${viewport.name}`).toBeLessThanOrEqual(0.05);
+      }
+    }
   });
 
   it("keeps result previews to one row at every display scale", () => {
     // `rem` keeps the reader's browser font-size; Display size changes only
-    // --display-scale, which makes --space-md as large as 1.25rem today.
+    // --display-scale, which makes --space-md as large as 1.5625rem (16 × 1.25 × 1.25).
     // Container queries cannot read that custom property, so these thresholds
     // reserve the largest possible gap: n × 12rem + (n - 1) × maxGap.
     const gridMinimum = css.match(/grid-template-columns:\s*repeat\(auto-fill,\s*minmax\(min\(([\d.]+)rem,\s*100%\),\s*1fr\)\)/);
@@ -462,7 +478,8 @@ describe("desktop density scale", () => {
     // The gap is --space-md = N × --density-unit, whose largest value is the
     // unit's rem ceiling × the largest display scale. Read both from the sheet.
     const gapUnits = css.match(/--space-md:\s*calc\((\d+)\s*\*\s*var\(--density-unit\)\)/);
-    const unitCeilings = [...css.matchAll(/--density-unit:\s*calc\((?:clamp\([^,]+,[^,]+,\s*)?([\d.]+)rem/g)].map((match) => Number(match[1]));
+    // The LAST rem before `* var(--display-scale` in each declaration is that declaration's ceiling.
+    const unitCeilings = [...css.matchAll(/--density-unit:[^;]*?([\d.]+)rem\s*\)?\s*\*\s*var\(--display-scale/g)].map((match) => Number(match[1]));
     expect(gapUnits).not.toBeNull();
     expect(unitCeilings.length).toBeGreaterThan(0);
     const maxGap = Number(gapUnits?.[1]) * Math.max(...unitCeilings) * Math.max(...Object.values(DISPLAY_SCALE_FACTOR));

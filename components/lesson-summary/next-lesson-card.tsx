@@ -13,7 +13,7 @@ export function NextLessonCard({ next }: { next: NextLesson }) {
       <h2 id="summary-next-title" className="text-caption font-semibold uppercase tracking-wide text-primary-strong">{t("title")}</h2>
       <div className="space-y-2xs">
         <p className="text-caption text-muted-foreground">{next.reason === "path" ? t("path") : t("recommended")}</p>
-        <p className="text-body font-semibold">{next.title}</p>
+        <p className="break-words text-body font-semibold">{next.title}</p>
       </div>
       <Link href={next.href} className={buttonStyles({ className: "w-full" })}>{t("start")}</Link>
     </Card>

@@ -20,7 +20,7 @@ export default async function ForumPostPage({ params }: { params: { id: string }
 
   return (
     <Container className="py-8">
-      <Link href="/community" className="text-sm text-muted-foreground hover:text-foreground hover:underline">
+      <Link href="/community" className="text-body text-muted-foreground hover:text-foreground hover:underline">
         {t("postPage.back")}
       </Link>
 

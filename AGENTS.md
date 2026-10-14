@@ -126,6 +126,10 @@ learners. Treat them as first-class, not add-ons:
   live copy's `search_path`, grants and quota literal unpinned. Re-run the subsystem's live gate on
   a fresh reset after any such edit. If a migration ever *does* reach an environment that cannot be
   reset, this rule is what must change first — deliberately, not by one commit choosing otherwise.
+- Interface type uses the `--text-*` tokens only (`text-caption` … `text-display`); a Figma frame's
+  own unit scales layout and art, never type (L-051, L-052). `lib/typography-scan.test.ts` and
+  `tests/e2e/typography.spec.ts` must stay green; an exemption is one element in
+  `lib/typography-allowlist.ts` with a reason, never a page.
 
 ---
 

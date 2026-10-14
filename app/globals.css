@@ -9,9 +9,9 @@
 
      A preview must never wrap. Display size changes --display-scale and thus
      --space-md, but not the root font-size: `rem` and the 12rem minimum stay
-     stable while the gap reaches 1.25rem at the largest scale. Container
-     queries cannot read that custom property, so their 25.25rem / 38.5rem /
-     51.75rem thresholds reserve n × 12rem + (n - 1) × 1.25rem. At smaller
+     stable while the gap reaches 1.5625rem at the largest scale (unit ceiling 1.25 × Display scale 1.25). Container
+     queries cannot read that custom property, so their 25.5625rem / 39.125rem /
+     52.6875rem thresholds reserve n × 12rem + (n - 1) × 1.5625rem. At smaller
      gaps this can hide one extra item, leaving a short row instead of a wrap.
      lib/design-tokens.test.ts derives these values from DISPLAY_SCALE_FACTOR. */
   .result-pane {
@@ -26,25 +26,25 @@
     grid-template-columns: repeat(auto-fill, minmax(min(12rem, 100%), 1fr));
   }
 
-  @container results (width < 25.25rem) {
+  @container results (width < 25.5625rem) {
     .result-preview > :nth-child(n + 2) {
       display: none;
     }
   }
 
-  @container results (25.25rem <= width < 38.5rem) {
+  @container results (25.5625rem <= width < 39.125rem) {
     .result-preview > :nth-child(n + 3) {
       display: none;
     }
   }
 
-  @container results (38.5rem <= width < 51.75rem) {
+  @container results (39.125rem <= width < 52.6875rem) {
     .result-preview > :nth-child(n + 4) {
       display: none;
     }
   }
 
-  @container results (width >= 51.75rem) {
+  @container results (width >= 52.6875rem) {
     .result-preview > :nth-child(n + 5) {
       display: none;
     }
@@ -182,8 +182,17 @@
      declared on, and every [data-density] subtree inherits the number and
      multiplies its own unit by it. Portals scale too, because they are still
      inside <html>. Proof is a browser measurement of the computed values:
-     tests/e2e/display-scale.spec.ts, not a reading of this file. */
-  --density-unit: calc(clamp(0.0555556rem, calc(100vw / 1440), 0.0625rem) * var(--display-scale, 1));
+     tests/e2e/display-scale.spec.ts, not a reading of this file.
+
+     Above 1440 (type-normalization spec S1, owner 2026-10-14) the whole app zooms
+     uniformly on a gentler line, 0.25px + 100vw/1920: 1.0 at 1440, 1.125 at 1680,
+     1.25 at 1920, held above by the 0.078125rem cap. 1920 / 1.25 = 1536, the
+     canvas the Figma app frames are drawn on. The intercept is rem for the same
+     WCAG reason as the bounds. tests/e2e/typography.spec.ts measures the result. */
+  --density-unit: calc(
+    clamp(0.0555556rem, min(100vw / 1440, 0.015625rem + 100vw / 1920), 0.078125rem)
+    * var(--display-scale, 1)
+  );
 
   /* Font families. next/font in app/[locale]/layout.tsx sets these at runtime;
      the values here are only the pre-hydration fallback. */
@@ -1666,32 +1675,33 @@
    order at every width; the right rail below is placement only. Explicit lines are always given in pairs. */
 .profile-layout { container: profile / inline-size; }
 
-/* /dashboard (port-dashboard spec §7; owner feedback 2026-10-13). Figma `111:515` is a 1180px-wide main column
-   scaled to fit its frame, so the page scales the same way instead of centring a capped column: `--d` is one
-   authored Figma px at a 1180px main column, and type, spacing and art are all written in it. `--d` holds
-   `cqi`, which resolves where it is USED, against `.dashboard-page`; nothing inside may declare a container.
-   Small text keeps a legibility floor. Desktop only: mobile is the app. */
+/* /dashboard (port-dashboard spec §7; owner feedback 2026-10-13; type-normalization 2026-10-14). Figma `111:515`
+   is a 1180px-wide main column scaled to fit its frame, so LAYOUT and ART scale the same way: `--d` is one
+   authored Figma px at a 1180px main column, and padding, gaps, radii, icons, bars and cells are written in it.
+   TYPE is not: every font-size and line-height here is a shared --text-* token (lesson L-052), so the Dashboard
+   reads like every other screen; no property is written in both units. `--d` holds `cqi`, which resolves where
+   it is USED, against `.dashboard-page`; nothing inside may declare a container. Desktop only. */
 .dashboard-page { container: dashboard / inline-size; }
 .dashboard-layout {
   --d: clamp(0.8px, calc(100cqi / 1180), 1.75px);
   padding: calc(32 * var(--d)) calc(36 * var(--d)) calc(40 * var(--d));
-  font-size: max(11.5px, calc(11 * var(--d)));
-  line-height: 1.5;
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
 }
-.dashboard-layout .dash-eyebrow { font-size: max(10px, calc(10 * var(--d))); font-weight: 700; line-height: 1.5; letter-spacing: 0.16em; text-transform: uppercase; color: hsl(var(--primary)); }
+.dashboard-layout .dash-eyebrow { font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; color: hsl(var(--primary)); }
 .dashboard-layout .dash-display { font-family: var(--font-display), var(--font-sans), sans-serif; font-weight: 600; letter-spacing: -0.01em; }
-.dashboard-layout .dash-h1 { font-size: calc(34 * var(--d)); line-height: 1.4; letter-spacing: -0.04em; }
-.dashboard-layout .dash-title-lg { font-size: calc(28 * var(--d)); line-height: 1.3; letter-spacing: -0.03em; }
-.dashboard-layout .dash-title { font-size: calc(22 * var(--d)); line-height: 1.35; }
-.dashboard-layout .dash-quote { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: calc(20 * var(--d)); line-height: 1.4; }
-.dashboard-layout .dash-meta { font-size: max(10.5px, calc(10 * var(--d))); line-height: 1.5; }
-.dashboard-layout .dash-small { font-size: max(10px, calc(9 * var(--d))); line-height: 1.5; }
+.dashboard-layout .dash-h1 { font-size: var(--text-title); line-height: var(--leading-title); letter-spacing: -0.04em; }
+.dashboard-layout .dash-title-lg { font-size: var(--text-heading-lg); line-height: var(--leading-heading-lg); letter-spacing: -0.03em; }
+.dashboard-layout .dash-title { font-size: var(--text-heading); line-height: var(--leading-heading); }
+.dashboard-layout .dash-quote { font-size: var(--text-body-lg); line-height: var(--leading-body-lg); font-family: var(--font-display), var(--font-sans), sans-serif; }
+.dashboard-layout .dash-meta { font-size: var(--text-caption); line-height: var(--leading-caption); }
+.dashboard-layout .dash-small { font-size: var(--text-caption); line-height: var(--leading-caption); }
 .dashboard-layout .dash-soft { color: hsl(var(--ember-300)); }
-.dashboard-layout .dash-link { display: inline-flex; align-items: center; gap: calc(2 * var(--d)); font-size: max(10px, calc(9 * var(--d))); font-weight: 600; color: hsl(var(--ember-300)); }
+.dashboard-layout .dash-link { font-size: var(--text-caption); line-height: var(--leading-caption); display: inline-flex; align-items: center; gap: calc(2 * var(--d)); font-weight: 600; color: hsl(var(--ember-300)); }
 .dashboard-layout .dash-link:hover { text-decoration: underline; }
 .dashboard-layout .dash-link svg { inline-size: calc(10 * var(--d)); block-size: calc(10 * var(--d)); }
-.dashboard-layout .dash-btn { block-size: max(30px, calc(38 * var(--d))); padding-inline: calc(16 * var(--d)); gap: calc(8 * var(--d)); border-radius: 9999px; font-size: max(10.5px, calc(10 * var(--d))); font-weight: 700; box-shadow: none; }
-.dashboard-layout .dash-btn--sm { block-size: max(26px, calc(29 * var(--d))); padding-inline: calc(12 * var(--d)); font-size: max(10px, calc(9 * var(--d))); }
+.dashboard-layout .dash-btn { font-size: var(--text-body); line-height: var(--leading-body); block-size: max(30px, calc(38 * var(--d))); padding-inline: calc(16 * var(--d)); gap: calc(8 * var(--d)); border-radius: 9999px; font-weight: 700; box-shadow: none; }
+.dashboard-layout .dash-btn--sm { font-size: var(--text-caption); line-height: var(--leading-caption); block-size: max(26px, calc(29 * var(--d))); padding-inline: calc(12 * var(--d)); }
 .dashboard-layout .dash-btn svg { inline-size: calc(11 * var(--d)); block-size: calc(11 * var(--d)); }
 .dashboard-layout .dash-icon { inline-size: calc(14 * var(--d)); block-size: calc(14 * var(--d)); flex: none; }
 .dashboard-layout .dash-icon--sm { inline-size: calc(12 * var(--d)); block-size: calc(12 * var(--d)); }
@@ -1702,10 +1712,10 @@
 .dashboard-search, .dashboard-streak, .dashboard-avatar { display: inline-flex; align-items: center; block-size: calc(40 * var(--d)); border-radius: 9999px; background: hsl(var(--card)); }
 .dashboard-search { inline-size: calc(220 * var(--d)); gap: calc(8 * var(--d)); padding-inline: calc(12 * var(--d)); color: hsl(var(--muted-foreground)); }
 .dashboard-search:focus-within { box-shadow: 0 0 0 2px hsl(var(--ring)); }
-.dashboard-search input { min-inline-size: 0; flex: 1; background: transparent; font-size: max(10.5px, calc(10 * var(--d))); color: hsl(var(--foreground)); outline: none; }
+.dashboard-search input { font-size: var(--text-body); line-height: var(--leading-body); min-inline-size: 0; flex: 1; background: transparent; color: hsl(var(--foreground)); outline: none; }
 .dashboard-search input::placeholder { color: hsl(var(--muted-foreground)); }
-.dashboard-streak { gap: calc(8 * var(--d)); padding-inline: calc(12 * var(--d)); font-size: max(10.5px, calc(10 * var(--d))); color: hsl(var(--ember-300)); }
-.dashboard-avatar { justify-content: center; inline-size: calc(40 * var(--d)); overflow: hidden; background: hsl(var(--primary) / 0.55); font-family: var(--font-display), var(--font-sans), sans-serif; font-size: calc(14 * var(--d)); font-weight: 600; }
+.dashboard-streak { font-size: var(--text-caption); line-height: var(--leading-caption); gap: calc(8 * var(--d)); padding-inline: calc(12 * var(--d)); color: hsl(var(--ember-300)); }
+.dashboard-avatar { font-size: var(--text-body); line-height: var(--leading-body); justify-content: center; inline-size: calc(40 * var(--d)); overflow: hidden; background: hsl(var(--primary) / 0.55); font-family: var(--font-display), var(--font-sans), sans-serif; font-weight: 600; }
 .dashboard-avatar img { block-size: 100%; inline-size: 100%; object-fit: cover; }
 
 .dashboard-grid, .dashboard-row { display: grid; gap: calc(20 * var(--d)); grid-template-columns: minmax(0, 1fr); align-items: stretch; }
@@ -1732,14 +1742,14 @@
 .dashboard-meter::-moz-meter-bar { border-radius: 9999px; background: hsl(var(--primary)); }
 
 .dashboard-continue-content { max-inline-size: 64%; }
-.dashboard-chip { border: 1px solid hsl(var(--foreground) / 0.07); border-radius: 9999px; padding: calc(4 * var(--d)) calc(8 * var(--d)); font-size: max(9.5px, calc(8 * var(--d))); line-height: 1.5; color: hsl(var(--muted-foreground)); }
+.dashboard-chip { font-size: var(--text-caption); line-height: var(--leading-caption); border: 1px solid hsl(var(--foreground) / 0.07); border-radius: 9999px; padding: calc(4 * var(--d)) calc(8 * var(--d)); color: hsl(var(--muted-foreground)); }
 .dashboard-check { display: inline-block; flex: none; inline-size: calc(10 * var(--d)); block-size: calc(10 * var(--d)); border: 1px solid hsl(var(--muted-foreground)); border-radius: calc(2 * var(--d)); }
 .dashboard-check[data-done] { border-color: hsl(var(--primary)); background: hsl(var(--primary)); }
 
 .dashboard-journey-nodes { display: flex; align-items: flex-start; }
 .dashboard-journey-nodes li { position: relative; flex: 1; min-inline-size: 0; text-align: center; }
 .dashboard-journey-nodes li:not(:last-child)::after { content: ""; position: absolute; inset-block-start: calc(18 * var(--d)); inset-inline: calc(50% + 24 * var(--d)) calc(-50% + 24 * var(--d)); block-size: 1px; background: hsl(var(--border)); }
-.dashboard-journey-node { display: inline-flex; align-items: center; justify-content: center; inline-size: calc(36 * var(--d)); block-size: calc(36 * var(--d)); border-radius: 9999px; background: hsl(var(--secondary)); font-size: max(10px, calc(10 * var(--d))); font-weight: 700; color: hsl(var(--muted-foreground)); }
+.dashboard-journey-node { font-size: var(--text-caption); line-height: var(--leading-caption); display: inline-flex; align-items: center; justify-content: center; inline-size: calc(36 * var(--d)); block-size: calc(36 * var(--d)); border-radius: 9999px; background: hsl(var(--secondary)); font-weight: 700; color: hsl(var(--muted-foreground)); }
 .dashboard-journey-nodes [data-state="current"] .dashboard-journey-node { box-shadow: inset 0 0 0 1px hsl(var(--primary)); background: transparent; color: hsl(var(--ember-300)); }
 .dashboard-journey-nodes [data-state="completed"] .dashboard-journey-node { background: hsl(var(--primary) / 0.15); color: hsl(var(--ember-300)); }
 .dashboard-milestone { border-radius: calc(28 * var(--d)); background: hsl(var(--secondary)); padding: calc(12 * var(--d)) calc(14 * var(--d)); }
@@ -1759,7 +1769,7 @@
 
 /* Quick Access is a section of tiles, not a card (Figma Section8). */
 .dashboard-quick { display: grid; gap: calc(12 * var(--d)); grid-template-columns: repeat(auto-fit, minmax(min(100%, 9rem), 1fr)); margin-top: calc(16 * var(--d)); }
-.dashboard-quick-link { display: flex; flex-direction: column; justify-content: center; gap: calc(16 * var(--d)); min-block-size: calc(88 * var(--d)); border-radius: calc(18 * var(--d)); background: hsl(var(--card)); padding: calc(20 * var(--d)); font-size: max(10.5px, calc(10 * var(--d))); font-weight: 600; transition: background-color 150ms; }
+.dashboard-quick-link { font-size: var(--text-body); line-height: var(--leading-body); display: flex; flex-direction: column; justify-content: center; gap: calc(16 * var(--d)); min-block-size: calc(88 * var(--d)); border-radius: calc(18 * var(--d)); background: hsl(var(--card)); padding: calc(20 * var(--d)); font-weight: 600; transition: background-color 150ms; }
 .dashboard-quick-link:hover { background: hsl(var(--secondary)); }
 .dashboard-quick-link svg { color: hsl(var(--primary)); }
 
@@ -1782,7 +1792,7 @@
   --f: clamp(0.7px, calc(100cqi / 1380), 1.4px);
   padding: calc(80 * var(--f)) calc(48 * var(--f)) calc(40 * var(--f));
   font-size: var(--text-body);
-  line-height: 1.5;
+  line-height: var(--leading-body);
   color: hsl(var(--muted-foreground));
 }
 .app-footer__row {
@@ -1793,23 +1803,23 @@
   column-gap: calc(40 * var(--f));
   align-items: start;
 }
-.app-footer__heading { margin: 0 0 calc(8 * var(--f)); font-size: var(--text-caption); line-height: 1.5; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; color: hsl(var(--primary)); }
+.app-footer__heading { margin: 0 0 calc(8 * var(--f)); font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase; white-space: nowrap; color: hsl(var(--primary)); }
 .app-footer__logo { display: flex; align-items: center; gap: calc(8 * var(--f)); margin: 0; }
-.app-footer__logo-tile { display: grid; place-items: center; inline-size: calc(36 * var(--f)); block-size: calc(36 * var(--f)); border-radius: calc(11 * var(--f)); background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 800; font-size: var(--text-caption); }
-.app-footer__wordmark { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading); font-weight: 700; letter-spacing: -0.04em; white-space: nowrap; color: hsl(var(--foreground)); }
-.app-footer__tagline { margin: calc(20 * var(--f)) 0 0; font-size: var(--text-body-lg); }
+.app-footer__logo-tile { display: grid; place-items: center; inline-size: calc(36 * var(--f)); block-size: calc(36 * var(--f)); border-radius: calc(11 * var(--f)); background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); font-weight: 800; font-size: var(--text-caption); line-height: var(--leading-caption); }
+.app-footer__wordmark { font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading); line-height: var(--leading-heading); font-weight: 700; letter-spacing: -0.04em; white-space: nowrap; color: hsl(var(--foreground)); }
+.app-footer__tagline { margin: calc(20 * var(--f)) 0 0; font-size: var(--text-body-lg); line-height: var(--leading-body-lg); }
 .app-footer__mascot { position: relative; display: block; inline-size: min(100%, calc(310 * var(--f))); margin-top: calc(32 * var(--f)); aspect-ratio: 310 / 190; border: 1px solid hsl(var(--border)); border-radius: calc(22 * var(--f)); background: hsl(var(--card)); }
 .app-footer__mascot:hover { border-color: hsl(var(--primary) / 0.4); }
 .app-footer__mascot-art { position: absolute; inset-block-start: 8.5%; inset-inline-end: 4%; inline-size: 50%; }
 .app-footer__mascot-art img { inline-size: 100%; block-size: auto; }
 /* Kept left of the art (which starts at 46%): it wraps rather than run under the mascot (2 lines at the vi floor). */
-.app-footer__mascot-cta { position: absolute; inset-inline-start: 6.7%; inset-block-start: 9%; max-inline-size: 42%; font-size: var(--text-caption); font-weight: 600; line-height: 1.3; color: hsl(var(--primary)); }
+.app-footer__mascot-cta { position: absolute; inset-inline-start: 6.7%; inset-block-start: 9%; max-inline-size: 42%; font-size: var(--text-caption); font-weight: 600; line-height: var(--leading-caption); color: hsl(var(--primary)); }
 .app-footer__mascot-cta-icon { display: inline-block; inline-size: 1em; block-size: 1em; margin-inline-start: 0.2em; vertical-align: -0.125em; }
 .app-footer__word-tile { position: absolute; inset-inline-start: 6.7%; inset-block-end: 9%; inline-size: 61%; aspect-ratio: 190 / 70; display: flex; flex-direction: column; justify-content: space-between; padding: calc(12 * var(--f)) calc(14 * var(--f)); border: 1px solid hsl(var(--primary) / 0.35); border-radius: calc(10 * var(--f)); background: hsl(var(--primary) / 0.08); }
-.app-footer__word-tile-jp { font-family: var(--font-jp); font-size: var(--text-body-lg); color: hsl(var(--primary)); }
-.app-footer__word-tile-en { font-size: var(--text-caption); letter-spacing: 0.04em; color: hsl(var(--muted-foreground)); }
+.app-footer__word-tile-jp { font-family: var(--font-jp); font-size: var(--text-body-lg); line-height: var(--leading-body-lg); color: hsl(var(--primary)); }
+.app-footer__word-tile-en { font-size: var(--text-caption); line-height: var(--leading-caption); letter-spacing: 0.04em; color: hsl(var(--muted-foreground)); }
 /* The sleeping mascot's snore, drifting up beside its head. */
-.app-footer__chip { position: absolute; inset-inline-start: 50%; inset-block-start: 9%; display: flex; align-items: flex-end; font-size: var(--text-body-lg); font-style: italic; font-weight: 700; line-height: 1; color: hsl(var(--primary) / 0.75); }
+.app-footer__chip { position: absolute; inset-inline-start: 50%; inset-block-start: 9%; display: flex; align-items: flex-end; font-size: var(--text-body-lg); font-style: italic; font-weight: 700; line-height: var(--leading-body-lg); color: hsl(var(--primary) / 0.75); }
 .app-footer__chip-z { margin-inline-start: 0.1em; font-size: 0.7em; transform: translateY(-0.6em); }
 .app-footer__sparkle { position: absolute; inset-inline-end: 5%; inset-block-start: 8%; inline-size: calc(13 * var(--f)); block-size: calc(13 * var(--f)); color: hsl(var(--primary)); }
 /* The frame's three columns spread across the section, each as wide as its longest label. */
@@ -1822,9 +1832,9 @@
 .app-footer__link:hover { color: hsl(var(--foreground)); }
 .app-footer__link--button { min-block-size: var(--hit-target-min); }
 .app-footer__link-icon { inline-size: 1.1em; block-size: 1.1em; flex: none; }
-.app-footer__note { max-inline-size: calc(160 * var(--f)); margin: calc(8 * var(--f)) 0 0; font-size: var(--text-caption); line-height: 1.8; }
-.app-footer__title { margin: calc(12 * var(--f)) 0 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading-lg); font-weight: 700; line-height: 1.15; letter-spacing: -0.03em; color: hsl(var(--foreground)); }
-.app-footer__body { margin: calc(16 * var(--f)) 0 0; font-size: var(--text-body); line-height: 1.8; }
+.app-footer__note { max-inline-size: calc(160 * var(--f)); margin: calc(8 * var(--f)) 0 0; font-size: var(--text-caption); line-height: var(--leading-caption); }
+.app-footer__title { margin: calc(12 * var(--f)) 0 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-heading-lg); font-weight: 700; line-height: var(--leading-heading-lg); letter-spacing: -0.03em; color: hsl(var(--foreground)); }
+.app-footer__body { margin: calc(16 * var(--f)) 0 0; font-size: var(--text-body); line-height: var(--leading-body); }
 /* Owner 2026-10-13: the two badges on one row (the frame stacks them), equally wide, never below the frame's 164. */
 .app-footer__badges { display: inline-grid; grid-template-columns: repeat(2, minmax(max-content, 1fr)); gap: calc(12 * var(--f)); margin-top: calc(28 * var(--f)); }
 .app-footer__badge { min-inline-size: calc(164 * var(--f)); display: flex; align-items: center; gap: calc(12 * var(--f)); min-block-size: max(var(--hit-target-min), calc(57.6 * var(--f))); padding: calc(12 * var(--f)) calc(16 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: calc(16 * var(--f)); background: hsl(var(--card)); color: hsl(var(--foreground)); }
@@ -1833,25 +1843,25 @@
 .app-footer__badge-chip--play { color: hsl(var(--primary)); background: hsl(var(--primary) / 0.15); }
 .app-footer__badge-text { display: flex; flex-direction: column; min-inline-size: 0; }
 /* Case as in the frame: "Download on the" mixed, only "GET IT ON" in caps. */
-.app-footer__badge-prefix { font-size: var(--text-caption); font-weight: 500; line-height: 1.5; white-space: nowrap; color: hsl(var(--muted-foreground)); }
+.app-footer__badge-prefix { font-size: var(--text-caption); font-weight: 500; line-height: var(--leading-caption); white-space: nowrap; color: hsl(var(--muted-foreground)); }
 .app-footer__badge-prefix--caps { text-transform: uppercase; }
-.app-footer__badge-name { font-size: var(--text-body); font-weight: 700; line-height: 1.5; white-space: nowrap; }
+.app-footer__badge-name { font-size: var(--text-body); font-weight: 700; line-height: var(--leading-body); white-space: nowrap; }
 .app-footer__rule { margin: calc(36 * var(--f)) 0 calc(24 * var(--f)); border: 0; border-top: 1px solid hsl(var(--border)); }
-.app-footer__newsletter-heading { margin: 0; font-size: var(--text-caption); font-weight: 600; color: hsl(var(--foreground)); }
-.app-footer__purpose, .app-footer__message, .app-footer__newsletter-done { margin: calc(4 * var(--f)) 0 0; font-size: var(--text-caption); }
+.app-footer__newsletter-heading { margin: 0; font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 600; color: hsl(var(--foreground)); }
+.app-footer__purpose, .app-footer__message, .app-footer__newsletter-done { margin: calc(4 * var(--f)) 0 0; font-size: var(--text-caption); line-height: var(--leading-caption); }
 .app-footer__field { display: flex; align-items: center; gap: calc(8 * var(--f)); margin-top: calc(12 * var(--f)); }
 /* `contain`: the account email (any length) must never widen the app column; it ellipsizes instead (L3). */
 .app-footer__pill { flex: 1 1 auto; min-inline-size: 0; contain: inline-size; display: flex; flex-direction: column; justify-content: center; min-block-size: var(--hit-target-min); padding: calc(4 * var(--f)) calc(12 * var(--f)); border: 1px solid hsl(var(--border)); border-radius: 9999px; background: hsl(var(--card)); }
-.app-footer__pill-label { font-size: var(--text-caption); line-height: 1.2; }
+.app-footer__pill-label { font-size: var(--text-caption); line-height: var(--leading-caption); }
 /* The ONE ellipsis the footer allows (L3): the full address stays in the DOM and in `title`. */
-.app-footer__email { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-body); line-height: 1.3; color: hsl(var(--foreground)); }
+.app-footer__email { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: var(--text-body); line-height: var(--leading-body); color: hsl(var(--foreground)); }
 .app-footer__send { display: grid; place-items: center; flex: none; inline-size: var(--hit-target-min); block-size: var(--hit-target-min); border-radius: 9999px; background: hsl(var(--primary)); color: hsl(var(--primary-foreground)); }
 .app-footer__send[aria-disabled="true"] { opacity: 0.6; cursor: progress; }
 .app-footer__send-icon { inline-size: var(--icon-sm); block-size: var(--icon-sm); }
 .app-footer__bottom { display: grid; justify-items: center; margin-top: calc(64 * var(--f)); padding-top: calc(32 * var(--f)); border-top: 1px solid hsl(var(--border)); text-align: center; }
-.app-footer__closing { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-body-lg); line-height: 1.5; white-space: nowrap; color: hsl(var(--foreground)); }
-.app-footer__copyright { margin: calc(12 * var(--f)) 0 0; font-size: var(--text-caption); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
-.app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: var(--text-caption); font-weight: 700; color: hsl(var(--primary)); }
+.app-footer__closing { margin: 0; font-family: var(--font-display), var(--font-sans), sans-serif; font-size: var(--text-body-lg); line-height: var(--leading-body-lg); white-space: nowrap; color: hsl(var(--foreground)); }
+.app-footer__copyright { margin: calc(12 * var(--f)) 0 0; font-size: var(--text-caption); line-height: var(--leading-caption); letter-spacing: 0.08em; text-transform: uppercase; white-space: nowrap; }
+.app-footer__top { display: inline-flex; align-items: center; gap: calc(4 * var(--f)); min-block-size: var(--hit-target-min); font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 700; color: hsl(var(--primary)); }
 .app-footer__top-icon { inline-size: 1em; block-size: 1em; }
 .app-footer a:focus-visible, .app-footer button:focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 2px; }
 

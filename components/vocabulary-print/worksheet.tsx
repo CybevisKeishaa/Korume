@@ -115,7 +115,7 @@ export function Worksheet({ pages, settings, labels, resources }: { pages: Prepa
   // Owner 2026-10-07: full item pages spread down to the band; the last item page stays packed at the top.
   const lastItemPage = pages.findLastIndex((page) => page.kind === "items");
   return (
-    <div className={`vp-paper${settings.density === "compact" ? " vp-compact" : ""}`} style={paperVars() as CSSProperties}>
+    <div data-type-exempt="vocab-print-sheet" className={`vp-paper${settings.density === "compact" ? " vp-compact" : ""}`} style={paperVars() as CSSProperties}>
       {pages.map((page, index) => (
         <section key={index} className="vp-sheet">
           <div className="vp-watermark" aria-hidden="true">

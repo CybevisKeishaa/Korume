@@ -157,7 +157,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={open ? popoverId : undefined}
-        className="rounded-md bg-card/90 px-2 py-1 text-xs font-medium text-foreground shadow-raised hover:bg-secondary"
+        className="rounded-md bg-card/90 px-2 py-1 text-caption font-medium text-foreground shadow-raised hover:bg-secondary"
       >
         {t("saveButton.trigger")}
       </button>
@@ -169,9 +169,9 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
           aria-label={t("saveButton.trigger")}
           className="absolute right-0 top-full z-20 mt-1 w-64 rounded-md border border-border bg-card p-3 text-left shadow-overlay"
         >
-          {listState.status === "loading" && <p className="text-sm text-muted-foreground">{t("saveButton.loadingPlaylists")}</p>}
+          {listState.status === "loading" && <p className="text-body text-muted-foreground">{t("saveButton.loadingPlaylists")}</p>}
           {listState.status === "error" && (
-            <p role="alert" className="text-sm text-danger-strong">
+            <p role="alert" className="text-body text-danger-strong">
               {listState.message}
             </p>
           )}
@@ -185,7 +185,7 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
                     type="button"
                     onClick={() => void addToPlaylist(playlist.id)}
                     disabled={addState.status === "adding"}
-                    className="w-full rounded px-2 py-1 text-left text-sm hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
+                    className="w-full rounded px-2 py-1 text-left text-body hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
                   >
                     {playlist.name}
                   </button>
@@ -207,18 +207,18 @@ export function SaveToPlaylistButton({ videoId, className }: SaveToPlaylistButto
               placeholder={t("saveButton.newPlaylistNameLabel")}
               maxLength={100}
               disabled={creating}
-              className="w-full rounded border border-input bg-card px-2 py-1 text-sm"
+              className="w-full rounded border border-input bg-card px-2 py-1 text-body"
             />
             <button
               type="submit"
               disabled={creating || !newName.trim()}
-              className="shrink-0 rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
+              className="shrink-0 rounded bg-primary px-2 py-1 text-caption font-medium text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
             >
               {t("saveButton.createAndAdd")}
             </button>
           </form>
 
-          <p role={addState.status === "error" ? "alert" : "status"} aria-live="polite" className={cn("mt-1 text-xs", addState.status === "error" ? "text-danger-strong" : "text-success-strong")}>
+          <p role={addState.status === "error" ? "alert" : "status"} aria-live="polite" className={cn("mt-1 text-caption", addState.status === "error" ? "text-danger-strong" : "text-success-strong")}>
             {addState.status === "added" && t("saveButton.added")}
             {addState.status === "error" && addState.message}
           </p>

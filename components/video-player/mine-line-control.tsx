@@ -113,7 +113,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={popoverId}
-        className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+        className="rounded-md px-2 py-1 text-body font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
       >
         {t("mine.trigger")}
       </button>
@@ -134,10 +134,10 @@ export function MineLineControl({ line }: MineLineControlProps) {
                     type="button"
                     onClick={() => void mine(segment.text, segment.reading)}
                     disabled={status === "submitting"}
-                    className="w-full rounded px-2 py-1 text-left font-jp text-sm hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
+                    className="w-full rounded px-2 py-1 text-left font-jp text-body hover:bg-secondary disabled:pointer-events-none disabled:opacity-50"
                   >
                     {segment.text}
-                    <span className="ml-1 text-xs text-muted-foreground">{segment.reading}</span>
+                    <span className="ml-1 text-caption text-muted-foreground">{segment.reading}</span>
                   </button>
                 </li>
               ))}
@@ -155,12 +155,12 @@ export function MineLineControl({ line }: MineLineControlProps) {
                 onChange={(event) => setManualWord(event.target.value)}
                 placeholder={t("mine.placeholder")}
                 disabled={status === "submitting"}
-                className="w-full rounded border border-input bg-card px-2 py-1 text-sm font-jp"
+                className="w-full rounded border border-input bg-card px-2 py-1 text-body font-jp"
               />
               <button
                 type="submit"
                 disabled={status === "submitting" || !manualWord.trim()}
-                className="rounded bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
+                className="rounded bg-primary px-2 py-1 text-body font-medium text-primary-foreground disabled:pointer-events-none disabled:opacity-50"
               >
                 {t("mine.add")}
               </button>
@@ -172,7 +172,7 @@ export function MineLineControl({ line }: MineLineControlProps) {
       <p
         role={status === "error" ? "alert" : "status"}
         aria-live={status === "error" ? "assertive" : "polite"}
-        className={cn("mt-1 max-w-40 text-right text-xs", status === "error" ? "text-danger-strong" : "text-muted-foreground")}
+        className={cn("mt-1 max-w-40 text-right text-caption", status === "error" ? "text-danger-strong" : "text-muted-foreground")}
       >
         {message}
       </p>

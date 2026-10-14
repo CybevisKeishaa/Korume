@@ -81,7 +81,7 @@ export function ConfirmButton({
   if (confirming) {
     return (
       <span role="group" aria-label={confirmLabel} className={cn("inline-flex items-center gap-2", className)}>
-        <span className="text-xs text-muted-foreground">{confirmLabel}</span>
+        <span className="text-caption text-muted-foreground">{confirmLabel}</span>
         <button
           ref={yesRef}
           type="button"
@@ -89,14 +89,14 @@ export function ConfirmButton({
             setConfirming(false);
             onConfirm();
           }}
-          className="rounded-md bg-danger px-2 py-1 text-xs font-medium text-danger-foreground hover:bg-danger/90"
+          className="rounded-md bg-danger px-2 py-1 text-caption font-medium text-danger-foreground hover:bg-danger/90"
         >
           {t("actions.confirmYes", { label: label.toLowerCase() })}
         </button>
         <button
           type="button"
           onClick={cancel}
-          className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+          className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
         >
           {t("actions.cancel")}
         </button>
@@ -111,7 +111,7 @@ export function ConfirmButton({
       disabled={disabled}
       onClick={() => setConfirming(true)}
       className={cn(
-        "rounded-md px-2 py-1 text-xs font-medium disabled:pointer-events-none disabled:opacity-50",
+        "rounded-md px-2 py-1 text-caption font-medium disabled:pointer-events-none disabled:opacity-50",
         variant === "danger"
           ? "text-danger-strong hover:bg-danger/10"
           : "text-muted-foreground hover:bg-secondary hover:text-foreground",

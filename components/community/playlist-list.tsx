@@ -96,7 +96,7 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               rows={2}
-              className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-sm"
+              className="mt-1 flex w-full rounded-md border border-input bg-card px-3 py-2 text-body"
             />
           </div>
           <div className="flex gap-2">
@@ -114,14 +114,14 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
             <Link href={`/playlists/${playlist.id}`} className="font-medium text-foreground hover:underline">
               {playlist.name}
             </Link>
-            {playlist.description && <p className="mt-1 text-sm text-muted-foreground">{playlist.description}</p>}
-            <p className="mt-1 text-xs text-muted-foreground">{t("itemCount", { count: playlist.itemCount })}</p>
+            {playlist.description && <p className="mt-1 text-body text-muted-foreground">{playlist.description}</p>}
+            <p className="mt-1 text-caption text-muted-foreground">{t("itemCount", { count: playlist.itemCount })}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => setEditing(true)}
-              className="rounded-md px-2 py-1 text-xs font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
+              className="rounded-md px-2 py-1 text-caption font-medium text-muted-foreground hover:bg-secondary hover:text-foreground"
             >
               {t("list.edit")}
             </button>
@@ -139,14 +139,14 @@ function PlaylistRow({ playlist, onChanged, onDeleted }: {
           aria-label={t("list.makePublicAriaLabel")}
           className="mt-0.5 h-4 w-4 accent-primary"
         />
-        <label htmlFor={publicId} className="text-sm">
+        <label htmlFor={publicId} className="text-body">
           <span className="font-medium">{t("list.publicLabel")}</span>
-          <span className="block text-xs text-muted-foreground">{t("list.publicDescription")}</span>
+          <span className="block text-caption text-muted-foreground">{t("list.publicDescription")}</span>
         </label>
       </div>
 
       {action.status === "error" && (
-        <p role="alert" className="mt-2 text-sm text-danger-strong">
+        <p role="alert" className="mt-2 text-body text-danger-strong">
           {action.message}
         </p>
       )}
@@ -168,7 +168,7 @@ export function PlaylistList({ playlists: initialPlaylists, className }: Playlis
   }
 
   if (playlists.length === 0) {
-    return <p className={className ?? "text-sm text-muted-foreground"}>{t("list.empty")}</p>;
+    return <p className={className ?? "text-body text-muted-foreground"}>{t("list.empty")}</p>;
   }
 
   return (

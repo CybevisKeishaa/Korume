@@ -100,7 +100,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
         {/* A failed embed keeps only its alert: a bar of dead controls would sit on top of it. */}
         {playerError === null && <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col">
           {subtitles && subtitle !== null && (
-            <p lang="ja" className="reading-foreground reading-jp-body bg-[hsl(var(--reading-surface)/0.85)] px-md py-2xs text-center font-jp" data-testid="workspace-subtitle">
+            <p lang="ja" data-type-exempt="reading-jp-body" className="reading-foreground reading-jp-body bg-[hsl(var(--reading-surface)/0.85)] px-md py-2xs text-center font-jp" data-testid="workspace-subtitle">
               {subtitle}
             </p>
           )}

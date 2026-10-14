@@ -25,7 +25,7 @@ export function MiningDeckList({ cards }: MiningDeckListProps) {
     return (
       <div className="flex flex-col items-center gap-3">
         <CompanionAnchor surface="mining-empty" pose="standing" context="empty_mining_deck" />
-        <p className="text-sm text-muted-foreground">{t("deck.empty")}</p>
+        <p className="text-body text-muted-foreground">{t("deck.empty")}</p>
       </div>
     );
   }
@@ -35,7 +35,7 @@ export function MiningDeckList({ cards }: MiningDeckListProps) {
       {cards.map((card) => (
         <li key={card.id}>
           <Card className="flex h-full flex-col gap-2 p-4">
-            <p className="font-jp text-lg leading-relaxed">
+            <p className="font-jp text-body-lg">
               {splitSentenceForEmphasis(card.sentenceJp, card.targetWord).map((segment, index) =>
                 segment.emphasized ? (
                   <strong
@@ -50,9 +50,9 @@ export function MiningDeckList({ cards }: MiningDeckListProps) {
               )}
             </p>
             {card.reading && (
-              <p className="font-jp text-sm text-muted-foreground">{card.reading}</p>
+              <p className="font-jp text-body text-muted-foreground">{card.reading}</p>
             )}
-            {card.translation && <p className="text-sm">{card.translation}</p>}
+            {card.translation && <p className="text-body">{card.translation}</p>}
             <div className="mt-auto pt-2">
               <MiningClipPlayer
                 videoId={card.videoId}

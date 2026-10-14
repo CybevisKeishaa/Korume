@@ -203,9 +203,9 @@ export function EditProfile({ view }: { view: ProfileView }) {
         <header className="mb-lg flex flex-wrap items-end justify-between gap-sm">
           <div>
             <p className={EYEBROW}>{t("edit.eyebrow")}</p>
-            <h1 className="text-3xl font-bold">{t("edit.title")}</h1>
+            <h1 className="text-title font-bold">{t("edit.title")}</h1>
           </div>
-          <p className="text-sm text-muted-foreground">{t("edit.hint")}</p>
+          <p className="text-body text-muted-foreground">{t("edit.hint")}</p>
         </header>
         <div className="profile-edit">
           <EditPreview
@@ -219,7 +219,7 @@ export function EditProfile({ view }: { view: ProfileView }) {
           <form className={`${CARD} grid gap-md`} aria-labelledby="profile-edit-form-title" noValidate onSubmit={submit}>
             <div>
               <p className={EYEBROW}>{t("edit.formEyebrow")}</p>
-              <h2 id="profile-edit-form-title" className="text-2xl font-bold">{t("edit.formTitle")}</h2>
+              <h2 id="profile-edit-form-title" className="text-heading font-bold">{t("edit.formTitle")}</h2>
             </div>
             <BasicSection
               draft={draft}

@@ -58,12 +58,12 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
   }, [passageId]);
 
   if (state.status === "loading") {
-    return <p className="text-sm text-muted-foreground">{t("detail.loading")}</p>;
+    return <p className="text-body text-muted-foreground">{t("detail.loading")}</p>;
   }
 
   if (state.status === "not-found") {
     return (
-      <p role="alert" className="text-sm text-danger-strong">
+      <p role="alert" className="text-body text-danger-strong">
         {t("detail.notFound")}
       </p>
     );
@@ -71,7 +71,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
 
   if (state.status === "error") {
     return (
-      <p role="alert" className="text-sm text-danger-strong">
+      <p role="alert" className="text-body text-danger-strong">
         {state.message}
       </p>
     );
@@ -82,16 +82,16 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
   return (
     <div className="space-y-8">
       <div>
-        <Link href="/reading" className="text-sm text-muted-foreground hover:text-foreground">
+        <Link href="/reading" className="text-body text-muted-foreground hover:text-foreground">
           {t("detail.back")}
         </Link>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <h1 className="text-2xl font-bold">{passage.title}</h1>
-          <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+          <h1 className="text-title font-bold">{passage.title}</h1>
+          <span className="rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
             {passage.jlpt_level}
           </span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="mt-1 text-caption text-muted-foreground">
           {passage.word_count != null
             ? t("wordCount", { count: passage.word_count })
             : t("wordCountUnknown")}
@@ -103,7 +103,7 @@ export function ReadingDetail({ passageId }: ReadingDetailProps) {
       <TranslationDisclosure translation={passage.body_translation} />
 
       <div>
-        <h2 className="mb-4 text-lg font-semibold">{t("detail.quizHeading")}</h2>
+        <h2 className="mb-4 text-heading font-semibold">{t("detail.quizHeading")}</h2>
         <ReadingQuiz passageId={passage.id} questions={passage.questions} />
       </div>
     </div>

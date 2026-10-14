@@ -174,8 +174,8 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="font-jp text-xl font-bold">{test.title}</h1>
-          <p className="text-sm text-muted-foreground">
+          <h1 className="font-jp text-title font-bold">{test.title}</h1>
+          <p className="text-body text-muted-foreground">
             {mode === "full"
               ? t("testRunner.fullMockTest")
               : t("testRunner.sectionPractice", { section: initialSection ? t(`sections.${initialSection}`) : "" })}
@@ -227,12 +227,12 @@ export function JlptTestRunner({ test, initialSection }: JlptTestRunnerProps) {
       </div>
 
       {confirmingSubmit && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {t("testRunner.confirmSubmit", { count: unansweredCount })}
         </p>
       )}
       {submitError && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {submitError}
         </p>
       )}

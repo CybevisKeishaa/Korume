@@ -25,10 +25,10 @@ export function ProfilePage({ view }: { view: ProfileView }) {
       <div className="profile-layout">
         <header className="mb-lg flex flex-wrap items-end justify-between gap-sm">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-strong">{t("page.eyebrow")}</p>
-            <h1 className="text-3xl font-bold">{t("page.title")}</h1>
+            <p className="text-caption font-semibold uppercase tracking-[0.2em] text-primary-strong">{t("page.eyebrow")}</p>
+            <h1 className="text-title font-bold">{t("page.title")}</h1>
           </div>
-          <p className="text-sm text-muted-foreground">{t("page.since", { month: month(view.identity.accountCreatedAt) })}</p>
+          <p className="text-body text-muted-foreground">{t("page.since", { month: month(view.identity.accountCreatedAt) })}</p>
         </header>
         <div className="profile-grid">
           <div className="profile-rail">

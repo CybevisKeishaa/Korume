@@ -48,11 +48,11 @@ export function ForumPostItem({ post }: ForumPostItemProps) {
         >
           {post.title}
         </Link>
-        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+        <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
           {topicLabel(t, post.topic)}
         </span>
       </div>
-      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+      <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-caption text-muted-foreground">
         <span>{post.author?.name ?? t("deletedUser")}</span>
         <span aria-hidden="true">·</span>
         <RelativeTime dateTime={post.createdAt} />

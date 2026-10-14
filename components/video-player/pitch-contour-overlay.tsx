@@ -119,7 +119,7 @@ export function PitchContourOverlay({
         />
       </svg>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-caption text-muted-foreground">
         <span data-testid="reference-legend" className="inline-flex items-center gap-1.5">
           <span aria-hidden className="inline-block h-0 w-5 border-t-2 border-dashed border-muted-foreground/70" />
           {t("pitch.overlay.reference")}
@@ -133,7 +133,7 @@ export function PitchContourOverlay({
         ) : (
           <span className="text-foreground">
             {t("pitch.overlay.intonation")}{" "}
-            <strong className="text-sm font-semibold">{Math.round(score.score)}</strong>
+            <strong className="text-body font-semibold">{Math.round(score.score)}</strong>
             <span aria-hidden>{t("pitch.overlay.scoreSuffix")}</span>
           </span>
         )}

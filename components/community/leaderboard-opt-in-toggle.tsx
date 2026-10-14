@@ -66,13 +66,13 @@ export function LeaderboardOptInToggle({ initialOptIn, onChanged, className }: L
           aria-label={t("optIn.ariaLabel")}
           className="mt-0.5 h-4 w-4 accent-primary"
         />
-        <label htmlFor={inputId} className="text-sm">
+        <label htmlFor={inputId} className="text-body">
           <span className="font-medium">{t("optIn.question")}</span>
-          <span className="block text-xs text-muted-foreground">{t("optIn.explanation")}</span>
+          <span className="block text-caption text-muted-foreground">{t("optIn.explanation")}</span>
         </label>
       </div>
       {error && (
-        <p role="alert" className="mt-1 text-xs text-danger-strong">
+        <p role="alert" className="mt-1 text-caption text-danger-strong">
           {error}
         </p>
       )}

@@ -31,7 +31,7 @@ function LevelFilter({
         aria-pressed={!active}
         onClick={() => onChange(undefined)}
         className={cn(
-          "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+          "rounded-full px-4 py-1.5 text-body font-medium transition-colors",
           !active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground",
         )}
       >
@@ -44,7 +44,7 @@ function LevelFilter({
           aria-pressed={active === level}
           onClick={() => onChange(level)}
           className={cn(
-            "rounded-full px-4 py-1.5 text-sm font-medium transition-colors",
+            "rounded-full px-4 py-1.5 text-body font-medium transition-colors",
             active === level
               ? "bg-primary text-primary-foreground"
               : "bg-muted text-muted-foreground hover:text-foreground",
@@ -99,17 +99,17 @@ export function ReadingList() {
       <LevelFilter active={level} onChange={setLevel} />
 
       {state.status === "loading" && (
-        <p className="text-sm text-muted-foreground">{t("list.loading")}</p>
+        <p className="text-body text-muted-foreground">{t("list.loading")}</p>
       )}
 
       {state.status === "error" && (
-        <p role="alert" className="text-sm text-danger-strong">
+        <p role="alert" className="text-body text-danger-strong">
           {state.message}
         </p>
       )}
 
       {state.status === "loaded" && state.passages.length === 0 && (
-        <p className="text-sm text-muted-foreground">
+        <p className="text-body text-muted-foreground">
           {level ? t("list.emptyAtLevel") : t("list.emptyAll")}
         </p>
       )}
@@ -121,11 +121,11 @@ export function ReadingList() {
               <Card className="flex h-full flex-col gap-2 p-4">
                 <div className="flex items-start justify-between gap-2">
                   <h2 className="font-medium">{passage.title}</h2>
-                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                  <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-caption font-medium text-muted-foreground">
                     {passage.jlpt_level}
                   </span>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-caption text-muted-foreground">
                   {passage.word_count != null
                     ? t("wordCount", { count: passage.word_count })
                     : t("wordCountUnknown")}

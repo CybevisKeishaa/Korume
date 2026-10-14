@@ -181,10 +181,10 @@ export function PitchContour({ blob, label, className, height = 96 }: PitchConto
   return (
     <div className={cn("text-primary", className)}>
       {status === "decoding" && (
-        <p className="text-xs text-muted-foreground">{t("pitch.contour.analyzing")}</p>
+        <p className="text-caption text-muted-foreground">{t("pitch.contour.analyzing")}</p>
       )}
       {status === "unavailable" && (
-        <p className="text-xs text-muted-foreground">{t("pitch.contour.unavailable")}</p>
+        <p className="text-caption text-muted-foreground">{t("pitch.contour.unavailable")}</p>
       )}
       {status === "ready" && (
         <canvas

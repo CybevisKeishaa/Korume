@@ -22,7 +22,7 @@ export default async function FocusChromeLayout({
   const user = await getCurrentUser();
 
   return (
-    <div className="flex min-h-screen flex-col md:flex-row">
+    <div className="flex min-h-screen flex-col text-body md:flex-row">
       <AppNav
         userEmail={user?.email ?? ""}
         groups={NAV_GROUPS}
