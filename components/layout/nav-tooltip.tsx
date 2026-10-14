@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 /** One tooltip per AppNav for the rail (spec 3.6). position: fixed, so the scroll region cannot clip it (plan P3);
- * shown on hover and keyboard focus, hidden on leave, blur, Escape and on a scroll that moved its item. */
+ * shown on hover and keyboard focus, hidden on leave, blur, Escape and on a scroll that moved its item. Hoverable
+ * (WCAG 1.4.13): moving the pointer from the item onto the tooltip, across the CSS bridge over the gap, keeps it. */
 export function useNavTooltip(enabled: boolean) {
   const id = useId();
   const [tip, setTip] = useState<{ label: string; left: number; top: number; owner: string } | null>(null);
@@ -12,6 +13,7 @@ export function useNavTooltip(enabled: boolean) {
   // focus event (so the tip is placed right) but dispatches that scroll's event a frame later: hiding on every scroll
   // erased the tip of any item below the fold (Task 9 R10). A scroll hides it only if it moved the item.
   const anchor = useRef<{ element: HTMLElement; top: number } | null>(null);
+  const tipRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     if (!tip) return;
@@ -29,11 +31,14 @@ export function useNavTooltip(enabled: boolean) {
       if (!enabled) return;
       const rect = event.currentTarget.getBoundingClientRect();
       anchor.current = { element: event.currentTarget, top: rect.top };
-      setTip({ label, left: rect.right + 10, top: rect.top + rect.height / 2, owner: label });
+      setTip({ label, left: rect.right, top: rect.top + rect.height / 2, owner: label });
     };
     return {
       onPointerEnter: show,
-      onPointerLeave: hide,
+      // Leaving the item onto its tooltip is not a leave; leaving the tooltip hides it (back onto the item re-shows it).
+      onPointerLeave: (event: React.PointerEvent) => {
+        if (!(event.relatedTarget instanceof Node && tipRef.current?.contains(event.relatedTarget))) hide();
+      },
       onFocus: show,
       onBlur: hide,
       onKeyDown: (event: React.KeyboardEvent) => { if (event.key === "Escape") hide(); },
@@ -42,7 +47,8 @@ export function useNavTooltip(enabled: boolean) {
   };
 
   const tooltip = enabled && tip
-    ? <span role="tooltip" id={id} className="nav-tooltip" style={{ left: tip.left, top: tip.top }}>{tip.label}</span>
+    ? <span ref={tipRef} role="tooltip" id={id} className="nav-tooltip" style={{ left: tip.left, top: tip.top }}
+        onPointerLeave={hide}>{tip.label}</span>
     : null;
   return { tooltip, bind };
 }

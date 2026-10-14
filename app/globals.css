@@ -1968,10 +1968,14 @@
   block-size: calc(12 * var(--nav-u)); border-radius: 999px; background: hsl(var(--foreground)); transition: transform 150ms; }
 .account-menu__switch[data-on="true"] { background: hsl(var(--primary)); }
 .account-menu__switch[data-on="true"]::after { transform: translateX(calc(12 * var(--nav-u))); }
-.nav-tooltip { position: fixed; z-index: var(--z-popover); transform: translateY(-50%); padding: calc(5 * var(--nav-u)) calc(10 * var(--nav-u));
+/* Placed at the item's right edge; the gap is a margin that ::before bridges, so the pointer can cross onto the tooltip
+   without leaving the item/tooltip pair (WCAG 1.4.13 hoverable, nav-tooltip.tsx). */
+.nav-tooltip { --tip-gap: calc(10 * var(--nav-u)); position: fixed; z-index: var(--z-popover); margin-inline-start: var(--tip-gap);
+  transform: translateY(-50%); padding: calc(5 * var(--nav-u)) calc(10 * var(--nav-u));
   border: 1px solid hsl(var(--border)); border-radius: var(--radius-sm); background: hsl(var(--secondary)); color: hsl(var(--foreground));
-  font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 600; white-space: nowrap; pointer-events: none;
+  font-size: var(--text-caption); line-height: var(--leading-caption); font-weight: 600; white-space: nowrap;
   box-shadow: 0 calc(8 * var(--nav-u)) calc(24 * var(--nav-u)) hsl(0 0% 0% / 0.4); }
+.nav-tooltip::before { content: ""; position: absolute; inset-block: -1px; inset-inline-end: 100%; inline-size: calc(var(--tip-gap) + 1px); }
 @media (prefers-reduced-motion: reduce) { .app-nav, .app-nav *, .account-menu, .account-menu * { transition: none !important; } }
 :root[data-reduce-motion="true"] .app-nav, :root[data-reduce-motion="true"] .app-nav *,
 :root[data-reduce-motion="true"] .account-menu, :root[data-reduce-motion="true"] .account-menu * { transition: none !important; }

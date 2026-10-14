@@ -1,11 +1,15 @@
 import { describe, expect, it, vi } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import { useNavTooltip } from "./nav-tooltip";
 
 function Harness({ enabled = true }: { enabled?: boolean }) {
   const { tooltip, bind } = useNavTooltip(enabled);
   return (<div><a href="/x" aria-label="Review, 32 due" {...bind("Review · 32")}>R</a><a href="/y" aria-label="Kanji" {...bind("Kanji")}>K</a>{tooltip}</div>);
 }
+
+// jsdom has no PointerEvent, so fireEvent.pointerLeave drops relatedTarget; React derives pointerleave from a native
+// pointerout, and a MouseEvent carries relatedTarget.
+const moveOut = (from: Element, to: Element) => act(() => { from.dispatchEvent(new MouseEvent("pointerout", { bubbles: true, relatedTarget: to })); });
 
 describe("useNavTooltip", () => {
   it("shows the label on hover, beside the link, and hides on leave", () => {
@@ -17,6 +21,19 @@ describe("useNavTooltip", () => {
     expect(tip.style.left).toMatch(/px$/);
     expect(tip.style.top).toMatch(/px$/);
     fireEvent.pointerLeave(screen.getByLabelText("Review, 32 due"));
+    expect(screen.queryByRole("tooltip")).toBeNull();
+  });
+  it("stays open while the pointer moves onto the tooltip, and hides when it leaves it (WCAG 1.4.13 hoverable)", () => {
+    render(<Harness />);
+    const link = screen.getByLabelText("Review, 32 due");
+    fireEvent.pointerEnter(link);
+    const tip = screen.getByRole("tooltip");
+    moveOut(link, tip);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Review · 32");
+    moveOut(tip, link);
+    expect(screen.getByRole("tooltip")).toHaveTextContent("Review · 32");
+    moveOut(link, tip);
+    moveOut(tip, document.body);
     expect(screen.queryByRole("tooltip")).toBeNull();
   });
   it("shows on keyboard focus, is described-by linked, and Escape hides it", () => {

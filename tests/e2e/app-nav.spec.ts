@@ -123,13 +123,7 @@ test("E3 the review badge drops right after a saved review, same route", async (
 async function topmostInside(page: Page, selector: string) {
   const result = await page.locator(selector).evaluate((el) => {
     const r = el.getBoundingClientRect();
-    // The tooltip is pointer-events: none, and hit testing skips such elements, so elementFromPoint would always
-    // report whatever is beneath it. Make it hittable for this one synchronous read: then the hit is the paint order.
-    const element = el as HTMLElement;
-    const previous = element.style.pointerEvents;
-    element.style.pointerEvents = "auto";
     const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
-    element.style.pointerEvents = previous;
     const name = (node: Element | null) => node ? `${node.tagName.toLowerCase()}.${[...node.classList].join(".")}` : "none";
     return {
       inside: r.left >= 0 && r.top >= 0 && r.right <= innerWidth && r.bottom <= innerHeight, topmost: !!hit && el.contains(hit),
@@ -206,6 +200,27 @@ test("E4 R10 a rail item reached by Tab below the visible list shows its tooltip
   const tip = await tooltip.evaluate((el) => el.getBoundingClientRect().toJSON() as DOMRect);
   expect(Math.abs(tip.top + tip.height / 2 - (item.top + item.height / 2))).toBeLessThanOrEqual(1);
   expect(tip.left).toBeGreaterThanOrEqual(item.right);
+});
+
+test("E4 the rail tooltip is hoverable: the pointer crosses the gap onto it and it stays (WCAG 1.4.13)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 529 });
+  await register(page);
+  await page.getByRole("button", { name: "Collapse navigation" }).click();
+  await settlesAt(page, 72);
+  const item = await nav(page).getByRole("link", { name: "Kanji", exact: true }).boundingBox();
+  if (!item) throw new Error("Kanji rail item has no box");
+  const y = item.y + item.height / 2;
+  await page.mouse.move(item.x + item.width / 2, y);
+  const tooltip = page.getByRole("tooltip");
+  await expect(tooltip).toHaveText("Kanji");
+  const tip = await tooltip.boundingBox();
+  if (!tip) throw new Error("tooltip has no box");
+  expect(tip.x).toBeGreaterThan(item.x + item.width); // a real gap to cross, not an overlap
+  // Straight across the gap in 1px-ish steps: every intermediate pointer event must keep it open.
+  await page.mouse.move(tip.x + tip.width / 2, y, { steps: Math.ceil(tip.x + tip.width / 2 - (item.x + item.width / 2)) });
+  await expect(tooltip).toHaveText("Kanji");
+  await page.mouse.move(tip.x + tip.width + 200, y, { steps: 10 });
+  await expect(tooltip).toHaveCount(0);
 });
 
 test("E6 an expired session clears personal data and lands on sign-in", async ({ page, context }) => {
