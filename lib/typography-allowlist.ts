@@ -94,6 +94,13 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     reason: "The reader's own Reading Settings size multiplier and line-height preference apply on top of the token rung, by design.",
   },
   {
+    id: "vocab-print-sheet",
+    file: "components/vocabulary-print/worksheet.tsx",
+    match: "data-type-exempt=\"vocab-print-sheet\"",
+    scope: "all",
+    reason: "The printable worksheet is set in physical units for paper (spec P1: the sheet is an allowlist entry); only the page chrome is interface type.",
+  },
+  {
     id: "footer-snore-z",
     file: "app/globals.css",
     match: ".app-footer__chip-z",

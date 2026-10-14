@@ -39,7 +39,9 @@ export function inspectPage(args: { pairs: Array<readonly [number, number]>; tol
     const style = getComputedStyle(el);
     const size = parseFloat(style.fontSize);
     const leading = style.lineHeight === "normal" ? Number.NaN : parseFloat(style.lineHeight);
-    if (!pairs.some(([s, l]) => near(size, s) && (scope === "line-height" || near(leading, l)))) {
+    // Chromium forces `line-height: normal` on a drop-down <select> whatever the author sets, so only its size is judged.
+    const sizeOnly = scope === "line-height" || (el instanceof HTMLSelectElement && style.lineHeight === "normal");
+    if (!pairs.some(([s, l]) => near(size, s) && (sizeOnly || near(leading, l)))) {
       findings.push({ kind: "type", where: label(el), detail: `${style.fontSize} / ${style.lineHeight}` });
     }
   };
@@ -56,7 +58,8 @@ export function inspectPage(args: { pairs: Array<readonly [number, number]>; tol
   for (const el of fields) if (shown(el)) checkType(el);
 
   for (const el of document.querySelectorAll('button, [role="button"], nav a, [lang="ja"]')) {
-    if (!(el instanceof HTMLElement) || el.clientWidth === 0 || !shown(el)) continue;
+    // Spec G2: an element under a scope-`all` marker is skipped by the gate (e.g. the print sheet's physical-unit tiles).
+    if (!(el instanceof HTMLElement) || el.clientWidth === 0 || !shown(el) || scopeOf(el) === "all") continue;
     const full = (el.textContent ?? "").trim();
     if (!full) continue;
     const style = getComputedStyle(el);
