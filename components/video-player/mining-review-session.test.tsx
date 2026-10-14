@@ -202,4 +202,29 @@ describe("MiningReviewSession", () => {
     expect(alert).toHaveTextContent("Something went wrong.");
     expect(alert).not.toHaveTextContent("Review failed (500)");
   });
+
+  it("tells the nav a review was saved only after the server accepted it", async () => {
+    consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const heard = vi.fn();
+    window.addEventListener("korume:review-submitted", heard);
+    vi.stubGlobal(
+      "fetch",
+      vi
+        .fn()
+        .mockResolvedValueOnce({ ok: false, status: 500, json: async () => ({}) } as Response)
+        .mockResolvedValueOnce({ ok: true, status: 200, json: async () => ({}) } as Response),
+    );
+    render(<MiningReviewSession items={ITEMS} />);
+
+    await userEvent.click(screen.getByRole("button", { name: /show answer/i }));
+    // first grade: server rejects
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+    expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong.");
+    expect(heard).not.toHaveBeenCalled();
+    // second grade: server accepts
+    await userEvent.click(screen.getByRole("button", { name: /^good/i }));
+    await waitFor(() => expect(screen.getByText("猫", { selector: "strong" })).toBeInTheDocument());
+    expect(heard).toHaveBeenCalledTimes(1);
+    window.removeEventListener("korume:review-submitted", heard);
+  });
 });

@@ -8,6 +8,7 @@ import type { ReviewItem } from "@/lib/learning-types";
 import { Button, buttonStyles } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
+import { REVIEW_SUBMITTED_EVENT } from "@/lib/nav/nav-state";
 
 export type { ReviewItem };
 
@@ -68,6 +69,7 @@ export function ReviewSession({
           body: JSON.stringify({ itemType, itemId: current.id, quality }),
         });
         if (!res.ok) throw new Error(`Review failed (${res.status})`);
+        window.dispatchEvent(new Event(REVIEW_SUBMITTED_EVENT));
         setReviewed((n) => n + 1);
         setRevealed(false);
         setIndex((i) => i + 1);
