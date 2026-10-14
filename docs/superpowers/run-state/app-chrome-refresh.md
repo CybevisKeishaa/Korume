@@ -11,11 +11,15 @@ Port the learner sidebar from Figma page `655:2` (structure) with Claude's visua
 
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
 - Spec `docs/superpowers/specs/2026-10-14-app-chrome-refresh-design.md` — approved by the owner 2026-10-14 (two review rounds).
+- Plan `docs/superpowers/plans/2026-10-14-app-chrome-refresh.md` (`b7ae73ac`, 10 tasks, plan-time corrections P1–P5)
+  — delivered to the owner; owner chose **subagent-driven** execution 2026-10-14.
 
 ## Accepted commits
 
 | Task | Status | Commit |
 |---|---|---|
+| spec | approved | `0bc90f55` + round 2 `c976abce` |
+| plan | written, execution method chosen | `b7ae73ac` |
 
 ## Contracts and decisions
 
@@ -37,4 +41,6 @@ Port the learner sidebar from Figma page `655:2` (structure) with Claude's visua
 
 ## Next actions
 
-- Write the plan (writing-plans) → owner approves it and picks the execution method → Task 1.
+- Next session: superpowers:subagent-driven-development from **Task 1** (zero-due review destination), BASE `b7ae73ac`.
+  One implementer + one reviewer per task, whole-branch review at Task 10, then the owner's Chrome look; merge only on
+  approval. Read spec + plan first; P1–P5 are already accepted by the owner (they chose execution after reading them).
