@@ -18,7 +18,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 | Task | Status | Commit |
 |---|---|---|
-| spec | written, awaiting owner review | (this commit) |
+| spec | written, review round 1 fixed (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a` + round 1 |
 
 ## Contracts and decisions
 

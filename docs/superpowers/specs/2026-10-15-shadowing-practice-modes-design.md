@@ -65,6 +65,7 @@ No earlier plan scheduled Parts 2/3; nothing was half-built. The one unmerged 1a
 | D22 | `/shadowing/[id]/dictation` redirects to Listening with Typing open, keeping the lesson id. `DictationView` is deleted only after Listening works, E2E passes and grep finds no caller. |
 | D23 | Pronunciation stores 16 kHz mono WAV; the server scores from the stored file and the line's own text (§4.2). Accuracy/completeness/words are persisted in a versioned `assessment` (§4.4). |
 | D24 | Each mode is switched on (`LEARNING_MODES[].complete = true`) **inside its branch** once it is ready for the owner's Chrome review; merge follows the owner's approval of the real mode bar and flow. |
+| D25 | Learners cannot write score rows directly (spec review 2026-10-15). `authenticated` loses INSERT/UPDATE on `shadowing_sessions` (B1) and `dictation_attempts` (B2); the server writes them with the service-role client after verifying the user (§7.1). Remaining accepted risk: `pitch_score` is measured on the client by design (§11). |
 
 ## 3. Shared practice frame — B1
 
@@ -217,7 +218,10 @@ unscored-* --"Score again"--> scoring           (same sessionId, no re-recording
   bucket's `allowed_mime_types` (and migrates it if `audio/wav` is not allowed).
 - order: upload → insert row → on insert failure delete the file; if the delete also fails, log the path and return
   the error. A session row therefore never lacks its file; an orphan file needs two failures and leaves a log line.
-- `recordActivity(source "shadowing", lineId)` stays at creation (mission progress counts distinct lines, §6.4).
+- `recordActivity(source "shadowing", lineId)` stays at creation (mission progress counts distinct lines, §6.1).
+- The user-scoped client verifies the user and the line; the **row insert uses the service-role client** with
+  `user_id` set to the verified user (D25). The storage upload stays on the user-scoped client (its RLS path policy
+  `${user.id}/…` is the ownership proof).
 
 ### 4.4 `assessment` (versioned, D23)
 
@@ -236,23 +240,34 @@ when its field exists; legacy rows (`assessment = null`) show "No detail recorde
 ### 4.5 Server: score by session
 
 `POST /api/pronunciation/score` with JSON `{ sessionId }`:
-1. auth; rate limit (10/min) unchanged; 503 when speech is not configured.
-2. **claim**: SQL function `claim_pronunciation_scoring(p_session uuid)` (`security invoker`) runs
+1. auth (user-scoped client); rate limit (10/min) unchanged; 503 when speech is not configured.
+2. **claim with a lease token.** Columns `scoring_claim uuid` + `scoring_started_at timestamptz`. The server calls
+   `claim_pronunciation_scoring(p_user uuid, p_session uuid) returns table (claim uuid, video_id, transcript_line_id,
+   recording_url)` (`security definer`, executable by `service_role` only, D25):
    ```sql
-   update shadowing_sessions set scoring_started_at = now()
-    where id = p_session and user_id = auth.uid() and pronunciation_score is null
-      and (scoring_started_at is null or scoring_started_at < now() - interval '90 seconds')
-   returning id, video_id, transcript_line_id, recording_url
+   update shadowing_sessions
+      set scoring_claim = gen_random_uuid(), scoring_started_at = now()
+    where id = p_session and user_id = p_user and pronunciation_score is null
+      and (scoring_claim is null or scoring_started_at < now() - interval '90 seconds')
+   returning scoring_claim, video_id, transcript_line_id, recording_url
    ```
    No row → `409` (already scoring, already scored, or not the caller's). The client then refetches the session.
 3. reference text = the session's line `text_jp` (the client sends none); the line must still belong to the
    session's lesson.
-4. download the session's own file from storage; a `.webm` legacy recording → `409 legacy_format` (§4.7).
-5. Azure assess.
-6. success → `update … set pronunciation_score, rhythm_score, assessment, scoring_started_at = null where id = $1
-   and pronunciation_score is null`; **only when that update changes a row** run
-   `captureShadowScoreMemories` (Companion memory once per session).
-7. failure → `scoring_started_at = null`; scores stay `null`; the error maps to 429/502/503 as today.
+4. download the session's own file from storage; a `.webm` legacy recording → release the claim, `409
+   legacy_format` (§4.7).
+5. Azure assess with a 30 s request timeout, well inside the 90 s lease.
+6. success → `finish_pronunciation_scoring(p_session, p_claim, scores, assessment)` (service-role only):
+   `update … set pronunciation_score, rhythm_score, assessment, scoring_claim = null, scoring_started_at = null
+   where id = p_session and scoring_claim = p_claim and pronunciation_score is null`, returning whether a row
+   changed. **Only when it changed** run `captureShadowScoreMemories` (Companion memory once per session).
+7. failure → `release_pronunciation_scoring(p_session, p_claim)`: `set scoring_claim = null, scoring_started_at =
+   null where id = p_session and scoring_claim = p_claim`. Scores stay `null`; the error maps to 429/502/503 as
+   today.
+
+The token makes a late request harmless: a request whose lease expired and was re-claimed holds a stale `p_claim`,
+so its finish and its release both match no row — it can neither write a score nor free the newer claim. A late
+finish that matches no row returns `409` to its (already superseded) caller.
 
 A scored session is immutable: a new score means a new recording. Scoring never creates a session and never
 touches missions. The legacy multipart path (`referenceText` + audio from the client) is removed if the plan's grep
@@ -270,12 +285,17 @@ the capability is back on a surface).
   that differ from ours.
 - **Race safety:** each attempt is its own state record keyed by `{lineId, sessionId}` and stored per `lineId`; the
   panel renders only the current line's record, so a score for line 51 arriving while line 52 is shown lands on 51.
-  While **recording**, the navigator, Previous/Next and the mode bar are disabled with a hint ("Stop recording
-  first"); Esc or the mic stops. After the save, changing sentence while scoring is allowed. Unmount stops every
-  microphone track.
-- **Unsaved take:** in `recording`, `convert-failed` or `save-failed`, a `beforeunload` guard covers reload/close and
-  an in-app confirm dialog (not `window.confirm`) covers mode-bar and header navigation. A blob is never promised to
-  survive a browser crash; no IndexedDB.
+- **Unsaved states** = `recording`, `converting`, `convert-failed`, `saving`, `save-failed` — every state before the
+  server's 201. In any of them:
+  - the navigator and Previous/Next are disabled with a hint ("Finish saving this take first"); in `recording`, Esc
+    or the mic stops;
+  - a `beforeunload` guard covers reload/close;
+  - an in-app confirm dialog (not `window.confirm`) covers the mode bar, the header back link and any other
+    in-workspace navigation; confirming discards the take.
+
+  After the 201 (`scoring`, `scored`, `unscored-*`) changing sentence or mode needs no warning; a running score
+  lands on its own line. Unmount stops every microphone track. A blob is never promised to survive a browser crash;
+  no IndexedDB.
 
 ### 4.7 Legacy recordings
 
@@ -308,7 +328,7 @@ to an exact version in `package.json`.
 - Shuffle: Fisher–Yates with a seed from a hash of `lineId`; if the result equals the original order and n > 1,
   rotate by one.
 
-`GET /api/lines/[id]/chunks` → `{ version, textHash, reliable, reason, chunks }` (auth + lesson access as the
+`GET /api/lines/[id]/chunks` → `{ version, textHash, reliable, reason, chunks, typingHintUnit }` (auth + lesson access as the
 existing `/api/lines/[id]/analysis`; per-process memo; `private`). The server never trusts chunks sent by a client.
 
 **Coverage gate:** `scripts/dictation/chunk-coverage.ts` runs every local line through the chunker and reports the
@@ -329,7 +349,14 @@ The rules are not loosened before that report exists.
 
 CHECKs: `status = 'submitted' ⇔ accuracy_score is not null`; `status = 'revealed' ⇒ accuracy_score is null`;
 `format = 'word_bank' ⇒ chunk_order is not null or status = 'revealed'`. Index
-`(user_id, transcript_line_id, format, created_at desc)`. New code never writes `unscored` (DB check + zod).
+`(user_id, transcript_line_id, format, created_at desc)`.
+
+**`unscored` is legacy-only, enforced by a trigger** (a CHECK on `status` cannot tell an old row from a new one,
+and `created_at` is writable). The migration backfills first, then installs
+`dictation_attempts_no_new_unscored` — `before insert or update`, raising when `new.status = 'unscored'` and
+(`tg_op = 'INSERT'` or `old.status is distinct from 'unscored'`). Existing `unscored` rows stay; nothing can create
+one or turn a row into one. The zod schema also has no `unscored`. DB tests prove: insert `unscored` fails, update
+`submitted → unscored` fails, the backfilled legacy rows still read.
 
 ### 5.4 Submit / reveal API
 
@@ -337,20 +364,34 @@ CHECKs: `status = 'submitted' ⇔ accuracy_score is not null`; `status = 'reveal
 
 ```ts
 | { kind: "submit"; videoId; lineId; format: "word_bank"; version; textHash; chunkOrder: number[]; hintedUnits: number[] }
-| { kind: "submit"; videoId; lineId; format: "typing"; version; textHash; input: string; hintUnit: "chunk" | "grapheme4" | null; hintedUnits: number[] }
-| { kind: "reveal"; videoId; lineId; format; version; textHash; hintedUnits: number[] }
+| { kind: "submit"; videoId; lineId; format: "typing"; version; textHash; input: string; hintUnit: "chunk" | "grapheme4"; hintedUnits: number[] }
+| { kind: "reveal"; videoId; lineId; format: "word_bank"; version; textHash; hintedUnits: number[] }
+| { kind: "reveal"; videoId; lineId; format: "typing"; version; textHash; hintUnit: "chunk" | "grapheme4"; hintedUnits: number[] }
 ```
 
-Server, in order: auth → line belongs to lesson → `textHash` matches the current line text, else `409 line_changed`
-("This sentence changed, start again") → recompute chunks with `CHUNKERS[version]` (unknown version → 409) →
-validate:
-- `chunkOrder` is a permutation of `0…n−1` (length n, each index once);
-- `hintedUnits` unique, within `[0, unitCount)` for the declared unit; Word Bank requires `hint_unit = chunk`;
-- otherwise 400, nothing scored.
+zod objects are `.strict()`: a Word Bank body carrying `hintUnit` is a 400.
 
-`submit` → score (§5.5), insert `status = submitted` with snapshot/version/hints, `recordActivity(source "dictation",
-lineId)`, return the result. `reveal` → insert `status = revealed`, `accuracy_score = null`, **no `recordActivity`,
-no mission claim**, return the full answer.
+**Hint unit is decided by the server from the line, never chosen freely by the client:**
+- Word Bank → always `chunk` (the server sets it; the client sends none).
+- Typing → `typingHintUnit(line)` = `chunk` when the chunker is reliable **and** yields ≥ 2 chunks, else
+  `grapheme4`. The client sends the unit it used (it got it from `GET /chunks`); a mismatch is a 400.
+- Stored `hint_unit` is the server's value, or `null` when `hintedUnits` is empty.
+
+Server, in order: auth (user-scoped client) → line belongs to lesson → `textHash` matches the current line text,
+else `409 line_changed` ("This sentence changed, start again") → recompute chunks with `CHUNKERS[version]` (unknown
+version → 409) → validate:
+- `chunkOrder` is a permutation of `0…n−1` (length n, each index once);
+- `hintedUnits` unique integers within `[0, unitCount)`, where `unitCount` is the chunk count for `chunk` or the
+  number of 4-grapheme units for `grapheme4`;
+- otherwise 400, nothing scored or stored.
+
+`submit` → score (§5.5), insert `status = submitted` with snapshot/version/hints through the **service-role
+client** with the verified `user_id` (D25), `recordActivity(source "dictation", lineId)`, return the result.
+`reveal` → insert `status = revealed`, `accuracy_score = null` (same client), **no `recordActivity`, no mission
+claim**, return the full answer.
+
+Validation tests cover both formats and both units: a non-permutation, a duplicate or out-of-range hint index, a
+Word Bank body with `hintUnit`, a Typing `hintUnit` that disagrees with the line, and a `grapheme4` line.
 
 ### 5.5 Scoring
 
@@ -439,13 +480,35 @@ are deleted only after Listening E2E passes and grep shows no caller.
 
 ## 7. Migrations
 
-- **B1:** `shadowing_sessions add assessment jsonb, add scoring_started_at timestamptz` (+ check that `assessment` is
-  null or an object with `v`); `claim_pronunciation_scoring`; `practice_stats` (pronunciation); replace
-  `lesson_summary_evidence` (reached line, latest-scored pronunciation) and `practice_activity`; bucket MIME if needed.
-- **B2:** `dictation_attempts` columns, backfill, checks, index (§5.3); `practice_stats` word_bank/typing (R1/R2);
-  `lesson_summary_evidence` (per-format R1/R2); `weekly_skill_windows`, `weakness_scores`, `practice_activity`.
-- Every new or replaced function: `security invoker`, `set search_path = public`, `revoke … from public, anon`.
+- **B1:** `shadowing_sessions add assessment jsonb, add scoring_claim uuid, add scoring_started_at timestamptz`
+  (+ check that `assessment` is null or an object with `v`); `claim_` / `finish_` / `release_pronunciation_scoring`;
+  `practice_stats` (pronunciation); replace `lesson_summary_evidence` (reached line, latest-scored pronunciation) and
+  `practice_activity`; bucket MIME if needed; the privilege change of §7.1 for `shadowing_sessions`.
+- **B2:** `dictation_attempts` columns, backfill, checks, trigger, index (§5.3); `practice_stats` word_bank/typing
+  (R1/R2); `lesson_summary_evidence` (per-format R1/R2); `weekly_skill_windows`, `weakness_scores`,
+  `practice_activity`; the privilege change of §7.1 for `dictation_attempts`.
+- Read functions: `security invoker`, `set search_path = public`, `revoke … from public, anon`, granted to
+  `authenticated`. Score-write functions (`claim_`/`finish_`/`release_pronunciation_scoring`): `security definer`,
+  `set search_path = public`, `revoke … from public, anon, authenticated`, granted to `service_role` only.
 - Additive only: no existing row deleted or rewritten except the B2 backfill of the two new columns.
+
+### 7.1 Score write privileges (D25)
+
+Today RLS `shadowing_own` / `dictation_own` are `for all to authenticated`, so a learner can insert or update their
+own score rows through PostgREST, bypassing every server check. The only writers in the app are three server paths
+(`createSession`, `scorePronunciation`, `submitAttempt`), and the service-role client is already used by 10+ server
+modules, so the fix is contained:
+
+- `revoke insert, update on shadowing_sessions from authenticated, anon` (B1);
+  `revoke insert, update on dictation_attempts from authenticated, anon` (B2).
+- SELECT stays (RLS still scopes reads to the owner). DELETE is unchanged (no app path deletes; account erasure runs
+  as service role through the `users` cascade).
+- The server verifies the user and every relation with the user-scoped client first, then writes with the
+  service-role client, always setting `user_id` to the verified user. Service role bypasses RLS, so these write
+  helpers are the only place that may hold it for these tables, and each has a test that a foreign `lineId` /
+  `sessionId` is rejected before the write.
+- DB fixtures that insert these rows as `authenticated` move to the owner/service role; a DB test proves an
+  `authenticated` insert and update are refused.
 
 ## 8. Edge cases (tested)
 
@@ -453,7 +516,12 @@ are deleted only after Listening E2E passes and grep shows no caller.
 |---|---|
 | Score for line 51 returns while line 52 is shown | stored on 51's record; 52 unaffected |
 | Two "Score again" presses / two tabs | one claim wins; the other gets 409 and refetches |
-| Azure fails after claim | claim released, scores stay null, recording kept |
+| First request outlives its 90 s lease, a second claims, then the first returns | first's finish/release match no row (stale token); only the second can write or release |
+| Azure fails after claim | claim released with its own token, scores stay null, recording kept |
+| Navigation while `converting`/`saving` | blocked (navigator) or confirmed (mode bar, reload) like `recording` |
+| Learner inserts/updates a score row through PostgREST | refused (no INSERT/UPDATE privilege) |
+| Anything inserts `status = 'unscored'` or turns a row into it | trigger raises |
+| Word Bank body with `hintUnit`, or Typing `hintUnit` ≠ the line's unit | 400 |
 | Legacy webm session | playable, scores shown, rescore disabled with reason |
 | `assessment` null / unknown `v` / partial Azure result | detail parts hidden individually |
 | Azure word split ≠ ours, <90% alignment | no colouring, overall remark |
@@ -481,6 +549,10 @@ test fails without it.
 | Recording, WAV validation, save, score, rescore, history, legacy webm | required | regression |
 | Azure stub states: success, 429 (with/without `Retry-After`), 503, timeout, concurrent rescore | required | regression |
 | Race: late score lands on its own line; mic released on unmount | required | regression |
+| Lease token: stale finish and stale release change nothing (DB race test, two sessions) | required | regression |
+| Unsaved-state guard over all five pre-201 states | required | regression |
+| Direct `authenticated` INSERT/UPDATE refused | `shadowing_sessions` | + `dictation_attempts` |
+| `unscored` trigger, hint-unit validation for both formats and both units | — | required |
 | Chunker on real sentences, shuffle determinism, coverage report | — | required |
 | Word Bank, Typing, Hint, Show answer, scoring, metrics, input validation | — | required |
 | Concealment: no subtitle frame on entering Listening or changing line; cover keeps controls usable | — | required |
@@ -511,6 +583,11 @@ the worktree.
 - IndexedDB persistence of unsaved takes.
 - Rescoring legacy webm recordings.
 - A separate Word Bank skill on the Dashboard (D20 option 2).
-- **Score integrity against a learner writing their own rows:** RLS `shadowing_own` / `dictation_own` are
-  `for all`, so an owner can write their own scores through PostgREST, and `pitch_score` is client-computed by
-  design. Scores are self-assessment; hardening (column privileges + service-role writes) is a separate item.
+- **Accepted residual risk — `pitch_score`.** After D25 no learner can write a score row directly, and the Azure
+  scores and dictation scores are computed only on the server. `pitch_score` is still measured in the browser from
+  the learner's own recording and sent with the save; the server checks it is a number in 0–100 but cannot verify
+  it (existing zod range check). It is labelled a reference measure (D14), feeds no mission, and is read in two
+  places: Summary's `pitch` review reason and the Dashboard's pronunciation weakness family (`pitch` metric). A
+  learner can only skew their own reference reading. Accepted until pitch scoring moves to the server; it is not
+  described anywhere as server-verified.
+- Rows written before D25 were writable by their owner; they are kept as they are (no way to tell edited rows).
