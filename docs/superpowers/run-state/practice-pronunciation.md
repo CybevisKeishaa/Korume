@@ -12,7 +12,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
 - Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` — sections approved by the owner in
   conversation 2026-10-15; written spec awaiting the owner's review.
-- Plan: not written yet (after spec approval).
+- Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — written, awaiting owner review and the execution method.
 
 ## Accepted commits
 
@@ -39,5 +39,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Next actions
 
-1. Owner reviews the written spec.
-2. Write the implementation plan for B1 (writing-plans), owner reviews it and chooses the execution method.
+1. Owner reviews the plan and chooses the execution method.
+2. Start Task 1 (needs Docker Desktop + `npx supabase start`; Step 0 counts legacy rows first).
