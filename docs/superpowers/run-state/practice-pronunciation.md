@@ -18,11 +18,11 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 | Task | Status | Commit |
 |---|---|---|
-| spec | written, review round 1 fixed (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a` + round 1 |
+| spec | written, review round 1 fixed (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
 
 ## Contracts and decisions
 
-- Owner decisions D1–D24 are in spec §2. Gates by branch in spec §9.
+- Owner decisions D1–D25 are in spec §2. Gates by branch in spec §9.
 
 ## Verification
 
