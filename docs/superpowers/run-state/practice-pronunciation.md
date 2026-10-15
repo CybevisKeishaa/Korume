@@ -11,7 +11,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
 - Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` — sections approved by the owner in
-  conversation 2026-10-15; written spec awaiting the owner's review.
+  conversation 2026-10-15; written spec approved after review round 1 (owner: "Viết plan đi", 2026-10-15).
 - Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — written, awaiting owner review and the execution method.
 
 ## Accepted commits
