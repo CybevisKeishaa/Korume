@@ -12,13 +12,13 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
 - Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` — sections approved by the owner in
   conversation 2026-10-15; written spec approved after review round 1 (owner: "Viết plan đi", 2026-10-15).
-- Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — written, awaiting owner review and the execution method.
+- Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — approved by the owner 2026-10-15; execution method not chosen yet (recommended: subagent-driven).
 
 ## Accepted commits
 
 | Task | Status | Commit |
 |---|---|---|
-| spec | written, review round 1 fixed (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
+| spec | approved after review round 1 (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
 
 ## Contracts and decisions
 
@@ -39,5 +39,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Next actions
 
-1. Owner reviews the plan and chooses the execution method.
+1. Next session: ask the owner for the execution method (recommended subagent-driven), then Task 1.
 2. Start Task 1 (needs Docker Desktop + `npx supabase start`; Step 0 counts legacy rows first).
