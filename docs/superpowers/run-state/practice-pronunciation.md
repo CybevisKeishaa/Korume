@@ -19,25 +19,49 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | Task | Status | Commit |
 |---|---|---|
 | spec | approved after review round 1 (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
+| 1 | DB gates, isolated fresh chain, compatibility, lease/ownership mutations; task + fix reviews APPROVE | `5698c58a`, `d0e3ecbb` |
 
 ## Contracts and decisions
 
 - Owner decisions D1–D25 are in spec §2. Gates by branch in spec §9.
+- Ruling (2026-10-17): AGENTS §6 overrides Task 1's duplicate function definitions: edit
+  `lesson_summary_evidence` in migration 043 and `practice_activity` in 045 in place; migration 047
+  owns only new objects. Apply those canonical function definitions to the existing local DB without
+  resetting owner data. A fresh-reset gate requires a separate isolated database; report it as unmet
+  if that isolation cannot be established (L-050).
+- Task 1 ownership test was corrected under AGENTS §7/L-004: the foreign session is unscored and
+  unleased; removing ownership produced the intended failure. Separate fix review approved it.
 
 ## Verification
 
-- None yet. Before any migration: count legacy rows on the owner's local DB (spec §4.7, §9).
+- Task 1 accepted after task and fix reviews. Evidence and command outputs:
+  `.superpowers/sdd/2026-10-15-practice-pronunciation/task-1-report.md` and its cited logs.
+- Pre-migration recount 2026-10-17: shadowing `208|0|0` (total/webm/unscored), dictation `107|0`
+  (total/unscored). Legacy score dumps before/after match SHA-256
+  `C83D9F9D68FC5B9375BC22BD7C6D0920BA7DD70E3537148CDA3A06DC4DED2950`.
+- Practice, Summary, Dashboard, erasure and shadowing live gates passed, including two-session
+  scoring and existing parallel gates. Both stale-token mutations failed at the intended guard;
+  restoring the canonical definitions returned the gates to green.
+- Full product migration chain and gates passed on an isolated disposable DB with an empty public
+  schema. Down/up and transactional rollback checked there; disposable DB removed. Owner DB was
+  not reset.
+- Worktree dependencies installed from lockfile. Typecheck, lint (warnings), protocol, and reruns of
+  the dependency-affected suites passed. Initial full suite failed from missing installed dependencies;
+  a final full suite remains required after the last product edit (L-044).
 
 ## Working tree and environment
 
 - Owner: Codex
 - Docker Desktop + `npx supabase start` needed from the first migration task; build and serve only in this worktree.
+- This worktree has its own ignored `node_modules` installed by `npm ci`; no parent dependency edits.
 
 ## Blockers
 
-- None.
+- No external blocker. Intermediate save/score and Summary contracts remain incompatible until
+  Tasks 4/5 and 13 respectively, as recorded by the prior preflight ruling R2. Do not treat the
+  in-progress branch as ready for use or merge.
 
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Start Task 1 (needs Docker Desktop + `npx supabase start`; Step 0 counts legacy rows first).
+2. Task 2: WAV header inspection, RED/GREEN, mutation and task review. Tasks 3–15 remain.
