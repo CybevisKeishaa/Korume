@@ -94,7 +94,13 @@ begin
     raise exception 'FAIL 3f: completion did not persist scores/assessment or clear lease';
   end if;
   if exists (select 1 from claim_pronunciation_scoring('ba5eba11-0000-4000-8000-00000000000a', r.id)) then raise exception 'FAIL 3g: scored row reclaimed'; end if;
+  update shadowing_sessions set pronunciation_score = null where id = 'ba5eba11-0000-4000-8000-000000000104';
+  if not exists (select 1 from shadowing_sessions where id = 'ba5eba11-0000-4000-8000-000000000104'
+      and user_id = 'ba5eba11-0000-4000-8000-00000000000a' and pronunciation_score is null and scoring_claim is null) then
+    raise exception 'FAIL 3h setup: foreign session must be unscored and unleased';
+  end if;
   if exists (select 1 from claim_pronunciation_scoring('ba5eba11-0000-4000-8000-00000000000b', 'ba5eba11-0000-4000-8000-000000000104')) then raise exception 'FAIL 3h: another user claimed session'; end if;
+  update shadowing_sessions set pronunciation_score = 40 where id = 'ba5eba11-0000-4000-8000-000000000104';
   raise notice 'PASS 3 lease takeover, stale token refusal, immutable score, owner binding';
 end $$;
 
