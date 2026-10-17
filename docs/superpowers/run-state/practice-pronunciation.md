@@ -21,6 +21,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | spec | approved after review round 1 (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
 | 1 | DB gates, isolated fresh chain, compatibility, lease/ownership mutations; task + fix reviews APPROVE | `5698c58a`, `d0e3ecbb` |
 | 2 | WAV parser, audio regression, boundary mutations, TypeScript/lint; fix review APPROVE | `10c01022`, `c8414bd3` |
+| 3 | Shared alignment, assessment, Unicode word spans; caller regressions/mutations and fix review APPROVE | `9cbf5a13`, `1e764bc9` |
 
 ## Contracts and decisions
 
@@ -36,6 +37,11 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
   Verify RIFF/chunk extents and finish the bounded chunk walk before admitting the uploaded bytes;
   accept valid metadata, reject truncated or ambiguous chunks. This tightens admission for malformed
   files; the app's existing PCM encoder remains supported.
+- Task 3 ruling: fix the sample's asymmetric NFKC normalization, which rejects identical half-width
+  or decomposed kana. Preserve raw code-point offsets while composing voicing marks consistently.
+  Incorrect or absent word detail must still fall back to no colouring.
+- Deferred review minor: existing Vite CJS Node API deprecation warning in Vitest output; no
+  configuration change is included in these product tasks. Reassess at the integration gate.
 
 ## Verification
 
@@ -69,4 +75,4 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 3: shared alignment, versioned assessment and Azure word spans. Tasks 4–15 remain.
+2. Task 4: WAV session saving with server-owned row writes and extended history. Tasks 5–15 remain.
