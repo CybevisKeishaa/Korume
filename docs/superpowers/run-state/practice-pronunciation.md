@@ -12,7 +12,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md` (L-051, L-052).
 - Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` — sections approved by the owner in
   conversation 2026-10-15; written spec approved after review round 1 (owner: "Viết plan đi", 2026-10-15).
-- Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — approved by the owner 2026-10-15; execution method not chosen yet (recommended: subagent-driven).
+- Plan `docs/superpowers/plans/2026-10-15-practice-pronunciation.md` (15 tasks) — approved by the owner 2026-10-15; execution: subagent-driven, authorized by the owner 2026-10-17.
 
 ## Accepted commits
 
@@ -30,7 +30,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Working tree and environment
 
-- Owner: Claude
+- Owner: Codex
 - Docker Desktop + `npx supabase start` needed from the first migration task; build and serve only in this worktree.
 
 ## Blockers
@@ -39,5 +39,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Next actions
 
-1. Next session: ask the owner for the execution method (recommended subagent-driven), then Task 1.
+1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
 2. Start Task 1 (needs Docker Desktop + `npx supabase start`; Step 0 counts legacy rows first).
