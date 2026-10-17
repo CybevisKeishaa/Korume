@@ -45,7 +45,7 @@ declare e jsonb := lesson_summary_evidence('5ca1ab1e-0000-4000-8000-0000000000f1
 begin
   if (e->>'hasTranscript')::boolean is not true then raise exception 'FAIL 1: hasTranscript is %', e->'hasTranscript'; end if;
   if (e->>'lineCount')::int <> 2 then raise exception 'FAIL 1: lineCount % (whitespace line must not count)', e->'lineCount'; end if;
-  if (e->>'shadowedLines')::int <> 0 then raise exception 'FAIL 1: shadowedLines %', e->'shadowedLines'; end if;
+  if (e->>'reachedLine')::int is distinct from 0 then raise exception 'FAIL 1: reachedLine %', e->'reachedLine'; end if;
   if jsonb_typeof(e->'pronunciationMean') <> 'null' or jsonb_typeof(e->'dictationMean') <> 'null' then
     raise exception 'FAIL 1: means must be null, got % / %', e->'pronunciationMean', e->'dictationMean';
   end if;
@@ -56,7 +56,7 @@ begin
 end $$;
 commit;
 
--- 2 + 3. Sessions: B's row is invisible to A; the mean is over A's raw values; per-line score is the latest.
+-- 2 + 3. Sessions: B's row is invisible to A; the mean and per-line pronunciation use A's latest scored value.
 insert into shadowing_sessions (user_id, transcript_line_id, pronunciation_score, pitch_score, created_at) values
   (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d1', 55.5, 40, now() - interval '2 hours'),
   (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d1', 60.0, 45, now() - interval '1 hour'),
@@ -69,11 +69,11 @@ select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role
 do $$
 declare e jsonb := lesson_summary_evidence('5ca1ab1e-0000-4000-8000-0000000000f1', 2); l jsonb;
 begin
-  if (e->>'pronunciationMean')::numeric <> 57.75 then
-    raise exception 'FAIL 2/3: pronunciationMean % (expected 57.75 from A only; B''s 99 must be invisible)', e->'pronunciationMean';
+  if (e->>'pronunciationMean')::numeric is distinct from 60::numeric then
+    raise exception 'FAIL 2/3: pronunciationMean % (expected 60 from A only; B''s 99 must be invisible)', e->'pronunciationMean';
   end if;
   raise notice 'PASS 2 another learner''s sessions are invisible';
-  if (e->>'shadowedLines')::int <> 1 then raise exception 'FAIL 3: shadowedLines %', e->'shadowedLines'; end if;
+  if (e->>'reachedLine')::int is distinct from 0 then raise exception 'FAIL 3: reachedLine %', e->'reachedLine'; end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '5ca1ab1e-0000-4000-8000-0000000000d1';
   if (l->>'pronunciation')::numeric <> 60.0 or (l->>'pitch')::numeric <> 45 then
     raise exception 'FAIL 3: line 1 must carry the LATEST session (60 / 45), got %', l;
@@ -82,7 +82,7 @@ begin
   if (l->>'dictation')::numeric <> 70 or l->>'dictationInput' <> 'ちゅうもんをおねがいします' then
     raise exception 'FAIL 3: line 2 dictation evidence wrong: %', l;
   end if;
-  raise notice 'PASS 3 raw mean and latest-per-line scores';
+  raise notice 'PASS 3 latest-scored mean and latest-per-line scores';
 end $$;
 commit;
 
