@@ -20,6 +20,13 @@ function withMetadata(bytes: Uint8Array): Uint8Array {
   return result;
 }
 
+function append(bytes: Uint8Array, tail: Uint8Array, updateRiffSize = true): Uint8Array {
+  const result = new Uint8Array(bytes.length + tail.length);
+  result.set(bytes);
+  result.set(tail, bytes.length);
+  if (updateRiffSize) viewOf(result).setUint32(4, result.length - 8, true);
+  return result;
+}
 describe("inspectWav", () => {
   it("accepts 16 kHz mono 16-bit PCM and reports its duration", () => {
     expect(inspectWav(wav(2))).toEqual({ ok: true, durationSeconds: 2 });
@@ -117,6 +124,53 @@ describe("inspectWav", () => {
     const bytes = wav(1);
     viewOf(bytes).setUint32(4, size, true);
     expect(inspectWav(bytes)).toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("accepts padded metadata after the audio chunk", () => {
+    const metadata = new Uint8Array([74, 85, 78, 75, 1, 0, 0, 0, 7, 0]);
+    expect(inspectWav(append(wav(1), metadata))).toEqual({ ok: true, durationSeconds: 1 });
+  });
+
+  it("rejects a trailing metadata chunk claiming absent bytes", () => {
+    const truncated = new Uint8Array([74, 85, 78, 75, 20, 0, 0, 0]);
+    expect(inspectWav(append(wav(1), truncated))).toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("rejects trailing metadata missing its padding byte", () => {
+    const unpadded = new Uint8Array([74, 85, 78, 75, 1, 0, 0, 0, 7]);
+    expect(inspectWav(append(wav(1), unpadded))).toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it.each([1, 7])("rejects an incomplete trailing chunk header of %i bytes", (length) => {
+    expect(inspectWav(append(wav(1), new Uint8Array(length))))
+      .toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("rejects bytes outside the declared RIFF body", () => {
+    expect(inspectWav(append(wav(1), new Uint8Array(2), false)))
+      .toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("rejects duplicate audio chunks", () => {
+    const bytes = wav(1);
+    expect(inspectWav(append(bytes, bytes.subarray(36))))
+      .toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("rejects duplicate format chunks after audio", () => {
+    const bytes = wav(1);
+    expect(inspectWav(append(bytes, bytes.subarray(12, 36))))
+      .toEqual({ ok: false, reason: "not_wav" });
+  });
+
+  it("rejects duplicate format chunks before audio", () => {
+    const bytes = wav(1);
+    const result = new Uint8Array(bytes.length + 24);
+    result.set(bytes.subarray(0, 36));
+    result.set(bytes.subarray(12, 36), 36);
+    result.set(bytes.subarray(36), 60);
+    viewOf(result).setUint32(4, result.length - 8, true);
+    expect(inspectWav(result)).toEqual({ ok: false, reason: "not_wav" });
   });
 
   it("requires fmt before data and requires a data chunk", () => {

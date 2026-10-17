@@ -21,26 +21,27 @@ export function inspectWav(bytes: Uint8Array): WavCheck {
 
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
   const riffEnd = view.getUint32(4, true) + 8;
-  if (riffEnd < 12 || riffEnd > bytes.length) return { ok: false, reason: "not_wav" };
+  if (riffEnd < 12 || riffEnd !== bytes.length) return { ok: false, reason: "not_wav" };
   let formatOk: boolean | null = null;
-  for (let at = 12; at + 8 <= riffEnd;) {
+  let durationSeconds: number | null = null;
+  for (let at = 12; at < riffEnd;) {
+    if (at + 8 > riffEnd) return { ok: false, reason: "not_wav" };
     const id = tag(bytes, at);
     const size = view.getUint32(at + 4, true);
     const body = at + 8;
     const next = body + size + (size % 2);
     if (id === "data") {
-      if (formatOk === null) return { ok: false, reason: "not_wav" };
+      if (formatOk === null || durationSeconds !== null) return { ok: false, reason: "not_wav" };
       if (!formatOk) return { ok: false, reason: "bad_format" };
-      const durationSeconds = size / BYTES_PER_SECOND;
+      const seconds = size / BYTES_PER_SECOND;
       // Preserve too_long precedence even when the claimed audio exceeds the available bytes.
-      if (durationSeconds > WAV_MAX_SECONDS) return { ok: false, reason: "too_long" };
-      if (next > riffEnd) return { ok: false, reason: "not_wav" };
+      if (seconds > WAV_MAX_SECONDS) return { ok: false, reason: "too_long" };
       if (size === 0 || size % 2 !== 0) return { ok: false, reason: "bad_format" };
-      return { ok: true, durationSeconds };
+      durationSeconds = seconds;
     }
     if (next > riffEnd) return { ok: false, reason: "not_wav" };
     if (id === "fmt ") {
-      if (size < 16) return { ok: false, reason: "not_wav" };
+      if (formatOk !== null || size < 16) return { ok: false, reason: "not_wav" };
       const sampleRate = view.getUint32(body + 4, true);
       formatOk = view.getUint16(body, true) === 1
         && view.getUint16(body + 2, true) === 1
@@ -51,5 +52,7 @@ export function inspectWav(bytes: Uint8Array): WavCheck {
     }
     at = next;
   }
-  return { ok: false, reason: "not_wav" };
+  return durationSeconds === null
+    ? { ok: false, reason: "not_wav" }
+    : { ok: true, durationSeconds };
 }
