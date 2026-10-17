@@ -64,4 +64,25 @@ describe("alignWords", () => {
       { start: 1, end: 3, accuracy: 90, errorType: "None" },
     ]);
   });
+
+  it.each([
+    ["ガッツポーズです。", [w("ガッツ"), w("ポーズ"), w("です")], [[0, 3], [3, 6], [6, 8]]],
+    ["ｶﾞｯﾂﾎﾟｰｽﾞです。", [w("ｶﾞｯﾂ"), w("ﾎﾟｰｽﾞ"), w("です")], [[0, 4], [4, 9], [9, 11]]],
+    ["ｶﾞｯﾂﾎﾟｰｽﾞです。", [w("ガッツ"), w("ポーズ"), w("です")], [[0, 4], [4, 9], [9, 11]]],
+    ["ガッツポーズです。", [w("ｶﾞｯﾂ"), w("ﾎﾟｰｽﾞ"), w("です")], [[0, 3], [3, 6], [6, 8]]],
+    ["か\u3099んばります。", [w("か\u3099んばり"), w("ます")], [[0, 5], [5, 7]]],
+    ["か\u3099んばります。", [w("がんばり"), w("ます")], [[0, 5], [5, 7]]],
+    ["がんばります。", [w("か\u3099んばり"), w("ます")], [[0, 4], [4, 6]]],
+  ] as const)("composes kana consistently and preserves raw offsets: %s", (line, words, ranges) => {
+    expect(alignWords(line, words)).toEqual(ranges.map(([start, end]) => ({ start, end, accuracy: 90, errorType: "None" })));
+  });
+
+  it("composes voicing marks across Azure word boundaries using the base word's score", () => {
+    expect(alignWords("ｶﾞｯﾂﾎﾟｰｽﾞです。", [w("ｶ", 40, "Mispronunciation"), w("ﾞｯﾂ", 80), w("ﾎﾟｰｽﾞ"), w("です")])).toEqual([
+      { start: 0, end: 2, accuracy: 40, errorType: "Mispronunciation" },
+      { start: 2, end: 4, accuracy: 80, errorType: "None" },
+      { start: 4, end: 9, accuracy: 90, errorType: "None" },
+      { start: 9, end: 11, accuracy: 90, errorType: "None" },
+    ]);
+  });
 });

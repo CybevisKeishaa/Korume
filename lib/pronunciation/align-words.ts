@@ -10,30 +10,32 @@ export interface WordSpan {
 }
 
 const IGNORED = /[\s\p{P}\p{S}]/u;
-const norm = (char: string): string => char.normalize("NFKC");
+const segmenter = new Intl.Segmenter("ja", { granularity: "grapheme" });
+
+function normalizedCharacters(text: string): { char: string; start: number; end: number }[] {
+  const result: { char: string; start: number; end: number }[] = [];
+  let end = 0;
+  for (const { segment } of segmenter.segment(text)) {
+    const start = end;
+    end += Array.from(segment).length;
+    if (IGNORED.test(segment)) continue;
+    for (const char of Array.from(segment.normalize("NFKC"))) {
+      if (!IGNORED.test(char)) result.push({ char, start, end });
+    }
+  }
+  return result;
+}
 
 /** Spans index Array.from(lineText), end exclusive; require ≥90% matching non-punctuation characters. */
 export function alignWords(lineText: string, words: readonly AssessmentWord[]): WordSpan[] | null {
-  const chars = Array.from(lineText);
-  const ref: string[] = [];
-  const refOrigin: number[] = [];
-  chars.forEach((char, index) => {
-    if (IGNORED.test(char)) return;
-    for (const piece of Array.from(norm(char))) {
-      ref.push(piece);
-      refOrigin.push(index);
-    }
-  });
+  const refOrigin = normalizedCharacters(lineText);
+  const ref = refOrigin.map((part) => part.char);
   const kept = words.filter((word) => word.errorType !== "Insertion");
-  const hyp: string[] = [];
-  const hypOwner: number[] = [];
-  kept.forEach((word, owner) => {
-    for (const piece of Array.from(norm(word.word))) {
-      if (IGNORED.test(piece)) continue;
-      hyp.push(piece);
-      hypOwner.push(owner);
-    }
-  });
+  const rawOwners = kept.flatMap((word, owner) => Array.from(word.word, () => owner));
+  const hypParts = normalizedCharacters(kept.map((word) => word.word).join(""));
+  const hyp = hypParts.map((part) => part.char);
+  // A mark split into the next Azure word composes with its base and keeps the base word's score.
+  const hypOwner = hypParts.map((part) => rawOwners[part.start]);
   if (ref.length === 0) return null;
 
   const spans: WordSpan[] = [];
@@ -50,10 +52,10 @@ export function alignWords(lineText: string, words: readonly AssessmentWord[]): 
     }
     const previous = spans.at(-1);
     // Split at unaligned characters/punctuation so the UI never colours them by spanning a gap.
-    if (previous && lastOwner === owner && origin <= previous.end) {
-      previous.end = Math.max(previous.end, origin + 1);
+    if (previous && lastOwner === owner && origin.start <= previous.end) {
+      previous.end = Math.max(previous.end, origin.end);
     } else {
-      spans.push({ start: origin, end: origin + 1, accuracy: word.accuracy, errorType: word.errorType });
+      spans.push({ start: origin.start, end: origin.end, accuracy: word.accuracy, errorType: word.errorType });
     }
     lastOwner = owner;
   }
