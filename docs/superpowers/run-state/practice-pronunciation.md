@@ -20,6 +20,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 |---|---|---|
 | spec | approved after review round 1 (lease token, pre-201 guard, hint unit, unscored trigger, D25) | `d278843a`, `f8580170` |
 | 1 | DB gates, isolated fresh chain, compatibility, lease/ownership mutations; task + fix reviews APPROVE | `5698c58a`, `d0e3ecbb` |
+| 2 | WAV parser, audio regression, boundary mutations, TypeScript/lint; fix review APPROVE | `10c01022`, `c8414bd3` |
 
 ## Contracts and decisions
 
@@ -31,6 +32,10 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
   if that isolation cannot be established (L-050).
 - Task 1 ownership test was corrected under AGENTS §7/L-004: the foreign session is unscored and
   unleased; removing ownership produced the intended failure. Separate fix review approved it.
+- Task 2 ruling: spec §4.3/AGENTS input validation overrides the sample parser's early success.
+  Verify RIFF/chunk extents and finish the bounded chunk walk before admitting the uploaded bytes;
+  accept valid metadata, reject truncated or ambiguous chunks. This tightens admission for malformed
+  files; the app's existing PCM encoder remains supported.
 
 ## Verification
 
@@ -64,4 +69,4 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 2: WAV header inspection, RED/GREEN, mutation and task review. Tasks 3–15 remain.
+2. Task 3: shared alignment, versioned assessment and Azure word spans. Tasks 4–15 remain.
