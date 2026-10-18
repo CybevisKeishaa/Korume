@@ -9,7 +9,7 @@ import { PlaybackRoot } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
 import { usePlaybackController, usePositionStore, useSession, WorkspaceProviders } from "./workspace-context";
 
-vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
+vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }), usePathname: () => "/shadowing/video-1" }));
 installPointerEventShim();
 
 const lines = [

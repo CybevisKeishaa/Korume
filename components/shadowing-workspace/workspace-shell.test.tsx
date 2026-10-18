@@ -19,7 +19,7 @@ vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => router,
   // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
-  usePathname: () => "/shadowing/video-1",
+  usePathname: () => pathname.replace(/^\/en/, ""),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -80,6 +80,29 @@ describe("ShadowingWorkspaceShell", () => {
     expect(getByTestId("workspace-player-slot")).not.toHaveAttribute("data-line-id");
     expect(observedStore?.get()).toBe(12);
     expect(getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-orientation", "vertical");
+  });
+
+  it("swaps the live sentence for practice stats while retaining the player, controller and provider", async () => {
+    const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const store = observedStore;
+    const controller = observedController;
+    const player = yt.players[0];
+    expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
+    for (const mode of ["pronunciation", "listening"]) {
+      pathname = `/en/shadowing/video-1/${mode}`;
+      view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+      expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
+      expect(observedStore).toBe(store);
+      expect(observedController).toBe(controller);
+      expect(yt.players[0]).toBe(player);
+      expect(yt.players).toHaveLength(1);
+    }
+    pathname = "/en/shadowing/video-1";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
+    expect(observedController).toBe(controller);
   });
 
   it("uses a definite divider track and flex factors that cannot leave an empty grid gap", () => {

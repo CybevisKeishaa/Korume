@@ -35,6 +35,8 @@ export function usePlaybackControllerState(args: {
   onSentence(position: SentencePosition): void;
   onFlush?(reason: "pause" | "ended"): void;
   initialLoop: LoopConfig;
+  sentenceBound?: boolean;
+  onLoopChange?(config: LoopConfig): void;
   initialRate: number;
 }): { controller: PlaybackController; onTick(time: number): void; onStateChange(state: YtPlayerStateValue): void; onReady(): void } {
   const argsRef = useRef(args);
@@ -86,6 +88,35 @@ export function usePlaybackControllerState(args: {
     publish(positionAt(target), true);
   }, [positionAt, publish]);
 
+  const setLoop = useCallback((config: Partial<LoopConfig>) => {
+    loopConfigRef.current = { ...loopConfigRef.current, ...config };
+    loopStateRef.current = resetLoop(activeRef.current.index);
+    argsRef.current.onLoopChange?.(loopConfigRef.current);
+  }, []);
+
+  // Internal replays keep the loop; user navigation cancels it before changing position.
+  const navigateTo = useCallback((seconds: number, index?: number) => {
+    const current = argsRef.current;
+    if (current.sentenceBound) {
+      stopClock();
+      current.adapterRef.current?.pause();
+      setLoop({ enabled: false });
+    }
+    seekTo(seconds, index);
+  }, [seekTo, setLoop, stopClock]);
+
+  const play = useCallback(() => {
+    const current = argsRef.current;
+    if (current.sentenceBound) {
+      const index = activeRef.current.index ?? positionAt(current.positionStore.get()).index;
+      const line = index === null ? undefined : current.lines[index];
+      if (!line) return;
+      seekTo(line.startTime, index ?? undefined);
+      loopStateRef.current = resetLoop(index);
+    }
+    current.adapterRef.current?.play();
+  }, [positionAt, seekTo]);
+
   const onTick = useCallback((time: number) => {
     const current = argsRef.current;
     if (pausedAtBoundaryRef.current) return;
@@ -102,7 +133,7 @@ export function usePlaybackControllerState(args: {
     lastTickTimeRef.current = time;
 
     if (crossedBoundary && before.index !== null) {
-      const result = decideAtSentenceEnd(loopConfigRef.current, loopStateRef.current);
+      const result = decideAtSentenceEnd(current.sentenceBound ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
       loopStateRef.current = result.next;
       if (result.decision.kind === "replay") {
         const line = current.lines[before.index];
@@ -153,7 +184,7 @@ export function usePlaybackControllerState(args: {
     // ENDED is a boundary only when no tick already crossed this sentence's end (a null-ended last line);
     // otherwise the loop/pause was decided there and deciding again would replay the last line forever.
     if (lastTickTimeRef.current !== null && lastTickTimeRef.current >= end) return;
-    const result = decideAtSentenceEnd(loopConfigRef.current, loopStateRef.current);
+    const result = decideAtSentenceEnd(current.sentenceBound ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
     loopStateRef.current = result.next;
     const line = current.lines[active.index];
     if (!line) return;
@@ -168,20 +199,20 @@ export function usePlaybackControllerState(args: {
   }, [positionAt, seekTo, startClock, stopClock]);
 
   const controller = useMemo<PlaybackController>(() => ({
-    play: () => argsRef.current.adapterRef.current?.play(),
+    play,
     pause: () => argsRef.current.adapterRef.current?.pause(),
     togglePlay: () => {
       const adapter = argsRef.current.adapterRef.current;
       const state = adapter?.getPlayerState();
       if (state === YT_PLAYER_STATE.PLAYING || state === YT_PLAYER_STATE.BUFFERING) adapter?.pause();
-      else adapter?.play();
+      else play();
     },
     isPlaying: () => argsRef.current.adapterRef.current?.getPlayerState() === YT_PLAYER_STATE.PLAYING,
-    seekTo,
+    seekTo: navigateTo,
     seekToSentence: (index, options) => {
       const line = argsRef.current.lines[index];
       if (!line) return;
-      seekTo(line.startTime, index);
+      navigateTo(line.startTime, index);
       if (options?.play) argsRef.current.adapterRef.current?.play();
     },
     previousSentence: () => {
@@ -189,16 +220,16 @@ export function usePlaybackControllerState(args: {
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = previousTarget(current.lines, activeIndex, current.positionStore.get());
       const line = target === null ? undefined : current.lines[target];
-      if (line) seekTo(line.startTime, target ?? undefined);
+      if (line) navigateTo(line.startTime, target ?? undefined);
     },
     nextSentence: () => {
       const current = argsRef.current;
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = nextTarget(current.lines, activeIndex);
       const line = target === null ? undefined : current.lines[target];
-      if (line) seekTo(line.startTime, target ?? undefined);
+      if (line) navigateTo(line.startTime, target ?? undefined);
     },
-    rewind: (seconds) => seekTo(argsRef.current.positionStore.get() - seconds),
+    rewind: (seconds) => navigateTo(argsRef.current.positionStore.get() - seconds),
     setRate: (rate) => {
       const available = PLAYBACK_RATE_OPTIONS.filter((option) => argsRef.current.adapterRef.current?.getAvailablePlaybackRates().includes(option));
       const nearest = available.reduce<number | null>((best, option) => best === null || Math.abs(option - rate) < Math.abs(best - rate) ? option : best, null);
@@ -207,9 +238,9 @@ export function usePlaybackControllerState(args: {
     availableRates: () => PLAYBACK_RATE_OPTIONS.filter((option) => argsRef.current.adapterRef.current?.getAvailablePlaybackRates().includes(option)),
     toggleMute: () => argsRef.current.adapterRef.current?.isMuted() ? argsRef.current.adapterRef.current.unMute() : argsRef.current.adapterRef.current?.mute(),
     isMuted: () => argsRef.current.adapterRef.current?.isMuted() ?? false,
-    setLoop: (config) => { loopConfigRef.current = { ...loopConfigRef.current, ...config }; loopStateRef.current = resetLoop(activeRef.current.index); },
+    setLoop,
     loopConfig: () => loopConfigRef.current,
-  }), [seekTo]);
+  }), [navigateTo, play, setLoop]);
 
   const onReady = useCallback(() => controller.setRate(argsRef.current.initialRate), [controller]);
   return { controller, onTick, onStateChange, onReady };

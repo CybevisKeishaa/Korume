@@ -5,6 +5,10 @@ import { useSearchParams } from "next/navigation";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
+import { usePathname } from "@/lib/i18n/navigation";
+import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
+import { LessonStatStrip } from "./practice/lesson-stat-strip";
+import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
@@ -115,6 +119,8 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
 }
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  const mode = practiceModeFromPath(usePathname());
+  usePracticePlayback(mode);
   const t = useTranslations("shadowing");
   const [session, dispatch] = useSession();
   const { preferences } = usePreferences();
@@ -198,7 +204,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
         {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
-        {!fullTranscript && <LiveSentence />}
+        {!fullTranscript && (mode === "shadowing" ? <LiveSentence /> : <LessonStatStrip mode={mode} />)}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && (

@@ -40,13 +40,87 @@ describe("usePlaybackControllerState", () => {
 
   afterEach(() => { yt.restore(); vi.useRealTimers(); });
 
-  function setup(loop: LoopConfig = { enabled: false, count: 1, autoPause: false }, configuredLines = lines, adapter = adapterFor(player), onFlush = vi.fn()) {
+  function setup(loop: LoopConfig = { enabled: false, count: 1, autoPause: false }, configuredLines = lines, adapter = adapterFor(player), onFlush = vi.fn(), sentenceBound = false) {
     const positionStore = createPlaybackPositionStore(0);
     const onSentence = vi.fn();
     const adapterRef = { current: adapter } as React.RefObject<PlayerAdapter>;
-    const hook = renderHook(() => usePlaybackControllerState({ adapterRef, lines: configuredLines, duration: 9, positionStore, onSentence, initialLoop: loop, initialRate: 1, onFlush }));
+    const hook = renderHook(() => usePlaybackControllerState({ adapterRef, lines: configuredLines, duration: 9, positionStore, onSentence, initialLoop: loop, initialRate: 1, onFlush, sentenceBound }));
     return { ...hook, positionStore, onSentence, onFlush };
   }
+
+  it.each(["play", "togglePlay"] as const)("practice %s starts the current sentence exactly and stops at its boundary", (action) => {
+    const { result, positionStore } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+    const seek = vi.spyOn(player, "seekTo");
+    const pause = vi.spyOn(player, "pauseVideo");
+    positionStore.set(4.2);
+    act(() => result.current.controller[action]());
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+    expect(positionStore.get()).toBe(3);
+    act(() => { result.current.onTick(3.01); result.current.onTick(5.9); result.current.onTick(6); result.current.onTick(6.1); });
+    expect(pause).toHaveBeenCalledOnce();
+    expect(locateSentence(lines, positionStore.get(), 9).index).toBe(1);
+    act(() => result.current.controller.play());
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+  });
+
+  it.each(["previousSentence", "nextSentence", "seekToSentence", "seekTo"] as const)("practice %s pauses before seeking and cancels the current loop", (action) => {
+    const { result } = setup({ enabled: true, count: 0, autoPause: false }, lines, adapterFor(player), vi.fn(), true);
+    const pause = vi.spyOn(player, "pauseVideo");
+    const seek = vi.spyOn(player, "seekTo");
+    act(() => { result.current.onTick(3.5); player.playVideo(); });
+    act(() => {
+      if (action === "seekToSentence") result.current.controller.seekToSentence(2);
+      else if (action === "seekTo") result.current.controller.seekTo(6);
+      else result.current.controller[action]();
+    });
+    expect(pause).toHaveBeenCalledOnce();
+    expect(pause.mock.invocationCallOrder[0]).toBeLessThan(seek.mock.invocationCallOrder[0] ?? 0);
+    expect(seek).toHaveBeenLastCalledWith(action === "previousSentence" ? 0 : 6, true);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+    expect(result.current.controller.loopConfig().enabled).toBe(false);
+  });
+
+  it("practice explicit sentence replay pauses, seeks exactly, and plays that sentence", () => {
+    const { result } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+    const pause = vi.spyOn(player, "pauseVideo");
+    const seek = vi.spyOn(player, "seekTo");
+    act(() => result.current.controller.seekToSentence(1, { play: true }));
+    expect(pause).toHaveBeenCalledOnce();
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
+    act(() => { result.current.onTick(3.01); result.current.onTick(5.9); result.current.onTick(6); });
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+  });
+
+  it("practice loop repeats only the active sentence and then stops when disabled", () => {
+    const { result } = setup({ enabled: true, count: 0, autoPause: false }, lines, adapterFor(player), vi.fn(), true);
+    const seek = vi.spyOn(player, "seekTo");
+    const pause = vi.spyOn(player, "pauseVideo");
+    act(() => { result.current.onTick(3); result.current.onTick(5.9); result.current.onTick(6); });
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+    act(() => { result.current.controller.setLoop({ enabled: false }); result.current.onTick(3.01); result.current.onTick(5.9); result.current.onTick(6); });
+    expect(pause).toHaveBeenCalledOnce();
+  });
+
+  it("practice treats ENDED as the boundary of a null-ended last sentence", () => {
+    const { result, positionStore } = setup(undefined, lines.map((line) => line.index === 2 ? { ...line, endTime: null } : line), adapterFor(player), vi.fn(), true);
+    const pause = vi.spyOn(player, "pauseVideo");
+    act(() => { result.current.onTick(6.1); result.current.onStateChange(YT_PLAYER_STATE.ENDED); });
+    expect(pause).toHaveBeenCalledOnce();
+    expect(locateSentence(lines, positionStore.get(), 9).index).toBe(2);
+  });
+
+  it("Shadowing resumes in place and navigation preserves playing and loop config", () => {
+    const { result } = setup({ enabled: true, count: 3, autoPause: false });
+    const seek = vi.spyOn(player, "seekTo");
+    const pause = vi.spyOn(player, "pauseVideo");
+    act(() => { result.current.onTick(3.5); result.current.controller.play(); });
+    expect(seek).not.toHaveBeenCalled();
+    act(() => result.current.controller.nextSentence());
+    expect(pause).not.toHaveBeenCalled();
+    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
+    expect(result.current.controller.loopConfig()).toEqual({ enabled: true, count: 3, autoPause: false });
+  });
 
   it("publishes a sentence once for the spoken-state flip in a gap", () => {
     const { result, onSentence } = setup(undefined, gapLines);
