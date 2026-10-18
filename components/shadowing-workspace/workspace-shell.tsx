@@ -9,6 +9,8 @@ import { usePathname } from "@/lib/i18n/navigation";
 import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
+import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
+import { hasUnsaved } from "@/lib/pronunciation/attempts";
 import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
@@ -89,7 +91,9 @@ export function ShadowingWorkspaceShell({
         <WorkspacePresence videoId={bootstrap.video.id} />
         <DrawerProvider>
           <NotesProvider bootstrap={bootstrap}>
-            <WorkspaceLayout>{children}</WorkspaceLayout>
+            <PronunciationAttemptsProvider>
+              <WorkspaceLayout>{children}</WorkspaceLayout>
+            </PronunciationAttemptsProvider>
           </NotesProvider>
         </DrawerProvider>
       </PlaybackRoot>
@@ -127,6 +131,11 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const [session, dispatch] = useSession();
   const { preferences } = usePreferences();
   const controller = usePlaybackController();
+  const { attempts } = usePronunciationAttempts();
+  useEffect(() => {
+    controller.setLock({ navigation: hasUnsaved(attempts), play: Object.values(attempts).some((attempt) => attempt.phase === "recording") });
+  }, [attempts, controller]);
+  useEffect(() => () => controller.setLock({ navigation: false, play: false }), [controller]);
   const { toggleLoop } = usePlayerWiring();
   const drawer = useDrawer();
   const rootRef = useRef<HTMLDivElement>(null);
