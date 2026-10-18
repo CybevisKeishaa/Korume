@@ -27,6 +27,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 6 | Mode-aware shell, controller/wiring, saved loops and sentence-bound playback; review APPROVE WITH NITS | `77c1ecf3` |
 | 7a | Authenticated SQL stats adapter/API, null handling and private responses; review APPROVE | `3de4c3cd` |
 | 7b | Stable shared stats provider, responsive strip and EN/VI copy; review APPROVE WITH NITS | `30f34a43` |
+| 8 | Scrolling practice panel and accessible, state-aware sentence navigator; review APPROVE WITH NITS | `3e1e68b6` |
 
 ## Contracts and decisions
 
@@ -55,6 +56,9 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
   do not pause. The packet's auto-pause-only hook cannot alone satisfy spec §3.3/D17. Include the
   smallest mode-aware controller/wiring changes and regression tests: practice play starts at the
   current line, sentence navigation cancels loops and stays paused, Shadowing behavior unchanged.
+- Task 8 ruling: move the eight-chip window from its displayed start, rather than the sample's
+  anchor plus/minus eight, which shifts fewer than eight at clamped ends. Shared selection changes
+  only on chip activation. Focused end-window regressions failed first, then passed.
 - Deferred review minor: existing Vite CJS Node API deprecation warning in Vitest output; no
   configuration change is included in these product tasks. Reassess at the integration gate.
 - Deferred Task 5 minor: await the asynchronous work in ConversationApp's "disables tracking until
@@ -100,5 +104,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 8: practice panel and sentence navigator, then review. Task 7 is accepted (both role slices).
-   Keep one implementer/reviewer at a time; Tasks 9–15 follow.
+2. Task 9: shell-level pronunciation attempts and controller locks, then review. Tasks 1–8 accepted.
+   Keep one implementer/reviewer at a time; Tasks 10–15 follow.
