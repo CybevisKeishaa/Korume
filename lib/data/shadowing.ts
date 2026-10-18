@@ -1,16 +1,19 @@
 import "server-only";
 import { randomUUID } from "node:crypto";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { inspectWav, WAV_MAX_BYTES } from "@/lib/audio/wav-header";
+import { readAssessment, type Assessment } from "@/lib/pronunciation/assessment";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/data/gamification";
 import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
-import { validateAudioFile, type AudioFileLike } from "@/lib/validation/shadowing";
 
 const SESSION_LIMIT = { limit: 30, windowMs: 60_000 };
 /** Long enough for the recorder UI to hand the clip straight back for playback. */
 const SIGNED_URL_TTL_SECONDS = 60 * 60;
 const RECENT_SESSIONS_LIMIT = 10;
 const BUCKET = "recordings";
+const SCORING_LEASE_MS = 90_000;
 
 export interface CreateSessionInput {
   videoId: string;
@@ -28,11 +31,10 @@ export type CreateSessionResult =
 
 /**
  * Persist one shadowing recording for the current user: rate-limit, validate
- * the audio blob, upload it to the private `recordings` bucket at
- * `${user.id}/shadowing/${sessionId}.webm` — the RLS insert policy on
- * `storage.objects` requires that exact prefix (CLAUDE.md §2: recordings
- * belong to the user, encrypted at rest, never public) — insert the
- * `shadowing_sessions` row, and return a short-lived signed URL for
+ * WAV bytes, upload them to the private `recordings` bucket at
+ * `${user.id}/shadowing/${sessionId}.wav` using storage RLS, then insert the
+ * `shadowing_sessions` row through the service client after verifying the
+ * user and line relation (practice modes spec D25). Return a signed URL for
  * immediate playback. `pronunciation_score`/`rhythm_score` are left null here
  * — they're filled in later by `POST /api/pronunciation/score` (Azure
  * scoring). `pitch_score` is accepted directly at creation when supplied:
@@ -49,9 +51,9 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
   const limited = rateLimit(`shadowing:session:${user.id}`, SESSION_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
 
-  const audioMeta: AudioFileLike = { size: input.audio.size, type: input.audio.type };
-  const validation = validateAudioFile(audioMeta);
-  if (!validation.ok) return { ok: false, status: 422 };
+  if (input.audio.size > WAV_MAX_BYTES) return { ok: false, status: 422 };
+  const bytes = new Uint8Array(await input.audio.arrayBuffer());
+  if (!inspectWav(bytes).ok) return { ok: false, status: 422 };
   const { data: line, error: lineError } = await supabase
     .from("transcript_lines")
     .select("id, transcripts!inner(video_id)")
@@ -67,14 +69,14 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
   }
 
   const sessionId = randomUUID();
-  const recordingPath = `${user.id}/shadowing/${sessionId}.webm`;
+  const recordingPath = `${user.id}/shadowing/${sessionId}.wav`;
 
   const { error: uploadError } = await supabase.storage
     .from(BUCKET)
-    .upload(recordingPath, input.audio, { contentType: input.audio.type, upsert: false });
+    .upload(recordingPath, bytes, { contentType: "audio/wav", upsert: false });
   if (uploadError) return { ok: false, status: 400 };
 
-  const { data: inserted, error: insertError } = await supabase
+  const { data: inserted, error: insertError } = await createServiceClient()
     .from("shadowing_sessions")
     .insert({
       id: sessionId,
@@ -90,7 +92,8 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
   if (insertError) {
     // Bad videoId/lineId (FK violation) or other write failure — don't leave
     // an orphaned object behind, and surface as 400 rather than a 500 leak.
-    await supabase.storage.from(BUCKET).remove([recordingPath]);
+    const { error: removeError } = await supabase.storage.from(BUCKET).remove([recordingPath]);
+    if (removeError) console.error("[shadowing] orphaned recording after a failed insert:", recordingPath, removeError);
     return { ok: false, status: 400 };
   }
 
@@ -114,7 +117,32 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
 export interface SessionListItem {
   id: string;
   createdAt: string;
-  signedUrl: string;
+  signedUrl: string | null;
+  pronunciationScore: number | null;
+  rhythmScore: number | null;
+  pitchScore: number | null;
+  assessment: Assessment | null;
+  state: "scored" | "scoring" | "unscored" | "legacy";
+  format: "wav" | "webm";
+}
+
+interface SessionRow {
+  id: string;
+  created_at: string;
+  recording_url: string | null;
+  pronunciation_score: number | null;
+  rhythm_score: number | null;
+  pitch_score: number | null;
+  assessment: unknown;
+  scoring_claim: string | null;
+  scoring_started_at: string | null;
+}
+
+function sessionState(row: SessionRow, now: number): SessionListItem["state"] {
+  if (row.pronunciation_score !== null) return "scored";
+  if (row.recording_url?.endsWith(".webm")) return "legacy";
+  const started = row.scoring_started_at === null ? Number.NaN : Date.parse(row.scoring_started_at);
+  return row.scoring_claim !== null && now - started < SCORING_LEASE_MS ? "scoring" : "unscored";
 }
 
 export type ListSessionsResult = { ok: true; data: SessionListItem[] } | { ok: false; status: 401 };
@@ -133,29 +161,32 @@ export async function listSessions(lineId: string): Promise<ListSessionsResult> 
 
   const { data: rows, error } = await supabase
     .from("shadowing_sessions")
-    .select("id, recording_url, created_at")
+    .select("id, recording_url, created_at, pronunciation_score, rhythm_score, pitch_score, assessment, scoring_claim, scoring_started_at")
     .eq("user_id", user.id)
     .eq("transcript_line_id", lineId)
     .order("created_at", { ascending: false })
     .limit(RECENT_SESSIONS_LIMIT);
   if (error) throw error;
 
-  const typedRows = (rows ?? []) as { id: string; recording_url: string | null; created_at: string }[];
+  const typedRows = (rows ?? []) as SessionRow[];
+  const now = Date.now();
 
   // Sign in parallel rather than N+1 sequentially; row order (newest-first,
   // from the query above) is preserved since each promise keeps its index.
-  const signedResults = await Promise.all(
-    typedRows.map(async (row) => {
-      if (!row.recording_url) return null;
-      const { data: signed } = await supabase.storage
-        .from(BUCKET)
-        .createSignedUrl(row.recording_url, SIGNED_URL_TTL_SECONDS);
-      if (!signed) return null;
-      return { id: row.id, createdAt: row.created_at, signedUrl: signed.signedUrl };
+  const sessions = await Promise.all(
+    typedRows.map(async (row): Promise<SessionListItem> => {
+      const signed = row.recording_url
+        ? await supabase.storage.from(BUCKET).createSignedUrl(row.recording_url, SIGNED_URL_TTL_SECONDS)
+        : null;
+      return {
+        id: row.id, createdAt: row.created_at,
+        signedUrl: signed?.error ? null : signed?.data?.signedUrl ?? null,
+        pronunciationScore: row.pronunciation_score, rhythmScore: row.rhythm_score, pitchScore: row.pitch_score,
+        assessment: readAssessment(row.assessment), state: sessionState(row, now),
+        format: row.recording_url?.endsWith(".webm") ? "webm" : "wav",
+      };
     }),
   );
-
-  const sessions = signedResults.filter((s): s is SessionListItem => s !== null);
 
   return { ok: true, data: sessions };
 }
