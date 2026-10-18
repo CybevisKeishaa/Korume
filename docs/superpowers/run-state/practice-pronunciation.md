@@ -23,6 +23,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 2 | WAV parser, audio regression, boundary mutations, TypeScript/lint; fix review APPROVE | `10c01022`, `c8414bd3` |
 | 3 | Shared alignment, assessment, Unicode word spans; caller regressions/mutations and fix review APPROVE | `9cbf5a13`, `1e764bc9` |
 | 4 | WAV-only saves, privileged row insert, history/cache headers; mutation/regression and fix review APPROVE | `e665d3b1`, `536d47f3` |
+| 5 | Lease scoring, stored WAV/server text, timeout/retry metadata, conversation preserved; review APPROVE WITH NITS | `c2d704d9` |
 
 ## Contracts and decisions
 
@@ -41,8 +42,22 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Task 3 ruling: fix the sample's asymmetric NFKC normalization, which rejects identical half-width
   or decomposed kana. Preserve raw code-point offsets while composing voicing marks consistently.
   Incorrect or absent word detail must still fall back to no colouring.
+- Task 5 ruling (2026-10-18, caller audit L-023): voice conversation actively calls the old multipart
+  scorer, contradicting the plan's caller inventory. Preserve that ephemeral feature at
+  `/api/conversation/pronunciation`, with its existing audio/reference validation and shared per-user
+  quota, private responses, and no shadowing-session write path. The practice scorer remains strict
+  JSON `{ sessionId }`, with server-owned reference text and stored WAV revalidation. Update the
+  conversation caller/tests; do not remove its score or retain client-supplied session scoring.
+- Task 6 preflight: the current controller's play/toggle resumes in place, and Previous/Next/seek
+  do not pause. The packet's auto-pause-only hook cannot alone satisfy spec §3.3/D17. Include the
+  smallest mode-aware controller/wiring changes and regression tests: practice play starts at the
+  current line, sentence navigation cancels loops and stays paused, Shadowing behavior unchanged.
 - Deferred review minor: existing Vite CJS Node API deprecation warning in Vitest output; no
   configuration change is included in these product tasks. Reassess at the integration gate.
+- Deferred Task 5 minor: await the asynchronous work in ConversationApp's "disables tracking until
+  a conversation session exists" test to address its React `act(...)` warning. Origin unestablished;
+  do not label it pre-existing without evidence. Four baseline non-null lint warnings are recorded
+  in the Task 5 report.
 
 ## Verification
 
@@ -69,12 +84,12 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Blockers
 
-- No external blocker. Intermediate save/score and Summary contracts remain incompatible until
-  Tasks 4/5 and 13 respectively, as recorded by the prior preflight ruling R2. Do not treat the
-  in-progress branch as ready for use or merge.
+- No external blocker. Save/score contracts are now implemented; the inactive orphan recorder is
+  removed in Task 14. Summary still requires its Task 13 adapter update. Practice UI and integrated
+  gates remain incomplete; do not treat the branch as ready for use or merge.
 
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 5: score stored sessions using lease tokens, persisted assessment and real upstream retry
-   metadata (prior preflight ruling R1). Tasks 6–15 remain.
+2. Task 6: mode-aware shell and genuinely sentence-bound playback, including the controller
+   preflight gap above. Tasks 7–15 remain.
