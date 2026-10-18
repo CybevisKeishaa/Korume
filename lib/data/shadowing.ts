@@ -62,6 +62,7 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
     .maybeSingle();
   if (lineError) throw lineError;
   if (!line) return { ok: false, status: 400 };
+  const service = createServiceClient();
   try {
     await ensureDailyMission(user.id);
   } catch (err) {
@@ -76,7 +77,7 @@ export async function createSession(input: CreateSessionInput): Promise<CreateSe
     .upload(recordingPath, bytes, { contentType: "audio/wav", upsert: false });
   if (uploadError) return { ok: false, status: 400 };
 
-  const { data: inserted, error: insertError } = await createServiceClient()
+  const { data: inserted, error: insertError } = await service
     .from("shadowing_sessions")
     .insert({
       id: sessionId,

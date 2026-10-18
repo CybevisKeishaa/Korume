@@ -119,6 +119,16 @@ describe("createSession", () => {
     expect(createServiceClient).not.toHaveBeenCalled();
   });
 
+  it("does not upload when service client initialization throws", async () => {
+    const mock = install();
+    const error = new Error("Missing SUPABASE_SERVICE_ROLE_KEY");
+    vi.mocked(createServiceClient).mockImplementationOnce(() => { throw error; });
+    await expect(createSession(input())).rejects.toThrow(error);
+    expect(mock.line).toHaveBeenCalledTimes(1);
+    expect(mock.upload).not.toHaveBeenCalled();
+    expect(mock.insert).not.toHaveBeenCalled();
+  });
+
   it.each([false, true])("removes a failed insert's upload; logs a failed cleanup (%s)", async (cleanupFails) => {
     const mock = install({ insertError: true });
     const error = { message: "remove failed" };
