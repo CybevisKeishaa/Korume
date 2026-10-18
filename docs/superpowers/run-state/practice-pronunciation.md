@@ -24,6 +24,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 3 | Shared alignment, assessment, Unicode word spans; caller regressions/mutations and fix review APPROVE | `9cbf5a13`, `1e764bc9` |
 | 4 | WAV-only saves, privileged row insert, history/cache headers; mutation/regression and fix review APPROVE | `e665d3b1`, `536d47f3` |
 | 5 | Lease scoring, stored WAV/server text, timeout/retry metadata, conversation preserved; review APPROVE WITH NITS | `c2d704d9` |
+| 6 | Mode-aware shell, controller/wiring, saved loops and sentence-bound playback; review APPROVE WITH NITS | `77c1ecf3` |
 
 ## Contracts and decisions
 
@@ -58,6 +59,9 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
   a conversation session exists" test to address its React `act(...)` warning. Origin unestablished;
   do not label it pre-existing without evidence. Four baseline non-null lint warnings are recorded
   in the Task 5 report.
+- Deferred Task 6 minor: triage workspace React `act(...)` and server-layout-effect warnings at
+  integration; origins unestablished. Await/wrap real asynchronous updates and assert intentionally
+  expected SSR warnings narrowly rather than suppressing output.
 
 ## Verification
 
@@ -91,5 +95,6 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 6: mode-aware shell and genuinely sentence-bound playback, including the controller
-   preflight gap above. Tasks 7–15 remain.
+2. Task 7a: backend stats loader and API, then review. Task 7b: frontend stats provider/stat strip,
+   messages and stable shell integration, then review. This preserves the backend→frontend routing
+   order and one implementer/reviewer at a time. Tasks 8–15 follow.
