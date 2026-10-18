@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { renderToString } from "react-dom/server";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { render, TestIntlProvider, waitFor } from "@/test/render";
@@ -8,6 +9,7 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
+import { usePracticeStats } from "./practice/practice-stats-context";
 const presence = vi.hoisted(() => vi.fn());
 vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
@@ -105,6 +107,28 @@ describe("ShadowingWorkspaceShell", () => {
     expect(observedController).toBe(controller);
   });
 
+  it("shares stats with route children without remounting them or the player across modes", async () => {
+    let mounts = 0;
+    function StatsProbe() {
+      const { stats } = usePracticeStats();
+      const [identity] = useState(() => ++mounts);
+      return <output data-testid="stats-probe">{identity}:{stats?.mean ?? "none"}</output>;
+    }
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(url.includes("practice-stats")
+      ? Response.json({ data: { lineCount: 0, scoredLines: 0, mean: 84, lines: {} } })
+      : new Response(null, { status: 200 }))));
+    const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:none");
+    pathname = "/en/shadowing/video-1/pronunciation";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:84"));
+    pathname = "/en/shadowing/video-1";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:none");
+    expect(mounts).toBe(1);
+    expect(yt.players).toHaveLength(1);
+  });
   it("uses a definite divider track and flex factors that cannot leave an empty grid gap", () => {
     const template = workspaceGridTemplateColumns(0.7735);
     const factors = [...template.matchAll(/([\d.]+)fr/g)].map(([, factor]) => Number(factor));

@@ -8,12 +8,13 @@ import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-work
 import { usePathname } from "@/lib/i18n/navigation";
 import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
+import { PracticeStatsProvider } from "./practice/practice-stats-context";
 import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
 import { WorkspacePlayer } from "./workspace-player";
-import { tabPreference, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
+import { tabPreference, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
 import { useFullscreen } from "./use-fullscreen";
@@ -120,6 +121,7 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const mode = practiceModeFromPath(usePathname());
+  const { video } = useLesson();
   usePracticePlayback(mode);
   const t = useTranslations("shadowing");
   const [session, dispatch] = useSession();
@@ -170,6 +172,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
   return (
+    <PracticeStatsProvider videoId={video.id} mode={mode}>
     <div
       ref={rootRef}
       className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
@@ -231,5 +234,6 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
+    </PracticeStatsProvider>
   );
 }
