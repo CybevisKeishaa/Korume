@@ -25,6 +25,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 4 | WAV-only saves, privileged row insert, history/cache headers; mutation/regression and fix review APPROVE | `e665d3b1`, `536d47f3` |
 | 5 | Lease scoring, stored WAV/server text, timeout/retry metadata, conversation preserved; review APPROVE WITH NITS | `c2d704d9` |
 | 6 | Mode-aware shell, controller/wiring, saved loops and sentence-bound playback; review APPROVE WITH NITS | `77c1ecf3` |
+| 7a | Authenticated SQL stats adapter/API, null handling and private responses; review APPROVE | `3de4c3cd` |
 
 ## Contracts and decisions
 
@@ -95,6 +96,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 7a: backend stats loader and API, then review. Task 7b: frontend stats provider/stat strip,
-   messages and stable shell integration, then review. This preserves the backend→frontend routing
-   order and one implementer/reviewer at a time. Tasks 8–15 follow.
+2. Task 7b: frontend stats provider/stat strip, messages and stable shell integration, then review.
+   Task 7a backend contract is accepted. Keep one implementer/reviewer at a time; Tasks 8–15 follow.
