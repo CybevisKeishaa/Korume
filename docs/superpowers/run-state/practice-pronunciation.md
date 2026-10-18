@@ -26,6 +26,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 5 | Lease scoring, stored WAV/server text, timeout/retry metadata, conversation preserved; review APPROVE WITH NITS | `c2d704d9` |
 | 6 | Mode-aware shell, controller/wiring, saved loops and sentence-bound playback; review APPROVE WITH NITS | `77c1ecf3` |
 | 7a | Authenticated SQL stats adapter/API, null handling and private responses; review APPROVE | `3de4c3cd` |
+| 7b | Stable shared stats provider, responsive strip and EN/VI copy; review APPROVE WITH NITS | `30f34a43` |
 
 ## Contracts and decisions
 
@@ -63,6 +64,9 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Deferred Task 6 minor: triage workspace React `act(...)` and server-layout-effect warnings at
   integration; origins unestablished. Await/wrap real asynchronous updates and assert intentionally
   expected SSR warnings narrowly rather than suppressing output.
+- Task 7b review carries these warning checks forward, including selection-popover, drawer inspector,
+  utility-drawer and korume-overlay paths. Replace the retained `yt.players[0]!` shell-test assertion
+  with an explicit existence guard during integration. Browser persistence, type and contrast remain owed.
 
 ## Verification
 
@@ -96,5 +100,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 7b: frontend stats provider/stat strip, messages and stable shell integration, then review.
-   Task 7a backend contract is accepted. Keep one implementer/reviewer at a time; Tasks 8–15 follow.
+2. Task 8: practice panel and sentence navigator, then review. Task 7 is accepted (both role slices).
+   Keep one implementer/reviewer at a time; Tasks 9–15 follow.
