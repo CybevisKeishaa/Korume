@@ -1,18 +1,8 @@
 import { z } from "zod";
-
-/**
- * POST /api/pronunciation/score — multipart form fields (audio arrives as a
- * separate file part; see `validateAudioSize` in `lib/validation/audio.ts`).
- * `referenceText` is the transcript line the user was shadowing;
- * `shadowingSessionId` is optional — when present, the score is persisted
- * onto that (owned) `shadowing_sessions` row.
- */
-export const pronunciationScoreFieldsSchema = z.object({
-  referenceText: z
-    .string()
-    .trim()
-    .min(1, "Reference text is required.")
-    .max(500, "Reference text is too long (max 500 characters)."),
-  shadowingSessionId: z.string().uuid().optional(),
-});
-export type PronunciationScoreFields = z.infer<typeof pronunciationScoreFieldsSchema>;
+/** The saved take supplies both the audio and server-authored reference text. */
+export const scoreSessionSchema = z.object({ sessionId: z.string().uuid() }).strict();
+export type ScoreSessionFields = z.infer<typeof scoreSessionSchema>;
+/** Conversation audio is ephemeral and can never attach to a shadowing session. */
+export const conversationPronunciationSchema = z.object({
+  referenceText: z.string().trim().min(1).max(500),
+}).strict();

@@ -1,7 +1,7 @@
 /**
  * Client-safe shared types for the Layer 4 speech features (STT, TTS,
  * pronunciation scoring). These mirror the JSON shapes returned by
- * `/api/speech/stt` and `/api/pronunciation/score` (see the server-only
+ * `/api/speech/stt` and `/api/conversation/pronunciation` (see the server-only
  * source of truth in `lib/speech-scoring/types.ts`). This module has NO
  * runtime imports, so it is safe to import from client components — unlike
  * `lib/speech-scoring`, which is `server-only`.
@@ -16,7 +16,7 @@ export interface WordPronunciationScore {
   errorType: "None" | "Omission" | "Insertion" | "Mispronunciation";
 }
 
-/** `POST /api/pronunciation/score`'s `data` shape. */
+/** `POST /api/conversation/pronunciation`'s `data` shape. */
 export interface PronunciationAssessmentResult {
   /** What Azure recognized (may differ from the reference text). */
   recognizedText: string;

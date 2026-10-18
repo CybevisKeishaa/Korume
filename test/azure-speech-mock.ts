@@ -24,10 +24,10 @@
  *       },
  *     ]);
  *
- *     const result = await scorePronunciation(audioBlob, "今日はいい天気です");
+ *     const result = await assessPronunciation({ audio: new Uint8Array([1]), referenceText: "今日はいい天気です" });
  *
  *     expect(azure.calls[0]?.headers["pronunciation-assessment"]).toBeDefined();
- *     expect(result.pronScore).toBe(85);
+ *     expect(result.pronunciationScore).toBe(85);
  *   });
  */
 

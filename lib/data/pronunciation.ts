@@ -1,122 +1,108 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
-import {
-  assessPronunciation,
-  isSpeechConfigured,
-  SpeechError,
-  type PronunciationAssessmentResult,
-} from "@/lib/speech-scoring";
-import { speechErrorStatus, SPEECH_THROTTLE_RETRY_AFTER_MS } from "@/lib/http-status";
+import { inspectWav, WAV_MAX_BYTES } from "@/lib/audio/wav-header";
+import { toAssessment, type Assessment } from "@/lib/pronunciation/assessment";
+import { assessPronunciation, isSpeechConfigured, SpeechError, SpeechThrottledError, type PronunciationAssessmentResult } from "@/lib/speech-scoring";
+import { speechErrorStatus } from "@/lib/http-status";
 import { validateAudioSize } from "@/lib/validation/audio";
 import { captureShadowScoreMemories } from "@/lib/data/companion";
 
-/**
- * Pronunciation scoring (differentiator #1 support, CLAUDE.md §5). The most
- * quota-sensitive AI/speech endpoint — tightly rate-limited (10/min/user).
- */
+/** Both scoring flows share the same per-user quota. */
 const SCORE_LIMIT = { limit: 10, windowMs: 60_000 };
-
-export interface ScorePronunciationInput {
-  audio: Blob;
-  referenceText: string;
-  /** When present, the scores are persisted onto this (owned) session row. */
-  shadowingSessionId?: string;
-}
-
-/** The caller's own session row, as selected by the ownership lookup. */
-interface OwnedSession {
-  id: string;
+type ScoringFailure =
+  | { ok: false; status: 401 | 422 | 502 | 503 }
+  | { ok: false; status: 429; retryAfter: number | null };
+export type ScoreSessionResult =
+  | { ok: true; data: { sessionId: string; lineId: string; pronunciationScore: number; rhythmScore: number; assessment: Assessment } }
+  | ScoringFailure
+  | { ok: false; status: 409; reason: "not_claimable" | "legacy_format" | "superseded" };
+interface ClaimRow {
+  claim: string;
   video_id: string | null;
   transcript_line_id: string | null;
+  recording_url: string | null;
+}
+function speechFailure(error: SpeechError): ScoringFailure {
+  if (error.kind === "throttled") {
+    return { ok: false, status: 429, retryAfter: error instanceof SpeechThrottledError ? error.retryAfterMs ?? null : null };
+  }
+  return { ok: false, status: speechErrorStatus(error.kind) as 422 | 502 | 503 };
 }
 
-export type ScorePronunciationResult =
-  | { ok: true; data: PronunciationAssessmentResult }
-  | { ok: false; status: 401 | 404 | 422 | 502 | 503 }
-  // Our own limiter OR Azure's own throttle — merged so `status === 429`
-  // narrows to one shape with retryAfter always present in practice.
-  | { ok: false; status: 429; retryAfter: number };
-
-/**
- * Score a recorded line against `referenceText` via Azure Speech, and — when
- * `shadowingSessionId` is supplied — persist `pronunciationScore`/
- * `fluencyScore` onto the caller's own `shadowing_sessions` row (verified by
- * ownership lookup first; a session id that isn't the caller's own is a 404,
- * not a silent no-op).
- */
-export async function scorePronunciation(
-  input: ScorePronunciationInput,
-): Promise<ScorePronunciationResult> {
+/** Score only a caller-owned stored take; the current service-issued claim alone can finish it. */
+export async function scoreSession(sessionId: string): Promise<ScoreSessionResult> {
   const supabase = createClient();
   const user = await requireUser(supabase);
   if (!user) return { ok: false, status: 401 };
-
   const limited = rateLimit(`pronunciation:score:${user.id}`, SCORE_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
-
   if (!isSpeechConfigured()) return { ok: false, status: 503 };
 
-  const sizeCheck = validateAudioSize({ size: input.audio.size });
-  if (!sizeCheck.ok) return { ok: false, status: 422 };
+  // The service-only RPC checks caller ownership and issues the unforgeable lease token.
+  const service = createServiceClient();
+  const { data: claimed, error: claimError } = await service.rpc("claim_pronunciation_scoring", { p_user: user.id, p_session: sessionId });
+  if (claimError) throw claimError;
+  const lease = (claimed as ClaimRow[] | null)?.[0];
+  if (!lease) return { ok: false, status: 409, reason: "not_claimable" };
+  const release = async () => {
+    const { error } = await service.rpc("release_pronunciation_scoring", { p_session: sessionId, p_claim: lease.claim });
+    if (error) throw error;
+  };
 
-  // Kept beyond the ownership check: the Companion capture below needs the
-  // session's video/line pointers, and this is the only lookup that has them.
-  let ownedSession: OwnedSession | null = null;
-  if (input.shadowingSessionId) {
-    const { data: session, error: lookupError } = await supabase
-      .from("shadowing_sessions")
-      .select("id, video_id, transcript_line_id")
-      .eq("id", input.shadowingSessionId)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (lookupError) throw lookupError;
-    if (!session) return { ok: false, status: 404 };
-    ownedSession = session as OwnedSession;
-  }
-
-  const audioBuffer = await input.audio.arrayBuffer();
-
-  let result: PronunciationAssessmentResult;
   try {
-    result = await assessPronunciation({ audio: audioBuffer, referenceText: input.referenceText });
-  } catch (err) {
-    if (err instanceof SpeechError) {
-      if (err.kind === "throttled") {
-        return { ok: false, status: 429, retryAfter: SPEECH_THROTTLE_RETRY_AFTER_MS };
-      }
-      // `throttled` is handled above; the remaining kinds map to 422/502/503.
-      return { ok: false, status: speechErrorStatus(err.kind) as 422 | 502 | 503 };
+    if (!lease.recording_url || lease.recording_url.endsWith(".webm")) {
+      await release(); return { ok: false, status: 409, reason: "legacy_format" };
     }
-    throw err;
-  }
-
-  if (input.shadowingSessionId) {
-    const { error: updateError } = await supabase
-      .from("shadowing_sessions")
-      .update({
-        pronunciation_score: result.pronunciationScore,
-        rhythm_score: result.fluencyScore,
-      })
-      .eq("id", input.shadowingSessionId)
-      .eq("user_id", user.id);
-    if (updateError) throw updateError;
-
-    if (ownedSession) {
-      // The Companion's score-based producers hook HERE — this is the moment a
-      // pronunciation score first exists. Best-effort:
-      // `captureShadowScoreMemories` never throws (§6.5), so a memory hiccup
-      // can never fail the learner's scoring request.
-      await captureShadowScoreMemories({
-        userId: user.id,
-        sessionId: ownedSession.id,
-        videoId: ownedSession.video_id,
-        transcriptLineId: ownedSession.transcript_line_id,
-        pronunciationScore: result.pronunciationScore,
-      });
+    if (!lease.transcript_line_id || !lease.video_id) { await release(); return { ok: false, status: 422 }; }
+    const { data: line, error: lineError } = await supabase.from("transcript_lines")
+      .select("text_jp, transcripts!inner(video_id)")
+      .eq("id", lease.transcript_line_id).eq("transcripts.video_id", lease.video_id).maybeSingle();
+    if (lineError) throw lineError;
+    if (!line?.text_jp) { await release(); return { ok: false, status: 422 }; }
+    const { data: file, error: downloadError } = await supabase.storage.from("recordings").download(lease.recording_url);
+    if (downloadError || !file || file.size > WAV_MAX_BYTES) {
+      await release(); return { ok: false, status: 422 };
     }
+    // Storage remains writable by the user after save; validate the downloaded bytes again.
+    const audio = await file.arrayBuffer();
+    if (!inspectWav(new Uint8Array(audio)).ok) { await release(); return { ok: false, status: 422 }; }
+    const result = await assessPronunciation({ audio, referenceText: line.text_jp });
+    const assessment = toAssessment(result);
+    const { data: finished, error: finishError } = await service.rpc("finish_pronunciation_scoring", {
+      p_session: sessionId, p_claim: lease.claim, p_pronunciation: result.pronunciationScore,
+      p_rhythm: result.fluencyScore, p_assessment: assessment,
+    });
+    if (finishError) throw finishError;
+    if (finished !== true) return { ok: false, status: 409, reason: "superseded" };
+    await captureShadowScoreMemories({
+      userId: user.id, sessionId, videoId: lease.video_id, transcriptLineId: lease.transcript_line_id,
+      pronunciationScore: result.pronunciationScore,
+    });
+    return { ok: true, data: { sessionId, lineId: lease.transcript_line_id, pronunciationScore: result.pronunciationScore, rhythmScore: result.fluencyScore, assessment } };
+  } catch (error) {
+    await release();
+    if (error instanceof SpeechError) return speechFailure(error);
+    throw error;
   }
+}
 
-  return { ok: true, data: result };
+export type ScoreConversationPronunciationResult = { ok: true; data: PronunciationAssessmentResult } | ScoringFailure;
+/** Ephemeral conversation scoring has no session id, persistence or Companion side effects. */
+export async function scoreConversationPronunciation(input: { audio: Blob; referenceText: string }): Promise<ScoreConversationPronunciationResult> {
+  const user = await requireUser(createClient());
+  if (!user) return { ok: false, status: 401 };
+  const limited = rateLimit(`pronunciation:score:${user.id}`, SCORE_LIMIT);
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
+  if (!isSpeechConfigured()) return { ok: false, status: 503 };
+  if (!validateAudioSize({ size: input.audio.size }).ok) return { ok: false, status: 422 };
+  try {
+    const data = await assessPronunciation({ audio: await input.audio.arrayBuffer(), referenceText: input.referenceText });
+    return { ok: true, data };
+  } catch (error) {
+    if (error instanceof SpeechError) return speechFailure(error);
+    throw error;
+  }
 }
