@@ -63,6 +63,16 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Task 9 contract: pre-save actions carry only `lineId`; Tasks 10/11 must cancel or ignore an old
   conversion/save callback after discard and a new take on that same line. Session-addressed late
   outcomes are already owner-routed. Microphone cleanup and actual browser Back/Forward remain owed.
+- Task 10 implementation `f2db6ecc` is under task review, not yet accepted. It adds the full mode,
+  captured-operation cancellation, history reconciliation/polling and real stats refresh after save/score.
+  Necessary direct seams preserve one scored sentence with adaptive ruby, translation and lookup.
+  Recorder regressions cover failed startup, cancelled grants, old callbacks and double cleanup.
+- Task 10 confirmed that natural Shadowing playback could strand a retained unsaved take after Back.
+  The controller now bounds navigation-locked playback, including skipped ticks, before publishing a
+  different sentence. Ordinary unlocked Shadowing and internal replay regressions passed.
+- Task 10 toolbar ruling: the unlabeled Figma list/restart, headphones, waves and bookmark icons map
+  to Replay Native, Play my take, Details/intonation and sentence bookmark. Exact SVGs are local;
+  the shared header remains the single Reading Settings owner. Final owner look must judge the mapping.
 - Deferred review minor: existing Vite CJS Node API deprecation warning in Vitest output; no
   configuration change is included in these product tasks. Reassess at the integration gate.
 - Deferred Task 5 minor: await the asynchronous work in ConversationApp's "disables tracking until
@@ -110,5 +120,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 10: pronunciation mode, capture/save/score, feedback and history, then review. Tasks 1–9 accepted.
-   Keep one implementer/reviewer at a time; Tasks 11–15 follow.
+2. Task 10 implementation `f2db6ecc` is being reviewed by `task_10_review`; read its verdict before
+   accepting/checkpointing or starting Task 11. Focused 79 files / 1,140 tests passed; TypeScript,
+   scoped lint (46 baseline-proven warning sites) and protocol passed. Browser/full gates remain owed.
+3. Tasks 1–9 accepted. Keep one implementer/reviewer at a time; Tasks 11–15 follow after Task 10 review.
