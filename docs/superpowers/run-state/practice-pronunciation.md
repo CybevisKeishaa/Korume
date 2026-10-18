@@ -28,6 +28,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 7a | Authenticated SQL stats adapter/API, null handling and private responses; review APPROVE | `3de4c3cd` |
 | 7b | Stable shared stats provider, responsive strip and EN/VI copy; review APPROVE WITH NITS | `30f34a43` |
 | 8 | Scrolling practice panel and accessible, state-aware sentence navigator; review APPROVE WITH NITS | `3e1e68b6` |
+| 9 | Durable per-line attempts, session-routed results and controller locks; review APPROVE WITH NITS | `3b39eff7` |
 
 ## Contracts and decisions
 
@@ -59,6 +60,9 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Task 8 ruling: move the eight-chip window from its displayed start, rather than the sample's
   anchor plus/minus eight, which shifts fewer than eight at clamped ends. Shared selection changes
   only on chip activation. Focused end-window regressions failed first, then passed.
+- Task 9 contract: pre-save actions carry only `lineId`; Tasks 10/11 must cancel or ignore an old
+  conversion/save callback after discard and a new take on that same line. Session-addressed late
+  outcomes are already owner-routed. Microphone cleanup and actual browser Back/Forward remain owed.
 - Deferred review minor: existing Vite CJS Node API deprecation warning in Vitest output; no
   configuration change is included in these product tasks. Reassess at the integration gate.
 - Deferred Task 5 minor: await the asynchronous work in ConversationApp's "disables tracking until
@@ -71,6 +75,8 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Task 7b review carries these warning checks forward, including selection-popover, drawer inspector,
   utility-drawer and korume-overlay paths. Replace the retained `yt.players[0]!` shell-test assertion
   with an explicit existence guard during integration. Browser persistence, type and contrast remain owed.
+- Task 9 review confirms nine retained non-null warnings in controller/shell tests are on unchanged
+  code. Include those in integration cleanup; final scoped suite was 35 files / 319 passing tests.
 
 ## Verification
 
@@ -104,5 +110,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 9: shell-level pronunciation attempts and controller locks, then review. Tasks 1–8 accepted.
-   Keep one implementer/reviewer at a time; Tasks 10–15 follow.
+2. Task 10: pronunciation mode, capture/save/score, feedback and history, then review. Tasks 1–9 accepted.
+   Keep one implementer/reviewer at a time; Tasks 11–15 follow.
