@@ -22,6 +22,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 1 | DB gates, isolated fresh chain, compatibility, lease/ownership mutations; task + fix reviews APPROVE | `5698c58a`, `d0e3ecbb` |
 | 2 | WAV parser, audio regression, boundary mutations, TypeScript/lint; fix review APPROVE | `10c01022`, `c8414bd3` |
 | 3 | Shared alignment, assessment, Unicode word spans; caller regressions/mutations and fix review APPROVE | `9cbf5a13`, `1e764bc9` |
+| 4 | WAV-only saves, privileged row insert, history/cache headers; mutation/regression and fix review APPROVE | `e665d3b1`, `536d47f3` |
 
 ## Contracts and decisions
 
@@ -75,4 +76,5 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 ## Next actions
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 4: WAV session saving with server-owned row writes and extended history. Tasks 5–15 remain.
+2. Task 5: score stored sessions using lease tokens, persisted assessment and real upstream retry
+   metadata (prior preflight ruling R1). Tasks 6–15 remain.
