@@ -185,6 +185,51 @@
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
     "practice": {
+      "pronunciation": {
+        "region": "Luyện phát âm",
+        "record": "Thu âm",
+        "stop": "Dừng",
+        "replayNative": "Nghe giọng mẫu",
+        "playMine": "Nghe bản thu của tôi",
+        "saving": "Đang lưu bản thu…",
+        "saveAgain": "Lưu lại",
+        "convertAgain": "Thử lại",
+        "scoring": "Đang chấm…",
+        "scoreAgain": "Chấm lại",
+        "unavailable": "Chấm phát âm hiện chưa khả dụng. Bản thu đã được lưu.",
+        "throttledIn": "Thử lại sau {seconds} giây",
+        "throttled": "Đang quá tải, thử lại sau",
+        "legacy": "Bản ghi định dạng cũ, không chấm lại được",
+        "noDetail": "Không có dữ liệu chi tiết cho lượt này",
+        "finishSaving": "Hãy lưu xong bản thu này trước",
+        "label": {
+          "excellent": "Rất tốt",
+          "good": "Tốt",
+          "keepPractising": "Luyện thêm nhé"
+        },
+        "details": "Chi tiết",
+        "accuracy": "Độ chính xác",
+        "rhythm": "Nhịp điệu",
+        "completeness": "Độ đầy đủ",
+        "intonation": "Ngữ điệu (tham khảo, so với giọng máy)",
+        "heard": "Máy nghe được",
+        "history": "Các lượt thu của câu này",
+        "progress": {
+          "rhythm": "Nhịp điệu {from} → {to}",
+          "pronunciation": "Phát âm {from} → {to}"
+        },
+        "remarkUnaligned": "Chỉ có điểm tổng: không khớp được từng từ với câu một cách đáng tin.",
+        "historyLoading": "Đang tải các lượt thu…",
+        "historyError": "Không tải được các lượt thu.",
+        "historyEmpty": "Chưa có lượt thu cho câu này.",
+        "notScored": "Chưa chấm",
+        "requesting": "Đang chờ quyền truy cập micrô…",
+        "recording": "Đang thu âm…",
+        "saveFailed": "Không lưu được bản thu. Bản thu vẫn được giữ ở đây.",
+        "convertFailed": "Không xử lý được bản thu. Hãy thử lại.",
+        "scoreError": "Không chấm được bản thu. Bản thu đã được lưu.",
+        "micHint": "Cho phép truy cập micrô trong cài đặt trình duyệt để thu âm."
+      },
       "strip": { "sentence": "Câu {current}/{total}", "scored": "Đã chấm {count}/{total}", "average": "TB {value}", "noScore": "Chưa có điểm" },
       "navigator": {
         "label": "Điều hướng câu",

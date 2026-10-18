@@ -117,7 +117,7 @@ export function usePlaybackControllerState(args: {
   const play = useCallback(() => {
     if (lockRef.current.play) return;
     const current = argsRef.current;
-    if (current.sentenceBound) {
+    if (current.sentenceBound || lockRef.current.navigation) {
       const index = activeRef.current.index ?? positionAt(current.positionStore.get()).index;
       const line = index === null ? undefined : current.lines[index];
       if (!line) return;
@@ -135,15 +135,14 @@ export function usePlaybackControllerState(args: {
       if (Math.abs(time - guard.target) < 0.5 || Date.now() >= guard.expiresAt) seekGuardRef.current = null;
       else return;
     }
-    current.positionStore.set(time);
-    const before = activeRef.current;
+    const before = activeRef.current.index === null && lockRef.current.navigation ? positionAt(current.positionStore.get()) : activeRef.current;
     const end = before.index === null ? null : effectiveEnd(current.lines, before.index, current.duration);
     const last = lastTickTimeRef.current;
-    const crossedBoundary = end !== null && last !== null && last < end && end <= time && time - last < 1.5;
+    const crossedBoundary = end !== null && (lockRef.current.navigation ? end <= time : last !== null && last < end && end <= time && time - last < 1.5);
     lastTickTimeRef.current = time;
 
     if (crossedBoundary && before.index !== null) {
-      const result = decideAtSentenceEnd(current.sentenceBound ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
+      const result = decideAtSentenceEnd(current.sentenceBound || lockRef.current.navigation ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
       loopStateRef.current = result.next;
       if (result.decision.kind === "replay") {
         const line = current.lines[before.index];
@@ -161,6 +160,7 @@ export function usePlaybackControllerState(args: {
       }
     }
 
+    current.positionStore.set(time);
     publish(positionAt(time), true);
   }, [positionAt, publish, seekInternal, stopClock]);
 
@@ -200,7 +200,7 @@ export function usePlaybackControllerState(args: {
     // ENDED is a boundary only when no tick already crossed this sentence's end (a null-ended last line);
     // otherwise the loop/pause was decided there and deciding again would replay the last line forever.
     if (lastTickTimeRef.current !== null && lastTickTimeRef.current >= end) return;
-    const result = decideAtSentenceEnd(current.sentenceBound ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
+    const result = decideAtSentenceEnd(current.sentenceBound || lockRef.current.navigation ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
     loopStateRef.current = result.next;
     const line = current.lines[active.index];
     if (!line) return;

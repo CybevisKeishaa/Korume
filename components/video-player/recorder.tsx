@@ -82,6 +82,9 @@ export function useRecorder(): UseRecorderResult {
   // ref alongside the state used for rendering.
   const stateRef = useRef<RecorderState>("idle");
   stateRef.current = state;
+  const captureGeneration = useRef(0);
+  const invalidateCapture = useCallback(() => { captureGeneration.current += 1; }, []);
+  const setRecorderState = useCallback((next: RecorderState) => { stateRef.current = next; setState(next); }, []);
   // Same reason, one layer up: `start` is a stable callback, so without this
   // it would gate on the preferences captured when it was created and never
   // see the microphone being switched off (or back on) while it stays
@@ -105,6 +108,8 @@ export function useRecorder(): UseRecorderResult {
 
   const start = useCallback(async () => {
     if (stateRef.current === "recording" || stateRef.current === "requesting-permission") return;
+    const generation = ++captureGeneration.current;
+    const current = () => mountedRef.current && generation === captureGeneration.current;
 
     setError(null);
     setBlob(null);
@@ -114,15 +119,15 @@ export function useRecorder(): UseRecorderResult {
     // (settings spec §1.5).
     if (!canUseDevice(preferencesRef.current, "microphone")) {
       setError(t("recorder.errors.disabledInSettings"));
-      setState("disabled-in-settings");
+      setRecorderState("disabled-in-settings");
       return;
     }
 
-    setState("requesting-permission");
+    setRecorderState("requesting-permission");
 
     if (!navigator.mediaDevices?.getUserMedia || typeof MediaRecorder === "undefined") {
       setError(t("recorder.errors.notSupported"));
-      setState("error");
+      setRecorderState("error");
       return;
     }
 
@@ -130,13 +135,13 @@ export function useRecorder(): UseRecorderResult {
     try {
       stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     } catch (err) {
-      if (!mountedRef.current) return;
+      if (!current()) return;
       setError(t(`recorder.errors.${classifyMicError(err)}`));
-      setState("error");
+      setRecorderState("error");
       return;
     }
 
-    if (!mountedRef.current) {
+    if (!current()) {
       // Unmounted while permission was pending — release the mic we were
       // just granted instead of orphaning it.
       stream.getTracks().forEach((track) => track.stop());
@@ -145,44 +150,58 @@ export function useRecorder(): UseRecorderResult {
 
     streamRef.current = stream;
     chunksRef.current = [];
-    const mimeType = pickMimeType();
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+    try {
+      const mimeType = pickMimeType();
+      const recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
 
-    recorder.ondataavailable = (event: BlobEvent) => {
-      if (event.data.size > 0) chunksRef.current.push(event.data);
-    };
-    recorder.onstop = () => {
+      recorder.ondataavailable = (event: BlobEvent) => {
+        if (!current()) return;
+        if (event.data.size > 0) chunksRef.current.push(event.data);
+      };
+      recorder.onstop = () => {
+        if (!current()) return;
+        cleanupStream();
+        setBlob(new Blob(chunksRef.current, { type: mimeType ?? "audio/webm" }));
+        setRecorderState("recorded");
+      };
+      recorder.onerror = () => {
+        if (!current()) return;
+        cleanupStream();
+        setError(t("recorder.errors.recordingFailed"));
+        setRecorderState("error");
+      };
+
+      recorderRef.current = recorder;
+      recorder.start();
+      setRecorderState("recording");
+    } catch {
+      invalidateCapture();
+      const failed = recorderRef.current;
+      recorderRef.current = null;
+      if (failed && failed.state !== "inactive") failed.stop();
       cleanupStream();
-      if (!mountedRef.current) return;
-      setBlob(new Blob(chunksRef.current, { type: mimeType ?? "audio/webm" }));
-      setState("recorded");
-    };
-    recorder.onerror = () => {
-      cleanupStream();
-      if (!mountedRef.current) return;
       setError(t("recorder.errors.recordingFailed"));
-      setState("error");
-    };
-
-    recorderRef.current = recorder;
-    recorder.start();
-    setState("recording");
-  }, [cleanupStream, t]);
+      setRecorderState("error");
+    }
+  }, [cleanupStream, invalidateCapture, setRecorderState, t]);
 
   const stop = useCallback(() => {
     if (stateRef.current !== "recording") return;
-    recorderRef.current?.stop();
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
   }, []);
 
   const reset = useCallback(() => {
-    if (stateRef.current === "recording") recorderRef.current?.stop();
+    invalidateCapture();
+    const recorder = recorderRef.current;
+    if (recorder && recorder.state !== "inactive") recorder.stop();
     cleanupStream();
     recorderRef.current = null;
     chunksRef.current = [];
     setBlob(null);
     setError(null);
-    setState("idle");
-  }, [cleanupStream]);
+    setRecorderState("idle");
+  }, [cleanupStream, invalidateCapture, setRecorderState]);
 
   // Unmount cleanup: stop an in-progress recording and release the mic. A
   // real MediaRecorder's `stop()` fires `onstop` asynchronously, so we can't
@@ -194,6 +213,7 @@ export function useRecorder(): UseRecorderResult {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
+      invalidateCapture();
       const recorder = recorderRef.current;
       // Guard against double-stop: a real MediaRecorder throws
       // InvalidStateError if `stop()` is called while already "inactive".
@@ -202,7 +222,7 @@ export function useRecorder(): UseRecorderResult {
       }
       cleanupStream();
     };
-  }, [cleanupStream]);
+  }, [cleanupStream, invalidateCapture]);
 
   return { state, blob, error, start, stop, reset };
 }

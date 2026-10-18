@@ -179,6 +179,51 @@
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
     "practice": {
+      "pronunciation": {
+        "region": "Pronunciation practice",
+        "record": "Record",
+        "stop": "Stop",
+        "replayNative": "Replay native",
+        "playMine": "Play my take",
+        "saving": "Saving your take…",
+        "saveAgain": "Save again",
+        "convertAgain": "Try again",
+        "scoring": "Scoring…",
+        "scoreAgain": "Score again",
+        "unavailable": "Pronunciation scoring is unavailable right now. Your recording is saved.",
+        "throttledIn": "Try again in {seconds} s",
+        "throttled": "Busy, try again shortly",
+        "legacy": "Older recording format, cannot be rescored",
+        "noDetail": "No detail recorded for this attempt",
+        "finishSaving": "Finish saving this take first",
+        "label": {
+          "excellent": "Excellent",
+          "good": "Good",
+          "keepPractising": "Keep practising"
+        },
+        "details": "Details",
+        "accuracy": "Accuracy",
+        "rhythm": "Rhythm",
+        "completeness": "Completeness",
+        "intonation": "Intonation (reference, compared with a synthesized voice)",
+        "heard": "What the scorer heard",
+        "history": "This sentence's takes",
+        "progress": {
+          "rhythm": "Rhythm {from} → {to}",
+          "pronunciation": "Pronunciation {from} → {to}"
+        },
+        "remarkUnaligned": "Overall score only: the words could not be matched to this sentence reliably.",
+        "historyLoading": "Loading takes…",
+        "historyError": "Could not load your takes.",
+        "historyEmpty": "No takes for this sentence yet.",
+        "notScored": "Not scored yet",
+        "requesting": "Waiting for microphone permission…",
+        "recording": "Recording…",
+        "saveFailed": "Could not save your take. Your recording is kept here.",
+        "convertFailed": "Could not prepare your recording. Try again.",
+        "scoreError": "Could not score your take. Your recording is saved.",
+        "micHint": "Allow microphone access in your browser settings to record."
+      },
       "strip": { "sentence": "Sentence {current}/{total}", "scored": "Scored {count}/{total}", "average": "Avg {value}", "noScore": "No score yet" },
       "navigator": {
         "label": "Sentence navigator",

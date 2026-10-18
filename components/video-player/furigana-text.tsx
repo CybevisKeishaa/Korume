@@ -1,4 +1,5 @@
 import type { FuriganaSegment, VocabMasteryMap } from "@/lib/video-types";
+import type { ReactNode } from "react";
 
 export type FuriganaMode = "all" | "none";
 
@@ -27,6 +28,8 @@ export interface FuriganaTextProps {
    */
   shouldShowReading?: (segment: FuriganaSegment, index: number) => boolean;
   className?: string;
+  /** Decorates base text without changing reading decisions or selection offsets. Offsets are code points. */
+  renderText?: (text: string, offset: number) => ReactNode;
 }
 
 /**
@@ -39,10 +42,14 @@ export function FuriganaText({
   mode = "all",
   shouldShowReading,
   className,
+  renderText,
 }: FuriganaTextProps) {
+  let offset = 0;
   return (
     <span className={className} lang="ja">
       {segments.map((segment, index) => {
+        const base = renderText ? renderText(segment.text, offset) : segment.text;
+        offset += Array.from(segment.text).length;
         const canShow = segment.reading != null && segment.reading.length > 0;
         const showReading =
           canShow && (shouldShowReading ? shouldShowReading(segment, index) : mode === "all");
@@ -50,13 +57,13 @@ export function FuriganaText({
         if (showReading) {
           return (
             <ruby key={index}>
-              {segment.text}
+              {base}
               <rt data-type-exempt="furigana-rt-player">{segment.reading}</rt>
             </ruby>
           );
         }
         // eslint-disable-next-line react/no-array-index-key -- segments are a stable, non-reorderable render of one transcript line.
-        return <span key={index}>{segment.text}</span>;
+        return <span key={index}>{base}</span>;
       })}
     </span>
   );

@@ -417,4 +417,26 @@ describe("usePlaybackControllerState", () => {
     act(() => { result.current.onTick(3); result.current.controller.setLock({ navigation: true, play: true }); result.current.onTick(5.9); result.current.onTick(6); });
     expect(pause).toHaveBeenCalledOnce();
   });
+
+  it.each([false, true])("keeps a retained unsaved take on its sentence during Shadowing playback (skipped tick=%s)", (skippedTick) => {
+    const { result, positionStore, onSentence } = setup();
+    act(() => result.current.onTick(3.8));
+    const pause = vi.spyOn(player, "pauseVideo");
+    const seek = vi.spyOn(player, "seekTo");
+    onSentence.mockClear();
+    act(() => {
+      result.current.controller.setLock({ navigation: true, play: false });
+      result.current.controller.play();
+      result.current.onTick(3.01);
+      if (!skippedTick) result.current.onTick(5.9);
+      result.current.onTick(skippedTick ? 7 : 6);
+    });
+    expect(pause).toHaveBeenCalledOnce();
+    expect(locateSentence(lines, positionStore.get(), 9).index).toBe(1);
+    expect(onSentence).not.toHaveBeenCalled();
+    act(() => result.current.controller.play());
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+    act(() => { result.current.controller.setLock({ navigation: false, play: false }); result.current.onTick(3.1); result.current.onTick(5.9); result.current.onTick(6); });
+    expect(locateSentence(lines, positionStore.get(), 9).index).toBe(2);
+  });
 });
