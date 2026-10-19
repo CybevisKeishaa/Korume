@@ -34,9 +34,16 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 12 | "Practice this sentence" row action, only while Pronunciation is complete; seek then route | `a5862230` |
 | 13 | `reachedLine` evidence → "Watched to sentence n/total", practised never complete (D7); mission → `/pronunciation`, speaking copy; mutation (complete at last line) fails | `0f416e4a` |
 | 14 | Mode on (D24), orphan recorder panel deleted, loopback-only recognition override, speech stub, E2E 8/8 | `4e89542f`, `b11d10d5` |
-| 15 | Gates below; live Azure smoke, whole-branch review and owner look still owed | — |
+| 15 | Gates; owner-look screenshots (token fix `493fdd08`); whole-branch review REQUEST CHANGES → fix wave `ceb5660b` (I-1, I-2, M-1..M-6) → REQUEST CHANGES (R-1..R-4) → `0f40ae49` → APPROVE WITH NITS | `493fdd08`, `ceb5660b`, `0f40ae49` |
 
 ## Contracts and decisions
+
+- Whole-branch review N-1 ruling (Claude, 2026-10-19): `saving` is not discardable. A client navigation lets it
+  finish (the request outlives the mode and lands on the shell's store); the link guard and "Leave and discard" skip
+  it; `beforeunload` still warns. Spec §4.6 carries a dated build note.
+- Review I-1: the guard listens on the document (nav rail is outside the workspace root) and exposes
+  `useGuardedNavigation()` for code that navigates itself (Korume "Open full chat"). Downloads and non-http(s) links
+  are not navigations (R-1, transcript export).
 
 - Task 14 E2E ruling (Claude, 2026-10-19): the plan's case 4 assumed an Azure 503 shows "unavailable". The reviewed
   Task 5 route maps an upstream 503 to 502 ("Could not score your take. Your recording is saved.") and keeps its
@@ -106,7 +113,12 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Verification
 
-Claude, 2026-10-19 (cloud session, after the last product edit `fea2ccb8`):
+Claude, 2026-10-19, after the last product edit `0f40ae49`: full vitest 692 files / 5,909 tests; practice E2E +
+shadowing-workspace + summary 36/36 on a fresh build; tsc clean; no lint warning in a touched file. Owner-look
+screenshots of the whole flow at 1280×529 and 1920×1080 (en + vi) were taken on that build and shared in chat;
+they found the undefined `text-destructive` class (mispronounced word rendered black), fixed in `493fdd08`.
+
+Claude, 2026-10-19 (cloud session, after the product edit `fea2ccb8`):
 
 - `npx tsc --noEmit` 0; `npm run lint` 0 errors, 222 warnings, none in a file Claude changed; `npm run verify:protocol` valid.
 - Vitest full suite: 692 files / 5,893 tests passed.
@@ -162,13 +174,14 @@ Codex, earlier:
 
 Owed before merge (Claude, 2026-10-19):
 
-a. Whole-branch `code-reviewer` on `git diff master...practice-pronunciation` with the spec, plan and Review Focus
-   list, then a fix wave and its own review (plan Task 15 step 4).
+a. Done 2026-10-19: whole-branch review, two fix waves, each reviewed; APPROVE WITH NITS (N-1 recorded above).
 b. Live Azure smoke (plan Task 15 step 2): `scripts/smoke/practice-pronunciation-live.ts` is not written; it needs
    the owner's Azure key and a spoken Ep.729 WAV.
 c. Re-run the full Playwright suite where the dictionary is imported; only the reds named in Verification may remain.
-d. Owner Chrome look (Docker + `npx supabase start`, `npx next dev -p 3100`), including the Task 10 toolbar
-   icon mapping. Merge only after approval.
+d. Owner approval of the look, including the Task 10 toolbar icon mapping. The owner cannot open Chrome; judge
+   from the screenshots shared in chat 2026-10-19 or a later set. Merge only after approval.
+e. `practice-pronunciation` must be fast-forwarded to `claude/quirky-maxwell-h86erz` (owner's permission needed to
+   push the feature branch from the cloud session).
 
 History:
 

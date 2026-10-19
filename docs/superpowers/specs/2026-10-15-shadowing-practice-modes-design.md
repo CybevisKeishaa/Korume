@@ -293,6 +293,11 @@ the capability is back on a surface).
   - an in-app confirm dialog (not `window.confirm`) covers the mode bar, the header back link and any other
     in-workspace navigation; confirming discards the take.
 
+  > Build note (2026-10-19, whole-branch review N-1): the dialog also covers the app nav rail and programmatic
+  > navigation (Korume's "Open full chat"). It skips `saving`: that request finishes after the mode unmounts and
+  > lands on the shell's store, so leaving loses nothing, and discarding it would let its 201 attach to a newer take
+  > on the same line. `beforeunload` still warns in every unsaved state, `saving` included.
+
   After the 201 (`scoring`, `scored`, `unscored-*`) changing sentence or mode needs no warning; a running score
   lands on its own line. Unmount stops every microphone track. A blob is never promised to survive a browser crash;
   no IndexedDB.
