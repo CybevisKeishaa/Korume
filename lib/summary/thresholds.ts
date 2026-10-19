@@ -22,7 +22,7 @@ export function modeQuality(
   state: ModeState,
 ): Quality {
   if (mode === "shadowing") {
-    return state.kind === "complete" ? "strong" : state.kind === "in_progress" ? "practiced" : "not_started";
+    return state.kind === "complete" ? "strong" : state.kind === "in_progress" || state.kind === "reached" ? "practiced" : "not_started";
   }
   if (state.kind !== "scored") return "not_started";
   const [needsWorkBelow, strongAt] = CUTS[mode];

@@ -4,6 +4,7 @@ import { adaptiveShouldShowReading, FuriganaText } from "@/components/video-play
 import type { ReadingFurigana } from "@/lib/preferences/options";
 import type { FuriganaSegment } from "@/lib/japanese/types";
 import { cn } from "@/lib/utils";
+import type { ReactNode } from "react";
 import { useLesson } from "./workspace-context";
 
 /**
@@ -24,7 +25,7 @@ export function furiganaShownByMode(mode: ReadingFurigana): boolean {
  * persisted mode for this line only; under `adaptive` a revealed line shows mastered readings too.
  * Task 7's Full Transcript rows reuse it.
  */
-export function RubySentence({ segments, text, mode, override, hidden = false, as: Tag = "p", className, typeExempt }: {
+export function RubySentence({ segments, text, mode, override, hidden = false, as: Tag = "p", className, typeExempt, renderText }: {
   segments: FuriganaSegment[] | null;
   /** The plain line, rendered as-is when there are no segments. */
   text: string;
@@ -38,6 +39,7 @@ export function RubySentence({ segments, text, mode, override, hidden = false, a
   className?: string;
   /** `data-type-exempt` id of the `.reading-*` size class in `className` (spec G2). */
   typeExempt?: string;
+  renderText?: (text: string, offset: number) => ReactNode;
 }) {
   const { masteryMap } = useLesson();
   const show =
@@ -48,7 +50,7 @@ export function RubySentence({ segments, text, mode, override, hidden = false, a
   return (
     // Readings are never part of a selection (spec §6.3): selection offsets count base text only.
     <Tag lang="ja" aria-hidden={hidden || undefined} data-type-exempt={typeExempt} className={cn("font-jp [&_rt]:select-none", className)}>
-      {segments?.length ? <FuriganaText segments={segments} shouldShowReading={show} /> : text}
+      {segments?.length ? <FuriganaText segments={segments} shouldShowReading={show} renderText={renderText} /> : renderText ? renderText(text, 0) : text}
     </Tag>
   );
 }

@@ -53,7 +53,8 @@ create temporary table erasure_unlinked_uuid (relation regclass, column_name tex
 insert into erasure_unlinked_uuid values
   ('public.account_deletion_tombstones','user_id'), -- must outlive the users row it names
   ('public.ai_generations','turn_id'), ('public.ai_reservations','turn_id'), ('public.conversation_messages','turn_id'), -- turn correlation ids
-  ('public.knowledge_entries','lease_token'), ('public.lesson_creation_jobs','lease_token'), ('public.lesson_reflections','lease_token'); -- lease tokens
+  ('public.knowledge_entries','lease_token'), ('public.lesson_creation_jobs','lease_token'), ('public.lesson_reflections','lease_token'),
+  ('public.shadowing_sessions','scoring_claim'); -- lease tokens
 insert into erasure_unlinked_uuid values ('public.study_sessions','client_presence_id'); -- client-minted tab id, not a user key; the row cascades on user_id
 
 do $$

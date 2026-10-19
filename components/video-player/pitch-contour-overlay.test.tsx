@@ -111,6 +111,18 @@ describe("PitchContourOverlay", () => {
     expect(d.match(/M/g)?.length).toBe(2);
   });
 
+  it("bridges a short unvoiced gap (a voiceless consonant) but keeps a pause as a break", () => {
+    // 64 points like the real grid; a 2-point gap spans 3/63 ≈ 5 % of the line, a 12-point pause ≈ 21 %.
+    const overlay: PitchOverlayPoint[] = Array.from({ length: 64 }, (_, k) => ({
+      t: k / 63,
+      userSemitones: (k >= 10 && k < 12) || (k >= 30 && k < 42) ? null : Math.sin(k / 6),
+      refSemitones: k >= 20 && k < 22 ? null : Math.cos(k / 6),
+    }));
+    render(<PitchContourOverlay score={makeScore({ overlay })} />);
+    expect(screen.getByTestId("user-contour").getAttribute("d")?.match(/M/g)?.length).toBe(2);
+    expect(screen.getByTestId("reference-contour").getAttribute("d")?.match(/M/g)?.length).toBe(1);
+  });
+
   it("replaces the score with a low-confidence explanation when overlap is too small", () => {
     render(
       <PitchContourOverlay

@@ -1,6 +1,6 @@
 "use client";
 
-import { useId } from "react";
+import { useId, type ComponentProps, type ReactNode } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { HideTextGlyph, ShowTextGlyph } from "./player-glyphs";
@@ -18,7 +18,9 @@ const TRANSLATION = "reading-latin-body";
  * writes a preference. The card keeps its height through an intro, a hidden line and gaps, so the player
  * above never jumps.
  */
-export function LiveSentence() {
+export function LiveSentence({ renderSentence = (props) => <RubySentence {...props} /> }: {
+  renderSentence?: (props: ComponentProps<typeof RubySentence>) => ReactNode;
+}) {
   const t = useTranslations("shadowing");
   const labelId = useId();
   const { lines } = useLesson();
@@ -65,17 +67,17 @@ export function LiveSentence() {
             }}
             className="cursor-text rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <RubySentence
-              segments={line.furigana}
-              text={line.textJp}
-              mode={preferences.readingFurigana}
-              override={session.lineFurigana[line.id]}
+            {renderSentence({
+              segments: line.furigana,
+              text: line.textJp,
+              mode: preferences.readingFurigana,
+              override: session.lineFurigana[line.id],
               // Hidden keeps the box (no jump) and leaves the line out of the accessibility tree.
-              hidden={hidden}
+              hidden,
               // Softened between sentences by colour, never by opacity on already-muted text (contrast).
-              typeExempt={JAPANESE}
-              className={cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted")}
-            />
+              typeExempt: JAPANESE,
+              className: cn(JAPANESE, hidden && "invisible", isSpoken ? "reading-foreground" : "reading-muted"),
+            })}
           </div>
         ) : (
           <p aria-hidden="true" data-type-exempt={JAPANESE} className={cn(JAPANESE, "invisible")}>&nbsp;</p>

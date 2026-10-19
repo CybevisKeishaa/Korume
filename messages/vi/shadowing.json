@@ -184,6 +184,67 @@
   "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
   "workspace": {
+    "practice": {
+      "pronunciation": {
+        "region": "Luyện phát âm",
+        "record": "Thu âm",
+        "stop": "Dừng",
+        "replayNative": "Nghe giọng mẫu",
+        "playMine": "Nghe bản thu của tôi",
+        "position": "Vị trí",
+        "saving": "Đang lưu bản thu…",
+        "saveAgain": "Lưu lại",
+        "discardTake": "Bỏ bản thu",
+        "convertAgain": "Thử lại",
+        "scoring": "Đang chấm…",
+        "scoreAgain": "Chấm lại",
+        "unavailable": "Chấm phát âm hiện chưa khả dụng. Bản thu đã được lưu.",
+        "throttledIn": "Thử lại sau {seconds} giây",
+        "throttled": "Đang quá tải, thử lại sau",
+        "legacy": "Bản ghi định dạng cũ, không chấm lại được",
+        "noDetail": "Không có dữ liệu chi tiết cho lượt này",
+        "finishSaving": "Hãy lưu xong bản thu này trước",
+        "label": {
+          "excellent": "Rất tốt",
+          "good": "Tốt",
+          "keepPractising": "Luyện thêm nhé"
+        },
+        "details": "Chi tiết",
+        "accuracy": "Độ chính xác",
+        "rhythm": "Độ trôi chảy",
+        "completeness": "Độ hoàn thiện",
+        "intonation": "Ngữ điệu (tham khảo, so với giọng máy)",
+        "heard": "Máy nghe được",
+        "history": "Các lượt thu của câu này",
+        "progress": {
+          "rhythm": "Độ trôi chảy {from} → {to}",
+          "pronunciation": "Phát âm {from} → {to}"
+        },
+        "wordGrade": { "needsWork": "Cần luyện thêm: {words}.", "good": "Tốt: {words}.", "strong": "Rất tốt: {words}." },
+        "analysis": { "title": "Điểm phát âm", "subtitle": "Điểm phát âm cho cả câu", "words": "Chi tiết từng từ", "wordsHelpLabel": "Cách đọc màu", "wordsHelp": "Xanh lá: rất tốt, vàng: tốt, đỏ: cần luyện thêm. Từ bị gạch là từ máy không nghe thấy.", "notHeard": "không nghe thấy", "mismatch": "Câu bạn vừa đọc chưa khớp với câu mẫu. Hãy nghe lại và đọc đúng nội dung câu đang hiển thị." },
+        "remarkUnaligned": "Chỉ có điểm tổng: không khớp được từng từ với câu một cách đáng tin.",
+        "historyLoading": "Đang tải các lượt thu…",
+        "historyError": "Không tải được các lượt thu.",
+        "historyEmpty": "Chưa có lượt thu cho câu này.",
+        "notScored": "Chưa chấm",
+        "requesting": "Đang chờ quyền truy cập micrô…",
+        "recording": "Đang thu âm…",
+        "saveFailed": "Không lưu được bản thu. Bản thu vẫn được giữ ở đây.",
+        "convertFailed": "Không xử lý được bản thu. Hãy thử lại.",
+        "scoreError": "Không chấm được bản thu. Bản thu đã được lưu.",
+        "unheard": "Máy chấm không nghe thấy giọng nói trong bản thu này. Hãy thu lại, để micro gần hơn một chút.",
+        "micHint": "Cho phép truy cập micrô trong cài đặt trình duyệt để thu âm."
+      },
+      "strip": { "label": "Tiến độ bài học", "sentence": "Câu", "scored": "Đã chấm", "average": "Điểm TB", "noScore": "Chưa có điểm" },
+      "navigator": {
+        "label": "Điều hướng câu",
+        "earlier": "Các câu trước",
+        "later": "Các câu sau",
+        "chip": "Câu {number}, {state}",
+        "state": { "none": "chưa luyện", "scored": "{score} điểm", "needs_review": "cần ôn lại", "unscored": "chưa chấm" }
+      },
+      "leave": { "title": "Bỏ bản thu chưa lưu?", "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.", "stay": "Ở lại", "discard": "Rời đi và bỏ bản thu" }
+    },
     "mining": {
       "loading": "Đang tải thẻ của bạn…",
       "failed": "Không tải được thẻ.",
@@ -296,6 +357,7 @@
       "markedDifficult": "Đã đánh dấu khó",
       "actions": "Thao tác với câu",
       "replay": "Phát lại",
+      "practice": "Luyện câu này",
       "bookmark": "Đánh dấu",
       "difficult": "Khó",
       "lineFurigana": "Cách đọc cho câu này",
@@ -499,6 +561,7 @@
       "notEnoughData": "Chưa đủ dữ liệu",
       "complete": "Hoàn thành",
       "percent": "{value}%",
+      "reached": "Đã xem đến câu {line}/{total}",
       "score": "{value}"
     },
     "saved": {

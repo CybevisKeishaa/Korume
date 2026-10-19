@@ -25,4 +25,9 @@ describe("modeQuality (spec §5.1 table)", () => {
     expect(modeQuality("shadowing", { kind: "in_progress", percent: 10 })).toBe("practiced");
     expect(modeQuality("shadowing", { kind: "not_started" })).toBe("not_started");
   });
+
+  it("reads a watched-to position as practised, never strong", () => {
+    expect(modeQuality("shadowing", { kind: "reached", line: 51, total: 194 })).toBe("practiced");
+    expect(modeQuality("shadowing", { kind: "reached", line: 194, total: 194 })).toBe("practiced");
+  });
 });

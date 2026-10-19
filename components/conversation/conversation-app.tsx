@@ -46,7 +46,7 @@ function nextLocalId(): string {
 
 const SESSION_ENDPOINT = "/api/conversation/session";
 const MESSAGE_ENDPOINT = "/api/conversation/message";
-const PRONUNCIATION_ENDPOINT = "/api/pronunciation/score";
+const PRONUNCIATION_ENDPOINT = "/api/conversation/pronunciation";
 
 /**
  * `res`'s body may carry a server-authored `error` string (e.g. the

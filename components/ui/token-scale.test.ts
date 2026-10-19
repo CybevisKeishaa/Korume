@@ -67,7 +67,9 @@ const SCANNED_DIRS = [
   // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
   // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
-  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 45 },
+  // Practice-pronunciation Task 11: + practice/unsaved-take-guard.
+  // Practice-pronunciation owner round 2026-10-19: + practice/take-player, practice/pronunciation-analysis.
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 60 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },
@@ -83,7 +85,7 @@ const SCANNED_DIRS = [
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: FORBIDDEN, sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: FORBIDDEN, sources: 4 },
   // Task 4b: the workspace route group only; dictation stays outside this scope.
-  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 2 },
+  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 3 },
   // The Shadowing Hub renders into this tree and the first pass missed it:
   // hub-import-section imports VideoImportForm, and both it and
   // hub-library-section import LessonCreationProgress. A calibration screen

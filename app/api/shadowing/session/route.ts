@@ -3,6 +3,8 @@ import { z } from "zod";
 import { createSession, listSessions } from "@/lib/data/shadowing";
 import { shadowingSessionSchema } from "@/lib/validation/shadowing";
 
+const PRIVATE_HEADERS = { "Cache-Control": "private, no-store" };
+
 /**
  * POST /api/shadowing/session — multipart upload: `videoId`, `lineId`
  * (strings) + `audio` (file). Body is `multipart/form-data`, not JSON, so
@@ -14,7 +16,7 @@ export async function POST(request: Request) {
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid form data" }, { status: 400, headers: PRIVATE_HEADERS });
   }
 
   const videoId = form.get("videoId");
@@ -30,15 +32,15 @@ export async function POST(request: Request) {
   if (!parsed.success) {
     return NextResponse.json(
       { error: "Invalid fields", details: parsed.error.flatten().fieldErrors },
-      { status: 400 },
+      { status: 400, headers: PRIVATE_HEADERS },
     );
   }
 
   // A missing/malformed file part is a structural request error, distinct
-  // from a present-but-invalid file (bad mime/size), which createSession
+  // from a present-but-invalid file (invalid WAV/size), which createSession
   // reports as 422 after auth + rate-limit have been checked.
   if (!(audio instanceof Blob) || audio.size === 0) {
-    return NextResponse.json({ error: "Missing audio file" }, { status: 400 });
+    return NextResponse.json({ error: "Missing audio file" }, { status: 400, headers: PRIVATE_HEADERS });
   }
 
   const result = await createSession({
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
     if (result.status === 429) {
       return NextResponse.json(
         { error: "Too many recordings, slow down" },
-        { status: 429, headers: { "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
+        { status: 429, headers: { ...PRIVATE_HEADERS, "Retry-After": String(Math.ceil(result.retryAfter / 1000)) } },
       );
     }
     const message =
@@ -60,10 +62,10 @@ export async function POST(request: Request) {
         : result.status === 422
           ? "Invalid audio file"
           : "Could not save recording";
-    return NextResponse.json({ error: message }, { status: result.status });
+    return NextResponse.json({ error: message }, { status: result.status, headers: PRIVATE_HEADERS });
   }
 
-  return NextResponse.json({ data: result.data }, { status: 201 });
+  return NextResponse.json({ data: result.data }, { status: 201, headers: PRIVATE_HEADERS });
 }
 
 /** GET /api/shadowing/session?lineId=<uuid> — the current user's recent recordings for that line. */
@@ -71,12 +73,12 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const parsedLineId = z.string().uuid().safeParse(searchParams.get("lineId"));
   if (!parsedLineId.success) {
-    return NextResponse.json({ error: "Invalid lineId" }, { status: 400 });
+    return NextResponse.json({ error: "Invalid lineId" }, { status: 400, headers: PRIVATE_HEADERS });
   }
 
   const result = await listSessions(parsedLineId.data);
   if (!result.ok) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: result.status });
+    return NextResponse.json({ error: "Unauthorized" }, { status: result.status, headers: PRIVATE_HEADERS });
   }
-  return NextResponse.json({ data: result.data });
+  return NextResponse.json({ data: result.data }, { headers: PRIVATE_HEADERS });
 }

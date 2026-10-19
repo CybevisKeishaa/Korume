@@ -39,7 +39,7 @@ async function loadDailyMission(): Promise<MissionView | null> {
     const lesson = row.video_id ? lessons.get(row.video_id) : null;
     const playbackPercent = row.type === "finish_lesson" && lesson?.duration_seconds && lesson.duration_seconds > 0
       ? Math.min(100, Math.max(0, Math.round(100 * (lesson.last_watched_position ?? 0) / lesson.duration_seconds))) : null;
-    return { type: row.type, current: row.current, target: row.target, title: row.video_id ? titles.get(row.video_id) ?? null : null, href: row.type === "review" ? review.href : row.type === "dictation_lines" ? `/shadowing/${row.video_id}/dictation` : `/shadowing/${row.video_id}`, playbackPercent };
+    return { type: row.type, current: row.current, target: row.target, title: row.video_id ? titles.get(row.video_id) ?? null : null, href: row.type === "review" ? review.href : row.type === "dictation_lines" ? `/shadowing/${row.video_id}/dictation` : row.type === "shadow_lines" ? `/shadowing/${row.video_id}/pronunciation` : `/shadowing/${row.video_id}`, playbackPercent };
   }) };
 }
 

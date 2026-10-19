@@ -10,11 +10,20 @@ import { usePositionStore, useSession, WorkspaceProviders } from "./workspace-co
 
 // One router object, as next-intl's memoised useRouter gives: a fresh one per call would change toggleMark
 // on every provider render and defeat the row memo the render-count test measures.
-const router = vi.hoisted(() => ({ refresh: () => undefined }));
+const router = vi.hoisted(() => ({ refresh: () => undefined, push: vi.fn() }));
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => router,
 }));
+
+// Pronunciation is switched on per test: the row offers "Practice this sentence" only when it is complete.
+const modes = vi.hoisted(() => ({ pronunciationComplete: true }));
+vi.mock("@/lib/shadowing-workspace/learning-modes", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/lib/shadowing-workspace/learning-modes")>();
+  return { ...actual, get LEARNING_MODES() {
+    return actual.LEARNING_MODES.map((mode) => mode.id === "pronunciation" ? { ...mode, complete: modes.pronunciationComplete } : mode);
+  } };
+});
 
 // Counts RubySentence renders by line text, to prove a sentence change re-renders only the rows that moved.
 const rubyRenders: string[] = [];
@@ -266,5 +275,28 @@ describe("TranscriptPanel", () => {
     // Keyboard activation of a button dispatches a click with detail 0.
     fireEvent.click(screen.getByRole("button", { name: "Back to current" }), { detail: 0 });
     expect(document.activeElement).toBe(bodyOf("会議を始めます"));
+  });
+
+  it("Practice this sentence moves to that line, then opens Pronunciation", () => {
+    modes.pronunciationComplete = true;
+    seekToSentence.mockClear();
+    router.push.mockClear();
+    const order: string[] = [];
+    seekToSentence.mockImplementation(() => order.push("seek"));
+    router.push.mockImplementation(() => order.push("push"));
+    renderPanel();
+    fireEvent.click(within(rowAt(3)).getByRole("button", { name: "Practice this sentence" }));
+    expect(seekToSentence).toHaveBeenCalledWith(3);
+    expect(router.push).toHaveBeenCalledWith("/shadowing/v/pronunciation");
+    expect(order).toEqual(["seek", "push"]);
+    seekToSentence.mockReset();
+    router.push.mockReset();
+  });
+
+  it("offers no Practice this sentence while the Pronunciation mode is off", () => {
+    modes.pronunciationComplete = false;
+    renderPanel();
+    expect(screen.queryByRole("button", { name: "Practice this sentence" })).not.toBeInTheDocument();
+    modes.pronunciationComplete = true;
   });
 });

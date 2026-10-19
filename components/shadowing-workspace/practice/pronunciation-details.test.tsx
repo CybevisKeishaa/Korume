@@ -1,0 +1,45 @@
+import { describe, expect, it, vi } from "vitest";
+import userEvent from "@testing-library/user-event";
+import { render, screen } from "@/test/render";
+import type { SessionListItem } from "@/lib/data/shadowing";
+import { PronunciationDetails, progressLine } from "./pronunciation-details";
+
+const item = (id: string, pronunciationScore: number | null, rhythmScore: number | null): SessionListItem => ({
+  id, createdAt: "2026-10-18T00:00:00Z", signedUrl: null, pronunciationScore, rhythmScore, pitchScore: null,
+  assessment: null, state: pronunciationScore === null ? "unscored" : "scored", format: "wav",
+});
+describe("PronunciationDetails", () => {
+  it("compares the latest two scored takes only", () => {
+    expect(progressLine([item("a", 90, 80)])).toBeNull();
+    expect(progressLine([item("a", 90, 80), item("b", null, null), item("c", 84, 72)])).toEqual({ metric: "rhythm", from: 72, to: 80 });
+    expect(progressLine([item("a", 90, null), item("b", 84, 72)])).toEqual({ metric: "pronunciation", from: 84, to: 90 });
+    // Scores are numeric(5,2); the line reads like the badge and the history, in whole numbers (review M-3).
+    expect(progressLine([item("a", 86.2, null), item("b", 84.4, null)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
+    expect(progressLine([item("a", 86.2, 72.4), item("b", 84.4, 72.3)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
+  });
+  it("hides details initially, then shows the takes and the progress line (the scores live in the analysis card)", async () => {
+    render(<PronunciationDetails pitch={null} items={[item("a", 90, 80), item("b", 84, 72)]} onScore={vi.fn()} />);
+    const button = screen.getByRole("button", { name: "Details" });
+    expect(button).toHaveAttribute("aria-expanded", "false");
+    expect(screen.queryByText("This sentence's takes")).not.toBeInTheDocument();
+    await userEvent.click(button);
+    expect(button).toHaveAttribute("aria-expanded", "true");
+    expect(screen.queryByText("Accuracy")).not.toBeInTheDocument();
+    expect(screen.getByText("Fluency 72 → 80")).toBeVisible();
+    expect(screen.getAllByRole("listitem")).toHaveLength(2);
+  });
+  it("offers retry for unscored history and explains disabled legacy recordings", async () => {
+    const onScore = vi.fn();
+    render(<PronunciationDetails pitch={null}
+      items={[item("new", null, null), { ...item("old", null, null), state: "legacy", format: "webm" }]} onScore={onScore} />);
+    await userEvent.click(screen.getByRole("button", { name: "Details" }));
+    const retry = screen.getAllByRole("button", { name: "Score again" });
+    expect(retry).toHaveLength(2);
+    expect(retry[1]).toBeDisabled();
+    expect(screen.getByText("Older recording format, cannot be rescored")).toBeVisible();
+    const retryable = retry[0]; if (!retryable) throw new Error("Missing retry button");
+    await userEvent.click(retryable);
+    expect(onScore).toHaveBeenCalledWith("new");
+    expect(screen.queryByText(/Pronunciation \d+ →/)).not.toBeInTheDocument();
+  });
+});

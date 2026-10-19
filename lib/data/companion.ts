@@ -216,7 +216,7 @@ export interface ShadowScoreCaptureInput {
  * `first_shadow` + `line_mastered` producers (spec §6). Hooks the pronunciation
  * score WRITE, not session creation — scores don't exist yet when a shadowing
  * session row is inserted; Azure fills them in later (see
- * `lib/data/pronunciation.ts::scorePronunciation`).
+ * `lib/data/pronunciation.ts::scoreSession`).
  *
  * Best-effort and idempotent: it MUST NEVER throw into the scoring request
  * (§6.5), and the dedupe keys make repeats no-ops — `first_shadow` is a

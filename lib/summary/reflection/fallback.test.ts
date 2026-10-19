@@ -22,6 +22,8 @@ describe("buildReflectionFallback", () => {
       .toEqual({ kind: "state", state: "complete" });
     expect(buildReflectionFallback({ ...base, status: { ...base.status, shadowing: { kind: "in_progress", percent: 20 } } }))
       .toEqual({ kind: "state", state: "in_progress" });
+    expect(buildReflectionFallback({ ...base, status: { ...base.status, shadowing: { kind: "reached", line: 51, total: 194 } } }))
+      .toEqual({ kind: "state", state: "in_progress" });
     expect(buildReflectionFallback(base)).toEqual({ kind: "state", state: "not_started" });
   });
 });

@@ -49,7 +49,7 @@ export class SpeechAuthError extends SpeechError {
 export class SpeechThrottledError extends SpeechError {
   readonly kind = "throttled" as const;
   readonly status = 429 as const;
-  constructor(message = "Azure Speech request was throttled (429).") {
+  constructor(message = "Azure Speech request was throttled (429).", readonly retryAfterMs?: number) {
     super(message);
     this.name = "SpeechThrottledError";
   }

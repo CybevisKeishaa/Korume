@@ -342,7 +342,7 @@ describe("ConversationApp", () => {
         handle: () => jsonResponse(200, { data: { reply: "はい", truncated: false, model: "m" } }),
       },
       {
-        match: (url) => url === "/api/pronunciation/score",
+        match: (url) => url === "/api/conversation/pronunciation",
         handle: () => jsonResponse(200, { data: { pronunciationScore: 88 } }),
       },
     ]);
@@ -363,9 +363,10 @@ describe("ConversationApp", () => {
     await userEvent.click(screen.getByRole("button", { name: /^send$/i }));
 
     await waitFor(() =>
-      expect(router.calls.some((c) => c.url === "/api/pronunciation/score")).toBe(true),
+      expect(router.calls.some((c) => c.url === "/api/conversation/pronunciation")).toBe(true),
     );
-    const scoreCall = router.calls.find((c) => c.url === "/api/pronunciation/score")!;
+    expect(await screen.findByTitle(/pronunciation score for this message/i)).toHaveTextContent("88");
+    const scoreCall = router.calls.find((c) => c.url === "/api/conversation/pronunciation")!;
     const body = scoreCall.init!.body as FormData;
     expect(body.get("referenceText")).toBe("すみません");
 

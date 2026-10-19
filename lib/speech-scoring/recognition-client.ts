@@ -5,7 +5,7 @@
  * don't duplicate fetch/error plumbing.
  */
 import { recognitionEndpoint, speechCredentials } from "./config";
-import { SpeechRequestError, throwForHttpStatus } from "./errors";
+import { SpeechRequestError, SpeechThrottledError, throwForHttpStatus } from "./errors";
 import type { SpeechAudioInput } from "./types";
 
 /** Raw per-word entry from Azure's detailed recognition (assessment mode). */
@@ -75,6 +75,7 @@ export async function postRecognition(
       method: "POST",
       headers,
       body: toBodyInit(audio),
+      signal: AbortSignal.timeout(SPEECH_REQUEST_TIMEOUT_MS),
     });
   } catch (err) {
     throw new SpeechRequestError(
@@ -84,7 +85,28 @@ export async function postRecognition(
     );
   }
 
+  if (response.status === 429) throw new SpeechThrottledError(undefined, upstreamRetryAfter(response.headers.get("Retry-After")));
   if (!response.ok) throwForHttpStatus(response.status, await safeText(response));
 
-  return (await response.json()) as RawRecognitionResponse;
+  try {
+    return (await response.json()) as RawRecognitionResponse;
+  } catch {
+    // Fetch resolves at headers; its signal can still abort a stalled body.
+    throw new SpeechRequestError("Could not read Azure Speech recognition response.");
+  }
+}
+
+export const SPEECH_REQUEST_TIMEOUT_MS = 30_000;
+/** Retry-After is delta-seconds or an HTTP date; never invent a wait for an absent/invalid header. */
+function upstreamRetryAfter(value: string | null): number | undefined {
+  if (value === null) return undefined;
+  const header = value.trim();
+  if (/^\d+$/.test(header)) {
+    const ms = Number(header) * 1000;
+    return Number.isSafeInteger(ms) ? ms : undefined;
+  }
+  if (!/^[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT$/.test(header)) return undefined;
+  const date = Date.parse(header);
+  if (!Number.isFinite(date) || new Date(date).toUTCString() !== header) return undefined;
+  return Math.max(0, date - Date.now());
 }

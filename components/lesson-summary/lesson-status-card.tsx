@@ -16,6 +16,7 @@ export function LessonStatusCard({ status }: { status: LessonStatus }) {
       case "not_enough_data": return t("notEnoughData");
       case "complete": return t("complete");
       case "in_progress": return t("percent", { value: state.percent });
+      case "reached": return t("reached", { line: state.line, total: state.total });
       case "scored": return t("score", { value: state.score });
     }
   };

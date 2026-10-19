@@ -35,7 +35,7 @@ const video = {
 const emptyEvidence: LessonEvidence = {
   hasTranscript: true,
   lineCount: 1,
-  shadowedLines: 0,
+  reachedLine: 0,
   pronunciationMean: null,
   dictationMean: null,
   completed: false,

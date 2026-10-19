@@ -38,6 +38,7 @@ describe("getDailyMission", () => {
         { item_id: "i1", slot: 1, type: "review", video_id: null, target: 3, current: 1 },
         { item_id: "i2", slot: 2, type: "finish_lesson", video_id: "v1", target: 1, current: 0 },
         { item_id: "i3", slot: 3, type: "dictation_lines", video_id: "v1", target: 5, current: 1 },
+        { item_id: "i4", slot: 4, type: "shadow_lines", video_id: "v1", target: 3, current: 0 },
       ], error: null });
     const from = vi.fn((table: string) => table === "daily_missions"
         ? { select: () => ({ eq: () => ({ maybeSingle: () => Promise.resolve({ data: { rewarded_at: null }, error: null }) }) }) }
@@ -48,6 +49,7 @@ describe("getDailyMission", () => {
       { type: "review", current: 1, target: 3, title: null, href: "/mining/review", playbackPercent: null },
       { type: "finish_lesson", current: 0, target: 1, title: "Café", href: "/shadowing/v1", playbackPercent: 80 },
       { type: "dictation_lines", current: 1, target: 5, title: "Café", href: "/shadowing/v1/dictation", playbackPercent: null },
+      { type: "shadow_lines", current: 0, target: 3, title: "Café", href: "/shadowing/v1/pronunciation", playbackPercent: null },
     ] } };
     await expect(Promise.all([getDailyMission(), getDailyMission()])).resolves.toEqual([expected, expected]);
     expect(ensureDailyMissionOrThrow).toHaveBeenCalledOnce();

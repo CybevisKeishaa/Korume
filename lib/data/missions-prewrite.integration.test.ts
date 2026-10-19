@@ -1,6 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
+import { encodeWavPCM16 } from "@/lib/audio/pcm-encode";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 
 // Spec M1: ensureDailyMission runs after auth + validation and BEFORE the first write of every mutation that can
@@ -12,6 +14,7 @@ const mission = vi.hoisted(() => ({
 }));
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
+vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/data/missions", () => mission);
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn(async () => { order.push("record"); return { ok: true }; }) }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn(async () => ({ ...DEFAULT_PREFERENCES })) }));
@@ -47,9 +50,16 @@ function install(user: typeof USER | null, tables: Record<string, (calls: QueryC
     }),
   };
   vi.mocked(createClient).mockReturnValue(client as unknown as ReturnType<typeof createClient>);
+  vi.mocked(createServiceClient).mockReturnValue(
+    createMockSupabase({ tables }) as unknown as ReturnType<typeof createServiceClient>,
+  );
 }
 
-const audio = () => new Blob(["x"], { type: "audio/webm" });
+const audio = () => {
+  const bytes = encodeWavPCM16(new Int16Array(16000), 16000);
+  // jsdom's Blob lacks arrayBuffer; retain real WAV bytes for the save preflight.
+  return Object.assign(new Blob([bytes], { type: "audio/wav" }), { arrayBuffer: async () => bytes });
+};
 
 beforeEach(() => {
   order.length = 0;
@@ -126,7 +136,7 @@ describe("pre-write mission ensure (spec M1)", () => {
 
     install(USER, { sentence_mining_cards: table("sentence_mining_cards", null), transcript_lines: table("transcript_lines", null) });
     await expect(reviewMiningCard({ cardId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: false, status: 400 });
-    await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: new Blob(["x"], { type: "text/plain" }) }))
+    await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: Object.assign(new Blob(["x"]), { arrayBuffer: async () => new ArrayBuffer(1) }) }))
       .resolves.toMatchObject({ ok: false, status: 422 });
     await expect(submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "x" })).resolves.toMatchObject({ ok: false, status: 400 });
     expect(order).toEqual([]);

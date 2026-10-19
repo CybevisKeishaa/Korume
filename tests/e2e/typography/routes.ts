@@ -1,6 +1,6 @@
 import type { Learner } from "./learner";
 
-/** Spec P1 — the locked list. 34 static + 7 dynamic (app) routes + 3 (focus) routes = 44. */
+/** Spec P1 — the locked list. 34 static + 7 dynamic (app) routes + 4 (focus) routes = 45 (practice-pronunciation added the fourth). */
 export const STATIC_ROUTES = [
   "achievements", "certification", "challenges", "community", "community/peer-review", "companion",
   "conversation", "dashboard", "e2e-route-error", "grammar", "kanji", "kanji/review", "korume/chat",
@@ -9,7 +9,7 @@ export const STATIC_ROUTES = [
   "settings/privacy/memory", "shadowing", "shadowing/explore", "statistics", "vocab", "vocab/review",
   "weekly-report",
 ] as const;
-export const ROUTE_COUNT = 44;
+export const ROUTE_COUNT = 45;
 
 /** `path` has no locale prefix. `unavailable` is a FAILURE with its reason (spec G4: never skipped silently). */
 export type RouteTarget = { label: string; path: string } | { label: string; unavailable: string };
@@ -37,6 +37,7 @@ export async function resolveRoutes(learner: Learner): Promise<RouteTarget[]> {
     { label: "vocab/print", path: `vocab/print?source=lesson&lesson=${learner.ids.printLesson}&set=all` },
     ...dynamic.map(([label, base, id]) => (id ? { label, path: `${base}/${id}` } : { label, unavailable: `no row in the table behind ${label}` })),
     { label: "(focus) shadowing/[id]", path: `shadowing/${videoId}` },
+    { label: "(focus) shadowing/[id]/pronunciation", path: `shadowing/${videoId}/pronunciation` },
     { label: "(focus) shadowing/[id]/dictation", path: `shadowing/${videoId}/dictation` },
     { label: "(focus) shadowing/[id]/summary", path: `shadowing/${videoId}/summary` },
   ];

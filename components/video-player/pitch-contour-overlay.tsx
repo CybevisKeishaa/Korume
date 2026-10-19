@@ -24,27 +24,53 @@ const MIN_SEMITONE_SPAN = 4;
 const RANGE_PADDING_SEMITONES = 1;
 
 /**
- * Builds one SVG path `d` for a series of overlay points, starting a new
- * subpath (`M`) after every unvoiced gap so gaps are never bridged.
+ * Longest unvoiced stretch (normalized time, voiced edge to voiced edge) drawn through. Japanese speech is full of
+ * voiceless consonants and devoiced vowels (す, つ, き…), so breaking at every one chops the contour into dashes the
+ * learner reads as noise; a longer stretch is a real pause and stays a break.
+ */
+const BRIDGE_GAP = 0.08;
+
+/** Linear fill for interior unvoiced runs whose span is at most `maxSpan`; edges and longer runs stay null. */
+export function bridgeShortGaps(points: { t: number; v: number | null }[], maxSpan = BRIDGE_GAP): (number | null)[] {
+  const out = points.map((p) => p.v);
+  let last = -1;
+  points.forEach((p, i) => {
+    if (p.v === null) return;
+    const before = last >= 0 ? points[last] : undefined;
+    if (before && before.v !== null && i - last > 1 && p.t - before.t <= maxSpan) {
+      for (let k = last + 1; k < i; k++) {
+        const ratio = ((points[k] as { t: number }).t - before.t) / (p.t - before.t);
+        out[k] = before.v + (p.v - before.v) * ratio;
+      }
+    }
+    last = i;
+  });
+  return out;
+}
+
+/**
+ * Builds one SVG path `d` for a series of overlay points, starting a new subpath (`M`) after every unvoiced gap that
+ * survives `bridgeShortGaps`, so a pause is never bridged.
  */
 function seriesPath(
   overlay: PitchOverlayPoint[],
   pick: (p: PitchOverlayPoint) => number | null,
   toY: (semitones: number) => number,
 ): string {
+  const values = bridgeShortGaps(overlay.map((p) => ({ t: p.t, v: pick(p) })));
   let d = "";
   let drawing = false;
-  for (const p of overlay) {
-    const v = pick(p);
+  overlay.forEach((p, i) => {
+    const v = values[i] ?? null;
     if (v === null) {
       drawing = false;
-      continue;
+      return;
     }
     const x = (p.t * VIEW_WIDTH).toFixed(1);
     const y = toY(v).toFixed(1);
     d += `${drawing ? "L" : "M"}${x} ${y}`;
     drawing = true;
-  }
+  });
   return d;
 }
 

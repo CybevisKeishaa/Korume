@@ -178,6 +178,67 @@
   "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
   "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
+    "practice": {
+      "pronunciation": {
+        "region": "Pronunciation practice",
+        "record": "Record",
+        "stop": "Stop",
+        "replayNative": "Replay native",
+        "playMine": "Play my take",
+        "position": "Position",
+        "saving": "Saving your take…",
+        "saveAgain": "Save again",
+        "discardTake": "Discard take",
+        "convertAgain": "Try again",
+        "scoring": "Scoring…",
+        "scoreAgain": "Score again",
+        "unavailable": "Pronunciation scoring is unavailable right now. Your recording is saved.",
+        "throttledIn": "Try again in {seconds} s",
+        "throttled": "Busy, try again shortly",
+        "legacy": "Older recording format, cannot be rescored",
+        "noDetail": "No detail recorded for this attempt",
+        "finishSaving": "Finish saving this take first",
+        "label": {
+          "excellent": "Excellent",
+          "good": "Good",
+          "keepPractising": "Keep practising"
+        },
+        "details": "Details",
+        "accuracy": "Accuracy",
+        "rhythm": "Fluency",
+        "completeness": "Completeness",
+        "intonation": "Intonation (reference, compared with a synthesized voice)",
+        "heard": "What the scorer heard",
+        "history": "This sentence's takes",
+        "progress": {
+          "rhythm": "Fluency {from} → {to}",
+          "pronunciation": "Pronunciation {from} → {to}"
+        },
+        "wordGrade": { "needsWork": "Needs practice: {words}.", "good": "Good: {words}.", "strong": "Strong: {words}." },
+        "analysis": { "title": "Pronunciation score", "subtitle": "For the whole sentence", "words": "Word by word", "wordsHelpLabel": "How to read the colours", "wordsHelp": "Green is strong, amber is good, red needs practice. A struck-through word was not heard.", "notHeard": "not heard", "mismatch": "What you read doesn't match this sentence yet. Listen again and read the sentence shown." },
+        "remarkUnaligned": "Overall score only: the words could not be matched to this sentence reliably.",
+        "historyLoading": "Loading takes…",
+        "historyError": "Could not load your takes.",
+        "historyEmpty": "No takes for this sentence yet.",
+        "notScored": "Not scored yet",
+        "requesting": "Waiting for microphone permission…",
+        "recording": "Recording…",
+        "saveFailed": "Could not save your take. Your recording is kept here.",
+        "convertFailed": "Could not prepare your recording. Try again.",
+        "scoreError": "Could not score your take. Your recording is saved.",
+        "unheard": "The scorer could not hear speech in this take. Record it again, a little closer to the microphone.",
+        "micHint": "Allow microphone access in your browser settings to record."
+      },
+      "strip": { "label": "Lesson progress", "sentence": "Sentence", "scored": "Scored", "average": "Average", "noScore": "No score yet" },
+      "navigator": {
+        "label": "Sentence navigator",
+        "earlier": "Earlier sentences",
+        "later": "Later sentences",
+        "chip": "Sentence {number}, {state}",
+        "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet" }
+      },
+      "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" }
+    },
     "mining": {
       "loading": "Loading your cards…",
       "failed": "Couldn't load your cards.",
@@ -290,6 +351,7 @@
       "markedDifficult": "Marked difficult",
       "actions": "Sentence actions",
       "replay": "Replay",
+      "practice": "Practice this sentence",
       "bookmark": "Bookmark",
       "difficult": "Difficult",
       "lineFurigana": "Readings for this line",
@@ -493,6 +555,7 @@
       "notEnoughData": "Not enough data",
       "complete": "Complete",
       "percent": "{value}%",
+      "reached": "Watched to sentence {line}/{total}",
       "score": "{value}"
     },
     "saved": {

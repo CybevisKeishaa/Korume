@@ -2,6 +2,8 @@
 
 import { useCallback, useId, useMemo, useRef } from "react";
 import { useTranslations } from "@/lib/i18n";
+import { useRouter } from "@/lib/i18n/navigation";
+import { LEARNING_MODES } from "@/lib/shadowing-workspace/learning-modes";
 import type { ReadingTranslation, SentenceMarkKind } from "@/lib/preferences/options";
 import { matchingLineIndexes } from "@/lib/shadowing-workspace/transcript-search";
 import { cn } from "@/lib/utils";
@@ -44,6 +46,13 @@ export function TranscriptPanel() {
   const { suspended, resume } = useAutoFollow(scrollRef, currentIndex, query.trim() === "", session.view);
 
   const onReplay = useCallback((index: number) => controller.seekToSentence(index, { play: true }), [controller]);
+  const router = useRouter();
+  const practiceAvailable = LEARNING_MODES.some((mode) => mode.id === "pronunciation" && mode.complete);
+  // The shell and its player survive the route change, so the seek carries the line into Pronunciation.
+  const onPractice = useCallback((index: number) => {
+    controller.seekToSentence(index);
+    router.push(`/shadowing/${video.id}/pronunciation`);
+  }, [controller, router, video.id]);
   const { toggleMark } = marks;
   const onToggleMark = useCallback((lineId: string, kind: SentenceMarkKind) => toggleMark(lineId, kind), [toggleMark]);
   const onRevealTranslation = useCallback((lineId: string) => dispatch({ type: "reveal-line-translation", lineId }), [dispatch]);
@@ -147,6 +156,7 @@ export function TranscriptPanel() {
                     onRevealTranslation={onRevealTranslation}
                     onToggleFurigana={onToggleFurigana}
                     onOpenDrawer={onOpenDrawer}
+                    onPractice={practiceAvailable ? onPractice : undefined}
                   />
                 );
               })}

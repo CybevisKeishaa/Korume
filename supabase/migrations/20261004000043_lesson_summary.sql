@@ -7,15 +7,21 @@ language sql stable security invoker set search_path = public as $$
   with lesson_transcript as (
     select t.id from transcripts t where t.video_id = p_video order by t.created_at desc, t.id limit 1
   ), lines as (
-    select tl.id from transcript_lines tl
+    select tl.id, tl.start_time from transcript_lines tl
     where tl.transcript_id = (select id from lesson_transcript) and btrim(coalesce(tl.text_jp, '')) <> ''
   ), sessions as (
     select s.transcript_line_id as line_id, s.pronunciation_score, s.pitch_score, s.created_at, s.id
     from shadowing_sessions s
     where s.user_id = auth.uid() and s.transcript_line_id in (select id from lines)
-  ), latest_session as (
-    select distinct on (line_id) line_id, pronunciation_score, pitch_score
-    from sessions order by line_id, created_at desc, id desc
+  ), latest_scored as (
+    select distinct on (line_id) line_id, pronunciation_score
+    from sessions where pronunciation_score is not null order by line_id, created_at desc, id desc
+  ), latest_pitch as (
+    select distinct on (line_id) line_id, pitch_score
+    from sessions where pitch_score is not null order by line_id, created_at desc, id desc
+  ), progress as (
+    select p.last_watched_position as watched from user_video_progress p
+    where p.user_id = auth.uid() and p.video_id = p_video
   ), attempts as (
     select d.transcript_line_id as line_id, d.accuracy_score, d.user_input, d.created_at, d.id
     from dictation_attempts d
@@ -30,18 +36,20 @@ language sql stable security invoker set search_path = public as $$
     select c.id, c.source_kind, c.source_ref, c.srs_stage, c.last_reviewed_at, c.transcript_line_id
     from sentence_mining_cards c where c.user_id = auth.uid() and c.video_id = p_video
   ), per_line as (
-    select l.id as line_id, ls.pronunciation_score, ls.pitch_score, la.accuracy_score, la.user_input,
+    select l.id as line_id, ls.pronunciation_score, lp.pitch_score, la.accuracy_score, la.user_input,
       exists (select 1 from difficult d where d.line_id = l.id) as is_difficult
     from lines l
-    left join latest_session ls on ls.line_id = l.id
+    left join latest_scored ls on ls.line_id = l.id
+    left join latest_pitch lp on lp.line_id = l.id
     left join latest_attempt la on la.line_id = l.id
-    where ls.line_id is not null or la.line_id is not null or exists (select 1 from difficult d where d.line_id = l.id)
+    where ls.line_id is not null or lp.line_id is not null or la.line_id is not null
+      or exists (select 1 from difficult d where d.line_id = l.id)
   )
   select jsonb_build_object(
     'hasTranscript', exists (select 1 from lesson_transcript),
     'lineCount', (select count(*) from lines),
-    'shadowedLines', (select count(distinct line_id) from sessions),
-    'pronunciationMean', (select avg(pronunciation_score) from sessions where pronunciation_score is not null),
+    'reachedLine', (select count(*) from lines where (select watched from progress) > 0 and start_time <= (select watched from progress)),
+    'pronunciationMean', (select avg(pronunciation_score) from latest_scored),
     'dictationMean', (select avg(accuracy_score) from attempts where accuracy_score is not null),
     'completed', exists (select 1 from user_video_progress p
                          where p.user_id = auth.uid() and p.video_id = p_video and p.completed_at is not null),

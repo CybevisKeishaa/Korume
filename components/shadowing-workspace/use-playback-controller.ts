@@ -25,6 +25,7 @@ export interface PlaybackController {
   isMuted(): boolean;
   setLoop(config: Partial<LoopConfig>): void;
   loopConfig(): LoopConfig;
+  setLock(lock: { navigation: boolean; play: boolean }): void;
 }
 
 export function usePlaybackControllerState(args: {
@@ -35,6 +36,8 @@ export function usePlaybackControllerState(args: {
   onSentence(position: SentencePosition): void;
   onFlush?(reason: "pause" | "ended"): void;
   initialLoop: LoopConfig;
+  sentenceBound?: boolean;
+  onLoopChange?(config: LoopConfig): void;
   initialRate: number;
 }): { controller: PlaybackController; onTick(time: number): void; onStateChange(state: YtPlayerStateValue): void; onReady(): void } {
   const argsRef = useRef(args);
@@ -47,11 +50,13 @@ export function usePlaybackControllerState(args: {
   const pausedAtBoundaryRef = useRef(false);
   const seekGuardRef = useRef<{ target: number; expiresAt: number } | null>(null);
   const seekTargetIndexRef = useRef<number | null>(null);
+  const lockRef = useRef({ navigation: false, play: false });
 
   const publish = useCallback((position: SentencePosition, reset: boolean) => {
     const current = argsRef.current;
     if (!sameSentencePosition(activeRef.current, position)) current.onSentence(position);
     if (reset && activeRef.current.index !== position.index) loopStateRef.current = resetLoop(position.index);
+    if (seekTargetIndexRef.current !== position.index) seekTargetIndexRef.current = null;
     activeRef.current = position;
   }, []);
 
@@ -68,12 +73,11 @@ export function usePlaybackControllerState(args: {
       if (line && time >= line.startTime && time < effectiveEnd(current.lines, targetIndex, current.duration)) {
         return { index: targetIndex, isSpoken: true };
       }
-      seekTargetIndexRef.current = null;
     }
     return locateSentence(current.lines, time, current.duration);
   }, []);
 
-  const seekTo = useCallback((seconds: number, explicitIndex?: number) => {
+  const seekInternal = useCallback((seconds: number, explicitIndex?: number) => {
     const current = argsRef.current;
     const target = Math.max(0, Math.min(seconds, current.duration ?? Number.POSITIVE_INFINITY));
     // A deliberate seek (⏮/⏭/row/replay) leaves any Auto Pause hold behind it.
@@ -86,6 +90,43 @@ export function usePlaybackControllerState(args: {
     publish(positionAt(target), true);
   }, [positionAt, publish]);
 
+  const setLoop = useCallback((config: Partial<LoopConfig>) => {
+    loopConfigRef.current = { ...loopConfigRef.current, ...config };
+    loopStateRef.current = resetLoop(activeRef.current.index);
+    argsRef.current.onLoopChange?.(loopConfigRef.current);
+  }, []);
+
+  // Internal replays keep the loop; user navigation cancels it before changing position.
+  const navigateTo = useCallback((seconds: number, index?: number) => {
+    const current = argsRef.current;
+    const target = Math.max(0, Math.min(seconds, current.duration ?? Number.POSITIVE_INFINITY));
+    const targetIndex = index ?? positionAt(target).index;
+    if (lockRef.current.navigation) {
+      const activeIndex = activeRef.current.index ?? positionAt(current.positionStore.get()).index;
+      if (targetIndex !== activeIndex) return false;
+    }
+    if (current.sentenceBound) {
+      stopClock();
+      current.adapterRef.current?.pause();
+      setLoop({ enabled: false });
+    }
+    seekInternal(target, targetIndex ?? undefined);
+    return true;
+  }, [positionAt, seekInternal, setLoop, stopClock]);
+
+  const play = useCallback(() => {
+    if (lockRef.current.play) return;
+    const current = argsRef.current;
+    if (current.sentenceBound || lockRef.current.navigation) {
+      const index = activeRef.current.index ?? positionAt(current.positionStore.get()).index;
+      const line = index === null ? undefined : current.lines[index];
+      if (!line) return;
+      seekInternal(line.startTime, index ?? undefined);
+      loopStateRef.current = resetLoop(index);
+    }
+    current.adapterRef.current?.play();
+  }, [positionAt, seekInternal]);
+
   const onTick = useCallback((time: number) => {
     const current = argsRef.current;
     if (pausedAtBoundaryRef.current) return;
@@ -94,21 +135,20 @@ export function usePlaybackControllerState(args: {
       if (Math.abs(time - guard.target) < 0.5 || Date.now() >= guard.expiresAt) seekGuardRef.current = null;
       else return;
     }
-    current.positionStore.set(time);
-    const before = activeRef.current;
+    const before = activeRef.current.index === null && lockRef.current.navigation ? positionAt(current.positionStore.get()) : activeRef.current;
     const end = before.index === null ? null : effectiveEnd(current.lines, before.index, current.duration);
     const last = lastTickTimeRef.current;
-    const crossedBoundary = end !== null && last !== null && last < end && end <= time && time - last < 1.5;
+    const crossedBoundary = end !== null && (lockRef.current.navigation ? end <= time : last !== null && last < end && end <= time && time - last < 1.5);
     lastTickTimeRef.current = time;
 
     if (crossedBoundary && before.index !== null) {
-      const result = decideAtSentenceEnd(loopConfigRef.current, loopStateRef.current);
+      const result = decideAtSentenceEnd(current.sentenceBound || lockRef.current.navigation ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
       loopStateRef.current = result.next;
       if (result.decision.kind === "replay") {
         const line = current.lines[before.index];
         if (!line) return;
-        seekTo(line.startTime, before.index);
-        current.adapterRef.current?.play();
+        seekInternal(line.startTime, before.index);
+        if (!lockRef.current.play) current.adapterRef.current?.play();
         return;
       }
       if (result.decision.kind === "pause") {
@@ -120,8 +160,9 @@ export function usePlaybackControllerState(args: {
       }
     }
 
+    current.positionStore.set(time);
     publish(positionAt(time), true);
-  }, [positionAt, publish, seekTo, stopClock]);
+  }, [positionAt, publish, seekInternal, stopClock]);
 
   const startClock = useCallback(() => {
     stopClock();
@@ -137,6 +178,12 @@ export function usePlaybackControllerState(args: {
 
   const onStateChange = useCallback((state: YtPlayerStateValue) => {
     if (state === YT_PLAYER_STATE.PLAYING) {
+      // Native iframe controls can start audio without calling the public controller.
+      if (lockRef.current.play) {
+        stopClock();
+        argsRef.current.adapterRef.current?.pause();
+        return;
+      }
       pausedAtBoundaryRef.current = false;
       startClock();
       return;
@@ -153,35 +200,36 @@ export function usePlaybackControllerState(args: {
     // ENDED is a boundary only when no tick already crossed this sentence's end (a null-ended last line);
     // otherwise the loop/pause was decided there and deciding again would replay the last line forever.
     if (lastTickTimeRef.current !== null && lastTickTimeRef.current >= end) return;
-    const result = decideAtSentenceEnd(loopConfigRef.current, loopStateRef.current);
+    const result = decideAtSentenceEnd(current.sentenceBound || lockRef.current.navigation ? { ...loopConfigRef.current, autoPause: true } : loopConfigRef.current, loopStateRef.current);
     loopStateRef.current = result.next;
     const line = current.lines[active.index];
     if (!line) return;
     if (result.decision.kind === "replay") {
-      seekTo(line.startTime, active.index);
-      current.adapterRef.current?.play();
+      seekInternal(line.startTime, active.index);
+      if (!lockRef.current.play) current.adapterRef.current?.play();
     } else if (result.decision.kind === "pause") {
       pausedAtBoundaryRef.current = true;
       current.positionStore.set(Math.min(current.positionStore.get(), end - 0.001));
       current.adapterRef.current?.pause();
     }
-  }, [positionAt, seekTo, startClock, stopClock]);
+  }, [positionAt, seekInternal, startClock, stopClock]);
 
   const controller = useMemo<PlaybackController>(() => ({
-    play: () => argsRef.current.adapterRef.current?.play(),
+    play,
     pause: () => argsRef.current.adapterRef.current?.pause(),
     togglePlay: () => {
+      if (lockRef.current.play) return;
       const adapter = argsRef.current.adapterRef.current;
       const state = adapter?.getPlayerState();
       if (state === YT_PLAYER_STATE.PLAYING || state === YT_PLAYER_STATE.BUFFERING) adapter?.pause();
-      else adapter?.play();
+      else play();
     },
     isPlaying: () => argsRef.current.adapterRef.current?.getPlayerState() === YT_PLAYER_STATE.PLAYING,
-    seekTo,
+    seekTo: navigateTo,
     seekToSentence: (index, options) => {
       const line = argsRef.current.lines[index];
-      if (!line) return;
-      seekTo(line.startTime, index);
+      if (!line || (options?.play && lockRef.current.play)) return;
+      if (!navigateTo(line.startTime, index)) return;
       if (options?.play) argsRef.current.adapterRef.current?.play();
     },
     previousSentence: () => {
@@ -189,16 +237,16 @@ export function usePlaybackControllerState(args: {
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = previousTarget(current.lines, activeIndex, current.positionStore.get());
       const line = target === null ? undefined : current.lines[target];
-      if (line) seekTo(line.startTime, target ?? undefined);
+      if (line) navigateTo(line.startTime, target ?? undefined);
     },
     nextSentence: () => {
       const current = argsRef.current;
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = nextTarget(current.lines, activeIndex);
       const line = target === null ? undefined : current.lines[target];
-      if (line) seekTo(line.startTime, target ?? undefined);
+      if (line) navigateTo(line.startTime, target ?? undefined);
     },
-    rewind: (seconds) => seekTo(argsRef.current.positionStore.get() - seconds),
+    rewind: (seconds) => navigateTo(argsRef.current.positionStore.get() - seconds),
     setRate: (rate) => {
       const available = PLAYBACK_RATE_OPTIONS.filter((option) => argsRef.current.adapterRef.current?.getAvailablePlaybackRates().includes(option));
       const nearest = available.reduce<number | null>((best, option) => best === null || Math.abs(option - rate) < Math.abs(best - rate) ? option : best, null);
@@ -207,9 +255,10 @@ export function usePlaybackControllerState(args: {
     availableRates: () => PLAYBACK_RATE_OPTIONS.filter((option) => argsRef.current.adapterRef.current?.getAvailablePlaybackRates().includes(option)),
     toggleMute: () => argsRef.current.adapterRef.current?.isMuted() ? argsRef.current.adapterRef.current.unMute() : argsRef.current.adapterRef.current?.mute(),
     isMuted: () => argsRef.current.adapterRef.current?.isMuted() ?? false,
-    setLoop: (config) => { loopConfigRef.current = { ...loopConfigRef.current, ...config }; loopStateRef.current = resetLoop(activeRef.current.index); },
+    setLoop,
     loopConfig: () => loopConfigRef.current,
-  }), [seekTo]);
+    setLock: (lock) => { lockRef.current = lock; },
+  }), [navigateTo, play, setLoop]);
 
   const onReady = useCallback(() => controller.setRate(argsRef.current.initialRate), [controller]);
   return { controller, onTick, onStateChange, onReady };

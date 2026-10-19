@@ -6,6 +6,8 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import type { WorkspaceLine } from "@/lib/shadowing-workspace/types";
 import type { PlaybackController } from "./use-playback-controller";
 import { LiveSentence } from "./live-sentence";
+import { ScoredSentence } from "./practice/scored-sentence";
+import { LOOKUP_EVENT } from "./selection-popover";
 import { usePositionStore, useSession, WorkspaceProviders } from "./workspace-context";
 
 vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
@@ -31,13 +33,13 @@ function Probe(): null {
 
 const controller = { pause: vi.fn() } as unknown as PlaybackController;
 
-function renderLive(preferences: Partial<UserPreferences> = {}, masteryMap: Record<string, number> = {}, at = 1) {
+function renderLive(preferences: Partial<UserPreferences> = {}, masteryMap: Record<string, number> = {}, at = 1, scored = false) {
   const bootstrap: WorkspaceBootstrap = {
     userId: "u", video: { id: "v", youtubeVideoId: "yt", title: "T", channelTitle: null, durationSeconds: 20, jlptLevel: null },
     transcript: { id: "t", lines }, masteryMap, preferences: { ...DEFAULT_PREFERENCES, ...preferences },
     resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
   };
-  const view = render(<WorkspaceProviders bootstrap={bootstrap} controller={controller}><LiveSentence /><Probe /></WorkspaceProviders>);
+  const view = render(<WorkspaceProviders bootstrap={bootstrap} controller={controller}><LiveSentence renderSentence={scored ? (props) => <ScoredSentence text={props.text} spans={[{ start: 0, end: 2, accuracy: 90, errorType: "None" }, { start: 3, end: 6, accuracy: 40, errorType: "Mispronunciation" }]} reading={props} /> : undefined} /><Probe /></WorkspaceProviders>);
   act(() => store?.set(at));
   return view;
 }
@@ -48,6 +50,22 @@ describe("LiveSentence", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn());
+  });
+
+  it("composes scores into one reading surface, retaining adaptive ruby, translation, hiding and keyboard lookup", () => {
+    renderLive({ readingFurigana: "adaptive", readingTranslation: "always" }, { 目標: 5 }, 1, true);
+    const paragraph = document.querySelector("p[lang='ja']");
+    expect(document.querySelectorAll("p[lang='ja']")).toHaveLength(1);
+    expect(paragraph?.querySelectorAll("mark[data-error-type]")).toHaveLength(3);
+    expect(readings()).toEqual(["うわまわ"]);
+    expect(screen.getByText("Vượt mục tiêu")).toBeVisible();
+    const listener = vi.fn(); window.addEventListener(LOOKUP_EVENT, listener);
+    fireEvent.keyDown(screen.getByRole("group"), { key: "Enter" });
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("group")).toHaveAttribute("data-word-click");
+    window.removeEventListener(LOOKUP_EVENT, listener);
+    fireEvent.click(screen.getByRole("button", { name: "Hide Japanese" }));
+    expect(paragraph).toHaveAttribute("aria-hidden", "true");
   });
 
   it("flows every ruby segment inline inside one paragraph", () => {

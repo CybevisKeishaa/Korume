@@ -19,12 +19,18 @@ export async function seedSummaryEvidence(
   if (dictation.error) throw dictation.error;
   const mark = await admin.from("sentence_marks").insert({ user_id: userId, transcript_line_id: lineIds[3], kind: "difficult" });
   if (mark.error) throw mark.error;
+  // Shadowing status is how far the learner watched (D7): just past line 2's start reaches two sentences.
+  const progress = await admin.from("user_video_progress").upsert({
+    user_id: userId, video_id: videoId, last_watched_position: lineStart(1) + 1, last_watched_at: new Date().toISOString(),
+  });
+  if (progress.error) throw progress.error;
   return {
     async cleanup() {
       const results = await Promise.all([
         admin.from("shadowing_sessions").delete().in("id", sessions.data.map((row) => row.id)),
         admin.from("dictation_attempts").delete().eq("id", dictation.data.id),
         admin.from("sentence_marks").delete().eq("user_id", userId).eq("transcript_line_id", lineIds[3]).eq("kind", "difficult"),
+        admin.from("user_video_progress").delete().eq("user_id", userId).eq("video_id", videoId),
       ]);
       for (const result of results) if (result.error) throw result.error;
     },

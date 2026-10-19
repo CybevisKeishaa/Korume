@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { renderToString } from "react-dom/server";
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import { render, TestIntlProvider, waitFor } from "@/test/render";
@@ -8,6 +9,8 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
+import { usePracticeStats } from "./practice/practice-stats-context";
+import { usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 const presence = vi.hoisted(() => vi.fn());
 vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
@@ -19,7 +22,7 @@ vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
   useRouter: () => router,
   // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
-  usePathname: () => "/shadowing/video-1",
+  usePathname: () => pathname.replace(/^\/en/, ""),
 }));
 
 vi.mock("next/navigation", () => ({
@@ -82,6 +85,51 @@ describe("ShadowingWorkspaceShell", () => {
     expect(getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-orientation", "vertical");
   });
 
+  it("swaps the live sentence for practice stats while retaining the player, controller and provider", async () => {
+    const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const store = observedStore;
+    const controller = observedController;
+    const player = yt.players[0];
+    expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
+    for (const mode of ["pronunciation", "listening"]) {
+      pathname = `/en/shadowing/video-1/${mode}`;
+      view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+      expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
+      expect(observedStore).toBe(store);
+      expect(observedController).toBe(controller);
+      expect(yt.players[0]).toBe(player);
+      expect(yt.players).toHaveLength(1);
+    }
+    pathname = "/en/shadowing/video-1";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
+    expect(observedController).toBe(controller);
+  });
+
+  it("shares stats with route children without remounting them or the player across modes", async () => {
+    let mounts = 0;
+    function StatsProbe() {
+      const { stats } = usePracticeStats();
+      const [identity] = useState(() => ++mounts);
+      return <output data-testid="stats-probe">{identity}:{stats?.mean ?? "none"}</output>;
+    }
+    vi.stubGlobal("fetch", vi.fn().mockImplementation((url: string) => Promise.resolve(url.includes("practice-stats")
+      ? Response.json({ data: { lineCount: 0, scoredLines: 0, mean: 84, lines: {} } })
+      : new Response(null, { status: 200 }))));
+    const view = render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:none");
+    pathname = "/en/shadowing/video-1/pronunciation";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:84"));
+    pathname = "/en/shadowing/video-1";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StatsProbe /></ShadowingWorkspaceShell>);
+    expect(screen.getByTestId("stats-probe")).toHaveTextContent("1:none");
+    expect(mounts).toBe(1);
+    expect(yt.players).toHaveLength(1);
+  });
   it("uses a definite divider track and flex factors that cannot leave an empty grid gap", () => {
     const template = workspaceGridTemplateColumns(0.7735);
     const factors = [...template.matchAll(/([\d.]+)fr/g)].map(([, factor]) => Number(factor));
@@ -171,6 +219,62 @@ describe("ShadowingWorkspaceShell", () => {
     );
 
     expect(observedStore).toBe(initialStore);
+  });
+
+  it("retains an unsaved WAV through mode changes and Back/Forward-like child replacement with one player", async () => {
+    let attempts: ReturnType<typeof usePronunciationAttempts> | undefined;
+    function AttemptProbe() { attempts = usePronunciationAttempts(); return <StoreProbe />; }
+    const lesson = { ...bootstrap, transcript: { id: "t", lines: [
+      { id: "L1", index: 0, startTime: 0, endTime: 3, textJp: "one", textTranslation: null, furigana: null },
+      { id: "L2", index: 1, startTime: 3, endTime: 6, textJp: "two", textTranslation: null, furigana: null },
+    ] } };
+    pathname = "/en/shadowing/video-1/pronunciation";
+    const view = render(<ShadowingWorkspaceShell bootstrap={lesson}><AttemptProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = yt.players[0];
+    if (!player || !attempts || !observedController) throw new Error("workspace not ready");
+    const controller = observedController;
+    const dispatchAttempt = attempts.dispatch;
+    const original = new Blob(["take"]);
+    const wav = new Blob(["wav"], { type: "audio/wav" });
+    act(() => dispatchAttempt({ type: "start", lineId: "L1" }));
+    const play = vi.spyOn(player, "playVideo");
+    act(() => controller.play());
+    expect(play).not.toHaveBeenCalled();
+    act(() => {
+      dispatchAttempt({ type: "recorded", lineId: "L1", original });
+      dispatchAttempt({ type: "converted", lineId: "L1", wav, pitch: null });
+      dispatchAttempt({ type: "saving", lineId: "L1" });
+      dispatchAttempt({ type: "save-failed", lineId: "L1" });
+    });
+    // Route children really disappear on Back; the lesson shell and store must stay mounted.
+    pathname = "/en/shadowing/video-1";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={{ ...lesson }}><p>Shadowing route</p></ShadowingWorkspaceShell>);
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    expect(observedStore?.get()).toBe(0);
+    pathname = "/en/shadowing/video-1/listening";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={lesson}><p>Listening route</p></ShadowingWorkspaceShell>);
+    pathname = "/en/shadowing/video-1/pronunciation";
+    view.rerender(<ShadowingWorkspaceShell bootstrap={lesson}><AttemptProbe /></ShadowingWorkspaceShell>);
+    expect(attempts.dispatch).toBe(dispatchAttempt);
+    expect(attempts.attempts.L1?.phase).toBe("save-failed");
+    expect(attempts.attempts.L1?.original).toBe(original);
+    expect(attempts.attempts.L1?.wav).toBe(wav);
+    expect(yt.players).toHaveLength(1);
+    expect(yt.players[0]).toBe(player);
+    expect(observedController).toBe(controller);
+    const seek = vi.spyOn(player, "seekTo");
+    act(() => controller.nextSentence());
+    expect(seek).not.toHaveBeenCalled();
+    act(() => controller.play());
+    expect(play).toHaveBeenCalledOnce();
+    act(() => dispatchAttempt({ type: "saved", lineId: "L1", sessionId: "S1", signedUrl: "u" }));
+    act(() => controller.nextSentence());
+    expect(seek).toHaveBeenLastCalledWith(3, true);
+    act(() => dispatchAttempt({ type: "start", lineId: "L2" }));
+    const setLock = vi.spyOn(controller, "setLock");
+    view.unmount();
+    expect(setLock).toHaveBeenLastCalledWith({ navigation: false, play: false });
   });
 
   it("tracks shadowing with the video id and the player's playing state", async () => {

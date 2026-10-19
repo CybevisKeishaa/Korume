@@ -5,11 +5,19 @@ import { useSearchParams } from "next/navigation";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
+import { usePathname } from "@/lib/i18n/navigation";
+import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
+import { LessonStatStrip } from "./practice/lesson-stat-strip";
+import { PracticeStatsProvider } from "./practice/practice-stats-context";
+import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
+import { hasUnsaved } from "@/lib/pronunciation/attempts";
+import { UnsavedTakeGuard } from "./practice/unsaved-take-guard";
+import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
 import { WorkspacePlayer } from "./workspace-player";
-import { tabPreference, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
+import { tabPreference, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
 import { useFullscreen } from "./use-fullscreen";
@@ -84,7 +92,11 @@ export function ShadowingWorkspaceShell({
         <WorkspacePresence videoId={bootstrap.video.id} />
         <DrawerProvider>
           <NotesProvider bootstrap={bootstrap}>
-            <WorkspaceLayout>{children}</WorkspaceLayout>
+            <PronunciationAttemptsProvider>
+              <UnsavedTakeGuard>
+                <WorkspaceLayout>{children}</WorkspaceLayout>
+              </UnsavedTakeGuard>
+            </PronunciationAttemptsProvider>
           </NotesProvider>
         </DrawerProvider>
       </PlaybackRoot>
@@ -115,10 +127,18 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
 }
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
+  const mode = practiceModeFromPath(usePathname());
+  const { video } = useLesson();
+  usePracticePlayback(mode);
   const t = useTranslations("shadowing");
   const [session, dispatch] = useSession();
   const { preferences } = usePreferences();
   const controller = usePlaybackController();
+  const { attempts } = usePronunciationAttempts();
+  useEffect(() => {
+    controller.setLock({ navigation: hasUnsaved(attempts), play: Object.values(attempts).some((attempt) => attempt.phase === "recording") });
+  }, [attempts, controller]);
+  useEffect(() => () => controller.setLock({ navigation: false, play: false }), [controller]);
   const { toggleLoop } = usePlayerWiring();
   const drawer = useDrawer();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -164,6 +184,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
   return (
+    <PracticeStatsProvider videoId={video.id} mode={mode}>
     <div
       ref={rootRef}
       className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
@@ -198,7 +219,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
         {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
-        {!fullTranscript && <LiveSentence />}
+        {!fullTranscript && (mode === "shadowing" ? <LiveSentence /> : <LessonStatStrip mode={mode} />)}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && (
@@ -225,5 +246,6 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
+    </PracticeStatsProvider>
   );
 }
