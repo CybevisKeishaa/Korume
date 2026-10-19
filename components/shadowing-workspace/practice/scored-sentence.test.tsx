@@ -27,6 +27,19 @@ describe("ScoredSentence", () => {
     expect(marks[2]).toHaveClass("text-danger-strong");
     expect(marks[3]).toHaveClass("text-inherit");
   });
+  it("says each word's grade in words too, outside the sentence so selection offsets stay base text (review R-3)", () => {
+    const { container } = render(<ScoredSentence text="今日は雨です" spans={[
+      { start: 0, end: 2, accuracy: 90, errorType: "None" },
+      { start: 2, end: 3, accuracy: 70, errorType: "None" },
+      { start: 3, end: 4, accuracy: 40, errorType: "Mispronunciation" },
+    ]} />);
+    expect(container.querySelector("p[lang=ja]")).toHaveTextContent(/^今日は雨です$/);
+    const summary = screen.getByTestId("word-grades");
+    expect(summary).toHaveClass("sr-only");
+    expect(summary).toHaveTextContent("Needs practice: 雨");
+    expect(summary).toHaveTextContent("Good: は");
+    expect(summary).toHaveTextContent("Strong: 今日");
+  });
   it("shows the honest overall-only remark without word detail", () => {
     const { container } = render(<ScoredSentence text="日本語。" spans={null} />);
     expect(container.querySelectorAll("mark")).toHaveLength(0);

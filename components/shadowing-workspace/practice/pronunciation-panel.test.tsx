@@ -319,6 +319,7 @@ describe("pronunciation capture, save and score", () => {
     mount(); await start(); await finish(); await screen.findByRole("button", { name: "Save again" });
     fireEvent.click(screen.getByRole("button", { name: "Discard take" }));
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}")).toEqual({});
+    expect(screen.getByRole("button", { name: "Record" })).toHaveFocus(); // the button that was clicked is gone (review R-4)
     expect(screen.getByRole("button", { name: "Record" })).not.toHaveAttribute("aria-disabled");
     expect(screen.getByRole("button", { name: "Next sentence" })).not.toHaveAttribute("aria-disabled");
   });

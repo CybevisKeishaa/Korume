@@ -89,7 +89,7 @@ describe("UnsavedTakeGuard", () => {
   });
 
   it("routes a programmatic navigation through the same confirm (review I-1, Open full chat)", async () => {
-    state.attempts = { l1: attempt("l1", "saving") };
+    state.attempts = { l1: attempt("l1", "converting") };
     render(<Harness />);
     await userEvent.click(screen.getByRole("button", { name: "Open full chat" }));
     expect(state.push).not.toHaveBeenCalled();
@@ -115,7 +115,7 @@ describe("UnsavedTakeGuard", () => {
   });
 
   it("leaves modifier clicks and new-tab links alone", () => {
-    state.attempts = { l1: attempt("l1", "saving") };
+    state.attempts = { l1: attempt("l1", "save-failed") };
     render(<Harness />);
     for (const init of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }]) expect(clickLeavesAlone("Shadowing", init)).toBe(true);
     expect(clickLeavesAlone("New tab")).toBe(true);
@@ -127,6 +127,36 @@ describe("UnsavedTakeGuard", () => {
     for (const name of ["Same page", "External", "Current mode"]) expect(clickLeavesAlone(name)).toBe(true);
     expect(state.dispatch).not.toHaveBeenCalled();
     expect(state.push).not.toHaveBeenCalled();
+  });
+
+  it("leaves a download alone, such as the transcript export's blob link on <body> (review R-1)", () => {
+    state.attempts = { l1: attempt("l1", "save-failed") };
+    render(<Harness />);
+    const anchor = document.createElement("a");
+    anchor.href = `blob:${window.location.origin}/abc-123`;
+    anchor.download = "transcript.txt";
+    anchor.textContent = "Export";
+    anchor.addEventListener("click", (event) => event.preventDefault(), { once: true });
+    document.body.append(anchor);
+    expect(fireEvent.click(anchor)).toBe(false); // prevented only by this test's own listener
+    anchor.remove();
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("lets a link through while the only unsaved take is still saving: that save finishes on its own (review R-2)", () => {
+    state.attempts = { l1: attempt("l1", "saving") };
+    render(<Harness />);
+    expect(clickLeavesAlone("Shadowing")).toBe(true);
+    expect(state.dispatch).not.toHaveBeenCalled();
+    expect(beforeUnloadPrevented()).toBe(true); // closing the tab would still abort the upload
+  });
+
+  it("Leave and discard keeps a take that is saving, so its 201 never lands on a newer take (review R-2)", async () => {
+    state.attempts = { l1: attempt("l1", "saving"), l2: attempt("l2", "save-failed") };
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("link", { name: "Shadowing" }));
+    await userEvent.click(screen.getByRole("button", { name: "Leave and discard" }));
+    expect(state.dispatch.mock.calls).toEqual([[{ type: "discard", lineId: "l2" }]]);
   });
 
   it("does nothing to links when every take is saved", () => {

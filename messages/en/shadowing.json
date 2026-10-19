@@ -213,6 +213,7 @@
           "rhythm": "Rhythm {from} → {to}",
           "pronunciation": "Pronunciation {from} → {to}"
         },
+        "wordGrade": { "needsWork": "Needs practice: {words}.", "good": "Good: {words}.", "strong": "Strong: {words}." },
         "remarkUnaligned": "Overall score only: the words could not be matched to this sentence reliably.",
         "historyLoading": "Loading takes…",
         "historyError": "Could not load your takes.",

@@ -36,6 +36,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
   const { lines } = useLesson();
   const marks = useMarks();
   const audioRef = useRef<HTMLAudioElement>(null);
+  const micRef = useRef<HTMLButtonElement>(null);
   const lockHintId = useId();
   const { attempts, dispatch } = usePronunciationAttempts();
   const { recorder } = capture;
@@ -69,7 +70,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
     </div>
     <LiveSentence renderSentence={result ? (props) => <ScoredSentence text={props.text} spans={result.assessment?.words ? alignWords(props.text, result.assessment.words) : null} reading={props} /> : undefined} />
     <div className="flex flex-col items-center gap-sm py-sm">
-      {capture.supported ? <button type="button" aria-label={t(recording ? "stop" : "record")} disabled={index === null} {...lock(busy || (unsaved && !recording))}
+      {capture.supported ? <button ref={micRef} type="button" aria-label={t(recording ? "stop" : "record")} disabled={index === null} {...lock(busy || (unsaved && !recording))}
         onClick={() => { if (recording) capture.stop(); else if (index !== null && !busy && !unsaved) void capture.start(index); }}
         className="flex size-20 items-center justify-center rounded-full border-8 border-primary/20 bg-muted text-primary-strong hover:bg-primary/10 disabled:opacity-50 aria-disabled:opacity-50">
         {recording ? <Square className="size-icon-lg" aria-hidden="true" /> : <PracticeGlyph name="microphone" large />}
@@ -93,7 +94,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
       {(attempt?.phase === "save-failed" || attempt?.phase === "convert-failed") && <div className="flex flex-wrap justify-center gap-xs">
         <button type="button" className={ACTION} onClick={() => { if (index !== null) capture.retry(index); }}>{t(attempt.phase === "save-failed" ? "saveAgain" : "convertAgain")}</button>
         {/* A save the server keeps refusing would otherwise lock the mic and the sentence until a link is followed. */}
-        <button type="button" className={ACTION} onClick={() => dispatch({ type: "discard", lineId: attempt.lineId })}>{t("discardTake")}</button>
+        <button type="button" className={ACTION} onClick={() => { dispatch({ type: "discard", lineId: attempt.lineId }); micRef.current?.focus(); }}>{t("discardTake")}</button>
       </div>}
       {canRetry && <button type="button" disabled={(!attempt && selected?.format === "webm") || (retrySeconds !== null && retrySeconds > 0)} className={ACTION}
         onClick={() => { if (sessionId && line) void sessions.score(sessionId, line.id); }}>{t("scoreAgain")}</button>}

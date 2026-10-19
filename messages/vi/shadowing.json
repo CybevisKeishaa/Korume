@@ -219,6 +219,7 @@
           "rhythm": "Nhịp điệu {from} → {to}",
           "pronunciation": "Phát âm {from} → {to}"
         },
+        "wordGrade": { "needsWork": "Cần luyện thêm: {words}.", "good": "Tốt: {words}.", "strong": "Rất tốt: {words}." },
         "remarkUnaligned": "Chỉ có điểm tổng: không khớp được từng từ với câu một cách đáng tin.",
         "historyLoading": "Đang tải các lượt thu…",
         "historyError": "Không tải được các lượt thu.",

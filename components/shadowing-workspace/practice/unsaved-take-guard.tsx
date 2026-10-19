@@ -6,7 +6,7 @@ import { useRouter } from "@/lib/i18n/navigation";
 import { routing } from "@/lib/i18n/routing";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { hasUnsaved, UNSAVED_PHASES } from "@/lib/pronunciation/attempts";
+import { hasUnsaved, UNSAVED_PHASES, type AttemptsState } from "@/lib/pronunciation/attempts";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 
 const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
@@ -14,6 +14,14 @@ const LOCALE_PREFIX = new RegExp(`^/(${routing.locales.join("|")})(?=/|$)`);
 /** A next-intl `Link` renders the locale into `href`; the locale-aware router wants the path without it. */
 export function localeLessPath(href: string): string {
   return href.replace(LOCALE_PREFIX, "") || "/";
+}
+
+/**
+ * A take that would be lost by a client navigation. A `saving` take is not: its request finishes after the mode
+ * unmounts and lands on the shell's store. Discarding it would let that 201 attach to a newer take on the same line.
+ */
+function discardable(attempts: AttemptsState): string[] {
+  return Object.values(attempts).filter((attempt) => attempt.phase !== "saving" && UNSAVED_PHASES.has(attempt.phase)).map((attempt) => attempt.lineId);
 }
 
 type Navigate = (href: string) => void;
@@ -35,29 +43,32 @@ export function UnsavedTakeGuard({ children }: { children: React.ReactNode }) {
   const t = useTranslations("shadowing.workspace.practice.leave");
   const router = useRouter();
   const { attempts, dispatch } = usePronunciationAttempts();
-  const blocking = hasUnsaved(attempts);
+  // Unload aborts any request, so every unsaved phase warns; a client navigation loses only the discardable ones.
+  const unloading = hasUnsaved(attempts);
+  const blocking = discardable(attempts).length > 0;
   const blockingRef = useRef(blocking);
   blockingRef.current = blocking;
   const [pending, setPending] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!blocking) return;
+    if (!unloading) return;
     const onBeforeUnload = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ""; };
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [blocking]);
+  }, [unloading]);
 
   useEffect(() => {
     if (!blocking) return;
     const onClick = (event: MouseEvent) => {
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
-      if (!anchor || anchor.target === "_blank") return;
+      // A download (the transcript export's blob link on <body>) or another scheme is not a navigation.
+      if (!anchor || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
       // Only a client navigation to another page can lose the take silently: another origin unloads the page
       // (beforeunload), and a hash or the page already open goes nowhere.
       const href = anchor.getAttribute("href") ?? "";
       const url = new URL(href, window.location.href);
-      if (url.origin !== window.location.origin || href.startsWith("#")) return;
+      if (!/^https?:$/.test(url.protocol) || url.origin !== window.location.origin || href.startsWith("#")) return;
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
       // Capture phase, before next-intl's Link starts its client navigation.
       event.preventDefault();
@@ -74,7 +85,7 @@ export function UnsavedTakeGuard({ children }: { children: React.ReactNode }) {
   }, [router]);
 
   const leave = () => {
-    for (const attempt of Object.values(attempts)) if (UNSAVED_PHASES.has(attempt.phase)) dispatch({ type: "discard", lineId: attempt.lineId });
+    for (const lineId of discardable(attempts)) dispatch({ type: "discard", lineId });
     const href = pending;
     setPending(null);
     if (href) router.push(localeLessPath(href));
