@@ -14,6 +14,19 @@ describe("ScoredSentence", () => {
     expect(marks[1]).toHaveAttribute("data-error-type", "Mispronunciation");
     expect(container.querySelector("p[lang=ja]")).toHaveTextContent("𠮷野、です。");
   });
+  it("colours each word from the theme's text tokens; a <mark> otherwise keeps the browser's black", () => {
+    const { container } = render(<ScoredSentence text="今日は雨です" spans={[
+      { start: 0, end: 2, accuracy: 90, errorType: "None" },
+      { start: 2, end: 3, accuracy: 70, errorType: "None" },
+      { start: 3, end: 4, accuracy: 40, errorType: "Mispronunciation" },
+      { start: 4, end: 6, accuracy: null, errorType: "None" },
+    ]} />);
+    const marks = Array.from(container.querySelectorAll("mark"));
+    expect(marks[0]).toHaveClass("text-success-strong");
+    expect(marks[1]).toHaveClass("text-accent-strong");
+    expect(marks[2]).toHaveClass("text-danger-strong");
+    expect(marks[3]).toHaveClass("text-inherit");
+  });
   it("shows the honest overall-only remark without word detail", () => {
     const { container } = render(<ScoredSentence text="日本語。" spans={null} />);
     expect(container.querySelectorAll("mark")).toHaveLength(0);

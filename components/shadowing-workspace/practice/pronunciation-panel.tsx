@@ -83,7 +83,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
         {!scoring && kind === "error" && <p>{t("scoreError")}</p>}
         {label && score != null && <p className="flex items-center justify-center gap-sm"><span className="font-semibold">{t(`label.${label}`)}</span><span className="rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}</span></p>}
       </div>
-      {recorder.error && <div role="alert" className="text-center text-caption text-destructive"><p>{recorder.error}</p>
+      {recorder.error && <div role="alert" className="text-center text-caption text-danger-strong"><p>{recorder.error}</p>
         {recorder.state === "error" && <p>{t("micHint")}</p>}
         {recorder.state === "disabled-in-settings" && <Link href="/settings#privacy" className="underline">{shadowing("recorder.errors.disabledInSettingsAction")}</Link>}
       </div>}

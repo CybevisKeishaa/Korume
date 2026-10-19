@@ -18,7 +18,7 @@ export function ScoredSentence({ text, spans, reading }: { text: string; spans: 
         const before = chars.slice(end, start).join("");
         end = finish;
         const tone = span.errorType !== "None" || (span.accuracy !== null && span.accuracy < REVIEW_PRONUNCIATION_BELOW)
-          ? "text-destructive underline decoration-wavy" : span.accuracy !== null && span.accuracy >= STRONG_PRONUNCIATION_AT
+          ? "text-danger-strong underline decoration-wavy" : span.accuracy !== null && span.accuracy >= STRONG_PRONUNCIATION_AT
             ? "text-success-strong" : span.accuracy === null ? "text-inherit" : "text-accent-strong";
         return <Fragment key={index}>{before}<mark data-error-type={span.errorType} className={`rounded-sm bg-transparent ${tone}`}>{chars.slice(start, finish).join("")}</mark></Fragment>;
       })}{chars.slice(end).join("")}</>;
