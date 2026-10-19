@@ -96,10 +96,6 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 - Task 9 contract: pre-save actions carry only `lineId`; Tasks 10/11 must cancel or ignore an old
   conversion/save callback after discard and a new take on that same line. Session-addressed late
   outcomes are already owner-routed. Microphone cleanup and actual browser Back/Forward remain owed.
-- Task 10 implementation `f2db6ecc` is under task review, not yet accepted. It adds the full mode,
-  captured-operation cancellation, history reconciliation/polling and real stats refresh after save/score.
-  Necessary direct seams preserve one scored sentence with adaptive ruby, translation and lookup.
-  Recorder regressions cover failed startup, cancelled grants, old callbacks and double cleanup.
 - Task 10 confirmed that natural Shadowing playback could strand a retained unsaved take after Back.
   The controller now bounds navigation-locked playback, including skipped ticks, before publishing a
   different sentence. Ordinary unlocked Shadowing and internal replay regressions passed.
@@ -190,21 +186,8 @@ b. Live Azure smoke (plan Task 15 step 2): `scripts/smoke/practice-pronunciation
 c. Re-run the full Playwright suite where the dictionary is imported; only the reds named in Verification may remain.
 d. Owner approval of the look, including the Task 10 toolbar icon mapping. The owner cannot open Chrome; judge
    from the screenshots shared in chat 2026-10-19 or a later set. Merge only after approval.
-e. `practice-pronunciation` must be fast-forwarded to `claude/quirky-maxwell-h86erz` (owner's permission needed to
-   push the feature branch from the cloud session).
+e. Find why the owner's takes stay unscored: read the `[pronunciation/score]` server log line on their machine.
 
-History:
-
-0. 2026-10-19: the owner asked Claude to review the branch and finish it ("xem có vấn đề gì không và làm tiếp").
-   Codex task 10 review verdict was never recorded; Claude reviewed `f2db6ecc` (tsc clean, 53 files / 506
-   tests in lib/pronunciation + workspace + video-player green) and accepted it. Nit carried: unmounting
-   during `saving` marks the take `save-failed` while the request may still reach 201, so "Save again"
-   can create a second row; Task 11's guard blocks in-workspace links, leaving only browser Back.
-   Claude now owns Tasks 11-15 in a cloud session (no worktree; branch pushed as
-   `claude/quirky-maxwell-h86erz` from `practice-pronunciation`).
-
-1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
-2. Task 10 implementation `f2db6ecc` is being reviewed by `task_10_review`; read its verdict before
-   accepting/checkpointing or starting Task 11. Focused 79 files / 1,140 tests passed; TypeScript,
-   scoped lint (46 baseline-proven warning sites) and protocol passed. Browser/full gates remain owed.
-3. Tasks 1–9 accepted. Keep one implementer/reviewer at a time; Tasks 11–15 follow after Task 10 review.
+History: 2026-10-17 Codex took implementation (Tasks 1–10). 2026-10-19 the owner asked Claude to review and
+finish; Claude accepted Task 10, built Tasks 11–15 and two review fix waves in a cloud session, and with the owner's
+permission fast-forwards `practice-pronunciation` from `claude/quirky-maxwell-h86erz`.
