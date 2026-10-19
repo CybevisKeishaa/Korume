@@ -30,8 +30,23 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 8 | Scrolling practice panel and accessible, state-aware sentence navigator; review APPROVE WITH NITS | `3e1e68b6` |
 | 9 | Durable per-line attempts, session-routed results and controller locks; review APPROVE WITH NITS | `3b39eff7` |
 | 10 | Mode body, capture/sessions hooks, details, scored sentence, take limit; Claude review 2026-10-19 APPROVE WITH NITS | `f2db6ecc` |
+| 11 | Unsaved-take guard: beforeunload + same-origin link confirm, discard on leave; mutation (`saving` out of UNSAVED_PHASES) fails | `5ffda80a`, `fea2ccb8` |
+| 12 | "Practice this sentence" row action, only while Pronunciation is complete; seek then route | `a5862230` |
+| 13 | `reachedLine` evidence → "Watched to sentence n/total", practised never complete (D7); mission → `/pronunciation`, speaking copy; mutation (complete at last line) fails | `0f416e4a` |
+| 14 | Mode on (D24), orphan recorder panel deleted, loopback-only recognition override, speech stub, E2E 8/8 | `4e89542f`, `b11d10d5` |
+| 15 | Gates below; live Azure smoke, whole-branch review and owner look still owed | — |
 
 ## Contracts and decisions
+
+- Task 14 E2E ruling (Claude, 2026-10-19): the plan's case 4 assumed an Azure 503 shows "unavailable". The reviewed
+  Task 5 route maps an upstream 503 to 502 ("Could not score your take. Your recording is saved.") and keeps its
+  own 503 for speech not configured. The contract stands; the E2E asserts it, and D16 (take kept, no fake score) holds.
+- Task 14 override: `AZURE_SPEECH_RECOGNITION_URL` is accepted only on a loopback host and throws otherwise. The
+  request carries the Azure key and the learner's audio.
+- Task 11 scope: the guard confirms same-origin path navigations only; a `#hash` or another origin is left to the
+  browser (beforeunload covers a full unload). Review Focus 1 holds for Back/Forward between modes (E2E 6); Back out
+  of the workspace unmounts the shell and loses an unsaved take, as the spec's guard set allows.
+- Open nit: after a reload, Details closes once the sentence resolves from none to 1, so an immediate click is undone.
 
 - Owner decisions D1–D25 are in spec §2. Gates by branch in spec §9.
 - Ruling (2026-10-17): AGENTS §6 overrides Task 1's duplicate function definitions: edit
@@ -91,6 +106,29 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Verification
 
+Claude, 2026-10-19 (cloud session, after the last product edit `fea2ccb8`):
+
+- `npx tsc --noEmit` 0; `npm run lint` 0 errors, 222 warnings, none in a file Claude changed; `npm run verify:protocol` valid.
+- Vitest full suite: 692 files / 5,893 tests passed.
+- DB gates on a fresh local stack (all 47 migrations applied by `npx supabase start`): practice (incl. two-session
+  lease race), summary, dashboard, erasure, shadowing all passed. Before the stack could start, the same five passed on
+  a hand-built Postgres + GoTrue + stand-in `storage` schema; the real stack run supersedes it.
+- E2E `practice-pronunciation.spec.ts` 8/8, twice in a row; `shadowing-workspace.spec.ts` + `summary.spec.ts` 28/28
+  (summary :29, listed as a known red, is green: its fixture now seeds the watched position D7 reads).
+- Full Playwright suite: 142 passed, 43 failed, 7 did not run. Every failure is outside this branch (no changed file
+  under landing, print, dictionary, kanji or the study-tools drawer) and environmental in this sandbox:
+  landing-page (22, `page.goto` never reaches `load` — external assets blocked), print-vocabulary (17, "no words
+  to print": no dictionary import in a fresh DB), shadowing-intelligence :94/:185/:290 and typography `kanji/[id]`
+  404 (same missing dictionary). Re-run on the owner's machine, where the dictionary is imported.
+- Typography gate with `(focus) shadowing/[id]/pronunciation` added (45 routes): at 1280, 1440 and 1920 the only
+  finding is the environmental `kanji/[id]` 404; nav-collapsed, XL scale and dialog tests 5/5.
+- Layout measure (`/pronunciation`, fresh learner): document scroll = viewport in both axes at 1280×529, 1440×900,
+  1920×1080 and nav collapsed. At 1280×529 the sentence ends at y=261, the mic at 363, Replay/Play my take at 137.
+  The score label, the stat strip compacting on a divider drag, and a nav-collapsed cookie that actually collapses a
+  focus-chrome page were not measured.
+
+Codex, earlier:
+
 - Task 1 accepted after task and fix reviews. Evidence and command outputs:
   `.superpowers/sdd/2026-10-15-practice-pronunciation/task-1-report.md` and its cited logs.
 - Pre-migration recount 2026-10-17: shadowing `208|0|0` (total/webm/unscored), dictation `107|0`
@@ -110,15 +148,29 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 - Owner: Claude
 - Docker Desktop + `npx supabase start` needed from the first migration task; build and serve only in this worktree.
+- 2026-10-19 Claude worked in a cloud container, not in `.worktrees/practice-pronunciation`: the branch was pushed
+  as `claude/quirky-maxwell-h86erz` (practice-pronunciation + Tasks 11–15). Fast-forward `practice-pronunciation`
+  to it before resuming locally. That container's lockfile needed `npm install` (`npm ci` refused: `@swc/helpers`
+  missing from the lock on Linux); the lockfile was not changed.
 - This worktree has its own ignored `node_modules` installed by `npm ci`; no parent dependency edits.
 
 ## Blockers
 
-- No external blocker. Save/score contracts are now implemented; the inactive orphan recorder is
-  removed in Task 14. Summary still requires its Task 13 adapter update. Practice UI and integrated
-  gates remain incomplete; do not treat the branch as ready for use or merge.
+- Not ready to merge until the owed items in Next actions are done. No external blocker.
 
 ## Next actions
+
+Owed before merge (Claude, 2026-10-19):
+
+a. Whole-branch `code-reviewer` on `git diff master...practice-pronunciation` with the spec, plan and Review Focus
+   list, then a fix wave and its own review (plan Task 15 step 4).
+b. Live Azure smoke (plan Task 15 step 2): `scripts/smoke/practice-pronunciation-live.ts` is not written; it needs
+   the owner's Azure key and a spoken Ep.729 WAV.
+c. Re-run the full Playwright suite where the dictionary is imported; only the reds named in Verification may remain.
+d. Owner Chrome look (Docker + `npx supabase start`, `npx next dev -p 3100`), including the Task 10 toolbar
+   icon mapping. Merge only after approval.
+
+History:
 
 0. 2026-10-19: the owner asked Claude to review the branch and finish it ("xem có vấn đề gì không và làm tiếp").
    Codex task 10 review verdict was never recorded; Claude reviewed `f2db6ecc` (tsc clean, 53 files / 506
