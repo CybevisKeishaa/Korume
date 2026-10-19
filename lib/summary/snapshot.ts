@@ -11,6 +11,8 @@ export type ModeState =
   | { kind: "not_started" }
   | { kind: "in_progress"; percent: number }
   | { kind: "complete" }
+  /** Shadowing: how far the learner watched. Reaching the last sentence is not completing it (D7). */
+  | { kind: "reached"; line: number; total: number }
   | { kind: "scored"; score: number }
   | { kind: "not_enough_data" };
 
@@ -84,7 +86,7 @@ const numeric = z.coerce.number();
 export const lessonEvidenceSchema = z.object({
   hasTranscript: z.boolean(),
   lineCount: numeric,
-  shadowedLines: numeric,
+  reachedLine: numeric,
   pronunciationMean: numeric.nullable(),
   dictationMean: numeric.nullable(),
   completed: z.boolean(),
@@ -133,9 +135,8 @@ export function mistakeSpan(reference: string, input: string): string | null {
 }
 
 function shadowingState(evidence: LessonEvidence): ModeState {
-  if (evidence.lineCount === 0 || evidence.shadowedLines === 0) return { kind: "not_started" };
-  if (evidence.shadowedLines >= evidence.lineCount) return { kind: "complete" };
-  return { kind: "in_progress", percent: round((100 * evidence.shadowedLines) / evidence.lineCount) };
+  if (evidence.lineCount === 0 || evidence.reachedLine === 0) return { kind: "not_started" };
+  return { kind: "reached", line: Math.min(evidence.reachedLine, evidence.lineCount), total: evidence.lineCount };
 }
 
 const meanState = (mean: number | null): ModeState => (

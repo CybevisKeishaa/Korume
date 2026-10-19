@@ -4,7 +4,7 @@ import { buildLessonSnapshot, mistakeSpan, summaryLines, type LessonEvidence, ty
 const evidence = (overrides: Partial<LessonEvidence> = {}): LessonEvidence => ({
   hasTranscript: true,
   lineCount: 10,
-  shadowedLines: 0,
+  reachedLine: 0,
   pronunciationMean: null,
   dictationMean: null,
   completed: false,
@@ -45,12 +45,12 @@ describe("buildLessonSnapshot", () => {
     expect(snapshot.bestLine).toBeNull();
   });
 
-  it("derives shadowing states with half-up progress percentages", () => {
-    expect(buildLessonSnapshot(evidence({ shadowedLines: 0 }), lines(10), new Map(), 0).status.shadowing).toEqual({ kind: "not_started" });
-    expect(buildLessonSnapshot(evidence({ shadowedLines: 3 }), lines(10), new Map(), 0).status.shadowing).toEqual({ kind: "in_progress", percent: 30 });
-    expect(buildLessonSnapshot(evidence({ shadowedLines: 10 }), lines(10), new Map(), 0).status.shadowing).toEqual({ kind: "complete" });
-    expect(buildLessonSnapshot(evidence({ lineCount: 3, shadowedLines: 1 }), lines(3), new Map(), 0).status.shadowing).toEqual({ kind: "in_progress", percent: 33 });
-    expect(buildLessonSnapshot(evidence({ lineCount: 3, shadowedLines: 2 }), lines(3), new Map(), 0).status.shadowing).toEqual({ kind: "in_progress", percent: 67 });
+  it("derives shadowing as the sentence the learner watched to, never complete (D7)", () => {
+    expect(buildLessonSnapshot(evidence({ reachedLine: 0 }), lines(10), new Map(), 0).status.shadowing).toEqual({ kind: "not_started" });
+    expect(buildLessonSnapshot(evidence({ lineCount: 0, reachedLine: 0 }), lines(0), new Map(), 0).status.shadowing).toEqual({ kind: "not_started" });
+    expect(buildLessonSnapshot(evidence({ lineCount: 194, reachedLine: 51 }), lines(194), new Map(), 0).status.shadowing)
+      .toEqual({ kind: "reached", line: 51, total: 194 });
+    expect(buildLessonSnapshot(evidence({ reachedLine: 10 }), lines(10), new Map(), 0).status.shadowing).toEqual({ kind: "reached", line: 10, total: 10 });
   });
 
   it("preserves zero means and rounds non-null pronunciation and dictation means", () => {

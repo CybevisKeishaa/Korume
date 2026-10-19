@@ -11,5 +11,5 @@ export function buildReflectionFallback(snapshot: LessonSnapshot): ReflectionFal
   const target = snapshot.reviewTargets[0];
   if (target) return { kind: "target", line: target.lineText };
   const shadowing = snapshot.status.shadowing.kind;
-  return { kind: "state", state: shadowing === "complete" ? "complete" : shadowing === "in_progress" ? "in_progress" : "not_started" };
+  return { kind: "state", state: shadowing === "complete" ? "complete" : shadowing === "in_progress" || shadowing === "reached" ? "in_progress" : "not_started" };
 }

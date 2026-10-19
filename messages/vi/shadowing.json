@@ -556,6 +556,7 @@
       "notEnoughData": "Chưa đủ dữ liệu",
       "complete": "Hoàn thành",
       "percent": "{value}%",
+      "reached": "Đã xem đến câu {line}/{total}",
       "score": "{value}"
     },
     "saved": {

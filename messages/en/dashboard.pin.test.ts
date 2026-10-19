@@ -23,6 +23,9 @@ describe("dashboard.json EN — card copy", () => {
     expect(en.continue.eyebrow).toEqual({ continue: "Continue learning", startNext: "Start next lesson", recommended: "Recommended for you", onboarding: "Start learning" });
     expect(en.continue.cta).toEqual({ continue: "Continue learning", start: "Start lesson", review: "Review lesson", explore: "Explore lessons" });
     expect(en.mission).toMatchObject({ eyebrow: "Today's mission", titleThree: "Three small promises", titleSome: "Today's missions", reward: "Reward", rewardEarned: "+{xp} XP earned" });
+    // practice-pronunciation: the sentence mission opens the speaking mode, so its copy says speaking.
+    expect(en.mission.item.shadow).toBe("{target, plural, one {Practise speaking {target} sentence} other {Practise speaking {target} sentences}}");
+    expect(vi.mission.item.shadow).toBe("{target, plural, other {Luyện nói {target} câu}}");
     expect(en.journey).toMatchObject({ eyebrow: "Learning journey", next: "Next milestone", authoring: "The JLPT journey is being prepared.", complete: "You've completed the current journey." });
     expect(en.korume).toEqual({ practice: "Practice now", viewWeakness: "View weakness" });
     expect(en.weekly).toMatchObject({ eyebrow: "Weekly evolution", notTracked: "Not yet tracked" });

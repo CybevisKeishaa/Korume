@@ -550,6 +550,7 @@
       "notEnoughData": "Not enough data",
       "complete": "Complete",
       "percent": "{value}%",
+      "reached": "Watched to sentence {line}/{total}",
       "score": "{value}"
     },
     "saved": {

@@ -81,6 +81,8 @@ describe("SummaryPage", () => {
     expect(within(status()).getByText("Not enough data")).toBeInTheDocument();
     rerender(<SummaryPage {...PROPS} status={{ ...PROPS.status, shadowing: { kind: "complete" } }} />);
     expect(within(status()).getByText("Complete")).toBeInTheDocument();
+    rerender(<SummaryPage {...PROPS} status={{ ...PROPS.status, shadowing: { kind: "reached", line: 51, total: 194 } }} />);
+    expect(within(status()).getByText("Watched to sentence 51/194")).toBeInTheDocument();
   });
 
   it("saved knowledge: real counts and a retention tile in words", () => {
