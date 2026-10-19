@@ -16,7 +16,7 @@ import { readBlobAsArrayBuffer } from "./read-blob";
  * friendly "couldn't process that recording" message rather than send bytes
  * Azure can't parse.
  */
-export async function blobToWav16kMono(blob: Blob): Promise<Blob> {
+export async function blobToWav16kMono(blob: Blob, { maxSeconds }: { maxSeconds?: number } = {}): Promise<Blob> {
   const AudioCtx =
     window.AudioContext ??
     (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -29,9 +29,12 @@ export async function blobToWav16kMono(blob: Blob): Promise<Blob> {
     const arrayBuffer = await readBlobAsArrayBuffer(blob);
     const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
 
+    // `maxSeconds` cuts a take that ran past its limit (a background tab coarsens the auto-stop timer).
+    const frames = maxSeconds === undefined ? Infinity : Math.floor(maxSeconds * audioBuffer.sampleRate);
     const channels: Float32Array[] = [];
     for (let i = 0; i < audioBuffer.numberOfChannels; i++) {
-      channels.push(audioBuffer.getChannelData(i));
+      const data = audioBuffer.getChannelData(i);
+      channels.push(data.length > frames ? data.subarray(0, frames) : data);
     }
 
     const wavBuffer = buildWav16kMono(channels, audioBuffer.sampleRate, TARGET_SAMPLE_RATE);

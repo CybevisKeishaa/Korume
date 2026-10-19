@@ -40,6 +40,19 @@ describe("blobToWav16kMono", () => {
     expect(view.getInt16(44, true)).toBe(0);
   });
 
+  it("cuts the take at maxSeconds, so a late auto-stop never makes a WAV the server refuses", async () => {
+    audio = mockAudioContext({ channelData: [new Float32Array(16000 * 3).fill(0.25)], sampleRate: 16000 });
+    const wav = await blobToWav16kMono(new Blob([new Uint8Array([1])]), { maxSeconds: 2 });
+    const view = new DataView(await readBlobBytes(wav));
+    expect(view.getUint32(40, true)).toBe(16000 * 2 * 2); // data bytes: 2 s of 16-bit mono
+  });
+
+  it("keeps the whole take when it is shorter than maxSeconds", async () => {
+    audio = mockAudioContext({ channelData: [new Float32Array(16000).fill(0.25)], sampleRate: 16000 });
+    const wav = await blobToWav16kMono(new Blob([new Uint8Array([1])]), { maxSeconds: 2 });
+    expect(new DataView(await readBlobBytes(wav)).getUint32(40, true)).toBe(16000 * 2);
+  });
+
   it("propagates a decode failure", async () => {
     audio = mockAudioContext({ rejectWith: new Error("corrupt audio") });
     await expect(blobToWav16kMono(new Blob([new Uint8Array([1])]))).rejects.toThrow(

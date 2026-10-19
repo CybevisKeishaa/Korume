@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useId, useMemo, useRef, useState } from "react";
-import { Link, useRouter, useTranslations } from "@/lib/i18n";
+import { Link, useTranslations } from "@/lib/i18n";
 import { unionGrounding } from "@/lib/korume/grounding";
 import { Composer } from "@/components/korume/composer";
 import { KorumeRail } from "@/components/korume/korume-rail";
@@ -9,6 +9,7 @@ import { MessageList } from "@/components/korume/message-list";
 import { TurnNotice } from "@/components/korume/turn-notice";
 import { LOCKING_NOTICES, useKorumeThread, type DraftAnchor } from "@/components/korume/use-korume-thread";
 import { useCurrentSentence, useLesson, usePlaybackController } from "./workspace-context";
+import { useGuardedNavigation } from "./practice/unsaved-take-guard";
 
 const CHIP_CHARS = 18;
 
@@ -35,7 +36,8 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
 }) {
   const t = useTranslations("companion");
   const { video, lines } = useLesson();
-  const router = useRouter();
+  // Through the unsaved-take guard: leaving for the full chat would otherwise drop an unsaved take silently.
+  const navigate = useGuardedNavigation();
   const [expanded, setExpanded] = useState(false);
   const current = useCurrentSentence();
   const controller = usePlaybackController();
@@ -66,7 +68,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   const locked = thread.notice !== null && LOCKING_NOTICES.has(thread.notice.kind);
   // Before the first send there is no thread yet: create it (anchor and all, idempotent by id), then go.
   const openFullChat = async () => {
-    if (await thread.ensureThread().catch(() => false)) router.push(`/korume/chat?thread=${thread.threadId}`);
+    if (await thread.ensureThread().catch(() => false)) navigate(`/korume/chat?thread=${thread.threadId}`);
   };
 
   return (

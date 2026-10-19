@@ -30,6 +30,8 @@ export function usePronunciationCapture(onSaved: (sessionId: string, lineId: str
     autoStop.current = null;
   }, []);
   const valid = useCallback((op: Operation) => mounted.current && operation.current === op && !op.cancelled, []);
+  // A save outlives this body: the store is the shell's, and dropping a 201 would make "Save again" a second row.
+  const current = useCallback((op: Operation) => operation.current === op && !op.cancelled, []);
   const save = useCallback(async (op: Operation, wav: Blob, pitch: PitchAccentScore | null) => {
     if (!valid(op)) return;
     dispatch({ type: "saving", lineId: op.lineId });
@@ -38,24 +40,24 @@ export function usePronunciationCapture(onSaved: (sessionId: string, lineId: str
     if (pitch) form.append("pitchScore", String(Math.round(pitch.score)));
     try {
       const response = await fetch("/api/shadowing/session", { method: "POST", body: form });
-      if (!valid(op)) return;
+      if (!current(op)) return;
       if (response.status !== 201) throw new Error("save failed");
       const { data } = await response.json() as { data: { id: string; signedUrl: string } };
-      if (!valid(op)) return;
+      if (!current(op)) return;
       dispatch({ type: "saved", lineId: op.lineId, sessionId: data.id, signedUrl: data.signedUrl });
       op.cancelled = true;
       latest.current.onSaved(data.id, op.lineId);
     } catch {
-      if (valid(op)) dispatch({ type: "save-failed", lineId: op.lineId });
+      if (current(op)) dispatch({ type: "save-failed", lineId: op.lineId });
     }
-  }, [dispatch, valid, video.id]);
+  }, [current, dispatch, valid, video.id]);
 
   const convert = useCallback(async (op: Operation, original: Blob) => {
     if (!valid(op)) return;
     op.processing = true;
     dispatch({ type: "recorded", lineId: op.lineId, original });
     let wav: Blob;
-    try { wav = await blobToWav16kMono(original); }
+    try { wav = await blobToWav16kMono(original, { maxSeconds: op.limit }); }
     catch { if (valid(op)) dispatch({ type: "convert-failed", lineId: op.lineId }); return; }
     if (!valid(op)) return;
     let timeout: ReturnType<typeof setTimeout> | undefined;
@@ -106,7 +108,11 @@ export function usePronunciationCapture(onSaved: (sessionId: string, lineId: str
   }, [clearAutoStop, convert, dispatch, recorder.state, recorder.blob, stop]);
   useEffect(() => {
     const op = operation.current;
-    if (op && !attempts[op.lineId]) { op.cancelled = true; clearAutoStop(); }
+    if (!op || op.cancelled || attempts[op.lineId]) return;
+    op.cancelled = true;
+    clearAutoStop();
+    const { recorder: live } = latest.current;
+    if (live.state === "recording" || live.state === "requesting-permission") live.reset();
   }, [attempts, clearAutoStop]);
   useEffect(() => {
     if (recorder.state !== "recording") return;
@@ -121,6 +127,7 @@ export function usePronunciationCapture(onSaved: (sessionId: string, lineId: str
       clearAutoStop();
       const op = operation.current;
       if (!op) return;
+      if (!op.cancelled && latest.current.attempts[op.lineId]?.phase === "saving") return;
       const wasPending = !op.cancelled;
       op.cancelled = true;
       latest.current.recorder.stop();
@@ -128,7 +135,6 @@ export function usePronunciationCapture(onSaved: (sessionId: string, lineId: str
       const attempt = latest.current.attempts[op.lineId];
       if (attempt?.phase === "recording") dispatch({ type: "discard", lineId: op.lineId });
       if (attempt?.phase === "converting") dispatch({ type: "convert-failed", lineId: op.lineId });
-      if (attempt?.phase === "saving") dispatch({ type: "save-failed", lineId: op.lineId });
     };
   }, [clearAutoStop, dispatch]);
 

@@ -93,7 +93,9 @@ export function ShadowingWorkspaceShell({
         <DrawerProvider>
           <NotesProvider bootstrap={bootstrap}>
             <PronunciationAttemptsProvider>
-              <WorkspaceLayout>{children}</WorkspaceLayout>
+              <UnsavedTakeGuard>
+                <WorkspaceLayout>{children}</WorkspaceLayout>
+              </UnsavedTakeGuard>
             </PronunciationAttemptsProvider>
           </NotesProvider>
         </DrawerProvider>
@@ -237,7 +239,6 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         />
       )}
       <SelectionPopoverHost workspaceRef={rootRef} />
-      <UnsavedTakeGuard rootRef={rootRef} />
       {/* Focus Mode hides the drawer; its state lives in DrawerProvider above, so leaving Focus restores it. */}
       {drawerShown && (
         <div className={normal ? "col-span-3 row-start-3 min-h-0" : "col-span-1 row-start-3 min-h-0"} data-testid="workspace-drawer-slot">

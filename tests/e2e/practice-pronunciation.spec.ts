@@ -28,6 +28,10 @@ async function stubMode(request: { post(url: string, options: { data: unknown })
   await request.post(`${STUB}/__mode`, { data: { mode } });
 }
 
+async function stubCalls(request: { get(url: string): Promise<{ json(): Promise<unknown> }> }): Promise<number> {
+  return ((await (await request.get(`${STUB}/__calls`)).json()) as { calls: number }).calls;
+}
+
 async function registerLearner(page: Page): Promise<void> {
   await page.route(/youtube\.com|youtube-nocookie\.com|googlevideo\.com/, (route) => route.abort());
   await page.route(/\/api\/speech\/tts/, (route) => route.abort());
@@ -70,12 +74,15 @@ test("1 · one player instance across the mode switch (B1 gate)", async ({ page 
   expect((await fakeYt(page)).mounts).toBe(1);
 });
 
-test("2 + 3 · record, save, score; the scored take survives a reload", async ({ page }) => {
+test("2 + 3 · record, save, score; the scored take survives a reload", async ({ page, request }) => {
   await registerLearner(page);
   await openLesson(page, "/pronunciation");
   await expect(strip(page)).toContainText("Sentence 1/");
+  const callsBefore = await stubCalls(request);
   await recordTake(page);
   await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
+  // The score came from the stub: a reused server without AZURE_SPEECH_RECOGNITION_URL would reach real Azure.
+  expect(await stubCalls(request)).toBe(callsBefore + 1);
   await expect(practice(page).getByText("Excellent")).toBeVisible();
   await expect(practice(page).locator("mark[data-error-type='Mispronunciation']")).toHaveText("文");
   await expect(page.getByRole("navigation", { name: "Sentence navigator" }).getByRole("button", { name: "Sentence 1, scored 86" })).toBeVisible();
@@ -140,6 +147,11 @@ test("6 · an unsaved take is guarded on in-workspace links and survives Back/Fo
   await dialog.getByText("Stay", { exact: true }).click();
   await expect(dialog).toBeHidden();
   await expect(page).toHaveURL(/\/pronunciation$/);
+  // The app nav rail sits outside the workspace root; it is guarded too (review I-1).
+  await page.getByRole("link", { name: "Help", exact: true }).click();
+  await expect(dialog).toBeVisible();
+  await dialog.getByText("Stay", { exact: true }).click();
+  await expect(page).toHaveURL(/\/pronunciation$/);
 
   // Client navigation the guard cannot intercept: the take lives in the shell, so it is still there on return.
   await page.goBack();
@@ -198,12 +210,14 @@ test("9 · sentence navigation is locked while a take is unsaved", async ({ page
 
   await page.locator("body").press("ArrowRight");
   await page.getByRole("navigation", { name: "Sentence navigator" }).getByRole("button", { name: /^Sentence 3,/ }).click({ force: true });
-  await expect(practice(page).getByRole("button", { name: "Next" })).toBeDisabled();
+  const next = practice(page).getByRole("button", { name: "Next sentence" });
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+  await next.click({ force: true }); // aria-disabled stays focusable and clickable; the click must not move
   await expect(strip(page)).toContainText("Sentence 1/");
 
   await page.unroute("**/api/shadowing/session");
   await practice(page).getByRole("button", { name: "Save again" }).click();
   await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
-  await practice(page).getByRole("button", { name: "Next" }).click();
+  await practice(page).getByRole("button", { name: "Next sentence" }).click();
   await expect(strip(page)).toContainText("Sentence 2/");
 });

@@ -13,6 +13,9 @@ describe("PronunciationDetails", () => {
     expect(progressLine([item("a", 90, 80)])).toBeNull();
     expect(progressLine([item("a", 90, 80), item("b", null, null), item("c", 84, 72)])).toEqual({ metric: "rhythm", from: 72, to: 80 });
     expect(progressLine([item("a", 90, null), item("b", 84, 72)])).toEqual({ metric: "pronunciation", from: 84, to: 90 });
+    // Scores are numeric(5,2); the line reads like the badge and the history, in whole numbers (review M-3).
+    expect(progressLine([item("a", 86.2, null), item("b", 84.4, null)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
+    expect(progressLine([item("a", 86.2, 72.4), item("b", 84.4, 72.3)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
   });
   it("hides details initially and exposes only recorded measurements", async () => {
     render(<PronunciationDetails assessment={{ v: 1, accuracy: 91, completeness: null, recognizedText: "日本語", words: null }} rhythmScore={80} pitch={null}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { useId, useRef } from "react";
 import { Square } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { Link } from "@/lib/i18n/navigation";
@@ -16,7 +16,7 @@ import { ScoredSentence } from "./scored-sentence";
 import type { usePronunciationCapture } from "./use-pronunciation-capture";
 import type { usePronunciationSessions } from "./use-pronunciation-sessions";
 
-const ACTION = "inline-flex min-h-control-sm items-center justify-center gap-xs rounded-full border border-border px-sm py-xs text-caption text-muted-foreground hover:bg-muted disabled:opacity-50";
+const ACTION = "inline-flex min-h-control-sm items-center justify-center gap-xs rounded-full border border-border px-sm py-xs text-caption text-muted-foreground hover:bg-muted disabled:opacity-50 aria-disabled:opacity-50";
 const ICON_ACTION = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted aria-pressed:text-primary-strong disabled:opacity-50";
 /** Exact Figma vectors as alpha masks: colours follow the shared contrast tokens in either theme. */
 function PracticeGlyph({ name, large = false }: { name: "replay-native" | "play-take" | "intonation" | "bookmark" | "microphone"; large?: boolean }) {
@@ -36,10 +36,13 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
   const { lines } = useLesson();
   const marks = useMarks();
   const audioRef = useRef<HTMLAudioElement>(null);
-  const { attempts } = usePronunciationAttempts();
+  const lockHintId = useId();
+  const { attempts, dispatch } = usePronunciationAttempts();
   const { recorder } = capture;
   const { attempt, selected, sessionId, failure, retrySeconds } = sessions;
   const unsaved = hasUnsaved(attempts);
+  // Locked, not disabled: the control stays focusable and its description says why (WCAG 4.1.2; title alone is mouse-only).
+  const lock = (locked: boolean) => locked ? { "aria-disabled": true as const, "aria-describedby": lockHintId, title: t("finishSaving") } : {};
   const line = index === null ? undefined : lines[index];
   const recording = recorder.state === "recording";
   const requesting = recorder.state === "requesting-permission";
@@ -66,9 +69,9 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
     </div>
     <LiveSentence renderSentence={result ? (props) => <ScoredSentence text={props.text} spans={result.assessment?.words ? alignWords(props.text, result.assessment.words) : null} reading={props} /> : undefined} />
     <div className="flex flex-col items-center gap-sm py-sm">
-      {capture.supported ? <button type="button" aria-label={t(recording ? "stop" : "record")} disabled={index === null || busy || (unsaved && !recording)}
-        onClick={() => { if (recording) capture.stop(); else if (index !== null) void capture.start(index); }}
-        className="flex size-20 items-center justify-center rounded-full border-8 border-primary/20 bg-muted text-primary-strong hover:bg-primary/10 disabled:opacity-50">
+      {capture.supported ? <button type="button" aria-label={t(recording ? "stop" : "record")} disabled={index === null} {...lock(busy || (unsaved && !recording))}
+        onClick={() => { if (recording) capture.stop(); else if (index !== null && !busy && !unsaved) void capture.start(index); }}
+        className="flex size-20 items-center justify-center rounded-full border-8 border-primary/20 bg-muted text-primary-strong hover:bg-primary/10 disabled:opacity-50 aria-disabled:opacity-50">
         {recording ? <Square className="size-icon-lg" aria-hidden="true" /> : <PracticeGlyph name="microphone" large />}
       </button> : <p className="text-caption text-muted-foreground">{shadowing("recorder.errors.notSupported")}</p>}
       <div role="status" aria-live="polite" className="text-center text-body">
@@ -87,16 +90,21 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
         {recorder.state === "error" && <p>{t("micHint")}</p>}
         {recorder.state === "disabled-in-settings" && <Link href="/settings#privacy" className="underline">{shadowing("recorder.errors.disabledInSettingsAction")}</Link>}
       </div>}
-      {(attempt?.phase === "save-failed" || attempt?.phase === "convert-failed") && <button type="button" className={ACTION} onClick={() => { if (index !== null) capture.retry(index); }}>{t(attempt.phase === "save-failed" ? "saveAgain" : "convertAgain")}</button>}
+      {(attempt?.phase === "save-failed" || attempt?.phase === "convert-failed") && <div className="flex flex-wrap justify-center gap-xs">
+        <button type="button" className={ACTION} onClick={() => { if (index !== null) capture.retry(index); }}>{t(attempt.phase === "save-failed" ? "saveAgain" : "convertAgain")}</button>
+        {/* A save the server keeps refusing would otherwise lock the mic and the sentence until a link is followed. */}
+        <button type="button" className={ACTION} onClick={() => dispatch({ type: "discard", lineId: attempt.lineId })}>{t("discardTake")}</button>
+      </div>}
       {canRetry && <button type="button" disabled={(!attempt && selected?.format === "webm") || (retrySeconds !== null && retrySeconds > 0)} className={ACTION}
         onClick={() => { if (sessionId && line) void sessions.score(sessionId, line.id); }}>{t("scoreAgain")}</button>}
       {!attempt && selected?.format === "webm" && <p className="text-caption text-muted-foreground">{t("legacy")}</p>}
       <div className="flex flex-wrap justify-center gap-xs">
         <button type="button" disabled={index === null || recording || requesting} onClick={replay} className={ACTION}><ReplayGlyph className="size-icon-xs" />{t("replayNative")}</button>
         <button type="button" disabled={!audio || recording || requesting} onClick={playMine} className={ACTION}><PracticeGlyph name="play-take" />{t("playMine")}</button>
-        <button type="button" disabled={unsaved || index === null || index === 0} title={unsaved ? t("finishSaving") : undefined} onClick={() => { if (index !== null) controller.seekToSentence(index - 1); }} className={ACTION}><PreviousGlyph className="size-icon-xs" />{shadowing("workspace.player.previous")}</button>
-        <button type="button" disabled={unsaved || index === null || index >= lines.length - 1} title={unsaved ? t("finishSaving") : undefined} onClick={() => { if (index !== null) controller.seekToSentence(index + 1); }} className={ACTION}>{shadowing("workspace.player.next")}<NextGlyph className="size-icon-xs" /></button>
+        <button type="button" disabled={index === null || index === 0} {...lock(unsaved)} onClick={() => { if (index !== null && !unsaved) controller.seekToSentence(index - 1); }} className={ACTION}><PreviousGlyph className="size-icon-xs" />{shadowing("workspace.player.previous")}</button>
+        <button type="button" disabled={index === null || index >= lines.length - 1} {...lock(unsaved)} onClick={() => { if (index !== null && !unsaved) controller.seekToSentence(index + 1); }} className={ACTION}>{shadowing("workspace.player.next")}<NextGlyph className="size-icon-xs" /></button>
       </div>
+      <p id={lockHintId} className="sr-only">{t("finishSaving")}</p>
     </div>
     {audio && (saved || selected) && <audio ref={audioRef} controls preload="none" src={audio} aria-label={t("playMine")} onPlay={() => controller.pause()} className="h-control w-full" />}
     {attempt?.original && <Waveform blob={attempt.original} height={40} />}

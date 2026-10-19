@@ -11,13 +11,17 @@ export function progressLine(items: SessionListItem[]): { metric: "rhythm" | "pr
   const scored = items.filter((item) => item.state === "scored" && item.pronunciationScore !== null);
   const [latest, previous] = scored;
   if (!latest || !previous) return null;
-  if (latest.rhythmScore !== null && previous.rhythmScore !== null && latest.rhythmScore !== previous.rhythmScore)
-    return { metric: "rhythm", from: previous.rhythmScore, to: latest.rhythmScore };
-  return { metric: "pronunciation", from: previous.pronunciationScore as number, to: latest.pronunciationScore as number };
+  // Whole numbers, like the badge and the history: scores are numeric(5,2).
+  const round = (value: number | null) => value === null ? null : Math.round(value);
+  const [from, to] = [round(previous.rhythmScore), round(latest.rhythmScore)];
+  if (from !== null && to !== null && from !== to) return { metric: "rhythm", from, to };
+  return { metric: "pronunciation", from: Math.round(previous.pronunciationScore as number), to: Math.round(latest.pronunciationScore as number) };
 }
 
-export function PronunciationDetails({ assessment, rhythmScore, pitch, items, onScore, historyStatus = "ready", onReload, retryDisabled, open, onOpenChange, contentId }: {
+export function PronunciationDetails({ assessment, rhythmScore, pitch, pitchScore = null, items, onScore, historyStatus = "ready", onReload, retryDisabled, open, onOpenChange, contentId }: {
   assessment: Assessment | null; rhythmScore: number | null; pitch: PitchAccentScore | null;
+  /** The stored score of a take whose contour is no longer in memory (after a reload): shown as a number, no overlay. */
+  pitchScore?: number | null;
   items: SessionListItem[]; onScore(id: string): void;
   historyStatus?: "loading" | "ready" | "error"; onReload?(): void;
   retryDisabled?(id: string): boolean;
@@ -37,7 +41,8 @@ export function PronunciationDetails({ assessment, rhythmScore, pitch, items, on
     {expanded && <div id={id} className="space-y-md pt-sm">
       {assessment === null && <p className="text-caption text-muted-foreground">{t("noDetail")}</p>}
       <dl className="grid grid-cols-3 gap-sm">{metrics.map(([key, value]) => value != null && <div key={key} className="rounded-lg bg-muted p-sm"><dt className="text-caption text-muted-foreground">{t(key)}</dt><dd className="text-body font-semibold tabular-nums">{Math.round(value)}</dd></div>)}</dl>
-      {pitch && <div><p className="text-caption text-muted-foreground">{t("intonation")}</p><PitchContourOverlay score={pitch} label={t("intonation")} /></div>}
+      {pitch ? <div><p className="text-caption text-muted-foreground">{t("intonation")}</p><PitchContourOverlay score={pitch} label={t("intonation")} /></div>
+        : pitchScore != null && <div><p className="text-caption text-muted-foreground">{t("intonation")}</p><p className="text-body font-semibold tabular-nums">{Math.round(pitchScore)}</p></div>}
       {assessment?.recognizedText && <div><p className="text-caption text-muted-foreground">{t("heard")}</p><p lang="ja" className="font-jp text-body">{assessment.recognizedText}</p></div>}
       <div><h3 className="text-body font-semibold">{t("history")}</h3>
         {historyStatus === "loading" && <p role="status" className="text-caption">{t("historyLoading")}</p>}

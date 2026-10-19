@@ -1,10 +1,9 @@
-import { useRef } from "react";
 import { fireEvent, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
 import type { Attempt, AttemptPhase, AttemptsState } from "@/lib/pronunciation/attempts";
-import { UnsavedTakeGuard } from "./unsaved-take-guard";
+import { UnsavedTakeGuard, useGuardedNavigation } from "./unsaved-take-guard";
 
 const state = vi.hoisted(() => ({ attempts: {} as AttemptsState, dispatch: vi.fn(), push: vi.fn() }));
 vi.mock("./pronunciation-attempts-context", () => ({
@@ -16,17 +15,23 @@ function attempt(lineId: string, phase: AttemptPhase): Attempt {
   return { lineId, phase, original: null, wav: null, pitch: null, sessionId: null, signedUrl: null, result: null, retryAfter: null };
 }
 
+function OpenChat() {
+  const navigate = useGuardedNavigation();
+  return <button type="button" onClick={() => navigate("/korume/chat?thread=t1")}>Open full chat</button>;
+}
+
+// The nav rail renders outside the workspace root (the focus layout's <AppNav>), so the guard listens on the document.
 function Harness() {
-  const rootRef = useRef<HTMLDivElement>(null);
   return <>
-    <div ref={rootRef}>
+    <nav><a href="/en/dashboard">Dashboard</a></nav>
+    <UnsavedTakeGuard>
       <a href="/en/shadowing/v1">Shadowing</a>
       <a href="/en/shadowing/v1/pronunciation" target="_blank">New tab</a>
       <a href="#transcript">Same page</a>
       <a href="https://www.youtube.com/watch?v=x">External</a>
-      <UnsavedTakeGuard rootRef={rootRef} />
-    </div>
-    <a href="/en/dashboard">Outside</a>
+      <a href={window.location.pathname}>Current mode</a>
+      <OpenChat />
+    </UnsavedTakeGuard>
   </>;
 }
 
@@ -34,6 +39,14 @@ function beforeUnloadPrevented(): boolean {
   const event = new Event("beforeunload", { cancelable: true });
   window.dispatchEvent(event);
   return event.defaultPrevented;
+}
+
+/** Clicks with a test-side preventDefault, so jsdom never navigates; reports whether the guard opened its dialog. */
+function clickLeavesAlone(name: string, init: MouseEventInit = {}): boolean {
+  const link = screen.getByRole("link", { name });
+  link.addEventListener("click", (event) => event.preventDefault(), { once: true });
+  fireEvent.click(link, init);
+  return screen.queryByRole("dialog") === null;
 }
 
 beforeEach(() => {
@@ -67,6 +80,31 @@ describe("UnsavedTakeGuard", () => {
     expect(state.dispatch).not.toHaveBeenCalled();
   });
 
+  it("confirms a nav-rail link outside the workspace root (review I-1)", async () => {
+    state.attempts = { l1: attempt("l1", "save-failed") };
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("link", { name: "Dashboard" }));
+    await userEvent.click(screen.getByRole("button", { name: "Leave and discard" }));
+    expect(state.push).toHaveBeenCalledWith("/dashboard");
+  });
+
+  it("routes a programmatic navigation through the same confirm (review I-1, Open full chat)", async () => {
+    state.attempts = { l1: attempt("l1", "saving") };
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("button", { name: "Open full chat" }));
+    expect(state.push).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole("button", { name: "Leave and discard" }));
+    expect(state.push).toHaveBeenCalledWith("/korume/chat?thread=t1");
+  });
+
+  it("navigates at once when nothing is unsaved", async () => {
+    state.attempts = { l1: attempt("l1", "scored") };
+    render(<Harness />);
+    await userEvent.click(screen.getByRole("button", { name: "Open full chat" }));
+    expect(state.push).toHaveBeenCalledWith("/korume/chat?thread=t1");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("Leave and discard drops every unsaved take and navigates to the locale-less path", async () => {
     state.attempts = { l1: attempt("l1", "save-failed"), l2: attempt("l2", "scored"), l3: attempt("l3", "converting") };
     render(<Harness />);
@@ -76,41 +114,25 @@ describe("UnsavedTakeGuard", () => {
     expect(state.push).toHaveBeenCalledWith("/shadowing/v1");
   });
 
-  it("leaves modifier clicks, new-tab links and links outside the workspace alone", () => {
+  it("leaves modifier clicks and new-tab links alone", () => {
     state.attempts = { l1: attempt("l1", "saving") };
     render(<Harness />);
-    const shadowing = screen.getByRole("link", { name: "Shadowing" });
-    shadowing.addEventListener("click", (event) => event.preventDefault());
-    for (const init of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }]) {
-      expect(fireEvent.click(shadowing, init)).toBe(false); // prevented only by the test's own listener
-    }
-    const newTab = screen.getByRole("link", { name: "New tab" });
-    newTab.addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(newTab);
-    const outside = screen.getByRole("link", { name: "Outside" });
-    outside.addEventListener("click", (event) => event.preventDefault());
-    fireEvent.click(outside);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    for (const init of [{ ctrlKey: true }, { metaKey: true }, { shiftKey: true }]) expect(clickLeavesAlone("Shadowing", init)).toBe(true);
+    expect(clickLeavesAlone("New tab")).toBe(true);
   });
 
-  it("leaves same-page hashes and other origins to the browser (beforeunload covers a full unload)", () => {
-    state.attempts = { l1: attempt("l1", "save-failed") };
+  it("leaves same-page hashes, other origins and the current page to the browser (review I-2)", () => {
+    state.attempts = { l1: attempt("l1", "recording") };
     render(<Harness />);
-    for (const name of ["Same page", "External"]) {
-      const link = screen.getByRole("link", { name });
-      link.addEventListener("click", (event) => event.preventDefault());
-      fireEvent.click(link);
-    }
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    for (const name of ["Same page", "External", "Current mode"]) expect(clickLeavesAlone(name)).toBe(true);
+    expect(state.dispatch).not.toHaveBeenCalled();
     expect(state.push).not.toHaveBeenCalled();
   });
 
-  it("does nothing to links when every take is saved", async () => {
+  it("does nothing to links when every take is saved", () => {
     state.attempts = { l1: attempt("l1", "scored") };
     render(<Harness />);
-    const link = screen.getByRole("link", { name: "Shadowing" });
-    link.addEventListener("click", (event) => event.preventDefault());
-    await userEvent.click(link);
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(clickLeavesAlone("Dashboard")).toBe(true);
+    expect(clickLeavesAlone("Shadowing")).toBe(true);
   });
 });

@@ -130,7 +130,7 @@ describe("pronunciation capture, save and score", () => {
     mount(); await start(); await finish();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
     await screen.findByText("Excellent");
-    expect(mock.convert).toHaveBeenNthCalledWith(2, original); expect(mock.start).toHaveBeenCalledTimes(1);
+    expect(mock.convert).toHaveBeenNthCalledWith(2, original, { maxSeconds: 7 }); expect(mock.start).toHaveBeenCalledTimes(1);
   });
   it("saves without pitch after its three-second budget", async () => {
     vi.useFakeTimers(); mock.pitch.mockReturnValue(new Promise(() => undefined));
@@ -197,7 +197,7 @@ describe("pronunciation capture, save and score", () => {
     await act(async () => { convert.resolve(wav); });
     expect(posts("/api/shadowing/session")).toHaveLength(0);
     fireEvent.click(screen.getByRole("button", { name: "Try again" })); await screen.findByText("Excellent");
-    expect(mock.convert).toHaveBeenNthCalledWith(2, original);
+    expect(mock.convert).toHaveBeenNthCalledWith(2, original, { maxSeconds: 7 });
   });
   it("stores a score after leaving the mode without resurrecting its capture", async () => {
     const score = deferred<Response>();
@@ -275,5 +275,51 @@ describe("pronunciation capture, save and score", () => {
     await start();
     expect(screen.queryByText("Accuracy")).not.toBeInTheDocument();
     expect(screen.queryByText("Excellent")).not.toBeInTheDocument();
+  });
+  it("stops the microphone when a recording take is discarded in place (review I-2)", async () => {
+    mount(); await start();
+    const resets = mock.reset.mock.calls.length;
+    fireEvent.click(screen.getByRole("button", { name: "Discard test take" }));
+    await act(async () => { await Promise.resolve(); });
+    expect(mock.reset.mock.calls.length).toBeGreaterThan(resets);
+    expect(screen.getByRole("button", { name: "Record" })).toBeInTheDocument();
+  });
+  it("lets a save in flight finish after leaving the mode, so Save again never makes a second row (review M-1)", async () => {
+    const save = deferred<Response>();
+    fetchMock.mockImplementation((url: string) => url.includes("?") ? Promise.resolve(response([])) : url.endsWith("/score") ? Promise.resolve(response(result)) : save.promise);
+    const view = mount(); await start(); await finish();
+    await waitFor(() => expect(posts("/api/shadowing/session")).toHaveLength(1));
+    view.rerender(tree(false));
+    expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.phase).toBe("saving");
+    await act(async () => { save.resolve(response({ id: "session-one", signedUrl: "/saved.wav" }, 201)); });
+    await waitFor(() => expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.phase).toBe("scored"));
+    expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.sessionId).toBe("session-one");
+    expect(posts("/api/shadowing/session")).toHaveLength(1);
+  });
+  it("explains a locked sentence change to keyboard and screen reader users (review M-4)", async () => {
+    fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([]) : response({}, 500));
+    mount(); await start(); await finish(); await screen.findByRole("button", { name: "Save again" });
+    for (const name of ["Next sentence", "Record"]) {
+      const button = screen.getByRole("button", { name });
+      expect(button).toHaveAttribute("aria-disabled", "true");
+      expect(button).toHaveAccessibleDescription("Finish saving this take first");
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Next sentence" }));
+    expect(mock.seek).not.toHaveBeenCalled();
+  });
+  it("shows a reloaded take's stored intonation score when the in-memory contour is gone (review M-5)", async () => {
+    fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([{ ...historyItem("scored", "old"), ...result, pitchScore: 64 }]) : response(result));
+    mount();
+    fireEvent.click(await screen.findByRole("button", { name: "Details" }));
+    expect(await screen.findByText("Intonation (reference, compared with a synthesized voice)")).toBeVisible();
+    expect(screen.getByText("64", { exact: true })).toBeVisible();
+  });
+  it("offers a way out of a save that keeps failing: Discard take unlocks the mic and the sentence (review M-2)", async () => {
+    fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([]) : response({}, 422));
+    mount(); await start(); await finish(); await screen.findByRole("button", { name: "Save again" });
+    fireEvent.click(screen.getByRole("button", { name: "Discard take" }));
+    expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}")).toEqual({});
+    expect(screen.getByRole("button", { name: "Record" })).not.toHaveAttribute("aria-disabled");
+    expect(screen.getByRole("button", { name: "Next sentence" })).not.toHaveAttribute("aria-disabled");
   });
 });
