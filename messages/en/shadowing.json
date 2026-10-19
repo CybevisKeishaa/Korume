@@ -231,7 +231,8 @@
         "later": "Later sentences",
         "chip": "Sentence {number}, {state}",
         "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet" }
-      }
+      },
+      "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" }
     },
     "mining": {
       "loading": "Loading your cards…",

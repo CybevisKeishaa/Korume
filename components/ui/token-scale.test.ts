@@ -67,7 +67,8 @@ const SCANNED_DIRS = [
   // Part 1b Task 14: + drawer/ai-knowledge-context, drawer/ai-tab, drawer/ai-section, drawer/ai-usage, drawer/section-renderers.
   // Part 1b reframe: - drawer/phrase-card, vocabulary-tab, grammar-tab and the five Task 14 AI files; + drawer/inspector.
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
-  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 57 },
+  // Practice-pronunciation Task 11: + practice/unsaved-take-guard.
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 58 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },

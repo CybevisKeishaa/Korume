@@ -11,6 +11,7 @@ import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
 import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
+import { UnsavedTakeGuard } from "./practice/unsaved-take-guard";
 import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
@@ -236,6 +237,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         />
       )}
       <SelectionPopoverHost workspaceRef={rootRef} />
+      <UnsavedTakeGuard rootRef={rootRef} />
       {/* Focus Mode hides the drawer; its state lives in DrawerProvider above, so leaving Focus restores it. */}
       {drawerShown && (
         <div className={normal ? "col-span-3 row-start-3 min-h-0" : "col-span-1 row-start-3 min-h-0"} data-testid="workspace-drawer-slot">
