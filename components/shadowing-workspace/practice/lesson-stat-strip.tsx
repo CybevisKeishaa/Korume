@@ -1,36 +1,40 @@
 "use client";
 
-import { Fragment, useEffect, useRef, useState } from "react";
+import type { ReactNode } from "react";
 import { useTranslations } from "@/lib/i18n";
 import type { PracticeModeId } from "@/lib/shadowing-workspace/learning-modes";
 import { useCurrentSentence, useLesson } from "../workspace-context";
 import { usePracticeStats } from "./practice-stats-context";
 
+const DASH = "—";
+
+/**
+ * The practice column's lesson strip: three labelled stats, no lesson title (the header already names the lesson;
+ * owner 2026-10-19). Short enough to stay on one row at the narrowest column, so there is no compact variant.
+ */
 export function LessonStatStrip({ mode }: { mode: Exclude<PracticeModeId, "shadowing"> }) {
-  const t = useTranslations("shadowing");
-  const { video, lines } = useLesson();
+  const t = useTranslations("shadowing.workspace.practice.strip");
+  const { lines } = useLesson();
   const { index } = useCurrentSentence();
   const { stats } = usePracticeStats();
-  const root = useRef<HTMLDivElement>(null);
-  const [compact, setCompact] = useState(false);
-
-  useEffect(() => {
-    const observer = new ResizeObserver(([entry]) => {
-      if (entry) setCompact(entry.contentRect.width < 420);
-    });
-    if (root.current) observer.observe(root.current);
-    return () => observer.disconnect();
-  }, []);
-
-  const cells = [
-    ...(stats && !compact ? [video.title] : []),
-    t("workspace.practice.strip.sentence", { current: index === null ? "—" : index + 1, total: lines.length }),
-    ...(stats ? [t("workspace.practice.strip.scored", { count: stats.scoredLines, total: lines.length })] : []),
-    ...(stats && !compact ? [stats.mean === null ? t("workspace.practice.strip.noScore") : t("workspace.practice.strip.average", { value: Math.round(stats.mean) })] : []),
+  const total = lines.length;
+  const average: ReactNode = stats?.mean == null
+    ? <><span aria-hidden="true">{DASH}</span>{stats && <span className="sr-only">{t("noScore")}</span>}</>
+    : Math.round(stats.mean);
+  const cells: { name: "sentence" | "scored" | "average"; value: ReactNode }[] = [
+    { name: "sentence", value: `${index === null ? DASH : index + 1}/${total}` },
+    { name: "scored", value: stats ? `${stats.scoredLines}/${total}` : DASH },
+    { name: "average", value: average },
   ];
   return (
-    <div ref={root} data-testid="lesson-stat-strip" data-mode={mode} data-compact={compact ? "" : undefined} className="flex flex-wrap items-center justify-center gap-x-xs gap-y-2xs rounded-lg border border-border bg-card px-md py-sm text-body text-foreground">
-      {cells.map((cell, position) => <Fragment key={position}>{position > 0 && <span aria-hidden="true"> · </span>}<span>{cell}</span></Fragment>)}
-    </div>
+    <dl aria-label={t("label")} data-testid="lesson-stat-strip" data-mode={mode}
+      className="grid grid-cols-3 divide-x divide-border rounded-lg border border-border bg-card py-sm text-center">
+      {cells.map(({ name, value }) => (
+        <div key={name} data-stat={name} className="flex min-w-0 flex-col items-center gap-2xs px-sm">
+          <dt className="text-caption text-muted-foreground">{t(name)}</dt>
+          <dd className="text-body-lg font-semibold tabular-nums text-foreground">{value}</dd>
+        </div>
+      ))}
+    </dl>
   );
 }

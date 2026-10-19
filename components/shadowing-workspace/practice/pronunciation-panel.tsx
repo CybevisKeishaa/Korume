@@ -7,12 +7,13 @@ import { Link } from "@/lib/i18n/navigation";
 import { alignWords } from "@/lib/pronunciation/align-words";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
 import { REVIEW_PRONUNCIATION_BELOW, STRONG_PRONUNCIATION_AT } from "@/lib/summary/thresholds";
-import { Waveform } from "@/components/video-player/waveform";
 import { LiveSentence } from "../live-sentence";
 import { NextGlyph, PreviousGlyph, ReplayGlyph } from "../player-glyphs";
 import { useLesson, useMarks, usePlaybackController } from "../workspace-context";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { ScoredSentence } from "./scored-sentence";
+import { PronunciationAnalysis } from "./pronunciation-analysis";
+import { TakePlayer } from "./take-player";
 import type { usePronunciationCapture } from "./use-pronunciation-capture";
 import type { usePronunciationSessions } from "./use-pronunciation-sessions";
 
@@ -54,8 +55,8 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
   const scoring = historyMatches && selected ? selected.state === "scoring" : attempt?.phase === "scoring";
   const score = result?.pronunciationScore;
   const audio = attempt?.signedUrl ?? (historyMatches ? selected?.signedUrl : null);
-  const canRetry = !scoring && sessionId !== null && (attempt ? attempt.phase.startsWith("unscored-") : selected?.state === "unscored" || selected?.state === "legacy");
   const kind = result ? null : failure?.kind ?? (attempt?.phase.startsWith("unscored-") ? attempt.phase.slice(9) : null);
+  const canRetry = !scoring && kind !== "unheard" && sessionId !== null && (attempt ? attempt.phase.startsWith("unscored-") : selected?.state === "unscored" || selected?.state === "legacy");
   const label = score != null ? score >= STRONG_PRONUNCIATION_AT ? "excellent" : score < REVIEW_PRONUNCIATION_BELOW ? "keepPractising" : "good" : null;
   const replay = () => { if (index !== null) controller.seekToSentence(index, { play: true }); };
   const playMine = () => { controller.pause(); void audioRef.current?.play().catch(() => undefined); };
@@ -75,7 +76,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
         className="flex size-20 items-center justify-center rounded-full border-8 border-primary/20 bg-muted text-primary-strong hover:bg-primary/10 disabled:opacity-50 aria-disabled:opacity-50">
         {recording ? <Square className="size-icon-lg" aria-hidden="true" /> : <PracticeGlyph name="microphone" large />}
       </button> : <p className="text-caption text-muted-foreground">{shadowing("recorder.errors.notSupported")}</p>}
-      <div role="status" aria-live="polite" className="text-center text-body">
+      <div role="status" aria-live="polite" data-testid="take-status" className="text-center text-body">
         {requesting && <p>{t("requesting")}</p>}
         {recording && <p>{t("recording")}</p>}
         {(attempt?.phase === "converting" || attempt?.phase === "saving") && <p>{t("saving")}</p>}
@@ -84,6 +85,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
         {scoring && <p>{t("scoring")}</p>}
         {!scoring && kind === "unavailable" && <p>{t("unavailable")}</p>}
         {!scoring && kind === "throttled" && <p>{retrySeconds !== null && retrySeconds > 0 ? t("throttledIn", { seconds: retrySeconds }) : t("throttled")}</p>}
+        {!scoring && kind === "unheard" && <p>{t("unheard")}</p>}
         {!scoring && kind === "error" && <p>{t("scoreError")}</p>}
         {label && score != null && <p className="flex items-center justify-center gap-sm"><span className="font-semibold">{t(`label.${label}`)}</span><span className="rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}</span></p>}
       </div>
@@ -107,7 +109,7 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
       </div>
       <p id={lockHintId} className="sr-only">{t("finishSaving")}</p>
     </div>
-    {audio && (saved || selected) && <audio ref={audioRef} controls preload="none" src={audio} aria-label={t("playMine")} onPlay={() => controller.pause()} className="h-control w-full" />}
-    {attempt?.original && <Waveform blob={attempt.original} height={40} />}
+    {audio && (saved || selected) && <TakePlayer src={audio} label={t("playMine")} audioRef={audioRef} onPlay={() => controller.pause()} />}
+    {result && line && <PronunciationAnalysis result={result} lineText={line.textJp} onPlayTake={playMine} canPlayTake={!!audio && !recording && !requesting} />}
   </div>;
 }

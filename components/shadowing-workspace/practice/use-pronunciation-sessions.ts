@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SessionListItem } from "@/lib/data/shadowing";
-import type { Attempt } from "@/lib/pronunciation/attempts";
+import type { Attempt, ScoreFailureKind } from "@/lib/pronunciation/attempts";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { usePracticeStats } from "./practice-stats-context";
 
-type Failure = { kind: "unavailable" | "throttled" | "error"; retryAt: number | null };
+type Failure = { kind: ScoreFailureKind; retryAt: number | null };
 type History = { lineId: string; items: SessionListItem[]; status: "loading" | "ready" | "error" };
 
 /** History is line-scoped; score completions remain session-scoped even after unmount. */
@@ -91,7 +91,7 @@ export function usePronunciationSessions(lineId: string | null) {
         refresh();
         if (mounted.current) setHistory((previous) => previous?.lineId === owner ? { ...previous, items: previous.items.map((item) => item.id === sessionId ? { ...item, ...data, state: "scored" } : item) } : previous);
       } else if (response.status !== 409) {
-        const kind = response.status === 503 ? "unavailable" : response.status === 429 ? "throttled" : "error";
+        const kind: ScoreFailureKind = response.status === 503 ? "unavailable" : response.status === 429 ? "throttled" : response.status === 422 ? "unheard" : "error";
         const header = response.headers.get("Retry-After");
         const seconds = header?.trim() ? Number(header) : NaN;
         const retryAfter = response.status === 429 && Number.isFinite(seconds) && seconds >= 0 ? seconds : null;

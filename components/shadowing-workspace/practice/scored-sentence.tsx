@@ -3,23 +3,15 @@
 import { Fragment, type ComponentProps } from "react";
 import { useTranslations } from "@/lib/i18n";
 import type { WordSpan } from "@/lib/pronunciation/align-words";
-import { REVIEW_PRONUNCIATION_BELOW, STRONG_PRONUNCIATION_AT } from "@/lib/summary/thresholds";
+import { GRADE_TEXT, GRADES, wordGrade as gradeOf, type Grade } from "@/lib/pronunciation/grade";
 import { RubySentence } from "../ruby-sentence";
 
-type Grade = "needsWork" | "good" | "strong";
-const GRADES: readonly Grade[] = ["needsWork", "good", "strong"];
 const TONE: Record<Grade | "none", string> = {
-  needsWork: "text-danger-strong underline decoration-wavy",
-  good: "text-accent-strong",
-  strong: "text-success-strong",
+  needsWork: `${GRADE_TEXT.needsWork} underline decoration-wavy`,
+  good: GRADE_TEXT.good,
+  strong: GRADE_TEXT.strong,
   none: "text-inherit",
 };
-
-function gradeOf(span: WordSpan): Grade | null {
-  if (span.errorType !== "None" || (span.accuracy !== null && span.accuracy < REVIEW_PRONUNCIATION_BELOW)) return "needsWork";
-  if (span.accuracy === null) return null;
-  return span.accuracy >= STRONG_PRONUNCIATION_AT ? "strong" : "good";
-}
 
 export function ScoredSentence({ text, spans, reading }: { text: string; spans: WordSpan[] | null; reading?: ComponentProps<typeof RubySentence> }) {
   const t = useTranslations("shadowing.workspace.practice.pronunciation");

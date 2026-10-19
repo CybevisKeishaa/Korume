@@ -48,6 +48,8 @@ function mount() { return render(tree()); }
 async function start() { fireEvent.click(screen.getByRole("button", { name: "Record" })); await act(async () => { await Promise.resolve(); }); }
 async function finish() { await act(async () => { mock.change?.({ state: "recorded", blob: original, error: null }); }); }
 let fetchMock: ReturnType<typeof vi.fn>;
+/** The grade also heads the analysis card; the live status under the mic is the one each take announces. */
+async function graded(label: string) { await waitFor(() => expect(screen.getByTestId("take-status")).toHaveTextContent(label)); }
 function posts(url: string) { return fetchMock.mock.calls.filter(([input, init]) => input === url && init?.method === "POST"); }
 
 describe("pronunciation capture, save and score", () => {
@@ -71,14 +73,14 @@ describe("pronunciation capture, save and score", () => {
     mount(); await start();
     expect(at(mock.pause.mock.invocationCallOrder, 0)).toBeLessThan(at(mock.start.mock.invocationCallOrder, 0));
     await finish();
-    await screen.findByText("Excellent");
+    await graded("Excellent");
     const saves = posts("/api/shadowing/session"); expect(saves).toHaveLength(1);
     const form = at(saves, 0)[1].body as FormData;
     expect(form.get("audio")).toMatchObject({ type: "audio/wav" });
     expect(form.get("pitchScore")).toBe("77"); expect(form.get("lineId")).toBe("one");
     const scores = posts("/api/pronunciation/score"); expect(scores).toHaveLength(1);
     expect(JSON.parse(at(scores, 0)[1].body as string)).toEqual({ sessionId: "session-one" });
-    expect(mock.refresh).toHaveBeenCalled(); expect(screen.getByText("88")).toBeVisible();
+    expect(mock.refresh).toHaveBeenCalled(); expect(screen.getByTestId("take-status")).toHaveTextContent("88");
     expect(document.querySelectorAll("mark[data-error-type]")).toHaveLength(1);
   });
   it("retains the same WAV on save failure, blocks navigation and retries without another recording", async () => {
@@ -97,7 +99,7 @@ describe("pronunciation capture, save and score", () => {
     expect(await screen.findByText(copy)).toBeVisible();
     expect(screen.getByRole("button", { name: "Score again" })).toBeVisible();
     expect(screen.queryByText("88")).not.toBeInTheDocument();
-    expect(screen.getByLabelText("Play my take", { selector: "audio" })).toHaveAttribute("src", "/saved.wav");
+    expect(document.querySelector("audio")).toHaveAttribute("src", "/saved.wav");
     expect(mock.refresh).toHaveBeenCalled();
   });
   it("refetches 409 state and polls a scoring lease until it becomes retryable", async () => {
@@ -129,7 +131,7 @@ describe("pronunciation capture, save and score", () => {
     mock.convert.mockRejectedValueOnce(new Error("decode")); mock.pitch.mockRejectedValue(new Error("tts"));
     mount(); await start(); await finish();
     fireEvent.click(await screen.findByRole("button", { name: "Try again" }));
-    await screen.findByText("Excellent");
+    await graded("Excellent");
     expect(mock.convert).toHaveBeenNthCalledWith(2, original, { maxSeconds: 7 }); expect(mock.start).toHaveBeenCalledTimes(1);
   });
   it("saves without pitch after its three-second budget", async () => {
@@ -149,6 +151,13 @@ describe("pronunciation capture, save and score", () => {
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.result.pronunciationScore).toBe(88);
     expect(screen.queryByText("Excellent")).not.toBeInTheDocument();
     expect((at(posts("/api/shadowing/session"), 0)[1].body as FormData).get("lineId")).toBe("one");
+  });
+  it("says when Azure heard no speech (422) and offers a new take, not a rescore that cannot succeed", async () => {
+    fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([]) : url.endsWith("/score") ? response({}, 422) : response({ id: "session-one", signedUrl: "/saved.wav" }, 201));
+    mount(); await start(); await finish();
+    expect(await screen.findByText("The scorer could not hear speech in this take. Record it again, a little closer to the microphone.")).toBeVisible();
+    expect(screen.queryByRole("button", { name: "Score again" })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Record" })).not.toHaveAttribute("aria-disabled");
   });
   it.each([["convert", false], ["save", false], ["convert", true], ["save", true]] as const)("ignores an abandoned same-line %s outcome (rejected=%s) after a new take starts", async (stage, rejected) => {
     const pendingConvert = deferred<Blob>(); const pendingSave = deferred<Response>();
@@ -196,7 +205,7 @@ describe("pronunciation capture, save and score", () => {
     view.rerender(tree());
     await act(async () => { convert.resolve(wav); });
     expect(posts("/api/shadowing/session")).toHaveLength(0);
-    fireEvent.click(screen.getByRole("button", { name: "Try again" })); await screen.findByText("Excellent");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" })); await graded("Excellent");
     expect(mock.convert).toHaveBeenNthCalledWith(2, original, { maxSeconds: 7 });
   });
   it("stores a score after leaving the mode without resurrecting its capture", async () => {
@@ -253,7 +262,7 @@ describe("pronunciation capture, save and score", () => {
     let history: unknown[] = [];
     fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response(history) : url.endsWith("/score") ? response({}, 409) : response({ id: "session-one", signedUrl: "/saved.wav" }, 201));
     mount(); await start(); history = [{ ...historyItem("scored", "session-one"), pronunciationScore: 65, rhythmScore: null }];
-    await finish(); expect(await screen.findByText("Good")).toBeVisible();
+    await finish(); await graded("Good");
     expect(screen.queryByText("Scoring…")).not.toBeInTheDocument();
     expect(screen.getByText(/Overall score only:/)).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
@@ -270,7 +279,7 @@ describe("pronunciation capture, save and score", () => {
     let history: unknown[] = [];
     fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response(history) : url.endsWith("/score") ? response(result) : response({ id: "session-one", signedUrl: "/saved.wav" }, 201));
     mount(); await start(); history = [{ ...historyItem("scored", "session-one"), ...result }]; await finish();
-    await screen.findByText("Excellent");
+    await graded("Excellent");
     fireEvent.click(screen.getByRole("button", { name: "Details" })); expect(screen.getByText("Accuracy")).toBeVisible();
     await start();
     expect(screen.queryByText("Accuracy")).not.toBeInTheDocument();

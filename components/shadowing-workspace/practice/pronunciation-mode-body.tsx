@@ -37,10 +37,9 @@ export function PronunciationModeBody() {
     <Link href="/shadowing">{t("workspace.emptyTranscript.backToHub")}</Link>
   </section>;
   const unsaved = hasUnsaved(attempts);
-  const result = sessions.attempt?.phase === "scored" ? sessions.attempt.result : sessions.selected?.state === "scored" ? sessions.selected : null;
   return <PracticePanel label={t("workspace.practice.pronunciation.region")}
     navigator={<SentenceNavigator disabled={unsaved} disabledHint={t("workspace.practice.pronunciation.finishSaving")} />}
-    feedback={<PronunciationDetails key={lineId} open={detailsOpen} onOpenChange={setDetailsOpen} contentId={detailsId} assessment={result?.assessment ?? null} rhythmScore={result?.rhythmScore ?? null} pitch={sessions.attempt?.pitch ?? null} pitchScore={sessions.selected?.pitchScore ?? null}
+    feedback={<PronunciationDetails key={lineId} open={detailsOpen} onOpenChange={setDetailsOpen} contentId={detailsId} pitch={sessions.attempt?.pitch ?? null} pitchScore={sessions.selected?.pitchScore ?? null}
       items={sessions.items} historyStatus={sessions.historyStatus} retryDisabled={sessions.retryDisabled} onReload={() => { if (lineId) void sessions.reload(lineId); }}
       onScore={(sessionId) => { if (lineId) void sessions.score(sessionId, lineId); }} />}>
     <PronunciationPanel index={index} capture={capture} sessions={sessions} detailsOpen={detailsOpen} detailsId={detailsId} onToggleDetails={() => setDetailsOpen(!detailsOpen)} />

@@ -50,6 +50,7 @@ async function openLesson(page: Page, mode: "" | "/pronunciation" = ""): Promise
 const modeBar = (page: Page) => page.getByRole("navigation", { name: "Learning modes" });
 const practice = (page: Page) => page.getByRole("region", { name: "Pronunciation practice" });
 const strip = (page: Page) => page.getByTestId("lesson-stat-strip");
+const stat = (page: Page, name: "sentence" | "scored" | "average") => strip(page).locator(`[data-stat="${name}"] dd`);
 
 async function recordTake(page: Page): Promise<void> {
   await practice(page).getByRole("button", { name: "Record", exact: true }).click();
@@ -77,27 +78,30 @@ test("1 · one player instance across the mode switch (B1 gate)", async ({ page 
 test("2 + 3 · record, save, score; the scored take survives a reload", async ({ page, request }) => {
   await registerLearner(page);
   await openLesson(page, "/pronunciation");
-  await expect(strip(page)).toContainText("Sentence 1/");
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
   const callsBefore = await stubCalls(request);
   await recordTake(page);
   await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
   // The score came from the stub: a reused server without AZURE_SPEECH_RECOGNITION_URL would reach real Azure.
   expect(await stubCalls(request)).toBe(callsBefore + 1);
-  await expect(practice(page).getByText("Excellent")).toBeVisible();
+  await expect(practice(page).getByTestId("take-status")).toContainText("Excellent");
   await expect(practice(page).locator("mark[data-error-type='Mispronunciation']")).toHaveText("文");
   await expect(page.getByRole("navigation", { name: "Sentence navigator" }).getByRole("button", { name: "Sentence 1, scored 86" })).toBeVisible();
-  await expect(strip(page)).toContainText("Scored 1/");
+  await expect(stat(page, "scored")).toHaveText(/^1\//);
+  await expect(stat(page, "average")).toHaveText("86");
 
   await page.reload();
   await expect(practice(page)).toBeVisible();
   // Details closes when the sentence changes; after a reload the sentence resolves from none to 1 first.
-  await expect(strip(page)).toContainText("Sentence 1/");
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
+  // The analysis card reads the stored take: Accuracy 88, Completeness 100, and 文 graded as needing work.
+  const accuracy = practice(page).locator("dt", { hasText: "Accuracy" }).locator("xpath=..");
+  await expect(accuracy.locator("dd")).toHaveText("88");
+  await expect(practice(page).locator("dt", { hasText: "Completeness" }).locator("xpath=..").locator("dd")).toHaveText("100");
+  await expect(practice(page).getByRole("list", { name: "Word by word" }).locator("li[data-grade='needsWork']")).toContainText("文");
   await page.getByRole("button", { name: "Details" }).click();
   await expect(page.getByRole("button", { name: "Details" })).toHaveAttribute("aria-expanded", "true");
   const details = page.getByRole("button", { name: "Details" }).locator("xpath=..");
-  await expect(details.getByText("Accuracy")).toBeVisible();
-  await expect(details.getByText("88", { exact: true })).toBeVisible();
-  await expect(details.getByText("100", { exact: true })).toBeVisible();
   await expect(details.getByRole("listitem")).toHaveCount(1);
   await expect(details.getByRole("listitem")).toContainText("86");
 });
@@ -165,7 +169,7 @@ test("6 · an unsaved take is guarded on in-workspace links and survives Back/Fo
   // A second failed take: Leave and discard navigates.
   await page.route("**/api/shadowing/session", (route) => route.request().method() === "POST" ? route.fulfill({ status: 500, body: "{}" }) : route.fallback());
   await page.getByRole("navigation", { name: "Sentence navigator" }).getByRole("button", { name: /^Sentence 2,/ }).click();
-  await expect(strip(page)).toContainText("Sentence 2/");
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await recordTake(page);
   await expect(practice(page).getByRole("button", { name: "Save again" })).toBeVisible({ timeout: 20_000 });
   await modeBar(page).getByRole("link", { name: "Shadowing" }).click();
@@ -180,7 +184,7 @@ test("7 · Practice this sentence opens Pronunciation on that line", async ({ pa
   await third.hover();
   await third.getByRole("button", { name: "Practice this sentence" }).click();
   await expect(page).toHaveURL(/\/pronunciation$/);
-  await expect(strip(page)).toContainText("Sentence 3/");
+  await expect(stat(page, "sentence")).toHaveText(/^3\//);
 });
 
 test("8 · Replay native plays the one sentence and stops at its end; the Shadowing loop is untouched", async ({ page }) => {
@@ -196,7 +200,7 @@ test("8 · Replay native plays the one sentence and stops at its end; the Shadow
   expect((await fakeYt(page)).seeks.slice(before)).toEqual([lineStart(0)]);
   await advance(page, 3);
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
-  await expect(strip(page)).toContainText("Sentence 1/");
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
   await modeBar(page).getByRole("link", { name: "Shadowing" }).click();
   await expect(loop).toHaveAttribute("aria-pressed", loopBefore ?? "false");
 });
@@ -213,11 +217,11 @@ test("9 · sentence navigation is locked while a take is unsaved", async ({ page
   const next = practice(page).getByRole("button", { name: "Next sentence" });
   await expect(next).toHaveAttribute("aria-disabled", "true");
   await next.click({ force: true }); // aria-disabled stays focusable and clickable; the click must not move
-  await expect(strip(page)).toContainText("Sentence 1/");
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
 
   await page.unroute("**/api/shadowing/session");
   await practice(page).getByRole("button", { name: "Save again" }).click();
   await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
   await practice(page).getByRole("button", { name: "Next sentence" }).click();
-  await expect(strip(page)).toContainText("Sentence 2/");
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
 });

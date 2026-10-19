@@ -26,6 +26,8 @@ interface ClaimRow {
   recording_url: string | null;
 }
 function speechFailure(error: SpeechError): ScoringFailure {
+  // The learner sees only "could not score"; the kind is what tells a misconfigured key from a silent take.
+  console.warn(`[pronunciation/score] speech failure: ${error.kind}`);
   if (error.kind === "throttled") {
     return { ok: false, status: 429, retryAfter: error instanceof SpeechThrottledError ? error.retryAfterMs ?? null : null };
   }
@@ -39,7 +41,10 @@ export async function scoreSession(sessionId: string): Promise<ScoreSessionResul
   if (!user) return { ok: false, status: 401 };
   const limited = rateLimit(`pronunciation:score:${user.id}`, SCORE_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
-  if (!isSpeechConfigured()) return { ok: false, status: 503 };
+  if (!isSpeechConfigured()) {
+    console.warn("[pronunciation/score] speech is off: SPEECH_PROVIDER is not azure");
+    return { ok: false, status: 503 };
+  }
 
   // The service-only RPC checks caller ownership and issues the unforgeable lease token.
   const service = createServiceClient();

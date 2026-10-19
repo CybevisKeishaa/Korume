@@ -17,23 +17,20 @@ describe("PronunciationDetails", () => {
     expect(progressLine([item("a", 86.2, null), item("b", 84.4, null)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
     expect(progressLine([item("a", 86.2, 72.4), item("b", 84.4, 72.3)])).toEqual({ metric: "pronunciation", from: 84, to: 86 });
   });
-  it("hides details initially and exposes only recorded measurements", async () => {
-    render(<PronunciationDetails assessment={{ v: 1, accuracy: 91, completeness: null, recognizedText: "日本語", words: null }} rhythmScore={80} pitch={null}
-      items={[item("a", 90, 80), item("b", 84, 72)]} onScore={vi.fn()} />);
+  it("hides details initially, then shows the takes and the progress line (the scores live in the analysis card)", async () => {
+    render(<PronunciationDetails pitch={null} items={[item("a", 90, 80), item("b", 84, 72)]} onScore={vi.fn()} />);
     const button = screen.getByRole("button", { name: "Details" });
     expect(button).toHaveAttribute("aria-expanded", "false");
-    expect(screen.queryByText("Accuracy")).not.toBeInTheDocument();
+    expect(screen.queryByText("This sentence's takes")).not.toBeInTheDocument();
     await userEvent.click(button);
     expect(button).toHaveAttribute("aria-expanded", "true");
-    expect(screen.getByText("Accuracy")).toBeVisible();
-    expect(screen.queryByText("Completeness")).not.toBeInTheDocument();
-    expect(screen.getByText("What the scorer heard")).toBeVisible();
-    expect(screen.getByText("Rhythm 72 → 80")).toBeVisible();
+    expect(screen.queryByText("Accuracy")).not.toBeInTheDocument();
+    expect(screen.getByText("Fluency 72 → 80")).toBeVisible();
     expect(screen.getAllByRole("listitem")).toHaveLength(2);
   });
   it("offers retry for unscored history and explains disabled legacy recordings", async () => {
     const onScore = vi.fn();
-    render(<PronunciationDetails assessment={null} rhythmScore={null} pitch={null}
+    render(<PronunciationDetails pitch={null}
       items={[item("new", null, null), { ...item("old", null, null), state: "legacy", format: "webm" }]} onScore={onScore} />);
     await userEvent.click(screen.getByRole("button", { name: "Details" }));
     const retry = screen.getAllByRole("button", { name: "Score again" });
@@ -43,7 +40,6 @@ describe("PronunciationDetails", () => {
     const retryable = retry[0]; if (!retryable) throw new Error("Missing retry button");
     await userEvent.click(retryable);
     expect(onScore).toHaveBeenCalledWith("new");
-    expect(screen.getByText("No detail recorded for this attempt")).toBeVisible();
     expect(screen.queryByText(/Pronunciation \d+ →/)).not.toBeInTheDocument();
   });
 });

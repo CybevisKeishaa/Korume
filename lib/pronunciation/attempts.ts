@@ -2,7 +2,7 @@ import type { PitchAccentScore } from "@/lib/pitch/score";
 import type { Assessment } from "./assessment";
 
 export type AttemptPhase = "recording" | "converting" | "convert-failed" | "saving" | "save-failed" | "scoring" | "scored"
-  | "unscored-unavailable" | "unscored-throttled" | "unscored-error";
+  | "unscored-unavailable" | "unscored-throttled" | "unscored-unheard" | "unscored-error";
 
 export interface Attempt {
   lineId: string;
@@ -26,10 +26,13 @@ export type AttemptAction =
   | { type: "save-failed"; lineId: string }
   | { type: "scoring"; sessionId: string }
   | { type: "scored"; sessionId: string; result: NonNullable<Attempt["result"]> }
-  | { type: "score-failed"; sessionId: string; kind: "unavailable" | "throttled" | "error"; retryAfter: number | null }
+  | { type: "score-failed"; sessionId: string; kind: ScoreFailureKind; retryAfter: number | null }
   | { type: "discard"; lineId: string };
 
 export type AttemptsState = Record<string, Attempt>;
+
+/** `unheard`: Azure found no speech in the take (422); the same audio can never score, only a new take can. */
+export type ScoreFailureKind = "unavailable" | "throttled" | "unheard" | "error";
 
 export const UNSAVED_PHASES: ReadonlySet<AttemptPhase> = new Set([
   "recording", "converting", "convert-failed", "saving", "save-failed",
