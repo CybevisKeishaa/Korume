@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { MineLineControl } from "@/components/video-player/mine-line-control";
 import { PinLineControl } from "@/components/video-player/pin-line-control";
 import type { DrawerTab } from "@/lib/shadowing-workspace/drawer-state";
-import { BookmarkGlyph, CardsGlyph, FlagGlyph, NoteGlyph, ReplayGlyph } from "./player-glyphs";
+import { BookmarkGlyph, CardsGlyph, FlagGlyph, MicGlyph, NoteGlyph, ReplayGlyph } from "./player-glyphs";
 import { furiganaShownByMode, RubySentence } from "./ruby-sentence";
 
 export type RowState = "past" | "current" | "future";
@@ -41,6 +41,8 @@ export interface TranscriptRowProps {
   onToggleFurigana(lineId: string, shownByMode: boolean): void;
   /** Opens the Utility Drawer on this line (spec §6.2); absent outside the workspace. */
   onOpenDrawer?(lineId: string, tab: DrawerTab): void;
+  /** Opens the Pronunciation mode on this line; absent while that mode is off. */
+  onPractice?(position: number): void;
 }
 
 const DRAWER_ACTIONS = [
@@ -147,6 +149,11 @@ export const TranscriptRow = memo(function TranscriptRow(props: TranscriptRowPro
         <button type="button" aria-label={t("workspace.transcript.replay")} title={t("workspace.transcript.replay")} onClick={() => props.onReplay(position)} className={ACTION}>
           <ReplayGlyph className="size-icon-sm" />
         </button>
+        {props.onPractice && (
+          <button type="button" aria-label={t("workspace.transcript.practice")} title={t("workspace.transcript.practice")} onClick={() => props.onPractice?.(position)} className={ACTION}>
+            <MicGlyph className="size-icon-sm" />
+          </button>
+        )}
         <button
           type="button"
           aria-label={t("workspace.transcript.bookmark")}

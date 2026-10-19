@@ -548,6 +548,7 @@ describe("shadowing.json EN workspace transcript panel", () => {
       markedDifficult: "Marked difficult",
       actions: "Sentence actions",
       replay: "Replay",
+      practice: "Practice this sentence",
       bookmark: "Bookmark",
       difficult: "Difficult",
       lineFurigana: "Readings for this line",

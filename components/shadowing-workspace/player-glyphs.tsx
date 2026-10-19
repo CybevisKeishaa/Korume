@@ -28,6 +28,10 @@ export const PauseGlyph = ({ className }: GlyphProps) => (
   <Glyph className={className} filled><path d="M7 4.5h3.5v15H7zM13.5 4.5H17v15h-3.5z" /></Glyph>
 );
 export const PreviousGlyph = ({ className }: GlyphProps) => <Glyph className={className}><path d="M18 19 8 12l10-7zM6 5v14" /></Glyph>;
+/** Microphone: "Practice this sentence" in a transcript row. */
+export const MicGlyph = ({ className }: GlyphProps) => (
+  <Glyph className={className}><path d="M12 3a3 3 0 0 0-3 3v6a3 3 0 0 0 6 0V6a3 3 0 0 0-3-3zM19 10v2a7 7 0 0 1-14 0v-2M12 19v3" /></Glyph>
+);
 export const NextGlyph = ({ className }: GlyphProps) => <Glyph className={className}><path d="m6 19 10-7L6 5zM18 5v14" /></Glyph>;
 /** ↶ with a small "5": node `105:3621`. */
 export const RewindFiveGlyph = ({ className }: GlyphProps) => (
