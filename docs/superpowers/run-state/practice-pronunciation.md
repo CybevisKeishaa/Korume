@@ -38,6 +38,16 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Contracts and decisions
 
+- Owner round 2026-10-19 (screenshots from the owner's machine, `e919a7e9` + E2E follow-up): analysis card per the
+  owner's sample (sentence score + grade, Accuracy / Fluency / Completeness, heard text with play, per-word chips,
+  mismatch note); no derived "average" tile, because PronScore is already Azure's aggregate (offered to the owner).
+  TakePlayer replaces native <audio>; stat strip has no lesson title; pitch contour bridges unvoiced gaps ≤ 8 % of
+  the line. Rhythm copy reads Fluency/Độ trôi chảy (it is Azure FluencyScore; spec §4.1 says "Rhythm (Azure
+  fluency)"). The analysis card is always visible once scored, not behind Details (owner request over D13 layering).
+- 422 from Azure (NoMatch, no speech heard) is its own state `unscored-unheard`: says so, offers a new take, hides
+  Score again. Every speech failure logs `[pronunciation/score] speech failure: <kind>` server-side, and
+  `SPEECH_PROVIDER` off logs once per request. The owner's takes all read "Chưa chấm"; cause not yet established.
+
 - Whole-branch review N-1 ruling (Claude, 2026-10-19): `saving` is not discardable. A client navigation lets it
   finish (the request outlives the mode and lands on the shell's store); the link guard and "Leave and discard" skip
   it; `beforeunload` still warns. Spec §4.6 carries a dated build note.

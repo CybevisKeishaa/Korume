@@ -81,7 +81,7 @@ test("2 + 3 · record, save, score; the scored take survives a reload", async ({
   await expect(stat(page, "sentence")).toHaveText(/^1\//);
   const callsBefore = await stubCalls(request);
   await recordTake(page);
-  await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByTestId("take-status").getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
   // The score came from the stub: a reused server without AZURE_SPEECH_RECOGNITION_URL would reach real Azure.
   expect(await stubCalls(request)).toBe(callsBefore + 1);
   await expect(practice(page).getByTestId("take-status")).toContainText("Excellent");
@@ -114,11 +114,11 @@ test("4 · an Azure outage keeps the take playable, then Score again scores it",
   await stubMode(request, "503");
   await recordTake(page);
   await expect(practice(page).getByText("Could not score your take. Your recording is saved.")).toBeVisible({ timeout: 20_000 });
-  await expect(practice(page).getByText("86", { exact: true })).toHaveCount(0);
+  await expect(practice(page).getByTestId("take-status").getByText("86", { exact: true })).toHaveCount(0);
   await expect(practice(page).locator("audio")).toHaveAttribute("src", /.+/);
   await stubMode(request, "success");
   await practice(page).getByRole("button", { name: "Score again" }).click();
-  await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByTestId("take-status").getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
 });
 
 test("5 · throttled scoring says when to retry, with and without Retry-After", async ({ page, request }) => {
@@ -164,7 +164,7 @@ test("6 · an unsaved take is guarded on in-workspace links and survives Back/Fo
   await expect(page).toHaveURL(/\/pronunciation$/);
   await page.unroute("**/api/shadowing/session");
   await practice(page).getByRole("button", { name: "Save again" }).click();
-  await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByTestId("take-status").getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
 
   // A second failed take: Leave and discard navigates.
   await page.route("**/api/shadowing/session", (route) => route.request().method() === "POST" ? route.fulfill({ status: 500, body: "{}" }) : route.fallback());
@@ -221,7 +221,7 @@ test("9 · sentence navigation is locked while a take is unsaved", async ({ page
 
   await page.unroute("**/api/shadowing/session");
   await practice(page).getByRole("button", { name: "Save again" }).click();
-  await expect(practice(page).getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByTestId("take-status").getByText("86", { exact: true })).toBeVisible({ timeout: 20_000 });
   await practice(page).getByRole("button", { name: "Next sentence" }).click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
 });
