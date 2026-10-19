@@ -553,3 +553,9 @@ affected migration steps and both acceptance criteria with what replaced each.
 `font-size`/`line-height` in `app/globals.css`; per-element exemptions in `lib/typography-allowlist.ts`) and
 `tests/e2e/typography.spec.ts` (computed type against the literal table in `tests/e2e/typography/scale.ts` at
 1280/1440/1920). `type-normalization`, 2026-10-14, closed the Dashboard and fixed-size pages the evidence names.
+
+### L-053 — A colour or size class the theme does not define compiles to nothing; look at the screen, not the class
+**Rule:** Before using a token class (`text-*`, `bg-*`, `border-*`, `size-*`, `h-*`), check that `tailwind.config.ts` defines that key in the matching theme section. Then look at the rendered screen in the dark theme at least once before calling a visual change done.
+**Why:** Tailwind emits no CSS for an unknown class, so nothing fails: tsc, lint, unit tests and E2E all pass, and the element falls back to an inherited or user-agent style. For `<mark>`, that fallback is black text, which on the dark card reads as an invisible word.
+**Evidence:** `practice-pronunciation`, 2026-10-19 — Task 10 coloured a mispronounced word `text-destructive`; the theme's danger token is `danger`/`danger-strong`. Every gate was green. The first owner-look screenshots showed 文 in black on the dark card. Fixed in `493fdd08` with a test pinning each grade to a real token class. In the same pass, `size-control-sm` was caught before shipping: the theme defines `control-sm` under `height`, not `size`. The pre-existing `text-destructive` in the print workspace was queued as a separate task.
+**Applies to:** every new class that names a theme token; most of all colour on a `<mark>`, `<button>` or other element with a user-agent colour.
