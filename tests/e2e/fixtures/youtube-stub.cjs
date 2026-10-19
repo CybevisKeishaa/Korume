@@ -20,7 +20,7 @@
 
 /** A video with Japanese captions: the pipeline should reach a studyable lesson. */
 const WITH_CAPTIONS = "e2ecap00001";
-/** A video whose caption track list is empty: a truthful no-caption failure. */
+/** A video with no caption tracks: a truthful no-caption failure. */
 const WITHOUT_CAPTIONS = "e2enocap001";
 
 const TITLES = {
@@ -55,6 +55,14 @@ function videoIdFrom(url) {
   }
 }
 
+function videoIdFromBody(init) {
+  try {
+    return JSON.parse(String(init?.body)).videoId ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const realFetch = globalThis.fetch;
 
 globalThis.fetch = async function stubbedFetch(input, init) {
@@ -69,7 +77,8 @@ globalThis.fetch = async function stubbedFetch(input, init) {
   const isYouTubeHost = url.hostname === "www.youtube.com" || url.hostname === "video.google.com";
   if (!isYouTubeHost) return realFetch(input, init);
 
-  const videoId = videoIdFrom(url);
+  // The InnerTube player call names its video in the JSON body, not the URL.
+  const videoId = url.pathname === "/youtubei/v1/player" ? videoIdFromBody(init) : videoIdFrom(url);
   if (videoId === null || TITLES[videoId] === undefined) {
     throw new Error(`[youtube-stub] refusing to reach the network for ${url.href}`);
   }
@@ -83,16 +92,23 @@ globalThis.fetch = async function stubbedFetch(input, init) {
     });
   }
 
-  if (url.pathname === "/timedtext") {
-    if (videoId === WITHOUT_CAPTIONS) {
-      // An empty track list is the truthful "this video has no captions".
-      return xml('<?xml version="1.0" encoding="utf-8"?><transcript_list></transcript_list>');
-    }
-    if (url.searchParams.get("type") === "list") {
-      return xml(
-        '<?xml version="1.0" encoding="utf-8"?><transcript_list><track id="0" name="" lang_code="ja" lang_original="日本語" lang_translated="Japanese"/></transcript_list>',
-      );
-    }
+  // lib/youtube/timedtext.ts: watch page → InnerTube player → caption track body.
+  if (url.pathname === "/watch") {
+    return new Response('<script>ytcfg.set({"INNERTUBE_API_KEY":"e2e-stub-key"});</script>', {
+      status: 200,
+      headers: { "content-type": "text/html" },
+    });
+  }
+
+  if (url.pathname === "/youtubei/v1/player") {
+    // No caption tracks at all is the truthful "this video has no captions".
+    const captionTracks = videoId === WITHOUT_CAPTIONS
+      ? []
+      : [{ baseUrl: `https://www.youtube.com/api/timedtext?v=${videoId}&lang=ja`, languageCode: "ja" }];
+    return json({ playabilityStatus: { status: "OK" }, captions: { playerCaptionsTracklistRenderer: { captionTracks } } });
+  }
+
+  if (url.pathname === "/api/timedtext") {
     return xml(CAPTION_BODY);
   }
 
