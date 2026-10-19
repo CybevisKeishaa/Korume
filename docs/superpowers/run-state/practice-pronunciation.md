@@ -178,6 +178,9 @@ Codex, earlier:
 
 ## Next actions
 
+Merged 2026-10-19 on the owner's approval ("Tốt merge vào main đi") after the owner round's screenshots. Items b, c
+and e below were still open at merge and carry over as follow-ups; d is closed by that approval.
+
 Owed before merge (Claude, 2026-10-19):
 
 a. Done 2026-10-19: whole-branch review, two fix waves, each reviewed; APPROVE WITH NITS (N-1 recorded above).
