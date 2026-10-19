@@ -49,11 +49,21 @@ export default defineConfig({
   projects: [
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
   ],
-  webServer: {
-    command: "npm run build && npm run start",
-    env: { E2E_ROUTE_ERROR: "1" },
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-  },
+  webServer: [
+    // Azure's recognition endpoint, stood in locally (`practice-pronunciation.spec.ts` drives its modes).
+    {
+      command: "node tests/e2e/fixtures/speech-stub.mjs",
+      url: "http://127.0.0.1:3999/",
+      reuseExistingServer: !process.env.CI,
+      timeout: 10_000,
+    },
+    {
+      command: "npm run build && npm run start",
+      // The override is accepted only on a loopback host (lib/speech-scoring/config.ts).
+      env: { E2E_ROUTE_ERROR: "1", AZURE_SPEECH_RECOGNITION_URL: "http://127.0.0.1:3999/recognize" },
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 120_000,
+    },
+  ],
 });

@@ -40,8 +40,23 @@ export function speechCredentials(): SpeechCredentials {
   return { key, region };
 }
 
-/** Short-audio recognition endpoint (STT + pronunciation assessment share it). */
+const RECOGNITION_OVERRIDE_VAR = "AZURE_SPEECH_RECOGNITION_URL";
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "[::1]"]);
+
+/**
+ * Short-audio recognition endpoint (STT + pronunciation assessment share it).
+ *
+ * `AZURE_SPEECH_RECOGNITION_URL` points it at a local stand-in (the E2E speech stub); test/dev only. The
+ * request carries the Azure key and the learner's audio, so only a loopback host is accepted.
+ */
 export function recognitionEndpoint(region: string): string {
+  const override = process.env[RECOGNITION_OVERRIDE_VAR];
+  if (override) {
+    let host: string | null = null;
+    try { host = new URL(override).hostname; } catch { /* not a URL: refused below */ }
+    if (host === null || !LOOPBACK_HOSTS.has(host)) throw new Error(`${RECOGNITION_OVERRIDE_VAR} must be a loopback URL`);
+    return override;
+  }
   return (
     `https://${region}.stt.speech.microsoft.com` +
     `/speech/recognition/conversation/cognitiveservices/v1` +

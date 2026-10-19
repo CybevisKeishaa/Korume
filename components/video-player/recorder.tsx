@@ -65,9 +65,9 @@ function classifyMicError(err: unknown): MicErrorKey {
 
 /**
  * Captures a single shadowing take: mic permission → MediaRecorder → Blob.
- * This owns recording capture only — upload/playback live in
- * `ShadowingRecorderPanel`, which composes this hook with `Waveform`. That
- * separation is also the seam B2 (pitch accent) reuses: it can call
+ * This owns recording capture only — upload/playback live in the
+ * Pronunciation mode (`usePronunciationCapture`), which composes this hook
+ * with `Waveform`. That separation is also the seam B2 (pitch accent) reuses: it can call
  * `useRecorder` again for its own capture without touching upload/UI code.
  */
 export function useRecorder(): UseRecorderResult {

@@ -8,7 +8,7 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { installAzureSpeechMock, type AzureSpeechMockHandle } from "@/test/azure-speech-mock";
 import { azureTtsAudioBuffer } from "@/test/fixtures/azure-speech-responses";
-import { isSpeechConfigured } from "./config";
+import { isSpeechConfigured, recognitionEndpoint } from "./config";
 import { SpeechNotConfiguredError } from "./errors";
 import { assessPronunciation } from "./pronunciation";
 import { recognizeSpeech } from "./stt";
@@ -98,5 +98,35 @@ describe("not-configured entry points", () => {
       SpeechNotConfiguredError,
     );
     expect(azure?.calls).toHaveLength(0);
+  });
+});
+
+describe("recognitionEndpoint override (test/dev only)", () => {
+  const VAR = "AZURE_SPEECH_RECOGNITION_URL";
+  const original = process.env[VAR];
+  afterEach(() => {
+    if (original === undefined) delete process.env[VAR];
+    else process.env[VAR] = original;
+  });
+
+  it("uses the regional Azure endpoint when no override is set", () => {
+    delete process.env[VAR];
+    expect(recognitionEndpoint("japaneast")).toBe(
+      "https://japaneast.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=ja-JP&format=detailed",
+    );
+  });
+
+  it("uses a loopback override, such as the E2E speech stub", () => {
+    process.env[VAR] = "http://127.0.0.1:3999/recognize";
+    expect(recognitionEndpoint("japaneast")).toBe("http://127.0.0.1:3999/recognize");
+    process.env[VAR] = "http://localhost:3999/recognize";
+    expect(recognitionEndpoint("japaneast")).toBe("http://localhost:3999/recognize");
+  });
+
+  it("refuses a non-loopback override: the request carries the Azure key and the learner's audio", () => {
+    for (const url of ["https://example.com/recognize", "http://10.0.0.5/recognize", "not a url"]) {
+      process.env[VAR] = url;
+      expect(() => recognitionEndpoint("japaneast")).toThrow(/loopback/);
+    }
   });
 });

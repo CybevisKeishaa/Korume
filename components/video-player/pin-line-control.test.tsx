@@ -5,8 +5,7 @@ import type { TranscriptLineRow } from "@/lib/video-types";
 import { CompanionContext, type CompanionApi } from "@/components/companion/use-companion";
 import { PinLineControl } from "./pin-line-control";
 
-/** Spy on the 4-verb API, same pattern as
- * shadowing-recorder-panel.test.tsx — a stub provider, not a rendered
+/** Spy on the 4-verb API through a stub provider, not a rendered
  * anchor, since this file is a learning-loop surface (§5.4). */
 function companionSpy() {
   const emitContext = vi.fn();

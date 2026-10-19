@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { completedModes, LEARNING_MODES, shouldRenderModeNav, practiceModeFromPath } from "./learning-modes";
 
 describe("learning modes", () => {
-  it("Shadowing and Summary are complete; the bar renders (summary spec 2026-10-04 §7.1)", () => {
-    expect(completedModes().map(({ id }) => id)).toEqual(["shadowing", "summary"]);
+  it("Shadowing, Pronunciation and Summary are complete; the bar renders (practice modes D24)", () => {
+    expect(completedModes().map(({ id }) => id)).toEqual(["shadowing", "pronunciation", "summary"]);
     expect(shouldRenderModeNav()).toBe(true);
   });
 
