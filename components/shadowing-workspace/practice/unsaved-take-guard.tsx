@@ -38,10 +38,15 @@ export function UnsavedTakeGuard({ rootRef }: { rootRef: React.RefObject<HTMLEle
       if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
       const anchor = (event.target as Element | null)?.closest?.("a[href]") as HTMLAnchorElement | null;
       if (!anchor || anchor.target === "_blank" || !root.contains(anchor)) return;
+      // Only a client navigation can lose the take silently; another origin unloads the page (beforeunload) and a
+      // same-page hash goes nowhere.
+      const href = anchor.getAttribute("href") ?? "";
+      const url = new URL(href, window.location.href);
+      if (url.origin !== window.location.origin || href.startsWith("#")) return;
       // Capture phase, before next-intl's Link starts its client navigation.
       event.preventDefault();
       event.stopPropagation();
-      setPending(anchor.getAttribute("href"));
+      setPending(url.pathname + url.search + url.hash);
     };
     root.addEventListener("click", onClick, true);
     return () => root.removeEventListener("click", onClick, true);

@@ -22,6 +22,8 @@ function Harness() {
     <div ref={rootRef}>
       <a href="/en/shadowing/v1">Shadowing</a>
       <a href="/en/shadowing/v1/pronunciation" target="_blank">New tab</a>
+      <a href="#transcript">Same page</a>
+      <a href="https://www.youtube.com/watch?v=x">External</a>
       <UnsavedTakeGuard rootRef={rootRef} />
     </div>
     <a href="/en/dashboard">Outside</a>
@@ -89,6 +91,18 @@ describe("UnsavedTakeGuard", () => {
     outside.addEventListener("click", (event) => event.preventDefault());
     fireEvent.click(outside);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("leaves same-page hashes and other origins to the browser (beforeunload covers a full unload)", () => {
+    state.attempts = { l1: attempt("l1", "save-failed") };
+    render(<Harness />);
+    for (const name of ["Same page", "External"]) {
+      const link = screen.getByRole("link", { name });
+      link.addEventListener("click", (event) => event.preventDefault());
+      fireEvent.click(link);
+    }
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(state.push).not.toHaveBeenCalled();
   });
 
   it("does nothing to links when every take is saved", async () => {

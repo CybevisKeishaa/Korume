@@ -83,7 +83,10 @@ test("2 + 3 · record, save, score; the scored take survives a reload", async ({
 
   await page.reload();
   await expect(practice(page)).toBeVisible();
+  // Details closes when the sentence changes; after a reload the sentence resolves from none to 1 first.
+  await expect(strip(page)).toContainText("Sentence 1/");
   await page.getByRole("button", { name: "Details" }).click();
+  await expect(page.getByRole("button", { name: "Details" })).toHaveAttribute("aria-expanded", "true");
   const details = page.getByRole("button", { name: "Details" }).locator("xpath=..");
   await expect(details.getByText("Accuracy")).toBeVisible();
   await expect(details.getByText("88", { exact: true })).toBeVisible();
