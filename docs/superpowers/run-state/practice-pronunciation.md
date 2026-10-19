@@ -29,6 +29,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 | 7b | Stable shared stats provider, responsive strip and EN/VI copy; review APPROVE WITH NITS | `30f34a43` |
 | 8 | Scrolling practice panel and accessible, state-aware sentence navigator; review APPROVE WITH NITS | `3e1e68b6` |
 | 9 | Durable per-line attempts, session-routed results and controller locks; review APPROVE WITH NITS | `3b39eff7` |
+| 10 | Mode body, capture/sessions hooks, details, scored sentence, take limit; Claude review 2026-10-19 APPROVE WITH NITS | `f2db6ecc` |
 
 ## Contracts and decisions
 
@@ -107,7 +108,7 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
 
 ## Working tree and environment
 
-- Owner: Codex
+- Owner: Claude
 - Docker Desktop + `npx supabase start` needed from the first migration task; build and serve only in this worktree.
 - This worktree has its own ignored `node_modules` installed by `npm ci`; no parent dependency edits.
 
@@ -118,6 +119,14 @@ and Mission changes. Listening Practice (Part 3) is B2 `practice-listening`, bra
   gates remain incomplete; do not treat the branch as ready for use or merge.
 
 ## Next actions
+
+0. 2026-10-19: the owner asked Claude to review the branch and finish it ("xem có vấn đề gì không và làm tiếp").
+   Codex task 10 review verdict was never recorded; Claude reviewed `f2db6ecc` (tsc clean, 53 files / 506
+   tests in lib/pronunciation + workspace + video-player green) and accepted it. Nit carried: unmounting
+   during `saving` marks the take `save-failed` while the request may still reach 201, so "Save again"
+   can create a second row; Task 11's guard blocks in-workspace links, leaving only browser Back.
+   Claude now owns Tasks 11-15 in a cloud session (no worktree; branch pushed as
+   `claude/quirky-maxwell-h86erz` from `practice-pronunciation`).
 
 1. Codex takes implementation ownership as requested on 2026-10-17; protocol gate passed before handoff.
 2. Task 10 implementation `f2db6ecc` is being reviewed by `task_10_review`; read its verdict before
