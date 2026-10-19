@@ -30,7 +30,7 @@ test("1 · deterministic status, review reasons and AI-off fallback", async ({ p
   await learner(page);
   await summary(page);
   const status = area(page, "status");
-  await expect(status.locator("dd")).toHaveText(["7%", "70", "70", "Not enough data"]);
+  await expect(status.locator("dd")).toHaveText(["Watched to sentence 2/30", "70", "70", "Not enough data"]);
   await expect(area(page, "saved").locator("dd")).toHaveText(["0", "0", "0", "Not enough data"]);
   const rows = area(page, "review").locator("li");
   await expect(rows).toHaveCount(3);

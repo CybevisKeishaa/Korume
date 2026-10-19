@@ -92,12 +92,15 @@ test("2 + 3 · record, save, score; the scored take survives a reload", async ({
   await expect(details.getByRole("listitem")).toContainText("86");
 });
 
-test("4 · scoring unavailable keeps the take playable, then Score again scores it", async ({ page, request }) => {
+// Azure's own 503 is an upstream failure: the score route answers 502 (Task 5), keeping its 503 for "speech not
+// configured", which the panel unit test covers. Either way the take is kept and nothing fake is scored (D16).
+test("4 · an Azure outage keeps the take playable, then Score again scores it", async ({ page, request }) => {
   await registerLearner(page);
   await openLesson(page, "/pronunciation");
   await stubMode(request, "503");
   await recordTake(page);
-  await expect(practice(page).getByText("Pronunciation scoring is unavailable right now. Your recording is saved.")).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByText("Could not score your take. Your recording is saved.")).toBeVisible({ timeout: 20_000 });
+  await expect(practice(page).getByText("86", { exact: true })).toHaveCount(0);
   await expect(practice(page).locator("audio")).toHaveAttribute("src", /.+/);
   await stubMode(request, "success");
   await practice(page).getByRole("button", { name: "Score again" }).click();
@@ -120,7 +123,10 @@ test("5 · throttled scoring says when to retry, with and without Retry-After", 
 
 test("6 · an unsaved take is guarded on in-workspace links and survives Back/Forward (Review Focus 1)", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page, "/pronunciation");
+  // Entered through the mode bar, so browser Back lands on Shadowing inside the same shell.
+  await openLesson(page);
+  await modeBar(page).getByRole("link", { name: "Pronunciation" }).click();
+  await expect(practice(page)).toBeVisible();
   await page.route("**/api/shadowing/session", (route) => route.request().method() === "POST" ? route.fulfill({ status: 500, body: "{}" }) : route.fallback());
   await recordTake(page);
   await expect(practice(page).getByRole("button", { name: "Save again" })).toBeVisible({ timeout: 20_000 });
@@ -134,7 +140,7 @@ test("6 · an unsaved take is guarded on in-workspace links and survives Back/Fo
 
   // Client navigation the guard cannot intercept: the take lives in the shell, so it is still there on return.
   await page.goBack();
-  await expect(page).not.toHaveURL(/\/pronunciation$/);
+  await expect(page).toHaveURL(new RegExp(`/shadowing/${data.videoId}$`));
   await page.goForward();
   await expect(page).toHaveURL(/\/pronunciation$/);
   await page.unroute("**/api/shadowing/session");
