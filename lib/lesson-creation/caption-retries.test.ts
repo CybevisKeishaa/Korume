@@ -28,7 +28,9 @@ const CLAIM: ClaimedLessonCreationJob = {
   youtubeVideoId: VIDEO_ID, leaseToken: "b4a4485c-9539-408b-a9ea-67a89e845234",
   leaseExpiresAt: "2026-09-14T03:02:00.000Z",
 };
-const TRACKS = '<transcript_list><track lang_code="ja"/></transcript_list>';
+const WATCH = '<script>{"INNERTUBE_API_KEY":"AIzaTestKey"}</script>';
+const PLAYER = JSON.stringify({ playabilityStatus: { status: "OK" }, captions: { playerCaptionsTracklistRenderer: {
+  captionTracks: [{ baseUrl: "https://www.youtube.com/api/timedtext?v=dQw4w9WgXcQ&lang=ja", languageCode: "ja" }] } } });
 const CAPTIONS = '<transcript><text start="0" dur="1">日本語</text></transcript>';
 
 beforeEach(() => {
@@ -50,7 +52,9 @@ beforeEach(() => {
 afterEach(() => { vi.unstubAllGlobals(); vi.useRealTimers(); });
 
 type Failure = 429 | 503 | 404 | "transport" | "body-transport" | "none" | "missing";
-function httpFixture(stage: "list" | "body", failure: Failure) {
+type Stage = "page" | "player" | "body";
+const PATHS: Record<Stage, string> = { page: "/watch", player: "/youtubei/v1/player", body: "/api/timedtext" };
+function httpFixture(stage: Stage, failure: Failure) {
   const urls: string[] = [];
   vi.stubGlobal("fetch", vi.fn(async (input: string) => {
     const url = new URL(input);
@@ -59,20 +63,22 @@ function httpFixture(stage: "list" | "body", failure: Failure) {
       return new Response(JSON.stringify({ title: "Lesson", author_name: "Author",
         thumbnail_url: "https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg" }));
     }
-    if (url.hostname !== "video.google.com" || url.pathname !== "/timedtext") throw new Error("Unexpected media request");
-    const isList = url.searchParams.get("type") === "list";
-    if ((stage === "list") === isList) {
+    const at = (Object.keys(PATHS) as Stage[]).find((key) => PATHS[key] === url.pathname);
+    if (url.hostname !== "www.youtube.com" || at === undefined) throw new Error("Unexpected media request");
+    if (at === stage) {
       if (failure === "transport") throw new TypeError("fetch failed");
       if (failure === "body-transport") return { ok: true, text: async () => { throw new TypeError("body connection lost"); } };
       if (typeof failure === "number") return new Response("", { status: failure });
-      if (failure === "missing") return new Response(isList ? "<transcript_list/>" : "<transcript/>");
+      if (failure === "missing") return new Response({ page: "<html/>", player: "{}", body: "<transcript/>" }[at]);
     }
-    return new Response(isList ? TRACKS : CAPTIONS);
+    return new Response({ page: WATCH, player: PLAYER, body: CAPTIONS }[at]);
   }));
   return urls;
 }
 
-describe.each(["list", "body"] as const)("production caption retries at the %s request", (stage) => {
+const STAGES: Stage[] = ["page", "player", "body"];
+
+describe.each(STAGES)("production caption retries at the %s request", (stage) => {
   it.each([429, 503, "transport", "body-transport"] as const)("requeues explicit %s failure through real production dependencies", async (failure) => {
     const urls = httpFixture(stage, failure);
 
@@ -82,9 +88,8 @@ describe.each(["list", "body"] as const)("production caption retries at the %s r
       availableAt: "2026-09-14T03:00:01.000Z",
     });
     expect(finalizeClaimedJob).not.toHaveBeenCalled();
-    expect(urls).toEqual(stage === "list"
-      ? ["www.youtube.com/oembed", "video.google.com/timedtext"]
-      : ["www.youtube.com/oembed", "video.google.com/timedtext", "video.google.com/timedtext"]);
+    expect(urls).toEqual(["www.youtube.com/oembed",
+      ...STAGES.slice(0, STAGES.indexOf(stage) + 1).map((at) => `www.youtube.com${PATHS[at]}`)]);
   });
 
   it.each([404, "missing"] as const)("keeps %s terminal instead of guessing it is transient", async (failure) => {
@@ -102,7 +107,7 @@ describe.each(["list", "body"] as const)("production caption retries at the %s r
 });
 
 it("persists successful captions fetched through real HTTP adapters", async () => {
-  httpFixture("list", "none");
+  httpFixture("page", "none");
   await expect(runLessonCreationPass(NOW)).resolves.toMatchObject({ succeeded: 1, requeued: 0, failed: 0 });
   expect(finalizeClaimedJob).toHaveBeenCalledWith(expect.objectContaining({ content: expect.objectContaining({
     source: "youtube_caption", lines: [{ startTime: 0, endTime: 1, textJp: "日本語", textTranslation: null, furiganaJson: [] }],
