@@ -17,6 +17,11 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
   subagent-driven chosen; P1–P9 accepted in direction with notes (P3 must work on fresh replay AND upgrade, one
   home; P5 label "Nghe (gõ chính tả)"; redirect keeps locale, id, deep links, E2E). Revised plan sent for the
   owner's final review; no product code before that approval. No merge before the owner's Chrome check.
+- Owner review round 2 (2026-10-21), applied in the plan: Task 1 proves 048, gates and SQL mutations on disposable
+  databases (D1 upgrade copy at 047 with the owner's legacy rows, D2 fresh chain) and only then upgrades the owner's
+  DB once — no experiment or mutation on the owner's DB, a disposable DB that cannot be built is an unmet gate;
+  Task 9 E2E enumerated in 13 cases; P10 URL is the one source of the format (D9 fallback = URL replace);
+  P11 reveal keyed by line + format + attempt, reset during render; P12 chunks memo only after the RLS read.
 
 ## Accepted commits
 
