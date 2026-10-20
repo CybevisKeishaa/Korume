@@ -19,14 +19,14 @@ beforeEach(() => {
 describe("youtubeCaptionProvider", () => {
   it("returns transcript lines with source 'youtube_caption' when captions exist", async () => {
     vi.mocked(fetchJapaneseCaptions).mockResolvedValue([
-      { startTime: 0, endTime: 2, textJp: "こんにちは" },
+      { startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: "Xin chào" },
     ]);
 
     const result = await youtubeCaptionProvider.fetch(VIDEO_ID);
 
     expect(result).toEqual({
       source: "youtube_caption",
-      lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: null }],
+      lines: [{ startTime: 0, endTime: 2, textJp: "こんにちは", textTranslation: "Xin chào" }],
     });
   });
 

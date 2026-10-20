@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchOembed, OembedFetchError } from "./oembed";
+import { fetchOembed, lessonMetadata, OembedFetchError } from "./oembed";
 import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 
 const ID = "dQw4w9WgXcQ";
@@ -124,5 +124,26 @@ describe("fetchOembed — failure", () => {
   it("keeps an HTTP status terminal: the provider answered, and its answer was no", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: false, status: 404 }));
     await expect(fetchOembed(ID)).rejects.toThrow(OembedFetchError);
+  });
+});
+
+describe("lessonMetadata", () => {
+  const OK = { title: " <b>聞き取り</b> Ep.1 ", thumbnailUrl: "https://i.ytimg.com/vi/x/hqdefault.jpg", authorName: "  Channel  " };
+
+  it("sanitizes the title and trims the channel", () => {
+    expect(lessonMetadata(OK)).toEqual({ title: "聞き取り Ep.1", thumbnailUrl: OK.thumbnailUrl, channelTitle: "Channel" });
+  });
+
+  it("cuts the channel at 200 code points without splitting a surrogate pair", () => {
+    expect(Array.from(lessonMetadata({ ...OK, authorName: "😊".repeat(250) })?.channelTitle ?? "")).toHaveLength(200);
+  });
+
+  it.each([
+    ["a title that sanitizes to nothing", { ...OK, title: "<b> </b>" }],
+    ["an http thumbnail", { ...OK, thumbnailUrl: "http://i.ytimg.com/vi/x/hqdefault.jpg" }],
+    ["a javascript: thumbnail", { ...OK, thumbnailUrl: "javascript:alert(1)" }],
+    ["a thumbnail that is not a URL", { ...OK, thumbnailUrl: "hqdefault.jpg" }],
+  ])("refuses %s", (_, metadata) => {
+    expect(lessonMetadata(metadata)).toBeNull();
   });
 });

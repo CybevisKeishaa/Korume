@@ -6,7 +6,7 @@ import {
   type ProviderTranscriptResult,
 } from "@/lib/data/transcript-providers";
 import type { VideoRow } from "@/lib/data/videos";
-import { fetchOembed } from "@/lib/youtube";
+import { fetchOembed, lessonMetadata, type LessonMetadata } from "@/lib/youtube";
 import { sanitizeTranscriptText } from "@/lib/transcript";
 import { TransientLessonCreationProviderError } from "./errors";
 import {
@@ -143,22 +143,10 @@ function requireFinalOutcome(outcome: FinalizeOutcome, jobId: string): LessonCre
   return outcome;
 }
 
-function parseMetadata(metadata: { title: string; thumbnailUrl: string; authorName: string | null }): {
-  title: string;
-  thumbnailUrl: string;
-  channelTitle: string | null;
-} {
-  const title = sanitizeTranscriptText(metadata.title);
-  const parsed = z.object({
-    title: z.string().min(1),
-    thumbnailUrl: z.string().url(),
-  }).strict().safeParse({ title, thumbnailUrl: metadata.thumbnailUrl });
-  if (!parsed.success) {
-    throw new LessonCreationPipelineError("metadata_unavailable", { cause: parsed.error });
-  }
-  const authorName = typeof metadata.authorName === "string" ? metadata.authorName.trim() : "";
-  // Same cut as finalize's left(…, 200): code points, so a surrogate pair is never split.
-  return { ...parsed.data, channelTitle: authorName.length > 0 ? Array.from(authorName).slice(0, 200).join("") : null };
+function parseMetadata(metadata: { title: string; thumbnailUrl: string; authorName: string | null }): LessonMetadata {
+  const parsed = lessonMetadata(metadata);
+  if (!parsed) throw new LessonCreationPipelineError("metadata_unavailable");
+  return parsed;
 }
 
 function parseCaptions(result: CaptionResult | null): CaptionResult {
@@ -169,7 +157,8 @@ function parseCaptions(result: CaptionResult | null): CaptionResult {
   const lines = parsed.data.lines.map((line) => ({
     ...line,
     textJp: sanitizeTranscriptText(line.textJp),
-    textTranslation: line.textTranslation === null ? null : sanitizeTranscriptText(line.textTranslation),
+    // A translation that sanitizes to nothing is no translation: "" would render an empty reveal.
+    textTranslation: line.textTranslation === null ? null : sanitizeTranscriptText(line.textTranslation) || null,
   }));
   if (lines.some((line) => line.textJp.length === 0)) {
     throw new LessonCreationPipelineError("transcript_unavailable");
@@ -230,7 +219,7 @@ export async function processClaimedLessonCreationJob(
   }
 
   await transitionAndRead(claim, store, "fetching_metadata");
-  let metadata: { title: string; thumbnailUrl: string; channelTitle: string | null };
+  let metadata: LessonMetadata;
   try {
     metadata = parseMetadata(await dependencies.fetchOembed(claim.youtubeVideoId));
   } catch (error) {

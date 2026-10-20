@@ -31,7 +31,7 @@ function toYoutubeCaptionResult(lines: Awaited<ReturnType<typeof fetchJapaneseCa
   if (!lines) return null;
   return {
     source: "youtube_caption",
-    lines: lines.map((line) => ({ ...line, textTranslation: null })),
+    lines,
   };
 }
 

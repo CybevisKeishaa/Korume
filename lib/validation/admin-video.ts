@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { attachVideoId, youtubeUrlField } from "./lesson-creation";
 
 /** GET /api/admin/videos/pending?cursor=... — cursor is the `created_at` of
  * the last item on the previous page (opaque to the client). Loosely
@@ -43,3 +44,26 @@ export const starVideoSchema = z.object({
   starred: z.boolean(),
 });
 export type StarVideoInput = z.infer<typeof starVideoSchema>;
+
+const subtitleFileContent = z
+  .string()
+  .min(1, "Subtitle content is required.")
+  .max(200_000, "Subtitle file is too long (max 200,000 characters).");
+
+/**
+ * POST /api/admin/videos/import-srt body: a lesson built from the admin's own
+ * subtitle files. Timed formats only — the translation is aligned onto the
+ * Japanese lines by time, which a plain transcript does not carry.
+ */
+export const adminSrtImportSchema = z
+  .object({
+    youtubeUrl: youtubeUrlField,
+    libraryAccess: z.enum(["FREE", "PLUS"]),
+    format: z.enum(["srt", "vtt"]),
+    content: subtitleFileContent,
+    translation: subtitleFileContent.optional(),
+    /** Required to overwrite an existing lesson: that deletes learners' notes and marks on its old lines. */
+    replace: z.boolean().optional(),
+  })
+  .transform(attachVideoId);
+export type AdminSrtImportInput = z.infer<typeof adminSrtImportSchema>;

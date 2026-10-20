@@ -11,6 +11,7 @@ const CONSENT_HTML = '<form action="https://consent.youtube.com/s"><input name="
 
 const JA_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=ja&fmt=srv3`;
 const JA_ASR_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=ja&kind=asr`;
+const VI_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=vi`;
 
 function player(captionTracks: unknown[], status = "OK", reason?: string) {
   return {
@@ -56,8 +57,8 @@ describe("fetchJapaneseCaptions", () => {
     const calls = route({});
 
     await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toEqual([
-      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは" },
-      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか" },
+      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは", textTranslation: null },
+      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか", textTranslation: null },
     ]);
     expect(calls.map((c) => c.url.pathname)).toEqual(["/watch", "/youtubei/v1/player", "/api/timedtext"]);
     expect(calls[1]?.url.searchParams.get("key")).toBe(API_KEY);
@@ -85,6 +86,57 @@ describe("fetchJapaneseCaptions", () => {
     const calls = route({ player: () => Response.json(player([{ baseUrl: JA_ASR_URL, languageCode: "ja", kind: "asr" }])) });
     await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toHaveLength(2);
     expect(calls[2]?.url.searchParams.get("kind")).toBe("asr");
+  });
+
+  it("attaches the creator's Vietnamese track to the Japanese lines it overlaps", async () => {
+    const calls = route({
+      player: () => Response.json(player([
+        { baseUrl: JA_URL, languageCode: "ja" },
+        { baseUrl: `${VI_URL}&kind=asr`, languageCode: "vi", kind: "asr" },
+        { baseUrl: VI_URL, languageCode: "vi" },
+      ])),
+      body: (url) => new Response(url.searchParams.get("lang") === "vi"
+        ? '<transcript><text start="0.5" dur="2.0">Xin chào</text></transcript>'
+        : CAPTION_BODY_XML),
+    });
+    await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toEqual([
+      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは", textTranslation: "Xin chào" },
+      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか", textTranslation: null },
+    ]);
+    expect(calls.map((c) => c.url.searchParams.get("lang"))).toEqual([null, null, "ja", "vi"]);
+    expect(calls[3]?.url.searchParams.get("kind")).toBeNull();
+  });
+
+  it.each([
+    ["HTTP 429", () => new Response("", { status: 429 })],
+    ["an empty body", () => new Response("<transcript></transcript>")],
+  ])("keeps the Japanese lines when the Vietnamese track fails with %s, even on the worker path", async (_, viRoute) => {
+    route({
+      player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: VI_URL, languageCode: "vi" }])),
+      body: (url) => url.searchParams.get("lang") === "vi" ? viRoute() : new Response(CAPTION_BODY_XML),
+    });
+    const lines = await fetchJapaneseCaptionsForWorker(VIDEO_ID);
+    expect(lines?.map((line) => line.textTranslation)).toEqual([null, null]);
+  });
+
+  it("keeps a numeric entity that is not a scalar value as written instead of losing the lesson", async () => {
+    route({
+      player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: VI_URL, languageCode: "vi" }])),
+      body: (url) => new Response(url.searchParams.get("lang") === "vi"
+        ? '<transcript><text start="0.5" dur="2">Xin &amp;#99999999; &amp;#x110000; &amp;#55296; chào</text></transcript>'
+        : CAPTION_BODY_XML),
+    });
+    const lines = await fetchJapaneseCaptionsForWorker(VIDEO_ID);
+    expect(lines?.map((line) => line.textTranslation)).toEqual(["Xin &#99999999; &#x110000; &#55296; chào", null]);
+  });
+
+  it.each([
+    ["needs a PO token", `${VI_URL}&exp=xpe`],
+    ["is off YouTube", "https://evil.example/api/timedtext?lang=vi"],
+  ])("never fetches a Vietnamese track that %s, and keeps the Japanese lines", async (_, viUrl) => {
+    const calls = route({ player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: viUrl, languageCode: "vi" }])) });
+    await expect(fetchJapaneseCaptionsForWorker(VIDEO_ID)).resolves.toHaveLength(2);
+    expect(calls.map((c) => c.url.searchParams.get("lang"))).toEqual([null, null, "ja"]);
   });
 
   it("passes the EU consent page with a CONSENT cookie", async () => {

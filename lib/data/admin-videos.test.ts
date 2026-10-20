@@ -3,6 +3,7 @@ import { createMockSupabase, eqValue, type QueryCall } from "@/test/supabase-moc
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin } from "@/lib/admin/guard";
 import { toFurigana } from "@/lib/japanese";
+import { fetchOembed } from "@/lib/youtube";
 
 vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/admin/guard", () => ({ requireAdmin: vi.fn() }));
@@ -10,11 +11,13 @@ vi.mock("@/lib/admin/guard", () => ({ requireAdmin: vi.fn() }));
 // (lib/japanese/furigana.test.ts) — mock it here, same precedent as
 // lib/data/reading.test.ts / lib/data/transcripts.ts's real usage.
 vi.mock("@/lib/japanese", () => ({ toFurigana: vi.fn() }));
+vi.mock("@/lib/youtube", async (importOriginal) => ({ ...(await importOriginal<typeof import("@/lib/youtube")>()), fetchOembed: vi.fn() }));
 
 // Imported after the mocks above are registered.
 import {
   computePromotionScore,
   demoteVideo,
+  importVideoFromSrt,
   listNeedsReview,
   listPublishedLessons,
   listReadyToPromote,
@@ -464,5 +467,152 @@ describe("replaceVideoTranscript", () => {
     expect(insertedTranscript).toEqual({ video_id: VIDEO_ID, source: "user_submitted", language: "ja" });
     expect(Array.isArray(insertedLines)).toBe(true);
     expect((insertedLines as unknown[]).length).toBe(2);
+  });
+});
+
+describe("importVideoFromSrt", () => {
+  const JA = `1
+00:00:01,000 --> 00:00:04,000
+こんにちは
+
+2
+00:00:04,000 --> 00:00:09,500
+元気ですか
+`;
+  const VI = `1
+00:00:01,000 --> 00:00:03,500
+Xin chào
+`;
+  const INPUT = { youtubeVideoId: "kIDaXEnkjmk", libraryAccess: "FREE" as const, format: "srt" as const, content: JA, translation: VI };
+
+  /** Records every write in order; `existing` is what the lookup by youtube id finds. */
+  function catalogue(existing: { id: string; library_access?: string } | null, failures: { insert?: { code: string; message: string }; lines?: Error } = {}) {
+    const writes: { op: string; values?: unknown; id?: unknown }[] = [];
+    const order: string[] = [];
+    let lines: unknown;
+    mockService({
+      videos: (calls: QueryCall[]) => {
+        const write = calls.find((c) => c.op === "insert" || c.op === "update" || c.op === "delete");
+        if (!write) return { data: existing, error: null };
+        writes.push({ op: write.op, values: "values" in write ? write.values : undefined, id: eqValue(calls, "id"), ...(write.op === "delete" ? { access: eqValue(calls, "library_access") } : {}) });
+        order.push(`videos.${write.op}`);
+        if (write.op === "insert" && failures.insert) return { data: null, error: failures.insert };
+        return { data: { id: VIDEO_ID }, error: null };
+      },
+      transcripts: (calls: QueryCall[]) => {
+        order.push(`transcripts.${calls.some((c) => c.op === "insert") ? "insert" : "delete"}`);
+        return { data: calls.some((c) => c.op === "insert") ? { id: "new-transcript" } : null, error: null };
+      },
+      transcript_lines: (calls: QueryCall[]) => {
+        lines = calls.find((c): c is Extract<QueryCall, { op: "insert" }> => c.op === "insert")?.values;
+        order.push("transcript_lines.insert");
+        return { data: null, error: failures.lines ?? null };
+      },
+    });
+    return { writes, order, lines: () => lines as { text_jp: string; text_translation: string | null }[] };
+  }
+
+  beforeEach(() => {
+    vi.mocked(fetchOembed).mockReset();
+    vi.mocked(fetchOembed).mockResolvedValue({
+      title: "  <b>聞き取り</b> Ep.1 ",
+      thumbnailUrl: "https://i.ytimg.com/vi/kIDaXEnkjmk/hqdefault.jpg",
+      authorName: " Channel ",
+    });
+  });
+
+  it("creates the video PRIVATE, attaches the aligned bilingual transcript, then publishes it", async () => {
+    const db = catalogue(null);
+
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({
+      ok: true,
+      data: { videoId: VIDEO_ID, created: true, lineCount: 2, translatedCount: 1 },
+    });
+    expect(db.writes).toEqual([
+      {
+        op: "insert",
+        values: {
+          youtube_video_id: "kIDaXEnkjmk",
+          title: "聞き取り Ep.1",
+          thumbnail_url: "https://i.ytimg.com/vi/kIDaXEnkjmk/hqdefault.jpg",
+          channel_title: "Channel",
+          duration_seconds: 10,
+          library_access: "PRIVATE",
+        },
+        id: undefined,
+      },
+      { op: "update", values: { library_access: "FREE" }, id: VIDEO_ID },
+    ]);
+    expect(db.lines().map((line) => [line.text_jp, line.text_translation])).toEqual([["こんにちは", "Xin chào"], ["元気ですか", null]]);
+    // Published only once it has lines: a failure in between never leaves an empty published lesson.
+    expect(db.order).toEqual(["videos.insert", "transcripts.delete", "transcripts.insert", "transcript_lines.insert", "videos.update"]);
+  });
+
+  it("refuses an existing video without `replace`, before touching its transcript or YouTube", async () => {
+    const db = catalogue({ id: VIDEO_ID, library_access: "PRIVATE" });
+
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true, libraryAccess: "PRIVATE" });
+    expect(db.order).toEqual([]);
+    expect(fetchOembed).not.toHaveBeenCalled();
+  });
+
+  it("with `replace`, replaces an existing video's transcript and keeps its access level", async () => {
+    const db = catalogue({ id: VIDEO_ID });
+
+    await expect(importVideoFromSrt({ ...INPUT, translation: undefined, replace: true })).resolves.toEqual({
+      ok: true,
+      data: { videoId: VIDEO_ID, created: false, lineCount: 2, translatedCount: 0 },
+    });
+    expect(db.order).toEqual(["transcripts.delete", "transcripts.insert", "transcript_lines.insert"]);
+    expect(fetchOembed).not.toHaveBeenCalled();
+  });
+
+  it("removes the new video again when its transcript cannot be written, so a retry starts clean", async () => {
+    const db = catalogue(null, { lines: new Error("lines insert failed") });
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+
+    await expect(importVideoFromSrt(INPUT)).rejects.toThrow("lines insert failed");
+    expect(db.writes.map((write) => write.op)).toEqual(["insert", "delete"]);
+    expect(db.writes[1]).toMatchObject({ id: VIDEO_ID, access: "PRIVATE" });
+  });
+
+  it("answers 409 when another import created the video first", async () => {
+    const db = catalogue(null, { insert: { code: "23505", message: "duplicate key value violates unique constraint" } });
+
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true, libraryAccess: null });
+    expect(db.order).toEqual(["videos.insert"]);
+  });
+
+  it.each([
+    ["YouTube metadata fails", () => vi.mocked(fetchOembed).mockRejectedValue(new Error("429"))],
+    ["the thumbnail is not https", () => vi.mocked(fetchOembed).mockResolvedValue({ title: "t", thumbnailUrl: "http://i.ytimg.com/x.jpg", authorName: null })],
+  ])("writes nothing when %s", async (_, arrange) => {
+    arrange();
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const db = catalogue(null);
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 503 });
+    expect(db.writes).toEqual([]);
+  });
+
+  it.each([
+    ["no cues", "not a subtitle"],
+    ["more than 2000 lines", Array.from({ length: 2001 }, (_, i) => `${i + 1}\n00:00:${String(i % 60).padStart(2, "0")},000 --> 00:00:${String(i % 60).padStart(2, "0")},500\n行\n`).join("\n")],
+  ])("refuses content with %s before any database call", async (_, content) => {
+    await expect(importVideoFromSrt({ ...INPUT, content })).resolves.toEqual({ ok: false, status: 422 });
+    expect(createServiceClient).not.toHaveBeenCalled();
+  });
+
+  it("rate-limits per admin", async () => {
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: true, user: { id: "admin-rate-limited", email: "r@example.com" } });
+    catalogue(null);
+    for (let i = 0; i < 10; i += 1) await importVideoFromSrt({ ...INPUT, content: "nothing" });
+    await expect(importVideoFromSrt(INPUT)).resolves.toMatchObject({ ok: false, status: 429 });
+  });
+
+  it("passes through a guard failure before any other work", async () => {
+    vi.mocked(requireAdmin).mockResolvedValue({ ok: false, status: 403 });
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 403 });
+    expect(createServiceClient).not.toHaveBeenCalled();
+    expect(fetchOembed).not.toHaveBeenCalled();
   });
 });

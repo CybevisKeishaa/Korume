@@ -212,6 +212,24 @@
       "contentLabel": "Content",
       "save": "Save transcript",
       "saving": "Saving…"
+    },
+    "srtImport": {
+      "heading": "Import a lesson from subtitle files",
+      "description": "Build a lesson from SRT/VTT files you already have, with no caption request to YouTube. The Vietnamese file is aligned onto each Japanese line by time.",
+      "urlLabel": "YouTube link or video ID",
+      "japaneseLabel": "Japanese subtitles (.srt / .vtt)",
+      "vietnameseLabel": "Vietnamese subtitles (optional)",
+      "accessLabel": "Tier",
+      "submit": "Import lesson",
+      "importing": "Importing…",
+      "created": "Lesson created: {lines} lines, {translated} with a translation.",
+      "replaced": "This video was already in the library — its transcript was replaced: {lines} lines, {translated} with a translation. Its tier is unchanged.",
+      "error": "Could not import this lesson.",
+      "japaneseMissing": "Choose the Japanese subtitle file.",
+      "replaceTitle": "Replace this video's transcript?",
+      "replaceDescription": "This video is already in the library. Replacing its transcript deletes every learner's notes and marks on the old lines, and cannot be undone. Its tier stays as it is.",
+      "replaceConfirm": "Replace transcript",
+      "currentTier": "Its current tier is {tier}."
     }
   },
   "styleGuide": {

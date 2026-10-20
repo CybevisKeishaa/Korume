@@ -276,6 +276,24 @@
       "contentLabel": "Nội dung",
       "save": "Lưu phụ đề",
       "saving": "Đang lưu…"
+    },
+    "srtImport": {
+      "heading": "Nhập bài học từ file phụ đề",
+      "description": "Tạo bài học từ file SRT/VTT có sẵn trên máy, không cần lấy phụ đề từ YouTube. File tiếng Việt được ghép vào từng câu tiếng Nhật theo thời gian.",
+      "urlLabel": "Link hoặc ID video YouTube",
+      "japaneseLabel": "Phụ đề tiếng Nhật (.srt / .vtt)",
+      "vietnameseLabel": "Phụ đề tiếng Việt (không bắt buộc)",
+      "accessLabel": "Gói",
+      "submit": "Nhập bài học",
+      "importing": "Đang nhập…",
+      "created": "Đã tạo bài học: {lines} câu, {translated} câu có bản dịch.",
+      "replaced": "Video đã có trong thư viện — đã thay phụ đề: {lines} câu, {translated} câu có bản dịch. Gói của video được giữ nguyên.",
+      "error": "Chưa thể nhập bài học này.",
+      "japaneseMissing": "Hãy chọn file phụ đề tiếng Nhật.",
+      "replaceTitle": "Thay phụ đề của video đã có?",
+      "replaceDescription": "Video này đã có trong thư viện. Thay phụ đề sẽ xoá mọi ghi chú và đánh dấu của người học trên các câu cũ, không hoàn tác được. Gói của video được giữ nguyên.",
+      "replaceConfirm": "Thay phụ đề",
+      "currentTier": "Gói hiện tại là {tier}."
     }
   },
   "styleGuide": {

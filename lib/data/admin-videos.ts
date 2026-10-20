@@ -2,8 +2,9 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin, type RequireAdminResult } from "@/lib/admin/guard";
 import { rateLimit } from "@/lib/rate-limit";
-import { parseTranscript } from "@/lib/transcript";
-import type { TranscriptFormat } from "@/lib/transcript";
+import { parseBilingualTranscript, parseTranscript } from "@/lib/transcript";
+import type { ParsedLine, TranscriptFormat } from "@/lib/transcript";
+import { fetchOembed, lessonMetadata, type LessonMetadata } from "@/lib/youtube";
 import { toFurigana } from "@/lib/japanese";
 
 /**
@@ -476,6 +477,38 @@ export async function replaceVideoTranscript(
     return { ok: false, status: 422 };
   }
 
+  return { ok: true, data: await writeVideoTranscript(service, videoId, parsedLines) };
+}
+
+/** Deletes the video's transcript (cascading its lines) and inserts `lines` as the new one, with best-effort furigana. */
+async function writeVideoTranscript(
+  service: ReturnType<typeof createServiceClient>,
+  videoId: string,
+  parsedLines: readonly ParsedLine[],
+): Promise<{ transcriptId: string; lineCount: number }> {
+  // Furigana first (seconds for a long file), so the delete, the header and the
+  // lines go in back to back: the window in which the lesson has no lines, or a
+  // caption job's finalize could fill the empty header with its own, stays short.
+  const lines = [];
+  for (const line of parsedLines) {
+    let furigana: unknown = null;
+    try {
+      furigana = await toFurigana(line.textJp);
+    } catch (err) {
+      // Best-effort, same posture as lib/data/reading.ts::ensureFurigana —
+      // a tokenizer hiccup must not fail the whole transcript attach.
+      console.error(`[admin] furigana generation failed for a transcript line on video ${videoId}:`, err);
+    }
+    lines.push({
+      start_time: line.startTime,
+      end_time: line.endTime,
+      text_jp: line.textJp,
+      text_translation: line.textTranslation ?? null,
+      furigana_json: furigana,
+    });
+  }
+
+  // ponytail: three statements, not one transaction; a transactional RPC would close the window entirely.
   const { error: deleteError } = await service.from("transcripts").delete().eq("video_id", videoId);
   if (deleteError) throw deleteError;
 
@@ -487,29 +520,110 @@ export async function replaceVideoTranscript(
   if (insertError) throw insertError;
 
   const transcriptId = (transcript as { id: string }).id;
-
-  const linesWithFurigana = [];
-  for (const line of parsedLines) {
-    let furigana: unknown = null;
-    try {
-      furigana = await toFurigana(line.textJp);
-    } catch (err) {
-      // Best-effort, same posture as lib/data/reading.ts::ensureFurigana —
-      // a tokenizer hiccup must not fail the whole transcript attach.
-      console.error(`[admin] furigana generation failed for a transcript line on video ${videoId}:`, err);
-    }
-    linesWithFurigana.push({
-      transcript_id: transcriptId,
-      start_time: line.startTime,
-      end_time: line.endTime,
-      text_jp: line.textJp,
-      text_translation: line.textTranslation ?? null,
-      furigana_json: furigana,
-    });
-  }
-
-  const { error: linesError } = await service.from("transcript_lines").insert(linesWithFurigana);
+  const { error: linesError } = await service
+    .from("transcript_lines")
+    .insert(lines.map((line) => ({ transcript_id: transcriptId, ...line })));
   if (linesError) throw linesError;
 
-  return { ok: true, data: { transcriptId, lineCount: linesWithFurigana.length } };
+  return { transcriptId, lineCount: lines.length };
+}
+
+export type ImportVideoFromSrtResult =
+  | { ok: true; data: { videoId: string; created: boolean; lineCount: number; translatedCount: number } }
+  | GuardFailure
+  /** `libraryAccess` is the existing row's, or `null` when another writer created it a moment ago. */
+  | { ok: false; status: 409; exists: true; libraryAccess: "PRIVATE" | "FREE" | "PLUS" | null }
+  | { ok: false; status: 422 | 503 }
+  | { ok: false; status: 429; retryAfter: number };
+
+const UNIQUE_VIOLATION = "23505";
+
+/**
+ * Builds a lesson from subtitle files the admin already has, with no YouTube
+ * caption request — the route that keeps working while YouTube rate-limits
+ * caption fetches. Only oEmbed metadata is read from YouTube, and only for a
+ * video the catalogue does not hold yet.
+ *
+ * A new video is inserted PRIVATE, given its transcript, and only then set to
+ * `libraryAccess`, so a published lesson never lacks lines (see
+ * `promoteVideo`); if the transcript write fails, the new row is removed again
+ * so a retry starts clean. A video that already exists answers 409 unless
+ * `replace` is set: replacing deletes the old lines, and with them every
+ * learner note and mark on them. A replaced video keeps its access level.
+ */
+export async function importVideoFromSrt(input: {
+  youtubeVideoId: string;
+  libraryAccess: "FREE" | "PLUS";
+  format: "srt" | "vtt";
+  content: string;
+  translation?: string;
+  replace?: boolean;
+}): Promise<ImportVideoFromSrtResult> {
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const limited = rateLimit(`admin:videos:srt-import:${admin.user.id}`, TRANSCRIPT_LIMIT);
+  if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
+
+  const lines = parseBilingualTranscript(input.content, input.translation ?? null, input.format);
+  if (lines.length === 0 || lines.length > MAX_TRANSCRIPT_LINES) return { ok: false, status: 422 };
+  const translatedCount = lines.filter((line) => line.textTranslation !== undefined).length;
+
+  const service = createServiceClient();
+  const { data: existing, error: existingError } = await service
+    .from("videos")
+    .select("id, library_access")
+    .eq("youtube_video_id", input.youtubeVideoId)
+    .maybeSingle();
+  if (existingError) throw existingError;
+
+  if (existing) {
+    const row = existing as { id: string; library_access: "PRIVATE" | "FREE" | "PLUS" };
+    if (!input.replace) return { ok: false, status: 409, exists: true, libraryAccess: row.library_access };
+    const videoId = row.id;
+    const { lineCount } = await writeVideoTranscript(service, videoId, lines);
+    return { ok: true, data: { videoId, created: false, lineCount, translatedCount } };
+  }
+
+  let metadata: LessonMetadata | null;
+  try {
+    metadata = lessonMetadata(await fetchOembed(input.youtubeVideoId));
+  } catch (err) {
+    console.error(`[admin] oEmbed failed for SRT import of ${input.youtubeVideoId}:`, err);
+    return { ok: false, status: 503 };
+  }
+  if (!metadata) return { ok: false, status: 503 };
+
+  const last = lines.at(-1);
+  const { data: inserted, error: insertError } = await service
+    .from("videos")
+    .insert({
+      youtube_video_id: input.youtubeVideoId,
+      title: metadata.title,
+      thumbnail_url: metadata.thumbnailUrl,
+      channel_title: metadata.channelTitle,
+      duration_seconds: last ? Math.ceil(last.endTime ?? last.startTime) : null,
+      library_access: "PRIVATE",
+    })
+    .select("id")
+    .single();
+  // Another import, or a caption job, created it in the meantime.
+  if (insertError?.code === UNIQUE_VIOLATION) return { ok: false, status: 409, exists: true, libraryAccess: null };
+  if (insertError) throw insertError;
+  const videoId = (inserted as { id: string }).id;
+
+  let lineCount: number;
+  try {
+    ({ lineCount } = await writeVideoTranscript(service, videoId, lines));
+  } catch (err) {
+    // Only while still PRIVATE, as this import left it: never a row someone has since published.
+    const { error: cleanupError } = await service.from("videos").delete().eq("id", videoId).eq("library_access", "PRIVATE");
+    if (cleanupError) console.error(`[admin] could not remove the half-imported video ${videoId}:`, cleanupError);
+    throw err;
+  }
+
+  const { error: accessError } = await service.from("videos").update({ library_access: input.libraryAccess }).eq("id", videoId);
+  if (accessError) throw accessError;
+
+  return { ok: true, data: { videoId, created: true, lineCount, translatedCount } };
 }
