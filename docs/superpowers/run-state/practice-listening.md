@@ -13,8 +13,10 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 - `AGENTS.md`, `.codex/docs/workflow.md`, `docs/lessons.md`.
 - Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` (approved 2026-10-15; B2 = §5, §6.2,
   B2 rows of §7–§9).
-- Plan `docs/superpowers/plans/2026-10-21-practice-listening.md` (11 tasks, rulings P1–P9) — awaiting the owner's
-  review. Execution method not chosen yet.
+- Plan `docs/superpowers/plans/2026-10-21-practice-listening.md` (10 tasks, rulings P1–P9). Owner 2026-10-21:
+  subagent-driven chosen; P1–P9 accepted in direction with notes (P3 must work on fresh replay AND upgrade, one
+  home; P5 label "Nghe (gõ chính tả)"; redirect keeps locale, id, deep links, E2E). Revised plan sent for the
+  owner's final review; no product code before that approval. No merge before the owner's Chrome check.
 
 ## Accepted commits
 
@@ -24,8 +26,10 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Contracts and decisions
 
-- Plan-time rulings P1–P9 are in the plan. P3 (four SQL read functions move from 043/045 to 048) and P5 (Dashboard
-  copy lands on the `skills.listening` label) are flagged for the owner.
+- Plan-time rulings P1–P9 are in the plan. P3 revised 2026-10-21 after measuring: 043/045/047 are applied on the
+  owner's DB; nothing in 044–047 calls the five read functions; `check_function_bodies = on` rejects a `language
+  sql` body naming a missing column. So all five functions that read B2 columns (incl. `practice_stats` from 047)
+  have their single home in 048; Task 1 gates both the upgrade path and a fresh replay.
 
 ## Verification
 
@@ -43,5 +47,5 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Owner reviews the plan and chooses the execution method.
+1. Owner's final review of the revised plan; then subagent-driven execution from Task 1.
 2. Task 1 Step 0: count legacy `dictation_attempts` on the owner's DB before migrating.
