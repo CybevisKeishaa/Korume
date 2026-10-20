@@ -169,7 +169,8 @@ function parseCaptions(result: CaptionResult | null): CaptionResult {
   const lines = parsed.data.lines.map((line) => ({
     ...line,
     textJp: sanitizeTranscriptText(line.textJp),
-    textTranslation: line.textTranslation === null ? null : sanitizeTranscriptText(line.textTranslation),
+    // A translation that sanitizes to nothing is no translation: "" would render an empty reveal.
+    textTranslation: line.textTranslation === null ? null : sanitizeTranscriptText(line.textTranslation) || null,
   }));
   if (lines.some((line) => line.textJp.length === 0)) {
     throw new LessonCreationPipelineError("transcript_unavailable");

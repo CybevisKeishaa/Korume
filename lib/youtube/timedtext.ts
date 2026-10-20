@@ -57,11 +57,16 @@ function playerUrl(apiKey: string): string {
   return `https://www.youtube.com/youtubei/v1/player?key=${encodeURIComponent(apiKey)}`;
 }
 
+/** A numeric entity past U+10FFFF stays as written: `String.fromCodePoint` would throw on it. */
+function codePoint(entity: string, value: number): string {
+  return value <= 0x10ffff ? String.fromCodePoint(value) : entity;
+}
+
 /** Decodes named entities YouTube emits plus numeric ones (`&#39;`, `&#x27;`). */
 function decodeEntities(text: string): string {
   return text
-    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => String.fromCodePoint(Number.parseInt(hex, 16)))
-    .replace(/&#(\d+);/g, (_, dec: string) => String.fromCodePoint(Number.parseInt(dec, 10)))
+    .replace(/&#x([0-9a-f]+);/gi, (entity, hex: string) => codePoint(entity, Number.parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (entity, dec: string) => codePoint(entity, Number.parseInt(dec, 10)))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&quot;/g, '"')

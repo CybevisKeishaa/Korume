@@ -244,6 +244,18 @@ describe("processClaimedLessonCreationJob", () => {
     expect(log).toHaveBeenCalledTimes(1);
   });
 
+  it("stores a translation that sanitizes to nothing as null, not an empty string", async () => {
+    const dependency = providers({ fetchCaptions: vi.fn().mockResolvedValue({
+      source: "youtube_caption",
+      lines: [{ startTime: 0, endTime: 1, textJp: "日本語", textTranslation: "<b></b>" }],
+    }) });
+    const store = persistence();
+
+    await processClaimedLessonCreationJob(claim(), dependency, store);
+
+    expect(store.finalizations[0]?.content?.lines[0]?.textTranslation).toBeNull();
+  });
+
   it("reports a permanent transcript failure when the caption provider has no usable captions", async () => {
     const dependency = providers({ fetchCaptions: vi.fn().mockResolvedValue(null) });
     const store = persistence();

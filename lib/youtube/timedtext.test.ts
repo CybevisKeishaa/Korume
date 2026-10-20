@@ -119,6 +119,26 @@ describe("fetchJapaneseCaptions", () => {
     expect(lines?.map((line) => line.textTranslation)).toEqual([null, null]);
   });
 
+  it("keeps an out-of-range numeric entity as written instead of throwing the lesson away", async () => {
+    route({
+      player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: VI_URL, languageCode: "vi" }])),
+      body: (url) => new Response(url.searchParams.get("lang") === "vi"
+        ? '<transcript><text start="0.5" dur="2">Xin &amp;#99999999; &amp;#x110000; chào</text></transcript>'
+        : CAPTION_BODY_XML),
+    });
+    const lines = await fetchJapaneseCaptionsForWorker(VIDEO_ID);
+    expect(lines?.map((line) => line.textTranslation)).toEqual(["Xin &#99999999; &#x110000; chào", null]);
+  });
+
+  it.each([
+    ["needs a PO token", `${VI_URL}&exp=xpe`],
+    ["is off YouTube", "https://evil.example/api/timedtext?lang=vi"],
+  ])("never fetches a Vietnamese track that %s, and keeps the Japanese lines", async (_, viUrl) => {
+    const calls = route({ player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: viUrl, languageCode: "vi" }])) });
+    await expect(fetchJapaneseCaptionsForWorker(VIDEO_ID)).resolves.toHaveLength(2);
+    expect(calls.map((c) => c.url.searchParams.get("lang"))).toEqual([null, null, "ja"]);
+  });
+
   it("passes the EU consent page with a CONSENT cookie", async () => {
     let served = 0;
     const calls = route({ watch: () => new Response(served++ === 0 ? CONSENT_HTML : WATCH_HTML) });
