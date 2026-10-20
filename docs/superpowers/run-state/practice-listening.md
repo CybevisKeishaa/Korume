@@ -27,7 +27,7 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 | Task | Status | Commit |
 |---|---|---|
-| plan | written 2026-10-21, awaiting owner review | this commit |
+| plan | APPROVED by the owner 2026-10-21 at `f800a8af` (subagent-driven), plus the Task 1 representativeness condition | `0288a15e`, `b051a539`, `f800a8af`, this commit |
 
 ## Contracts and decisions
 
@@ -46,11 +46,17 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 - Docker Desktop + `npx supabase start` needed from Task 1; build and serve only in this worktree; every shell
   command `Set-Location`s here first (the tool cwd is the main checkout).
 
+- Owner approval 2026-10-21 (`f800a8af`) with one stop condition, written into Task 1 Step 3: D1 is a faithful copy
+  of the owner's DB (same version ≠ same schema, since 043/045 were edited after being applied); a schema + grants
+  diff and a data/FK/function-result gate must pass before anything else on D1; a D0 replay of master's 001–047
+  reports drift. Any B2-relevant difference or an unbuildable D0/D1/D2 → UNMET, stop before the owner's DB.
+  Learner-data dumps stay in the git-ignored `.superpowers/` workspace. Owner: no need to ask about small design
+  choices already in the spec; stop for data-loss risk, scope change or architecture change.
+
 ## Blockers
 
-- Owner review of the plan.
+- None.
 
 ## Next actions
 
-1. Owner's final review of the revised plan; then subagent-driven execution from Task 1.
-2. Task 1 Step 0: count legacy `dictation_attempts` on the owner's DB before migrating.
+1. Task 1 (subagent-driven), starting with Step 0 read-only baseline on the owner's DB.

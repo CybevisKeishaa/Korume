@@ -100,13 +100,13 @@
   - `practice_activity`: `dictation_lines` = `count(distinct transcript_line_id)` over rows with `status = 'submitted'` (both formats; P9); `last_at` / `last_video_id` over the same rows.
 - Produces (tooling): `scripts/verify-listening-gate.ps1 [-Database <name>]` (default `postgres`), so the same gate runs against a disposable database.
 
-**Where each step runs:** steps 0 and 9–10 touch the owner's DB (read-only in step 0; one `migration up` and self-cleaning gates in 9–10). Steps 3–8 run only on disposable databases.
+**Where each step runs:** steps 0 and 9–10 touch the owner's DB (read-only in steps 0 and 3's copy/diff; one `migration up` and self-cleaning gates in 9–10). Steps 3–8 run only on disposable databases (D0 drift replay, D1 copy of the owner's DB, D2 fresh replay), all dropped at the end of the step that uses them.
 
 - [ ] **Step 0: Owner's DB — read-only baseline** (Docker + `npx supabase start` running; spec §9 migration gate). Confirm `select max(version) from supabase_migrations.schema_migrations` is `20261015000047`, then save to `.superpowers/sdd/2026-10-21-practice-listening/`:
   - `legacy-count.txt`: `select count(*), count(*) filter (where accuracy_score is null) from dictation_attempts` (B1 measured `107|0` on 2026-10-17);
   - `legacy-before.txt`: `select id, user_id, transcript_line_id, accuracy_score, user_input, created_at from dictation_attempts order by id`;
   - `functions-before.txt`: for each user who owns legacy rows, `lesson_summary_evidence` (for each of their lessons), `weekly_skill_windows`, `weakness_scores`, `practice_activity` called with that user's `request.jwt.claims` inside `begin … rollback` — the listening numbers each consumer returns today.
-  Also `pg_dump --data-only --table=public.dictation_attempts` of the owner's DB to `legacy-rows.sql` (used to seed the disposable upgrade copy in Step 6). Nothing in this step writes to the owner's DB.
+  Nothing in this step writes to the owner's DB. Every file holding learner data stays in the git-ignored `.superpowers/` workspace (`.gitignore:61`) and is never committed.
 
 - [ ] **Step 1: Write the failing DB test** `supabase/tests/practice-listening.sql` in the harness style of `supabase/tests/practice-pronunciation.sql` (fixed uuids, prefix `listengate-`, `set local role` + `request.jwt.claims`, `raise exception 'FAIL n'` / `raise notice 'PASS n'`, cleanup on the way in and out — L-017). Fixture: users A, B; one lesson, lines l1–l3; attempt rows inserted as `postgres` with explicit `format`/`status` (the backfill rule is checked on a temp copy in case 2). Cases:
   1. **Privileges (D25):** as `authenticated` A, `insert into dictation_attempts (user_id, user_input, accuracy_score, format, status) values (A, 'x', 50, 'typing', 'submitted')` raises `insufficient_privilege` (PASS 1a); `update … set accuracy_score = 100` raises (PASS 1b); A's `select count(*)` sees only A's rows.
@@ -122,7 +122,14 @@
 
 - [ ] **Step 2: Gate script** `scripts/verify-listening-gate.ps1` — copy `scripts/verify-practice-gate.ps1`, point it at `supabase/tests/practice-listening.sql`, add the `-Database` parameter passed to `psql -d`.
 
-- [ ] **Step 3: Disposable database D1 at 047 — RED.** Build it exactly as B1 did (`.worktrees/practice-pronunciation/.superpowers/sdd/2026-10-15-practice-pronunciation/task-1-report.md` item 7): `create database listening_t1_d1 template template0` in the same local container; bootstrap only the Supabase platform schemas (auth/storage/extensions — B1's `task-1-supabase-base.sql` if the CLI version is unchanged, else regenerate it the same way, read-only `pg_dump --schema-only` of those schemas); apply migrations `001 … 047` in filename order from **master** (`git show master:supabase/migrations/<file>`) so D1 is the owner's schema as it is today; load `legacy-rows.sql`. Run `scripts/verify-listening-gate.ps1 -Database listening_t1_d1` → **FAIL at case 1** (columns missing). Write 048 only after this RED.
+- [ ] **Step 3: Disposable database D1 = a copy of the owner's DB as it is — then RED.** Same version 047 does not mean the same schema (043 and 045 were edited after they were applied), so D1 is **copied from the owner's DB**, not replayed from migration files (owner 2026-10-21):
+  1. `create database listening_t1_d1 template template0` in the same local container. Copy the owner's DB into it with a read-only `pg_dump` of the owner's DB piped straight into `psql -d listening_t1_d1` inside the container (no dump file on disk): the `public` schema in full (schema, data, grants, policies, triggers, functions) and the Supabase platform pieces it depends on (the `auth` schema with `auth.users`, `storage`, the extensions in use; B1's `task-1-report.md` item 7 shows which platform objects the product needs). Restore with constraints on, so a missing parent row fails the copy instead of being dropped.
+  2. **Representativeness gate (must pass before anything else on D1):**
+     - **Schema:** `pg_dump --schema-only --schema=public` of the owner's DB and of D1, normalised (database name stripped), diff → empty; plus `has_function_privilege` / `has_table_privilege` for `anon`, `authenticated`, `service_role` on `dictation_attempts`, `shadowing_sessions`, `transcript_lines`, `transcripts`, `videos`, `users`, `user_video_progress`, `sentence_marks`, `sentence_mining_cards`, `learning_outcomes` and the five moved functions → identical in both. Any difference is listed; one that touches a B2 object, its grants, policies, triggers or the five functions stops the task (UNMET).
+     - **Data:** per-table row counts equal for every `public` table and `auth.users`; every foreign key of `dictation_attempts` (and of the tables it references) holds in D1 (`select` of orphans per FK → 0, and no constraint was skipped during restore); the Step 0 queries run on D1 give results identical to `legacy-before.txt` and `functions-before.txt`.
+  3. **Drift report (information for the owner, B2-relevant drift stops the task):** replay `001 … 047` from **master** (`git show master:supabase/migrations/<file>`) into a third disposable database D0 the way B1 did (template0 + platform bootstrap), dump its `public` schema and diff it with the owner's. Record every difference in the run state; drop D0. A difference in a B2 object means fresh replay and the owner's DB disagree before B2 starts — stop and report it.
+  4. Run `scripts/verify-listening-gate.ps1 -Database listening_t1_d1` → **FAIL at case 1** (columns missing). Write 048 only after this RED.
+  If D1 cannot be copied faithfully, or either gate in 2 is not green, record **UNMET** and stop before 048 is applied anywhere that matters (Step 8).
 
 - [ ] **Step 4: Write 048 in full** — table part first, then the five moved functions:
 
@@ -185,7 +192,7 @@ attempts as (
 --        else (case when ls.score < p_review_below then 'needs_review' else 'scored' end) end
 ```
 
-- [ ] **Step 5: D1 — upgrade path GREEN.** Apply 048 to D1 (the 047 schema with the owner's real legacy rows): exit 0. Run against D1: the listening gate and the existing practice, summary, dashboard, erasure and profile SQL gates (each `.sql` piped with `psql -d listening_t1_d1`, as B1 did) → all PASS. Compatibility on D1: `legacy-before` query → same `id, accuracy_score, user_input`; every row `format = 'typing'`, `status` per D21; the Step 0 function calls → the same listening numbers as `functions-before.txt` (any difference is reported with its cause before going on).
+- [ ] **Step 5: D1 — upgrade path GREEN.** Apply 048 to D1 (the copy of the owner's DB) with the same command shape `migration up` uses (a single transaction of the file): exit 0. Run against D1: the listening gate and the existing practice, summary, dashboard, erasure and profile SQL gates (each `.sql` piped with `psql -d listening_t1_d1`, as B1 did) → all PASS. Compatibility on D1: `legacy-before` query → same `id, accuracy_score, user_input`; every row `format = 'typing'`, `status` per D21; the Step 0 function calls → the same listening numbers as `functions-before.txt` (any difference is reported with its cause before going on).
 
 - [ ] **Step 6: D1 — mutations RED, then restored GREEN.** On D1 only, `create or replace` a mutated definition, run the listening gate, restore the canonical text from 048, rerun:
   - trigger without `tg_op = 'INSERT' or` → case 4 RED;
@@ -195,7 +202,7 @@ attempts as (
 
 - [ ] **Step 7: Disposable database D2 — fresh replay GREEN.** New `listening_t1_d2`, same bootstrap, apply the **branch's** full chain `001 … 048` in order: exit 0 (this proves 043/045/047 no longer need the moved functions and 048 creates them). Run the listening, practice, summary, dashboard, erasure and profile gates against D2 → all PASS. Drop D2 and confirm both catalogs are gone.
 
-- [ ] **Step 8: Stop point.** If D1 or D2 could not be built, or any gate above is not green, stop: report the gate as unmet to the owner (L-050). Nothing touches the owner's DB.
+- [ ] **Step 8: Stop point.** If D0, D1 or D2 could not be built, if the representativeness gate or the drift report found a B2-relevant difference, or if any gate above is not green, stop: report the gate as UNMET to the owner (L-050). Nothing touches the owner's DB.
 
 - [ ] **Step 9: Owner's DB — upgrade once.** `npx supabase migration up` (applies only 048). No `psql` hand-apply, no mutation, no reset.
 
