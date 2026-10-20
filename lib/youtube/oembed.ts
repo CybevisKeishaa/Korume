@@ -6,6 +6,7 @@
  */
 import { z } from "zod";
 import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { sanitizeTranscriptText } from "@/lib/transcript/sanitize";
 
 export interface OembedResult {
   title: string;
@@ -91,5 +92,37 @@ export async function fetchOembed(videoId: string): Promise<OembedResult> {
     title: parsed.data.title,
     thumbnailUrl: parsed.data.thumbnail_url,
     authorName: typeof parsed.data.author_name === "string" ? parsed.data.author_name : null,
+  };
+}
+
+export interface LessonMetadata {
+  title: string;
+  thumbnailUrl: string;
+  channelTitle: string | null;
+}
+
+/**
+ * The one bar oEmbed metadata must clear before it becomes a lesson row, for the
+ * lesson-creation worker and the admin subtitle import alike: a title that is
+ * not blank once sanitized, and an https thumbnail (it is rendered as an
+ * `<img src>`). `null` when either fails. The channel name never fails a lesson;
+ * it is cut to 200 code points, as `finalize_lesson_creation_job` does, so a
+ * surrogate pair is never split.
+ */
+export function lessonMetadata(oembed: OembedResult): LessonMetadata | null {
+  const title = sanitizeTranscriptText(oembed.title);
+  if (title.length === 0) return null;
+  let thumbnail: URL;
+  try {
+    thumbnail = new URL(oembed.thumbnailUrl);
+  } catch {
+    return null;
+  }
+  if (thumbnail.protocol !== "https:") return null;
+  const authorName = oembed.authorName?.trim() ?? "";
+  return {
+    title,
+    thumbnailUrl: oembed.thumbnailUrl,
+    channelTitle: authorName.length > 0 ? Array.from(authorName).slice(0, 200).join("") : null,
   };
 }

@@ -119,15 +119,15 @@ describe("fetchJapaneseCaptions", () => {
     expect(lines?.map((line) => line.textTranslation)).toEqual([null, null]);
   });
 
-  it("keeps an out-of-range numeric entity as written instead of throwing the lesson away", async () => {
+  it("keeps a numeric entity that is not a scalar value as written instead of losing the lesson", async () => {
     route({
       player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: VI_URL, languageCode: "vi" }])),
       body: (url) => new Response(url.searchParams.get("lang") === "vi"
-        ? '<transcript><text start="0.5" dur="2">Xin &amp;#99999999; &amp;#x110000; chào</text></transcript>'
+        ? '<transcript><text start="0.5" dur="2">Xin &amp;#99999999; &amp;#x110000; &amp;#55296; chào</text></transcript>'
         : CAPTION_BODY_XML),
     });
     const lines = await fetchJapaneseCaptionsForWorker(VIDEO_ID);
-    expect(lines?.map((line) => line.textTranslation)).toEqual(["Xin &#99999999; &#x110000; chào", null]);
+    expect(lines?.map((line) => line.textTranslation)).toEqual(["Xin &#99999999; &#x110000; &#55296; chào", null]);
   });
 
   it.each([

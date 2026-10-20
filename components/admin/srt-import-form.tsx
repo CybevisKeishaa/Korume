@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useTranslations } from "@/lib/i18n";
+import { ConfirmDialog } from "./confirm-dialog";
 import { readErrorMessage } from "./video-queue";
 
-type Status = { kind: "idle" | "busy" } | { kind: "done" | "error"; message: string };
+type Status = { kind: "idle" | "busy" | "confirmReplace" } | { kind: "done" | "error"; message: string };
 
 const FILE_INPUT =
   "mt-1 block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-card file:px-3 file:py-1.5 file:text-sm";
@@ -15,20 +16,25 @@ const FILE_INPUT =
 /**
  * Builds a lesson from subtitle files the admin already has (`importVideoFromSrt`):
  * no YouTube caption request, so it works while YouTube rate-limits caption
- * fetches. The Vietnamese file is optional and aligned onto the Japanese lines by time.
+ * fetches. The Vietnamese file is optional and aligned onto the Japanese lines by
+ * time. A video that already exists is replaced only after an explicit confirm,
+ * because replacing deletes learners' notes and marks on the old lines.
  */
 export function SrtImportForm() {
   const t = useTranslations("admin");
+  const tCommon = useTranslations("common");
   const [youtubeUrl, setYoutubeUrl] = useState("");
   const [libraryAccess, setLibraryAccess] = useState<"FREE" | "PLUS">("FREE");
   const [japanese, setJapanese] = useState<File | null>(null);
   const [vietnamese, setVietnamese] = useState<File | null>(null);
+  const [formKey, setFormKey] = useState(0);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
-  async function submit(event: FormEvent<HTMLFormElement>): Promise<void> {
-    event.preventDefault();
-    if (!japanese) return;
-    const form = event.currentTarget;
+  async function send(replace: boolean): Promise<void> {
+    if (!japanese) {
+      setStatus({ kind: "error", message: t("videos.srtImport.japaneseMissing") });
+      return;
+    }
     setStatus({ kind: "busy" });
     try {
       const res = await fetch("/api/admin/videos/import-srt", {
@@ -37,12 +43,17 @@ export function SrtImportForm() {
         body: JSON.stringify({
           youtubeUrl,
           libraryAccess,
-          // Both files are read in the Japanese file's format.
+          // SRT and VTT parse alike; the Japanese file names the format for both.
           format: japanese.name.toLowerCase().endsWith(".vtt") ? "vtt" : "srt",
           content: await japanese.text(),
           ...(vietnamese ? { translation: await vietnamese.text() } : {}),
+          ...(replace ? { replace: true } : {}),
         }),
       });
+      if (res.status === 409) {
+        setStatus({ kind: "confirmReplace" });
+        return;
+      }
       if (!res.ok) {
         setStatus({
           kind: "error",
@@ -58,13 +69,19 @@ export function SrtImportForm() {
           translated: data.translatedCount,
         }),
       });
-      form.reset();
       setYoutubeUrl("");
       setJapanese(null);
       setVietnamese(null);
+      // A file input cannot be cleared through React state; remounting the form resets it.
+      setFormKey((key) => key + 1);
     } catch {
       setStatus({ kind: "error", message: t("videos.srtImport.error") });
     }
+  }
+
+  function submit(event: FormEvent<HTMLFormElement>): void {
+    event.preventDefault();
+    void send(false);
   }
 
   const busy = status.kind === "busy";
@@ -72,7 +89,7 @@ export function SrtImportForm() {
     <section aria-labelledby="srt-import-heading" className="rounded-lg border border-border bg-card p-4">
       <h2 id="srt-import-heading" className="text-lg font-semibold">{t("videos.srtImport.heading")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("videos.srtImport.description")}</p>
-      <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={(event) => void submit(event)}>
+      <form key={formKey} className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={submit}>
         <div className="sm:col-span-2">
           <Label htmlFor="srt-import-url">{t("videos.srtImport.urlLabel")}</Label>
           <Input
@@ -90,8 +107,6 @@ export function SrtImportForm() {
             id="srt-import-ja"
             type="file"
             accept=".srt,.vtt"
-            // Not `required`: the submit button already waits for this file.
-            aria-required="true"
             className={FILE_INPUT}
             onChange={(event) => setJapanese(event.target.files?.[0] ?? null)}
           />
@@ -120,15 +135,24 @@ export function SrtImportForm() {
           </select>
         </div>
         <div className="flex items-end">
-          <Button type="submit" disabled={busy || !japanese || youtubeUrl.trim().length === 0}>
+          <Button type="submit" disabled={busy}>
             {busy ? t("videos.srtImport.importing") : t("videos.srtImport.submit")}
           </Button>
         </div>
       </form>
-      <p className="mt-2 text-sm text-muted-foreground">{t("videos.srtImport.replaceNote")}</p>
       {/* Always mounted, so the result is announced when it arrives. */}
       <p role="status" className="mt-3 text-sm">{status.kind === "done" ? status.message : ""}</p>
       {status.kind === "error" && <p role="alert" className="mt-3 text-sm text-danger-strong">{status.message}</p>}
+      <ConfirmDialog
+        open={status.kind === "confirmReplace"}
+        title={t("videos.srtImport.replaceTitle")}
+        description={t("videos.srtImport.replaceDescription")}
+        confirmLabel={t("videos.srtImport.replaceConfirm")}
+        cancelLabel={tCommon("actions.cancel")}
+        destructive
+        onConfirm={() => void send(true)}
+        onCancel={() => setStatus({ kind: "idle" })}
+      />
     </section>
   );
 }

@@ -288,8 +288,11 @@
       "importing": "Đang nhập…",
       "created": "Đã tạo bài học: {lines} câu, {translated} câu có bản dịch.",
       "replaced": "Video đã có trong thư viện — đã thay phụ đề: {lines} câu, {translated} câu có bản dịch. Gói của video được giữ nguyên.",
-      "replaceNote": "Nếu video đã có, phụ đề cũ sẽ bị thay và các đánh dấu của người học trên các câu cũ sẽ mất.",
-      "error": "Chưa thể nhập bài học này."
+      "error": "Chưa thể nhập bài học này.",
+      "japaneseMissing": "Hãy chọn file phụ đề tiếng Nhật.",
+      "replaceTitle": "Thay phụ đề của video đã có?",
+      "replaceDescription": "Video này đã có trong thư viện. Thay phụ đề sẽ xoá mọi ghi chú và đánh dấu của người học trên các câu cũ, không hoàn tác được. Gói của video được giữ nguyên.",
+      "replaceConfirm": "Thay phụ đề"
     }
   },
   "styleGuide": {

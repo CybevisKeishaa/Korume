@@ -2,9 +2,9 @@ import "server-only";
 import { createServiceClient } from "@/lib/supabase/service";
 import { requireAdmin, type RequireAdminResult } from "@/lib/admin/guard";
 import { rateLimit } from "@/lib/rate-limit";
-import { parseBilingualTranscript, parseTranscript, sanitizeTranscriptText } from "@/lib/transcript";
+import { parseBilingualTranscript, parseTranscript } from "@/lib/transcript";
 import type { ParsedLine, TranscriptFormat } from "@/lib/transcript";
-import { fetchOembed } from "@/lib/youtube";
+import { fetchOembed, lessonMetadata, type LessonMetadata } from "@/lib/youtube";
 import { toFurigana } from "@/lib/japanese";
 
 /**
@@ -486,6 +486,29 @@ async function writeVideoTranscript(
   videoId: string,
   parsedLines: readonly ParsedLine[],
 ): Promise<{ transcriptId: string; lineCount: number }> {
+  // Furigana first (seconds for a long file), so the delete, the header and the
+  // lines go in back to back: the window in which the lesson has no lines, or a
+  // caption job's finalize could fill the empty header with its own, stays short.
+  const lines = [];
+  for (const line of parsedLines) {
+    let furigana: unknown = null;
+    try {
+      furigana = await toFurigana(line.textJp);
+    } catch (err) {
+      // Best-effort, same posture as lib/data/reading.ts::ensureFurigana —
+      // a tokenizer hiccup must not fail the whole transcript attach.
+      console.error(`[admin] furigana generation failed for a transcript line on video ${videoId}:`, err);
+    }
+    lines.push({
+      start_time: line.startTime,
+      end_time: line.endTime,
+      text_jp: line.textJp,
+      text_translation: line.textTranslation ?? null,
+      furigana_json: furigana,
+    });
+  }
+
+  // ponytail: three statements, not one transaction; a transactional RPC would close the window entirely.
   const { error: deleteError } = await service.from("transcripts").delete().eq("video_id", videoId);
   if (deleteError) throw deleteError;
 
@@ -497,38 +520,22 @@ async function writeVideoTranscript(
   if (insertError) throw insertError;
 
   const transcriptId = (transcript as { id: string }).id;
-
-  const linesWithFurigana = [];
-  for (const line of parsedLines) {
-    let furigana: unknown = null;
-    try {
-      furigana = await toFurigana(line.textJp);
-    } catch (err) {
-      // Best-effort, same posture as lib/data/reading.ts::ensureFurigana —
-      // a tokenizer hiccup must not fail the whole transcript attach.
-      console.error(`[admin] furigana generation failed for a transcript line on video ${videoId}:`, err);
-    }
-    linesWithFurigana.push({
-      transcript_id: transcriptId,
-      start_time: line.startTime,
-      end_time: line.endTime,
-      text_jp: line.textJp,
-      text_translation: line.textTranslation ?? null,
-      furigana_json: furigana,
-    });
-  }
-
-  const { error: linesError } = await service.from("transcript_lines").insert(linesWithFurigana);
+  const { error: linesError } = await service
+    .from("transcript_lines")
+    .insert(lines.map((line) => ({ transcript_id: transcriptId, ...line })));
   if (linesError) throw linesError;
 
-  return { transcriptId, lineCount: linesWithFurigana.length };
+  return { transcriptId, lineCount: lines.length };
 }
 
 export type ImportVideoFromSrtResult =
   | { ok: true; data: { videoId: string; created: boolean; lineCount: number; translatedCount: number } }
   | GuardFailure
+  | { ok: false; status: 409; exists: true }
   | { ok: false; status: 422 | 503 }
   | { ok: false; status: 429; retryAfter: number };
+
+const UNIQUE_VIOLATION = "23505";
 
 /**
  * Builds a lesson from subtitle files the admin already has, with no YouTube
@@ -537,10 +544,11 @@ export type ImportVideoFromSrtResult =
  * video the catalogue does not hold yet.
  *
  * A new video is inserted PRIVATE, given its transcript, and only then set to
- * `libraryAccess`: a failure in between leaves a PRIVATE row in the review
- * queue, never a published lesson without lines (see `promoteVideo`). An
- * existing video keeps its access level and has its transcript replaced, as
- * `replaceVideoTranscript` does.
+ * `libraryAccess`, so a published lesson never lacks lines (see
+ * `promoteVideo`); if the transcript write fails, the new row is removed again
+ * so a retry starts clean. A video that already exists answers 409 unless
+ * `replace` is set: replacing deletes the old lines, and with them every
+ * learner note and mark on them. A replaced video keeps its access level.
  */
 export async function importVideoFromSrt(input: {
   youtubeVideoId: string;
@@ -548,6 +556,7 @@ export async function importVideoFromSrt(input: {
   format: "srt" | "vtt";
   content: string;
   translation?: string;
+  replace?: boolean;
 }): Promise<ImportVideoFromSrtResult> {
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
@@ -557,6 +566,7 @@ export async function importVideoFromSrt(input: {
 
   const lines = parseBilingualTranscript(input.content, input.translation ?? null, input.format);
   if (lines.length === 0 || lines.length > MAX_TRANSCRIPT_LINES) return { ok: false, status: 422 };
+  const translatedCount = lines.filter((line) => line.textTranslation !== undefined).length;
 
   const service = createServiceClient();
   const { data: existing, error: existingError } = await service
@@ -566,47 +576,51 @@ export async function importVideoFromSrt(input: {
     .maybeSingle();
   if (existingError) throw existingError;
 
-  let videoId = (existing as { id: string } | null)?.id ?? null;
-  const created = videoId === null;
-  if (videoId === null) {
-    let metadata: Awaited<ReturnType<typeof fetchOembed>>;
-    try {
-      metadata = await fetchOembed(input.youtubeVideoId);
-    } catch (err) {
-      console.error(`[admin] oEmbed failed for SRT import of ${input.youtubeVideoId}:`, err);
-      return { ok: false, status: 503 };
-    }
-    const title = sanitizeTranscriptText(metadata.title);
-    // Same bar as the worker's parseMetadata: the thumbnail is rendered as an <img src>.
-    if (title.length === 0 || !URL.canParse(metadata.thumbnailUrl) || !metadata.thumbnailUrl.startsWith("https://")) {
-      return { ok: false, status: 503 };
-    }
-    const last = lines.at(-1);
-    const { data: inserted, error: insertError } = await service
-      .from("videos")
-      .insert({
-        youtube_video_id: input.youtubeVideoId,
-        title,
-        thumbnail_url: metadata.thumbnailUrl,
-        channel_title: metadata.authorName ? Array.from(metadata.authorName.trim()).slice(0, 200).join("") || null : null,
-        duration_seconds: last ? Math.ceil(last.endTime ?? last.startTime) : null,
-        library_access: "PRIVATE",
-      })
-      .select("id")
-      .single();
-    if (insertError) throw insertError;
-    videoId = (inserted as { id: string }).id;
+  if (existing) {
+    if (!input.replace) return { ok: false, status: 409, exists: true };
+    const videoId = (existing as { id: string }).id;
+    const { lineCount } = await writeVideoTranscript(service, videoId, lines);
+    return { ok: true, data: { videoId, created: false, lineCount, translatedCount } };
   }
 
-  const { lineCount } = await writeVideoTranscript(service, videoId, lines);
+  let metadata: LessonMetadata | null;
+  try {
+    metadata = lessonMetadata(await fetchOembed(input.youtubeVideoId));
+  } catch (err) {
+    console.error(`[admin] oEmbed failed for SRT import of ${input.youtubeVideoId}:`, err);
+    return { ok: false, status: 503 };
+  }
+  if (!metadata) return { ok: false, status: 503 };
 
-  if (created) {
-    const { error: accessError } = await service.from("videos").update({ library_access: input.libraryAccess }).eq("id", videoId);
-    if (accessError) throw accessError;
+  const last = lines.at(-1);
+  const { data: inserted, error: insertError } = await service
+    .from("videos")
+    .insert({
+      youtube_video_id: input.youtubeVideoId,
+      title: metadata.title,
+      thumbnail_url: metadata.thumbnailUrl,
+      channel_title: metadata.channelTitle,
+      duration_seconds: last ? Math.ceil(last.endTime ?? last.startTime) : null,
+      library_access: "PRIVATE",
+    })
+    .select("id")
+    .single();
+  // Another import, or a caption job, created it in the meantime.
+  if (insertError?.code === UNIQUE_VIOLATION) return { ok: false, status: 409, exists: true };
+  if (insertError) throw insertError;
+  const videoId = (inserted as { id: string }).id;
+
+  let lineCount: number;
+  try {
+    ({ lineCount } = await writeVideoTranscript(service, videoId, lines));
+  } catch (err) {
+    const { error: cleanupError } = await service.from("videos").delete().eq("id", videoId);
+    if (cleanupError) console.error(`[admin] could not remove the half-imported video ${videoId}:`, cleanupError);
+    throw err;
   }
 
-  return {
-    ok: true,
-    data: { videoId, created, lineCount, translatedCount: lines.filter((line) => line.textTranslation !== undefined).length },
-  };
+  const { error: accessError } = await service.from("videos").update({ library_access: input.libraryAccess }).eq("id", videoId);
+  if (accessError) throw accessError;
+
+  return { ok: true, data: { videoId, created: true, lineCount, translatedCount } };
 }

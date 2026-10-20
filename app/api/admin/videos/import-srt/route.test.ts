@@ -59,6 +59,20 @@ describe("POST /api/admin/videos/import-srt", () => {
     expect(importVideoFromSrt).not.toHaveBeenCalled();
   });
 
+  it("passes `replace` through and answers 409 with `exists` when the video already has a lesson", async () => {
+    vi.mocked(importVideoFromSrt).mockResolvedValue({ ok: false, status: 409, exists: true });
+    const response = await post({ ...BODY, replace: false });
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toMatchObject({ exists: true });
+    expect(importVideoFromSrt).toHaveBeenCalledWith(expect.objectContaining({ replace: false }));
+  });
+
+  it("names the field problem the admin can fix", async () => {
+    const response = await post({ ...BODY, content: "x".repeat(200_001) });
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({ error: "Subtitle file is too long (max 200,000 characters)." });
+  });
+
   it("says when YouTube metadata is the problem", async () => {
     vi.mocked(importVideoFromSrt).mockResolvedValue({ ok: false, status: 503 });
     const response = await post(BODY);

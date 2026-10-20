@@ -62,6 +62,8 @@ export const adminSrtImportSchema = z
     format: z.enum(["srt", "vtt"]),
     content: subtitleFileContent,
     translation: subtitleFileContent.optional(),
+    /** Required to overwrite an existing lesson: that deletes learners' notes and marks on its old lines. */
+    replace: z.boolean().optional(),
   })
   .transform(attachVideoId);
 export type AdminSrtImportInput = z.infer<typeof adminSrtImportSchema>;

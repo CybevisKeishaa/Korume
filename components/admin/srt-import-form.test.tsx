@@ -64,8 +64,46 @@ describe("SrtImportForm", () => {
     expect(body).not.toHaveProperty("translation");
   });
 
-  it("cannot submit without a Japanese file", () => {
+  it("asks before replacing an existing lesson, then resends with `replace`", async () => {
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(jsonResponse(409, { error: "exists", exists: true }))
+      .mockResolvedValueOnce(jsonResponse(200, { data: { videoId: "v1", created: false, lineCount: 1, translatedCount: 0 } }));
+    vi.stubGlobal("fetch", fetchMock);
     render(<SrtImportForm />);
-    expect(screen.getByRole("button", { name: "Import lesson" })).toBeDisabled();
+
+    const user = await fill({ ja: subtitle(JA, "ep [ja].srt") });
+    await user.click(screen.getByRole("button", { name: "Import lesson" }));
+    expect(await screen.findByRole("dialog", { name: "Replace this video's transcript?" })).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    await user.click(screen.getByRole("button", { name: "Replace transcript" }));
+
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent("its transcript was replaced: 1 lines"));
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).not.toHaveProperty("replace");
+    expect(JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body))).toMatchObject({ replace: true });
+  });
+
+  it("cancelling the replace sends nothing more", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(jsonResponse(409, { error: "exists", exists: true }));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SrtImportForm />);
+
+    const user = await fill({ ja: subtitle(JA, "ep [ja].srt") });
+    await user.click(screen.getByRole("button", { name: "Import lesson" }));
+    await user.click(await screen.findByRole("button", { name: "Cancel" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("says why it cannot import without a Japanese file", async () => {
+    const fetchMock = vi.fn();
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SrtImportForm />);
+    const user = userEvent.setup();
+    await user.type(screen.getByLabelText("YouTube link or video ID"), "kIDaXEnkjmk");
+    await user.click(screen.getByRole("button", { name: "Import lesson" }));
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Choose the Japanese subtitle file.");
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

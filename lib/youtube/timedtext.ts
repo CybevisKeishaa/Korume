@@ -58,9 +58,13 @@ function playerUrl(apiKey: string): string {
   return `https://www.youtube.com/youtubei/v1/player?key=${encodeURIComponent(apiKey)}`;
 }
 
-/** A numeric entity past U+10FFFF stays as written: `String.fromCodePoint` would throw on it. */
+/**
+ * A numeric entity that is not a scalar value stays as written: past U+10FFFF
+ * `String.fromCodePoint` throws, and a lone surrogate (U+D800–DFFF) is refused
+ * by Postgres once the lines reach finalize as JSON.
+ */
 function codePoint(entity: string, value: number): string {
-  return value <= 0x10ffff ? String.fromCodePoint(value) : entity;
+  return value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff) ? entity : String.fromCodePoint(value);
 }
 
 /** Decodes named entities YouTube emits plus numeric ones (`&#39;`, `&#x27;`). */
