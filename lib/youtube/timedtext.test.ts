@@ -1,7 +1,7 @@
 // lib/youtube/timedtext.test.ts
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
-import { alignTranslations, fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker, parseCaptionBody, pickJapaneseTrack } from "./timedtext";
+import { fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker, parseCaptionBody, pickJapaneseTrack } from "./timedtext";
 
 const VIDEO_ID = "dQw4w9WgXcQ";
 const API_KEY = "AIzaTestKey_123";
@@ -202,21 +202,6 @@ describe("parseCaptionBody", () => {
       { startTime: 1.25, endTime: 2.25, textJp: "It's ok です" },
       { startTime: 4, endTime: 4, textJp: "あ" },
     ]);
-  });
-});
-
-describe("alignTranslations", () => {
-  it("joins every cue into the line it overlaps most and leaves uncovered lines null", () => {
-    const line = (startTime: number, endTime: number) => ({ startTime, endTime, textJp: "日本語" });
-    expect(alignTranslations(
-      [line(0, 2), line(2, 4), line(4, 6)],
-      [
-        { startTime: 0, endTime: 1, textJp: "Một" },
-        { startTime: 1, endTime: 2.4, textJp: "hai" },
-        { startTime: 2.4, endTime: 2.6, textJp: "ba" },
-        { startTime: 6, endTime: 7, textJp: "chạm mép" },
-      ],
-    )).toEqual(["Một hai", "ba", null]);
   });
 });
 

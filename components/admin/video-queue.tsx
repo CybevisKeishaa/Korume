@@ -41,7 +41,7 @@ function formatDuration(seconds: number | null): string | null {
  * moderation tooling, not a learner-facing surface, and the operator needs
  * the real diagnostic (e.g. why an approve/reject/transcript call failed),
  * not a generic fallback. Only `fallback` is translated. */
-async function readErrorMessage(res: Response, fallback: string): Promise<string> {
+export async function readErrorMessage(res: Response, fallback: string): Promise<string> {
   try {
     const body = (await res.json()) as ApiErrorBody;
     return body.error || fallback;

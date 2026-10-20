@@ -1,5 +1,6 @@
 // lib/youtube/timedtext.ts
 import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { alignTranslations } from "@/lib/transcript/align";
 
 /**
  * Best-effort YouTube caption fetch, the same keyless route the
@@ -137,27 +138,6 @@ export function pickJapaneseTrack(tracks: readonly CaptionTrack[]): CaptionTrack
 /** Only a creator's Vietnamese track: auto-generated Vietnamese speech recognition on a Japanese video is noise. */
 function pickVietnameseTrack(tracks: readonly CaptionTrack[]): CaptionTrack | null {
   return tracks.find((t) => t.kind === "manual" && (t.languageCode === "vi" || t.languageCode.startsWith("vi-"))) ?? null;
-}
-
-/**
- * Each translation cue joins the Japanese line it overlaps longest, so a track
- * split at different points still lands; a line no cue overlaps stays `null`.
- */
-export function alignTranslations(lines: readonly TimedTextLine[], cues: readonly TimedTextLine[]): (string | null)[] {
-  const parts: string[][] = lines.map(() => []);
-  for (const cue of cues) {
-    let best = -1;
-    let bestOverlap = 0;
-    lines.forEach((line, index) => {
-      const overlap = Math.min(line.endTime, cue.endTime) - Math.max(line.startTime, cue.startTime);
-      if (overlap > bestOverlap) {
-        best = index;
-        bestOverlap = overlap;
-      }
-    });
-    parts[best]?.push(cue.textJp);
-  }
-  return parts.map((texts) => (texts.length > 0 ? texts.join(" ") : null));
 }
 
 /** The track's XML URL, or `null` when it is not a YouTube URL or needs a PO token we cannot mint. */

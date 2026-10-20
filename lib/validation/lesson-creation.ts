@@ -15,9 +15,9 @@ import { parseVideoId } from "@/lib/youtube";
  * home — the synchronous importer it belonged to no longer exists.
  */
 
-const youtubeUrlField = z.string().trim().min(1, "A YouTube URL is required.");
+export const youtubeUrlField = z.string().trim().min(1, "A YouTube URL is required.");
 
-function attachVideoId<T extends { youtubeUrl: string }>(
+export function attachVideoId<T extends { youtubeUrl: string }>(
   value: T,
   ctx: z.RefinementCtx,
 ): (T & { youtubeVideoId: string }) | never {
