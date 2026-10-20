@@ -177,7 +177,10 @@ a due, over-window row the worker was about to serve — one job, and the retry 
 terminal state reveals is the way back.
 
 Transient failures use bounded exponential backoff and retain their public
-error category. Permanent failures include malformed input discovered before
+error category. A rate-limited provider failure (YouTube HTTP 429, captcha, "not
+a bot") instead waits `RATE_LIMITED_RETRY_DELAY_MS`, half the stale-queued window
+and derived from it, so the job falls due while the stale rule still cannot end it
+(amended 2026-10-20, branch `lesson-creation-rate-limit`). Permanent failures include malformed input discovered before
 enqueue, unavailable metadata, no supported transcript, and final quota
 refusal. The exact retryable provider-error allowlist lives in one worker
 classification module. There are three total execution attempts; an explicit

@@ -1,5 +1,5 @@
 // lib/youtube/timedtext.ts
-import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 import { alignTranslations } from "@/lib/transcript/align";
 
 /**
@@ -183,7 +183,10 @@ async function request(
   }
   if (!response.ok) {
     if (surfaceTransientErrors && isTransientHttpStatus(response.status)) {
-      throw new TransientLessonCreationProviderError(`YouTube ${stage} returned transient HTTP ${response.status}.`);
+      const message = `YouTube ${stage} returned transient HTTP ${response.status}.`;
+      throw response.status === 429
+        ? new RateLimitedLessonCreationProviderError(message)
+        : new TransientLessonCreationProviderError(message);
     }
     return null;
   }
@@ -263,7 +266,7 @@ async function fetchJapaneseCaptionsInternal(
     return lines.map((line, index) => ({ ...line, textTranslation: translations[index] ?? null }));
   } catch (error) {
     if (!(error instanceof CaptionsBlocked)) throw error;
-    if (surfaceTransientErrors) throw new TransientLessonCreationProviderError("YouTube is rate-limiting caption requests.");
+    if (surfaceTransientErrors) throw new RateLimitedLessonCreationProviderError("YouTube is rate-limiting caption requests.");
     return null;
   }
 }

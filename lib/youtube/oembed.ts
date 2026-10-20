@@ -5,7 +5,7 @@
  * YouTube for title/author/thumbnail, never for video bytes.
  */
 import { z } from "zod";
-import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 import { sanitizeTranscriptText } from "@/lib/transcript/sanitize";
 
 export interface OembedResult {
@@ -66,6 +66,10 @@ export async function fetchOembed(videoId: string): Promise<OembedResult> {
     );
   }
 
+  // A 429 says nothing about the video: retried later, never `metadata_unavailable`.
+  if (response.status === 429) {
+    throw new RateLimitedLessonCreationProviderError("YouTube oEmbed returned HTTP 429.");
+  }
   if (!response.ok) {
     throw new OembedFetchError(
       `YouTube oEmbed request failed with status ${response.status}`,

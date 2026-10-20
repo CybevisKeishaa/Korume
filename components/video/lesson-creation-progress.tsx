@@ -178,6 +178,10 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
             );
           })}
         </ol>
+        {/* Inside the live region, so the reason for the wait is announced with the stage list. */}
+        {job.state === "queued" && job.publicErrorCode !== null && (
+          <p className="mt-sm text-body text-muted-foreground">{t("creation.retryScheduled")}</p>
+        )}
       </div>
 
       {job.state === "failed" && (

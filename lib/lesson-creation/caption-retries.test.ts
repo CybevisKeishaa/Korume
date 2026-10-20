@@ -85,7 +85,8 @@ describe.each(STAGES)("production caption retries at the %s request", (stage) =>
     await expect(runLessonCreationPass(NOW)).resolves.toMatchObject({ claimed: 1, requeued: 1, failed: 0 });
     expect(transitionClaimedJob).toHaveBeenLastCalledWith({
       jobId: CLAIM.job.id, leaseToken: CLAIM.leaseToken, step: "failed", error: "temporary_failure",
-      availableAt: "2026-09-14T03:00:01.000Z",
+      // A 429 is YouTube rate-limiting this server: the worker waits minutes, not a second.
+      availableAt: failure === 429 ? "2026-09-14T03:05:00.000Z" : "2026-09-14T03:00:01.000Z",
     });
     expect(finalizeClaimedJob).not.toHaveBeenCalled();
     expect(urls).toEqual(["www.youtube.com/oembed",

@@ -273,8 +273,9 @@ export async function recoverExpiredLessonCreationJobs(now: string): Promise<num
  * acted inside it, read from the `running` rows in the event history. Every path
  * that writes one either mints a lease (`claim`) or presents a live matching one
  * (`transition`), so such an event means a worker was alive in the window, however
- * long the backlog is. The window is several times the lease and the backoff
- * ceiling, both of which live in this file and in `worker.ts`.
+ * long the backlog is. The window is several times the lease and the exponential
+ * backoff ceiling, and exactly twice `RATE_LIMITED_RETRY_DELAY_MS` in `worker.ts`,
+ * which is derived from it: a rate-limited job falls due with half the window left.
  *
  * Passed as an RPC argument rather than written into the migration, so the window
  * keeps one home (AGENTS.md §6) and needs no pin of its own.
