@@ -180,6 +180,10 @@ export function LessonCreationProgress({ job, events, onRetry }: LessonCreationP
         </ol>
       </div>
 
+      {job.state === "queued" && job.publicErrorCode !== null && (
+        <p className="mt-sm text-body text-muted-foreground">{t("creation.retryScheduled")}</p>
+      )}
+
       {job.state === "failed" && (
         <div className="mt-sm">
           <p role="alert" className="text-body text-danger-strong">

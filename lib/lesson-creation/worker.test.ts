@@ -4,11 +4,14 @@ import {
   finalizeClaimedJob,
   getRequesterJob,
   recoverExpiredLessonCreationJobs,
+  STALE_QUEUED_JOB_SECONDS,
   transitionClaimedJob,
   type ClaimedLessonCreationJob,
 } from "./store";
 import type { LessonCreationDependencies } from "./pipeline";
 import {
+  RATE_LIMITED_RETRY_DELAY_MS,
+  RateLimitedLessonCreationProviderError,
   TransientLessonCreationProviderError,
   retryDelayMs,
   runLessonCreationPass,
@@ -222,6 +225,26 @@ describe("runLessonCreationPass", () => {
     });
   });
 
+  it("waits minutes, not seconds, when YouTube rate-limits us", async () => {
+    installRunningStore(claim(2));
+    const dependency = providers({
+      fetchCaptions: vi.fn().mockRejectedValue(new RateLimitedLessonCreationProviderError("YouTube caption-body returned transient HTTP 429.")),
+    });
+
+    await expect(runLessonCreationPass(NOW, dependency)).resolves.toMatchObject({ claimed: 1, requeued: 1, failed: 0 });
+    expect(transitionClaimedJob).toHaveBeenLastCalledWith({
+      jobId: JOB_ID, leaseToken: LEASE_TOKEN, step: "failed", error: "temporary_failure",
+      availableAt: "2026-09-14T03:05:00.000Z",
+    });
+  });
+
+  it("still fails a rate-limited job on its last attempt", async () => {
+    installRunningStore(claim(3));
+    const dependency = providers({ fetchCaptions: vi.fn().mockRejectedValue(new RateLimitedLessonCreationProviderError("429")) });
+
+    await expect(runLessonCreationPass(NOW, dependency)).resolves.toMatchObject({ requeued: 0, failed: 1 });
+  });
+
   it("contains an unclassified provider failure without treating its message as a retry signal", async () => {
     installRunningStore();
     const dependency = providers({ fetchCaptions: vi.fn().mockRejectedValue(new Error("temporary timeout 503")) });
@@ -257,5 +280,14 @@ describe("retryDelayMs", () => {
       retryDelayMs(2),
       retryDelayMs(3),
     ]).toEqual([1_000, 2_000, 4_000]);
+  });
+});
+
+describe("RATE_LIMITED_RETRY_DELAY_MS", () => {
+  // A requeued job falls due with `updated_at` this old; the learner's status read
+  // fails a due job older than the stale window when no worker ran inside it.
+  it("leaves the worker at least half the stale window to claim a job before it can be called stale", () => {
+    expect(RATE_LIMITED_RETRY_DELAY_MS).toBeGreaterThanOrEqual(60_000);
+    expect(RATE_LIMITED_RETRY_DELAY_MS * 2).toBeLessThanOrEqual(STALE_QUEUED_JOB_SECONDS * 1000);
   });
 });

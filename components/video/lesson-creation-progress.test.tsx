@@ -117,6 +117,25 @@ describe("LessonCreationProgress", () => {
     expect(status).toContainElement(screen.getByText("Finding transcript"));
   });
 
+  it("says a requeued job will be retried on its own, without promising when", () => {
+    const { container } = render(
+      <LessonCreationProgress
+        job={job({ state: "queued", step: "failed", publicErrorCode: "temporary_failure" })}
+        events={[event("deduplicating", "queued")]}
+        onRetry={vi.fn()}
+      />,
+    );
+
+    expect(screen.getByText(/We will try again on our own/)).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
+    expect(container.textContent).not.toMatch(/remaining|estimat|about \d|\d+\s*(sec|min)|few minutes/i);
+  });
+
+  it("shows no retry note on a job that has not failed", () => {
+    render(<LessonCreationProgress job={job({ state: "queued", step: "deduplicating" })} events={[]} onRetry={vi.fn()} />);
+    expect(screen.queryByText(/We will try again on our own/)).toBeNull();
+  });
+
   it("promises no percentage, no ETA, and no estimated time", () => {
     const { container } = render(
       <LessonCreationProgress

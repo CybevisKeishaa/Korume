@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { fetchOembed, lessonMetadata, OembedFetchError } from "./oembed";
-import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 
 const ID = "dQw4w9WgXcQ";
 
@@ -75,6 +75,11 @@ describe("fetchOembed — success", () => {
 });
 
 describe("fetchOembed — failure", () => {
+  it("treats HTTP 429 as YouTube rate-limiting us, never as a verdict on the video", async () => {
+    mockFetchOnce({ ok: false, status: 429 });
+    await expect(fetchOembed(ID)).rejects.toBeInstanceOf(RateLimitedLessonCreationProviderError);
+  });
+
   it("throws OembedFetchError on a non-200 status", async () => {
     mockFetchOnce({ ok: false, status: 404 });
     await expect(fetchOembed(ID)).rejects.toThrow(OembedFetchError);

@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import {
   claimNextLessonCreationJob,
   recoverExpiredLessonCreationJobs,
+  STALE_QUEUED_JOB_SECONDS,
   transitionClaimedJob,
 } from "./store";
 import {
@@ -13,8 +14,8 @@ import {
   type LessonCreationDependencies,
 } from "./pipeline";
 import { MAX_LESSON_CREATION_ATTEMPTS, type LessonCreationErrorCode } from "./types";
-export { TransientLessonCreationProviderError } from "./errors";
-import { TransientLessonCreationProviderError } from "./errors";
+export { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "./errors";
+import { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "./errors";
 
 const TRANSIENT_DATABASE_CODES = new Set([
   "08000", "08001", "08003", "08004", "08006", "08007", "08P01",
@@ -33,6 +34,15 @@ export function retryDelayMs(attempt: number): number {
   const safeAttempt = Number.isInteger(attempt) && attempt > 0 ? attempt : 1;
   return Math.min(30_000, 1_000 * (2 ** (safeAttempt - 1)));
 }
+
+/**
+ * The wait after YouTube rate-limits us, derived from the stale window rather
+ * than chosen beside it. A requeued job falls due with its `updated_at` this old,
+ * and the learner's status read fails a due job older than the window when no
+ * worker ran inside it — which on an idle queue is exactly the moment the job
+ * falls due. Half the window leaves the worker the other half to claim it.
+ */
+export const RATE_LIMITED_RETRY_DELAY_MS = (STALE_QUEUED_JOB_SECONDS * 1000) / 2;
 
 function databaseCode(error: unknown): string | null {
   if (typeof error !== "object" || error === null || !("code" in error)) return null;
@@ -107,7 +117,10 @@ export async function runLessonCreationPass(
     const retryable = isExplicitlyTransient(error) &&
       claimed.job.attemptCount < MAX_LESSON_CREATION_ATTEMPTS;
     if (retryable) {
-      const availableAt = new Date(clock().getTime() + retryDelayMs(claimed.job.attemptCount)).toISOString();
+      const delay = error instanceof RateLimitedLessonCreationProviderError
+        ? RATE_LIMITED_RETRY_DELAY_MS
+        : retryDelayMs(claimed.job.attemptCount);
+      const availableAt = new Date(clock().getTime() + delay).toISOString();
       await transitionClaimedJob({
         jobId: claimed.job.id,
         leaseToken: claimed.leaseToken,

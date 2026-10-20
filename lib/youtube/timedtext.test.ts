@@ -1,6 +1,6 @@
 // lib/youtube/timedtext.test.ts
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
+import { RateLimitedLessonCreationProviderError, TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
 import { fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker, parseCaptionBody, pickJapaneseTrack } from "./timedtext";
 
 const VIDEO_ID = "dQw4w9WgXcQ";
@@ -185,6 +185,18 @@ describe("fetchJapaneseCaptionsForWorker", () => {
     route(routes);
     await expect(fetchJapaneseCaptionsForWorker(VIDEO_ID)).rejects.toBeInstanceOf(TransientLessonCreationProviderError);
     await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toBeNull();
+  });
+
+  it.each([
+    ["a captcha page", { watch: () => new Response('<div class="g-recaptcha"></div>') }, true],
+    ["bot detection", { player: () => Response.json(player([], "LOGIN_REQUIRED", "Sign in to confirm you’re not a bot")) }, true],
+    ["HTTP 429 on the caption body", { body: () => new Response("", { status: 429 }) }, true],
+    ["HTTP 503 on the caption body", { body: () => new Response("", { status: 503 }) }, false],
+  ] as [string, Routes, boolean][])("classifies %s as rate-limited: %s", async (_, routes, rateLimited) => {
+    route(routes);
+    const error = await fetchJapaneseCaptionsForWorker(VIDEO_ID).catch((thrown: unknown) => thrown);
+    expect(error).toBeInstanceOf(TransientLessonCreationProviderError);
+    expect(error instanceof RateLimitedLessonCreationProviderError).toBe(rateLimited);
   });
 
   it("keeps a 404 terminal", async () => {
