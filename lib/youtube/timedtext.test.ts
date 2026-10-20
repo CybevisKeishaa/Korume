@@ -1,7 +1,7 @@
 // lib/youtube/timedtext.test.ts
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { TransientLessonCreationProviderError } from "@/lib/lesson-creation/errors";
-import { fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker, parseCaptionBody, pickJapaneseTrack } from "./timedtext";
+import { alignTranslations, fetchJapaneseCaptions, fetchJapaneseCaptionsForWorker, parseCaptionBody, pickJapaneseTrack } from "./timedtext";
 
 const VIDEO_ID = "dQw4w9WgXcQ";
 const API_KEY = "AIzaTestKey_123";
@@ -11,6 +11,7 @@ const CONSENT_HTML = '<form action="https://consent.youtube.com/s"><input name="
 
 const JA_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=ja&fmt=srv3`;
 const JA_ASR_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=ja&kind=asr`;
+const VI_URL = `https://www.youtube.com/api/timedtext?v=${VIDEO_ID}&lang=vi`;
 
 function player(captionTracks: unknown[], status = "OK", reason?: string) {
   return {
@@ -56,8 +57,8 @@ describe("fetchJapaneseCaptions", () => {
     const calls = route({});
 
     await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toEqual([
-      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは" },
-      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか" },
+      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは", textTranslation: null },
+      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか", textTranslation: null },
     ]);
     expect(calls.map((c) => c.url.pathname)).toEqual(["/watch", "/youtubei/v1/player", "/api/timedtext"]);
     expect(calls[1]?.url.searchParams.get("key")).toBe(API_KEY);
@@ -85,6 +86,37 @@ describe("fetchJapaneseCaptions", () => {
     const calls = route({ player: () => Response.json(player([{ baseUrl: JA_ASR_URL, languageCode: "ja", kind: "asr" }])) });
     await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toHaveLength(2);
     expect(calls[2]?.url.searchParams.get("kind")).toBe("asr");
+  });
+
+  it("attaches the creator's Vietnamese track to the Japanese lines it overlaps", async () => {
+    const calls = route({
+      player: () => Response.json(player([
+        { baseUrl: JA_URL, languageCode: "ja" },
+        { baseUrl: `${VI_URL}&kind=asr`, languageCode: "vi", kind: "asr" },
+        { baseUrl: VI_URL, languageCode: "vi" },
+      ])),
+      body: (url) => new Response(url.searchParams.get("lang") === "vi"
+        ? '<transcript><text start="0.5" dur="2.0">Xin chào</text></transcript>'
+        : CAPTION_BODY_XML),
+    });
+    await expect(fetchJapaneseCaptions(VIDEO_ID)).resolves.toEqual([
+      { startTime: 0.5, endTime: 2.5, textJp: "こんにちは", textTranslation: "Xin chào" },
+      { startTime: 2.5, endTime: 4.0, textJp: "&元気ですか", textTranslation: null },
+    ]);
+    expect(calls.map((c) => c.url.searchParams.get("lang"))).toEqual([null, null, "ja", "vi"]);
+    expect(calls[3]?.url.searchParams.get("kind")).toBeNull();
+  });
+
+  it.each([
+    ["HTTP 429", () => new Response("", { status: 429 })],
+    ["an empty body", () => new Response("<transcript></transcript>")],
+  ])("keeps the Japanese lines when the Vietnamese track fails with %s, even on the worker path", async (_, viRoute) => {
+    route({
+      player: () => Response.json(player([{ baseUrl: JA_URL, languageCode: "ja" }, { baseUrl: VI_URL, languageCode: "vi" }])),
+      body: (url) => url.searchParams.get("lang") === "vi" ? viRoute() : new Response(CAPTION_BODY_XML),
+    });
+    const lines = await fetchJapaneseCaptionsForWorker(VIDEO_ID);
+    expect(lines?.map((line) => line.textTranslation)).toEqual([null, null]);
   });
 
   it("passes the EU consent page with a CONSENT cookie", async () => {
@@ -150,6 +182,21 @@ describe("parseCaptionBody", () => {
       { startTime: 1.25, endTime: 2.25, textJp: "It's ok です" },
       { startTime: 4, endTime: 4, textJp: "あ" },
     ]);
+  });
+});
+
+describe("alignTranslations", () => {
+  it("joins every cue into the line it overlaps most and leaves uncovered lines null", () => {
+    const line = (startTime: number, endTime: number) => ({ startTime, endTime, textJp: "日本語" });
+    expect(alignTranslations(
+      [line(0, 2), line(2, 4), line(4, 6)],
+      [
+        { startTime: 0, endTime: 1, textJp: "Một" },
+        { startTime: 1, endTime: 2.4, textJp: "hai" },
+        { startTime: 2.4, endTime: 2.6, textJp: "ba" },
+        { startTime: 6, endTime: 7, textJp: "chạm mép" },
+      ],
+    )).toEqual(["Một hai", "ba", null]);
   });
 });
 
