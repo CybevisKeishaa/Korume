@@ -228,7 +228,8 @@
       "japaneseMissing": "Choose the Japanese subtitle file.",
       "replaceTitle": "Replace this video's transcript?",
       "replaceDescription": "This video is already in the library. Replacing its transcript deletes every learner's notes and marks on the old lines, and cannot be undone. Its tier stays as it is.",
-      "replaceConfirm": "Replace transcript"
+      "replaceConfirm": "Replace transcript",
+      "currentTier": "Its current tier is {tier}."
     }
   },
   "styleGuide": {

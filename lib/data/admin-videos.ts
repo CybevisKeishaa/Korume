@@ -531,7 +531,8 @@ async function writeVideoTranscript(
 export type ImportVideoFromSrtResult =
   | { ok: true; data: { videoId: string; created: boolean; lineCount: number; translatedCount: number } }
   | GuardFailure
-  | { ok: false; status: 409; exists: true }
+  /** `libraryAccess` is the existing row's, or `null` when another writer created it a moment ago. */
+  | { ok: false; status: 409; exists: true; libraryAccess: "PRIVATE" | "FREE" | "PLUS" | null }
   | { ok: false; status: 422 | 503 }
   | { ok: false; status: 429; retryAfter: number };
 
@@ -571,14 +572,15 @@ export async function importVideoFromSrt(input: {
   const service = createServiceClient();
   const { data: existing, error: existingError } = await service
     .from("videos")
-    .select("id")
+    .select("id, library_access")
     .eq("youtube_video_id", input.youtubeVideoId)
     .maybeSingle();
   if (existingError) throw existingError;
 
   if (existing) {
-    if (!input.replace) return { ok: false, status: 409, exists: true };
-    const videoId = (existing as { id: string }).id;
+    const row = existing as { id: string; library_access: "PRIVATE" | "FREE" | "PLUS" };
+    if (!input.replace) return { ok: false, status: 409, exists: true, libraryAccess: row.library_access };
+    const videoId = row.id;
     const { lineCount } = await writeVideoTranscript(service, videoId, lines);
     return { ok: true, data: { videoId, created: false, lineCount, translatedCount } };
   }
@@ -606,7 +608,7 @@ export async function importVideoFromSrt(input: {
     .select("id")
     .single();
   // Another import, or a caption job, created it in the meantime.
-  if (insertError?.code === UNIQUE_VIOLATION) return { ok: false, status: 409, exists: true };
+  if (insertError?.code === UNIQUE_VIOLATION) return { ok: false, status: 409, exists: true, libraryAccess: null };
   if (insertError) throw insertError;
   const videoId = (inserted as { id: string }).id;
 
@@ -614,7 +616,8 @@ export async function importVideoFromSrt(input: {
   try {
     ({ lineCount } = await writeVideoTranscript(service, videoId, lines));
   } catch (err) {
-    const { error: cleanupError } = await service.from("videos").delete().eq("id", videoId);
+    // Only while still PRIVATE, as this import left it: never a row someone has since published.
+    const { error: cleanupError } = await service.from("videos").delete().eq("id", videoId).eq("library_access", "PRIVATE");
     if (cleanupError) console.error(`[admin] could not remove the half-imported video ${videoId}:`, cleanupError);
     throw err;
   }

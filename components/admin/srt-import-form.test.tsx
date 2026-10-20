@@ -66,14 +66,15 @@ describe("SrtImportForm", () => {
 
   it("asks before replacing an existing lesson, then resends with `replace`", async () => {
     const fetchMock = vi.fn()
-      .mockResolvedValueOnce(jsonResponse(409, { error: "exists", exists: true }))
+      .mockResolvedValueOnce(jsonResponse(409, { error: "exists", exists: true, libraryAccess: "PRIVATE" }))
       .mockResolvedValueOnce(jsonResponse(200, { data: { videoId: "v1", created: false, lineCount: 1, translatedCount: 0 } }));
     vi.stubGlobal("fetch", fetchMock);
     render(<SrtImportForm />);
 
     const user = await fill({ ja: subtitle(JA, "ep [ja].srt") });
     await user.click(screen.getByRole("button", { name: "Import lesson" }));
-    expect(await screen.findByRole("dialog", { name: "Replace this video's transcript?" })).toBeInTheDocument();
+    // The admin picked FREE, but a replace keeps the tier: the dialog must say which one that is.
+    expect(await screen.findByRole("dialog", { name: "Replace this video's transcript?" })).toHaveTextContent("Its current tier is PRIVATE.");
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await user.click(screen.getByRole("button", { name: "Replace transcript" }));
 
@@ -92,6 +93,20 @@ describe("SrtImportForm", () => {
     await user.click(await screen.findByRole("button", { name: "Cancel" }));
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("stays focusable while sending, and a second press sends nothing", async () => {
+    const fetchMock = vi.fn().mockReturnValue(new Promise(() => undefined));
+    vi.stubGlobal("fetch", fetchMock);
+    render(<SrtImportForm />);
+
+    const user = await fill({ ja: subtitle(JA, "ep [ja].srt") });
+    const button = screen.getByRole("button", { name: "Import lesson" });
+    await user.click(button);
+    await waitFor(() => expect(screen.getByRole("button", { name: "Importing…" })).toHaveAttribute("aria-disabled", "true"));
+    expect(screen.getByRole("button", { name: "Importing…" })).toBeEnabled();
+    await user.click(screen.getByRole("button", { name: "Importing…" }));
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 

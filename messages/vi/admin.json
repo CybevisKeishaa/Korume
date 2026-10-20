@@ -292,7 +292,8 @@
       "japaneseMissing": "Hãy chọn file phụ đề tiếng Nhật.",
       "replaceTitle": "Thay phụ đề của video đã có?",
       "replaceDescription": "Video này đã có trong thư viện. Thay phụ đề sẽ xoá mọi ghi chú và đánh dấu của người học trên các câu cũ, không hoàn tác được. Gói của video được giữ nguyên.",
-      "replaceConfirm": "Thay phụ đề"
+      "replaceConfirm": "Thay phụ đề",
+      "currentTier": "Gói hiện tại là {tier}."
     }
   },
   "styleGuide": {

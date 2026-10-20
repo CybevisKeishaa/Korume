@@ -486,7 +486,7 @@ Xin chào
   const INPUT = { youtubeVideoId: "kIDaXEnkjmk", libraryAccess: "FREE" as const, format: "srt" as const, content: JA, translation: VI };
 
   /** Records every write in order; `existing` is what the lookup by youtube id finds. */
-  function catalogue(existing: { id: string } | null, failures: { insert?: { code: string; message: string }; lines?: Error } = {}) {
+  function catalogue(existing: { id: string; library_access?: string } | null, failures: { insert?: { code: string; message: string }; lines?: Error } = {}) {
     const writes: { op: string; values?: unknown; id?: unknown }[] = [];
     const order: string[] = [];
     let lines: unknown;
@@ -494,7 +494,7 @@ Xin chào
       videos: (calls: QueryCall[]) => {
         const write = calls.find((c) => c.op === "insert" || c.op === "update" || c.op === "delete");
         if (!write) return { data: existing, error: null };
-        writes.push({ op: write.op, values: "values" in write ? write.values : undefined, id: eqValue(calls, "id") });
+        writes.push({ op: write.op, values: "values" in write ? write.values : undefined, id: eqValue(calls, "id"), ...(write.op === "delete" ? { access: eqValue(calls, "library_access") } : {}) });
         order.push(`videos.${write.op}`);
         if (write.op === "insert" && failures.insert) return { data: null, error: failures.insert };
         return { data: { id: VIDEO_ID }, error: null };
@@ -549,9 +549,9 @@ Xin chào
   });
 
   it("refuses an existing video without `replace`, before touching its transcript or YouTube", async () => {
-    const db = catalogue({ id: VIDEO_ID });
+    const db = catalogue({ id: VIDEO_ID, library_access: "PRIVATE" });
 
-    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true });
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true, libraryAccess: "PRIVATE" });
     expect(db.order).toEqual([]);
     expect(fetchOembed).not.toHaveBeenCalled();
   });
@@ -573,13 +573,13 @@ Xin chào
 
     await expect(importVideoFromSrt(INPUT)).rejects.toThrow("lines insert failed");
     expect(db.writes.map((write) => write.op)).toEqual(["insert", "delete"]);
-    expect(db.writes[1]?.id).toBe(VIDEO_ID);
+    expect(db.writes[1]).toMatchObject({ id: VIDEO_ID, access: "PRIVATE" });
   });
 
   it("answers 409 when another import created the video first", async () => {
     const db = catalogue(null, { insert: { code: "23505", message: "duplicate key value violates unique constraint" } });
 
-    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true });
+    await expect(importVideoFromSrt(INPUT)).resolves.toEqual({ ok: false, status: 409, exists: true, libraryAccess: null });
     expect(db.order).toEqual(["videos.insert"]);
   });
 

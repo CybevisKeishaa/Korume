@@ -60,10 +60,10 @@ describe("POST /api/admin/videos/import-srt", () => {
   });
 
   it("passes `replace` through and answers 409 with `exists` when the video already has a lesson", async () => {
-    vi.mocked(importVideoFromSrt).mockResolvedValue({ ok: false, status: 409, exists: true });
+    vi.mocked(importVideoFromSrt).mockResolvedValue({ ok: false, status: 409, exists: true, libraryAccess: "FREE" });
     const response = await post({ ...BODY, replace: false });
     expect(response.status).toBe(409);
-    await expect(response.json()).resolves.toMatchObject({ exists: true });
+    await expect(response.json()).resolves.toMatchObject({ exists: true, libraryAccess: "FREE" });
     expect(importVideoFromSrt).toHaveBeenCalledWith(expect.objectContaining({ replace: false }));
   });
 

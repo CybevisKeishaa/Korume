@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,7 +8,10 @@ import { useTranslations } from "@/lib/i18n";
 import { ConfirmDialog } from "./confirm-dialog";
 import { readErrorMessage } from "./video-queue";
 
-type Status = { kind: "idle" | "busy" | "confirmReplace" } | { kind: "done" | "error"; message: string };
+type Status =
+  | { kind: "idle" | "busy" }
+  | { kind: "confirmReplace"; libraryAccess: string | null }
+  | { kind: "done" | "error"; message: string };
 
 const FILE_INPUT =
   "mt-1 block w-full text-sm file:mr-3 file:rounded-md file:border file:border-input file:bg-card file:px-3 file:py-1.5 file:text-sm";
@@ -27,7 +30,8 @@ export function SrtImportForm() {
   const [libraryAccess, setLibraryAccess] = useState<"FREE" | "PLUS">("FREE");
   const [japanese, setJapanese] = useState<File | null>(null);
   const [vietnamese, setVietnamese] = useState<File | null>(null);
-  const [formKey, setFormKey] = useState(0);
+  const japaneseInput = useRef<HTMLInputElement>(null);
+  const vietnameseInput = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<Status>({ kind: "idle" });
 
   async function send(replace: boolean): Promise<void> {
@@ -51,7 +55,8 @@ export function SrtImportForm() {
         }),
       });
       if (res.status === 409) {
-        setStatus({ kind: "confirmReplace" });
+        const body = (await res.json().catch(() => ({}))) as { libraryAccess?: string | null };
+        setStatus({ kind: "confirmReplace", libraryAccess: body.libraryAccess ?? null });
         return;
       }
       if (!res.ok) {
@@ -72,8 +77,9 @@ export function SrtImportForm() {
       setYoutubeUrl("");
       setJapanese(null);
       setVietnamese(null);
-      // A file input cannot be cleared through React state; remounting the form resets it.
-      setFormKey((key) => key + 1);
+      // A file input cannot be cleared through React state. Clearing it in place keeps the focused button mounted.
+      if (japaneseInput.current) japaneseInput.current.value = "";
+      if (vietnameseInput.current) vietnameseInput.current.value = "";
     } catch {
       setStatus({ kind: "error", message: t("videos.srtImport.error") });
     }
@@ -81,7 +87,7 @@ export function SrtImportForm() {
 
   function submit(event: FormEvent<HTMLFormElement>): void {
     event.preventDefault();
-    void send(false);
+    if (status.kind !== "busy") void send(false);
   }
 
   const busy = status.kind === "busy";
@@ -89,7 +95,7 @@ export function SrtImportForm() {
     <section aria-labelledby="srt-import-heading" className="rounded-lg border border-border bg-card p-4">
       <h2 id="srt-import-heading" className="text-lg font-semibold">{t("videos.srtImport.heading")}</h2>
       <p className="mt-1 text-sm text-muted-foreground">{t("videos.srtImport.description")}</p>
-      <form key={formKey} className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={submit}>
+      <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={submit}>
         <div className="sm:col-span-2">
           <Label htmlFor="srt-import-url">{t("videos.srtImport.urlLabel")}</Label>
           <Input
@@ -105,6 +111,7 @@ export function SrtImportForm() {
           <Label htmlFor="srt-import-ja">{t("videos.srtImport.japaneseLabel")}</Label>
           <input
             id="srt-import-ja"
+            ref={japaneseInput}
             type="file"
             accept=".srt,.vtt"
             className={FILE_INPUT}
@@ -115,6 +122,7 @@ export function SrtImportForm() {
           <Label htmlFor="srt-import-vi">{t("videos.srtImport.vietnameseLabel")}</Label>
           <input
             id="srt-import-vi"
+            ref={vietnameseInput}
             type="file"
             accept=".srt,.vtt"
             className={FILE_INPUT}
@@ -135,7 +143,8 @@ export function SrtImportForm() {
           </select>
         </div>
         <div className="flex items-end">
-          <Button type="submit" disabled={busy}>
+          {/* aria-disabled, not disabled: disabling the focused button drops keyboard focus to <body>. */}
+          <Button type="submit" aria-disabled={busy}>
             {busy ? t("videos.srtImport.importing") : t("videos.srtImport.submit")}
           </Button>
         </div>
@@ -146,7 +155,11 @@ export function SrtImportForm() {
       <ConfirmDialog
         open={status.kind === "confirmReplace"}
         title={t("videos.srtImport.replaceTitle")}
-        description={t("videos.srtImport.replaceDescription")}
+        description={
+          status.kind === "confirmReplace" && status.libraryAccess
+            ? `${t("videos.srtImport.replaceDescription")} ${t("videos.srtImport.currentTier", { tier: status.libraryAccess })}`
+            : t("videos.srtImport.replaceDescription")
+        }
         confirmLabel={t("videos.srtImport.replaceConfirm")}
         cancelLabel={tCommon("actions.cancel")}
         destructive

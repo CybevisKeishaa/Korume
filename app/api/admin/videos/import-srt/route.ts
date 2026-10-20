@@ -28,7 +28,11 @@ export async function POST(request: Request) {
     }
     if (result.status === 409) {
       return NextResponse.json(
-        { error: "This video already has a lesson. Replacing its transcript needs confirmation.", exists: true },
+        {
+          error: "This video already has a lesson. Replacing its transcript needs confirmation.",
+          exists: true,
+          libraryAccess: result.libraryAccess,
+        },
         { status: 409 },
       );
     }
