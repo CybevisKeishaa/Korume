@@ -188,11 +188,11 @@ describe("fetchJapaneseCaptionsForWorker", () => {
   });
 
   it.each([
-    ["a captcha page", { watch: () => new Response('<div class="g-recaptcha"></div>') }, true],
-    ["bot detection", { player: () => Response.json(player([], "LOGIN_REQUIRED", "Sign in to confirm you’re not a bot")) }, true],
-    ["HTTP 429 on the caption body", { body: () => new Response("", { status: 429 }) }, true],
-    ["HTTP 503 on the caption body", { body: () => new Response("", { status: 503 }) }, false],
-  ] as [string, Routes, boolean][])("classifies %s as rate-limited: %s", async (_, routes, rateLimited) => {
+    ["a captcha page", true, { watch: () => new Response('<div class="g-recaptcha"></div>') }],
+    ["bot detection", true, { player: () => Response.json(player([], "LOGIN_REQUIRED", "Sign in to confirm you’re not a bot")) }],
+    ["HTTP 429 on the caption body", true, { body: () => new Response("", { status: 429 }) }],
+    ["HTTP 503 on the caption body", false, { body: () => new Response("", { status: 503 }) }],
+  ] as [string, boolean, Routes][])("classifies %s as rate-limited: %s", async (_, rateLimited, routes) => {
     route(routes);
     const error = await fetchJapaneseCaptionsForWorker(VIDEO_ID).catch((thrown: unknown) => thrown);
     expect(error).toBeInstanceOf(TransientLessonCreationProviderError);

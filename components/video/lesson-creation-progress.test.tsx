@@ -120,13 +120,13 @@ describe("LessonCreationProgress", () => {
   it("says a requeued job will be retried on its own, without promising when", () => {
     const { container } = render(
       <LessonCreationProgress
-        job={job({ state: "queued", step: "failed", publicErrorCode: "temporary_failure" })}
+        job={job({ state: "queued", step: "deduplicating", publicErrorCode: "temporary_failure" })}
         events={[event("deduplicating", "queued")]}
         onRetry={vi.fn()}
       />,
     );
 
-    expect(screen.getByText(/We will try again on our own/)).toBeInTheDocument();
+    expect(screen.getByRole("status")).toContainElement(screen.getByText(/We will try again on our own/));
     expect(screen.queryByRole("button", { name: "Try again" })).toBeNull();
     expect(container.textContent).not.toMatch(/remaining|estimat|about \d|\d+\s*(sec|min)|few minutes/i);
   });
@@ -184,6 +184,8 @@ describe("LessonCreationProgress", () => {
     );
 
     const retry = screen.getByRole("button", { name: "Try again" });
+    // A failed job is not being retried on its own: the note must not contradict the button.
+    expect(screen.queryByText(/We will try again on our own/)).toBeNull();
     await userEvent.tab();
     expect(retry).toHaveFocus();
     await userEvent.keyboard("{Enter}");

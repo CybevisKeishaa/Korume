@@ -26,7 +26,7 @@
     "stepWaiting": "not started",
     "retry": "Try again",
     "retrying": "Retrying…",
-    "retryScheduled": "A temporary problem, usually YouTube limiting requests. We will try again on our own \u2014 keep this page open or come back later.",
+    "retryScheduled": "A temporary problem, usually YouTube limiting requests. We will try again on our own — keep this page open or come back later.",
     "errors": {
       "metadataUnavailable": "We couldn't read this video's details. Check the link and try again.",
       "transcriptUnavailable": "This video has no Japanese captions, so there's nothing to shadow yet.",
