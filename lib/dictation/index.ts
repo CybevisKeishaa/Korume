@@ -1,6 +1,6 @@
 export { scoreDictation } from "./score";
 export { normalizeJa } from "./normalize";
-export type { DictationDiff, DictationResult } from "./types";
+export type { ChunkReason, DictationDiff, DictationResult, LineChunks } from "./types";
 export {
   PUNCTUATION,
   chunkUnits,
@@ -9,4 +9,4 @@ export {
   scoreWordBank,
   stripPunctuation,
 } from "./listening-score";
-export type { ListeningDiffOp, ListeningMetrics, Range } from "./listening-score";
+export type { ListeningDiffOp, ListeningMetrics, ListeningRevealData, ListeningSubmitData, Range } from "./listening-score";

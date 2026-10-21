@@ -1,6 +1,17 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { scoreDictation, type DictationDiff } from "@/lib/dictation";
+import { createServiceClient } from "@/lib/supabase/service";
+import {
+  chunkUnits,
+  grapheme4Units,
+  normalizeJa,
+  scoreTyping,
+  scoreWordBank,
+  type ListeningRevealData,
+  type ListeningSubmitData,
+  type Range,
+} from "@/lib/dictation";
+import { CHUNKERS, chunkLine, grammarRanges, lineTextHash, typingHintUnit } from "@/lib/dictation/chunk";
 import { rateLimit } from "@/lib/rate-limit";
 import { recordActivity } from "@/lib/data/gamification";
 import { claimActiveMission, ensureDailyMission } from "@/lib/data/missions";
@@ -8,21 +19,25 @@ import type { DictationAttemptInput } from "@/lib/validation/dictation";
 
 const ATTEMPT_LIMIT = { limit: 60, windowMs: 60_000 };
 
-export type SubmitAttemptResult =
-  | { ok: true; data: { accuracy: number; diff: DictationDiff[] } }
-  | { ok: false; status: 401 | 400 }
+export type ListeningAttemptResult =
+  | { ok: true; data: ListeningSubmitData | ListeningRevealData }
+  | { ok: false; status: 400 | 401 }
+  | { ok: false; status: 409; error: "line_changed" | "chunker_version" }
   | { ok: false; status: 429; retryAfter: number };
 
+/** Every index once, each within `[0, n)`. */
+const distinctWithin = (indices: number[], n: number): boolean =>
+  new Set(indices).size === indices.length && indices.every((i) => i >= 0 && i < n);
+
 /**
- * Score one dictation attempt for the current user against the reference
- * transcript line, persist it, and return the result. RLS confines the
- * `transcript_lines` read to lines whose parent video is approved (or owned
- * by the current user) — an id that doesn't exist or isn't reachable comes
- * back as `null` from `maybeSingle`, which we surface as 400 rather than 500.
+ * Score (`submit`) or record a Show answer (`reveal`) for one Listening attempt (spec §5.4–§5.7).
+ * Everything the score depends on — the line text, its chunks, the hint unit — is recomputed here from
+ * the line the learner's RLS lets them read in the requested lesson; nothing scoring-relevant is taken
+ * from the client but the arrangement, the typed text and the hinted indices, all validated against it.
+ * The row is written through the service client with the verified user id (D25, §7.1): `authenticated`
+ * holds no INSERT on `dictation_attempts`. A reveal is never a score and never a mission outcome (D11).
  */
-export async function submitAttempt(
-  input: DictationAttemptInput,
-): Promise<SubmitAttemptResult> {
+export async function submitListeningAttempt(input: DictationAttemptInput): Promise<ListeningAttemptResult> {
   const supabase = createClient();
   const {
     data: { user },
@@ -40,28 +55,74 @@ export async function submitAttempt(
     .maybeSingle();
   if (lineError) throw lineError;
   if (!line) return { ok: false, status: 400 };
+  const text: string = line.text_jp;
+
+  if (lineTextHash(text) !== input.textHash) return { ok: false, status: 409, error: "line_changed" };
+  if (!CHUNKERS[input.version]) return { ok: false, status: 409, error: "chunker_version" };
+  const cut = await chunkLine(text, input.version);
+  const base = normalizeJa(text);
+
+  // §5.4: the hint unit is the server's, never the client's choice.
+  let unit: "chunk" | "grapheme4";
+  if (input.format === "word_bank") {
+    if (!cut.reliable) return { ok: false, status: 400 };
+    unit = "chunk";
+  } else {
+    unit = typingHintUnit(cut);
+    if (input.hintUnit !== unit) return { ok: false, status: 400 };
+  }
+  const units = unit === "chunk" ? chunkUnits(cut.chunks) : grapheme4Units(base);
+  if (!distinctWithin(input.hintedUnits, units.length)) return { ok: false, status: 400 };
+  if (input.kind === "submit" && input.format === "word_bank"
+    && !(input.chunkOrder.length === cut.chunks.length && distinctWithin(input.chunkOrder, cut.chunks.length))) {
+    return { ok: false, status: 400 };
+  }
+
+  const row = {
+    user_id: user.id,
+    video_id: input.videoId,
+    transcript_line_id: input.lineId,
+    format: input.format,
+    hint_unit: input.hintedUnits.length > 0 ? unit : null,
+    hinted_units: input.hintedUnits,
+    chunker_version: input.version,
+    chunk_snapshot: cut.chunks,
+  };
+  const insert = async (values: Record<string, unknown>) => {
+    const { error } = await createServiceClient().from("dictation_attempts").insert({ ...row, ...values });
+    if (error) throw error;
+  };
+
+  if (input.kind === "reveal") {
+    await insert({ user_input: "", status: "revealed", accuracy_score: null, chunk_order: null });
+    return { ok: true, data: { kind: "reveal", answer: text, chunks: cut.chunks } };
+  }
+
   try {
     await ensureDailyMission(user.id);
   } catch (err) {
     console.error("[missions] ensure before dictation failed:", err);
   }
 
-  const { accuracy, diff } = scoreDictation(line.text_jp, input.userInput);
+  let data: ListeningSubmitData;
+  if (input.format === "word_bank") {
+    const { score, slots, metrics } = scoreWordBank(cut.chunks, input.chunkOrder, new Set(input.hintedUnits));
+    data = { kind: "submit", score, slots, metrics, answer: text };
+    await insert({
+      user_input: input.chunkOrder.map((i) => cut.chunks[i]).join(""),
+      status: "submitted",
+      accuracy_score: score,
+      chunk_order: input.chunkOrder,
+    });
+  } else {
+    const hinted = input.hintedUnits.flatMap((i): Range[] => (units[i] ? [units[i]] : []));
+    const { score, diff, metrics } = scoreTyping(base, input.input, hinted, await grammarRanges(text));
+    data = { kind: "submit", score, diff, metrics, answer: text };
+    await insert({ user_input: input.input, status: "submitted", accuracy_score: score, chunk_order: null });
+  }
 
-  const { error: insertError } = await supabase.from("dictation_attempts").insert({
-    user_id: user.id,
-    video_id: input.videoId,
-    transcript_line_id: input.lineId,
-    user_input: input.userInput,
-    accuracy_score: accuracy,
-  });
-  // A bad videoId (FK violation) or other write failure — surface as 400.
-  if (insertError) return { ok: false, status: 400 };
-
-  // Best-effort: gamification never fails a learning-flow request (see
-  // lib/data/gamification.ts::recordActivity).
+  // Best-effort: gamification never fails a learning-flow request (lib/data/gamification.ts::recordActivity).
   await recordActivity({ userId: user.id, source: "dictation", parts: { lineId: input.lineId } });
   await claimActiveMission(user.id);
-
-  return { ok: true, data: { accuracy, diff } };
+  return { ok: true, data };
 }

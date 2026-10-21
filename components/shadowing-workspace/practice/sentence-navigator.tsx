@@ -15,6 +15,8 @@ const TONES = {
   scored: "bg-muted text-success-strong ring-1 ring-success",
   needs_review: "bg-muted text-accent-strong ring-1 ring-accent",
   unscored: "bg-muted text-muted-foreground ring-1 ring-border",
+  // P4: a shown answer reads as review.
+  revealed: "bg-muted text-accent-strong ring-1 ring-accent",
 };
 
 /** Current and returned sentence indices are zero-based. */

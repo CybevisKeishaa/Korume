@@ -17,6 +17,24 @@ export interface ListeningMetrics {
   grammar?: number;
 }
 
+/** `POST /api/dictation/attempt` success payloads (spec §5.4, §5.5). `answer` is the raw `text_jp`. */
+export interface ListeningSubmitData {
+  kind: "submit";
+  score: number;
+  /** Word Bank only. */
+  slots?: ReturnType<typeof scoreWordBank>["slots"];
+  /** Typing only. */
+  diff?: ListeningDiffOp[];
+  metrics: ListeningMetrics;
+  answer: string;
+}
+export interface ListeningRevealData {
+  kind: "reveal";
+  answer: string;
+  /** Reference-order chunks; `[]` on an unreliable line. */
+  chunks: string[];
+}
+
 const pct = (num: number, den: number): number => Math.round((num / den) * 1000) / 10;
 const HAN = /\p{Script=Han}/u;
 

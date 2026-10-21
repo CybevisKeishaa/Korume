@@ -241,7 +241,7 @@
         "earlier": "Các câu trước",
         "later": "Các câu sau",
         "chip": "Câu {number}, {state}",
-        "state": { "none": "chưa luyện", "scored": "{score} điểm", "needs_review": "cần ôn lại", "unscored": "chưa chấm" }
+        "state": { "none": "chưa luyện", "scored": "{score} điểm", "needs_review": "cần ôn lại", "unscored": "chưa chấm", "revealed": "đã xem đáp án" }
       },
       "leave": { "title": "Bỏ bản thu chưa lưu?", "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.", "stay": "Ở lại", "discard": "Rời đi và bỏ bản thu" }
     },

@@ -17,3 +17,17 @@ export interface DictationResult {
   accuracy: number;
   diff: DictationDiff[];
 }
+
+/** Why a line cannot be cut for Word Bank (spec §5.2). */
+export type ChunkReason = "mismatch" | "unknown_token" | "latin_or_digit" | "single_chunk";
+
+/** `GET /api/lines/[lineId]/chunks` payload; chunks are in reference order (P8). */
+export interface LineChunks {
+  version: number;
+  /** sha256 hex of the raw `text_jp` the server just read; echoed back on submit (409 `line_changed`). */
+  textHash: string;
+  reliable: boolean;
+  reason: ChunkReason | null;
+  chunks: string[];
+  typingHintUnit: "chunk" | "grapheme4";
+}

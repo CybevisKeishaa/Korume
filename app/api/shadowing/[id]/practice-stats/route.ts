@@ -3,7 +3,7 @@ import { z } from "zod";
 import { loadPracticeStats } from "@/lib/data/practice-stats";
 
 const PRIVATE_HEADERS = { "Cache-Control": "private, no-store" };
-const requestSchema = z.object({ id: z.string().uuid(), mode: z.literal("pronunciation") });
+const requestSchema = z.object({ id: z.string().uuid(), mode: z.enum(["pronunciation", "word_bank", "typing"]) });
 
 export async function GET(request: Request, { params }: { params: { id: string } }): Promise<Response> {
   const parsed = requestSchema.safeParse({ id: params.id, mode: new URL(request.url).searchParams.get("mode") });

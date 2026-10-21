@@ -4,8 +4,10 @@ import type { IpadicFeatures } from "kuromoji";
 import { getTokenizer } from "../japanese/tokenizer";
 import { PUNCTUATION } from "./listening-score";
 import { normalizeJa } from "./normalize";
+import type { ChunkReason } from "./types";
 
-export type ChunkReason = "mismatch" | "unknown_token" | "latin_or_digit" | "single_chunk";
+// Defined in the client-safe `./types` so client code can name it without this server-only module (R5).
+export type { ChunkReason };
 
 export interface ChunkResult {
   version: number;

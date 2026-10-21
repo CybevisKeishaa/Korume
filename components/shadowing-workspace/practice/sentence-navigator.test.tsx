@@ -59,12 +59,12 @@ describe("SentenceNavigator", () => {
     expect(en.workspace.practice.navigator).toEqual({
       label: "Sentence navigator", earlier: "Earlier sentences", later: "Later sentences",
       chip: "Sentence {number}, {state}",
-      state: { none: "not practised", scored: "scored {score}", needs_review: "needs review", unscored: "not scored yet" },
+      state: { none: "not practised", scored: "scored {score}", needs_review: "needs review", unscored: "not scored yet", revealed: "answer shown" },
     });
     expect(viMessages.workspace.practice.navigator).toEqual({
       label: "Điều hướng câu", earlier: "Các câu trước", later: "Các câu sau",
       chip: "Câu {number}, {state}",
-      state: { none: "chưa luyện", scored: "{score} điểm", needs_review: "cần ôn lại", unscored: "chưa chấm" },
+      state: { none: "chưa luyện", scored: "{score} điểm", needs_review: "cần ôn lại", unscored: "chưa chấm", revealed: "đã xem đáp án" },
     });
   });
 
@@ -159,6 +159,8 @@ describe("SentenceNavigator", () => {
   it.each([
     ["scored", 86, "scored 86", "text-success-strong"],
     ["needs_review", 86, "needs review", "text-accent-strong"],
+    // P4: Show answer reads as review even when an older attempt scored high.
+    ["revealed", 92, "answer shown", "text-accent-strong"],
     ["unscored", null, "not scored yet", "ring-border"],
     ["none", null, "not practised", "text-muted-foreground"],
   ] as const)("uses the latest %s state and its token tone", (status, score, label, tone) => {
