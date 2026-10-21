@@ -33,6 +33,9 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 | 3 units and scoring | accepted (review Needs fixes → fix round 1 re-reviewed) | `377c57d6`, `b96b56fa` |
 | 2b punctuation-only UNKNOWN keeps Word Bank (owner 2026-10-21) | accepted (review Needs fixes → fix round 1 re-reviewed); chunker v1 edited in place (R17), coverage 431 → 433 | `a48fc6be`, `4131333e` |
 | 4 chunks API, submit/reveal API, per-format stats | accepted (review Approved, 0 Critical/Important); dictation save works again via the service client; includes the minimal navigator `revealed` state (R21) | `79ba1bca` |
+| 4b original-character display, `"` as punctuation (P13) | accepted 2026-10-22 (review Approved); coverage 433 → 434/603, no null display map | `617c47d0` |
+| 5 Listening-aware shell: reveal provider, cover, per-format strip | accepted 2026-10-22 (review Needs fixes → fix round 1 re-reviewed: re-entering Listening conceals again, R28; Show video is a plain button, R29) | `99b1bf15`, `3f7aa276` |
+| 6 mode body, Word Bank, P14 feedback, D9 URL fallback | accepted 2026-10-22 (review Approved, 6 Minor deferred); `listening/page.tsx` moved to Task 9 with the registry move (R30) | `ab609716` |
 
 ## Contracts and decisions
 
@@ -80,9 +83,14 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Owner 2026-10-21: P13 and P14 approved; Korume beside the feedback approved as P15 / Task 7b (after Task 7).
-   Execution resumed at **Task 4b**, then Task 5 (the navigator `revealed` item of Task 5 is already done, R21).
-   Ledger: `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
+1. Owner 2026-10-22: stop after Task 6. **Resume at Task 7** (Typing + format switch), BASE `ab609716`, brief
+   `.superpowers/sdd/2026-10-21-practice-listening/task-7-brief.md` (already trimmed of 7b); then 7b, 8, 9, 10.
+   Ledger (rulings R1–R30, deferred minors): `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
+   Carry into Task 7: Typing diff op `display` is "" on the 2nd+ char of a multi-char NFKC expansion (㌘);
+   the hook already exposes `setInProgress` / `reloadChunks` / `feedback` for Task 7; R3 notice lives in the body.
+   For the owner at the Chrome look: VI format names (R26) and most new VI feedback copy; Hint takes the lowest
+   unhinted chunk even if already placed correctly (D10); YouTube native captions may show the line once the
+   cover is lifted.
 2. Owner decisions 2026-10-21 that close the open questions: Latin/digits keep the Typing fallback; `"` joins the
    punctuation set; learners see the original `text_jp` characters; the revealed label stays "Answer shown" /
    "Đã xem đáp án". The floating Korume mascot stays hidden in Listening; only P15's small figure beside the
