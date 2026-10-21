@@ -29,6 +29,7 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 |---|---|---|
 | plan | APPROVED by the owner 2026-10-21 at `f800a8af` (subagent-driven), plus the Task 1 representativeness condition | `0288a15e`, `b051a539`, `f800a8af`, `b4565f92` |
 | 1 migration 048 | accepted (task review Approved, fix round 1 re-reviewed); owner's DB upgraded once to 048 | `b6d795bc`, `678fa543` |
+| 2 chunker v1, bank order, coverage | accepted (review Approved, fix round 1 re-reviewed); coverage sent to the owner, no rule changed | `0cd71392`, `b6d5069d` |
 
 ## Contracts and decisions
 
@@ -46,6 +47,11 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
   replaced by two RED ones); owner's DB took one `migration up` (048 only), 107 legacy rows byte-identical; D0–D3
   dropped. Visible number change on the owner's data, per P9: `practice_activity.dictation_lines` 1 → 0 for 101
   accounts whose only row has no line (score 70, 2026-10-12..14, test artefacts), 6 → 3 for one account.
+- Task 2 chunker coverage (spec §5.2 gate, chunker v1, 603 local lines, read-only; sent to the owner 2026-10-21, no
+  rule changed): Word Bank usable 431 (71.5%); fallback `latin_or_digit` 110 (18.2%: 今日は21番目の文を読みます。,
+  今日は2番目の文を読みます。, ②普段から美味しい情報を逃がさない); `single_chunk` 36 (6.0%: おやすみなさい, 今日は,
+  だって); `unknown_token` 26 (4.3%: お値段が…みたいな時が結構あるんですね, ねこの新しいポッドジャストビギナー今鉄平を毎日きいてください,
+  「いつもお店探しはどうやってしていますか？」). Chunk counts 2:98, 3:156, 4:101, 5:51, 6:17, 7:7, 8:1.
 
 ## Working tree and environment
 
@@ -66,4 +72,5 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Task 2 (chunker v1, bank order, coverage report — report to the owner before any chunking-rule change).
+1. Task 3 (units and scoring). Open owner question: loosen digits for Word Bank only, and/or treat `…` `？` as
+   punctuation (Task 2 coverage) — no chunking rule changes until the owner answers.
