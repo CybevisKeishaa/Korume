@@ -30,6 +30,8 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 | plan | APPROVED by the owner 2026-10-21 at `f800a8af` (subagent-driven), plus the Task 1 representativeness condition | `0288a15e`, `b051a539`, `f800a8af`, `b4565f92` |
 | 1 migration 048 | accepted (task review Approved, fix round 1 re-reviewed); owner's DB upgraded once to 048 | `b6d795bc`, `678fa543` |
 | 2 chunker v1, bank order, coverage | accepted (review Approved, fix round 1 re-reviewed); coverage sent to the owner, no rule changed | `0cd71392`, `b6d5069d` |
+| 3 units and scoring | accepted (review Needs fixes → fix round 1 re-reviewed) | `377c57d6`, `b96b56fa` |
+| 2b punctuation-only UNKNOWN keeps Word Bank (owner 2026-10-21) | accepted (review Needs fixes → fix round 1 re-reviewed); chunker v1 edited in place (R17), coverage 431 → 433 | `a48fc6be`, `4131333e` |
 
 ## Contracts and decisions
 
@@ -52,6 +54,11 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
   今日は2番目の文を読みます。, ②普段から美味しい情報を逃がさない); `single_chunk` 36 (6.0%: おやすみなさい, 今日は,
   だって); `unknown_token` 26 (4.3%: お値段が…みたいな時が結構あるんですね, ねこの新しいポッドジャストビギナー今鉄平を毎日きいてください,
   「いつもお店探しはどうやってしていますか？」). Chunk counts 2:98, 3:156, 4:101, 5:51, 6:17, 7:7, 8:1.
+- Owner 2026-10-21 decision on that report: loosen punctuation only (UNKNOWN tokens that are all punctuation no
+  longer fail; punctuation kept in chunks; Latin/digit unchanged). Task 2b result: usable 431 → 433 (71.8%); only
+  お値段が…みたいな時が結構あるんですね and 「いつもお店探しはどうやってしていますか？」 moved; remaining unknown_token 24
+  (loanwords インスタ/バズ/フォロワー…, ー, fragments; `[音楽]` and `"` quotes outside the punctuation set). Chunks render
+  NFKC forms (`...`, `?`, `!`) per P7. Digits decision pending with the owner.
 
 ## Working tree and environment
 
@@ -72,5 +79,5 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Task 3 (units and scoring). Open owner question: loosen digits for Word Bank only, and/or treat `…` `？` as
-   punctuation (Task 2 coverage) — no chunking rule changes until the owner answers.
+1. Task 4 (chunks API, submit/reveal API, per-format stats). Open owner questions: digits in Word Bank; `"` in the
+   punctuation set; chunk display in NFKC vs the original characters — no rule change until the owner answers.
