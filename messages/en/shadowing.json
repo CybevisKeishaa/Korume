@@ -233,7 +233,27 @@
       "listening": {
         "format": { "word_bank": "Word Bank", "typing": "Typing" },
         "strip": { "submitted": "{format} · Submitted" },
-        "cover": { "title": "Listen only", "show": "Show video" }
+        "cover": { "title": "Listen only", "show": "Show video" },
+        "region": "Listening practice",
+        "loading": "Loading this sentence…",
+        "chunksError": "This sentence could not be loaded.",
+        "retryLoad": "Retry",
+        "unreliable": "This sentence can't be split reliably, so it's Typing only",
+        "bank": "Word bank",
+        "answerSlots": "Your sentence",
+        "slot": "Slot {n} of {total}, {text}",
+        "slotEmpty": "Slot {n} of {total}, empty",
+        "slotState": {"correct": "correct", "wrong": "wrong", "hinted": "hint"},
+        "check": "Check",
+        "checking": "Checking…",
+        "hint": "Hint",
+        "showAnswer": "Show answer",
+        "tryAgain": "Try again",
+        "error": {"network": "Your answer could not be checked. It is kept here, so try again.", "line_changed": "This sentence changed, start again", "rate_limited": "Too many attempts. Wait a moment, then try again."},
+        "score": "Score",
+        "metrics": {"recall": "Recall", "slots": "Slots", "kanji": "Kanji", "grammar": "Grammar"},
+        "answer": "Answer",
+        "feedback": {"hint_used": "{count, plural, one {{count} {unit, select, chunk {chunk} other {part}}} other {{count} {unit, select, chunk {chunks} other {parts}}}} hinted so far. Hinted parts don't count toward recall.", "hint_all": "Every part is hinted, so this attempt scores 0 for recall.", "wb_perfect": "You arranged the whole sentence yourself!", "wb_partial": "You got {correct}/{total} chunks right.{wrong, plural, =0 {} one { Listen again and watch the order of the {wrong} chunk still wrong.} other { Listen again and watch the order of the {wrong} chunks still wrong.}}", "wb_hinted": "{hinted, plural, one {{hinted} hinted chunk doesn't} other {{hinted} hinted chunks don't}} count as your own.", "wb_fixed": "You fixed {fixed, plural, one {{fixed} chunk} other {{fixed} chunks}} since your last try.", "ty_errors": "{wrong} wrong, {missing} missing, {extra} extra. Replay the sentence and listen for {chars}.", "ty_extra": "{extra, plural, one {{extra} extra character} other {{extra} extra characters}} typed. Replay the sentence and compare.", "ty_perfect": "Every character written from memory.", "ty_hinted": "{hinted, plural, one {{hinted} hinted character doesn't} other {{hinted} hinted characters don't}} count toward recall.", "ty_kanji": "Kanji {kanji}%, below your recall. Listen for the kanji words.", "ty_grammar": "Particles and endings {grammar}%, below your recall. Listen for the small words.", "ty_fewer": "{fewer, plural, one {{fewer} fewer character error} other {{fewer} fewer character errors}} than your last try.", "retry": "New attempt. Your last score on this sentence was {score}.", "retry_first": "New attempt. Listen and start from the beginning.", "revealed": "This sentence is marked for review. This attempt has no score and doesn't count toward today's mission."}
       },
       "navigator": {
         "label": "Sentence navigator",

@@ -62,12 +62,13 @@ describe("LessonStatStrip", () => {
   });
 
   it("pins the Listening strip, format and cover copy in English and Vietnamese", () => {
-    expect(en.workspace.practice.listening).toEqual({
+    const pinned = ({ format, strip, cover }: typeof en.workspace.practice.listening) => ({ format, strip, cover });
+    expect(pinned(en.workspace.practice.listening)).toEqual({
       format: { word_bank: "Word Bank", typing: "Typing" },
       strip: { submitted: "{format} · Submitted" },
       cover: { title: "Listen only", show: "Show video" },
     });
-    expect(viMessages.workspace.practice.listening).toEqual({
+    expect(pinned(viMessages.workspace.practice.listening)).toEqual({
       format: { word_bank: "Xếp cụm từ", typing: "Gõ chính tả" },
       strip: { submitted: "{format} · Đã nộp" },
       cover: { title: "Chỉ nghe", show: "Hiện video" },
