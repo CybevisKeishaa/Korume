@@ -32,6 +32,7 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 | 2 chunker v1, bank order, coverage | accepted (review Approved, fix round 1 re-reviewed); coverage sent to the owner, no rule changed | `0cd71392`, `b6d5069d` |
 | 3 units and scoring | accepted (review Needs fixes → fix round 1 re-reviewed) | `377c57d6`, `b96b56fa` |
 | 2b punctuation-only UNKNOWN keeps Word Bank (owner 2026-10-21) | accepted (review Needs fixes → fix round 1 re-reviewed); chunker v1 edited in place (R17), coverage 431 → 433 | `a48fc6be`, `4131333e` |
+| 4 chunks API, submit/reveal API, per-format stats | accepted (review Approved, 0 Critical/Important); dictation save works again via the service client; includes the minimal navigator `revealed` state (R21) | `79ba1bca` |
 
 ## Contracts and decisions
 
@@ -79,5 +80,7 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Task 4 (chunks API, submit/reveal API, per-format stats). Open owner questions: digits in Word Bank; `"` in the
-   punctuation set; chunk display in NFKC vs the original characters — no rule change until the owner answers.
+1. PAUSED by the owner after Task 4 (2026-10-21). Resume at Task 5 (shell + reveal provider + cover); the
+   navigator `revealed` item of Task 5 is already done (R21). Ledger: `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
+2. Open owner questions: digits in Word Bank; `"` in the punctuation set; chunk display in NFKC vs the original
+   characters; VI copy "đã xem đáp án" — no rule change until the owner answers.
