@@ -6,13 +6,8 @@ import { describe, expect, it } from "vitest";
 const sql = readFileSync(join(process.cwd(), "supabase/migrations/20261004000043_lesson_summary.sql"), "utf8")
   .replace(/--[^\n]*/g, "").replace(/\s+/g, " ").toLowerCase();
 
+// lesson_summary_evidence moved to 20261021000048_practice_listening.sql (plan P3); its pins live in that file's test.
 describe("lesson summary SQL contract (spec §3, §5.5, §6.2)", () => {
-  it("aggregates evidence in SQL, as the invoker, for the caller only", () => {
-    expect(sql).toMatch(/create function lesson_summary_evidence\(p_video uuid, p_mastery int\) returns jsonb language sql stable security invoker set search_path = public/);
-    expect(sql).toContain("auth.uid()");
-    expect(sql).toContain("revoke all on function lesson_summary_evidence(uuid, int) from public, anon");
-    expect(sql).toContain("grant execute on function lesson_summary_evidence(uuid, int) to authenticated");
-  });
   it("schedules Review Tomorrow as the invoker, idempotently, never pushing a due card later", () => {
     expect(sql).toMatch(/create function schedule_review_tomorrow\(p_video uuid, p_targets jsonb, p_due timestamptz\) returns int language plpgsql security invoker set search_path = public/);
     expect(sql).toContain("on conflict (user_id, transcript_line_id) where source_kind = 'sentence' do update");

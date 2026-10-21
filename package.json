@@ -27,6 +27,7 @@
     "verify:db:footer": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-app-footer-gate.ps1",
     "verify:db:practice": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-practice-gate.ps1",
     "verify:db:summary": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-lesson-summary-gate.ps1",
+    "verify:db:listening": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-listening-gate.ps1",
     "dict:import": "vite-node --config vitest.config.ts scripts/import-dictionaries.ts --",
     "dict:gc": "vite-node --config vitest.config.ts scripts/dictionary-gc.ts --",
     "content:sync-curriculum": "vite-node --config vitest.config.ts scripts/sync-curriculum.ts",
