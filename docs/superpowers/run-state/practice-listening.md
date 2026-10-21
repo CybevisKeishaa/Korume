@@ -80,7 +80,10 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. PAUSED by the owner after Task 4 (2026-10-21). Resume at Task 5 (shell + reveal provider + cover); the
-   navigator `revealed` item of Task 5 is already done (R21). Ledger: `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
-2. Open owner questions: digits in Word Bank; `"` in the punctuation set; chunk display in NFKC vs the original
-   characters; VI copy "đã xem đáp án" — no rule change until the owner answers.
+1. PAUSED by the owner after Task 4 (2026-10-21). Plan amended the same day (P13 original-character display, P14
+   contextual feedback, new Task 4b, Task 6/7/9 tests). Resume at **Task 4b**, then Task 5 (the navigator `revealed`
+   item of Task 5 is already done, R21). Ledger: `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
+2. Owner decisions 2026-10-21 that close the open questions: Latin/digits keep the Typing fallback; `"` joins the
+   punctuation set; learners see the original `text_jp` characters; the revealed label stays "Answer shown" /
+   "Đã xem đáp án". A Korume mascot reaction in Listening is a separate design awaiting the owner's approval; the
+   mascot stays hidden in Listening until then.
