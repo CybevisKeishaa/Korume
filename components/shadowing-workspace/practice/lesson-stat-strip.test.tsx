@@ -60,4 +60,32 @@ describe("LessonStatStrip", () => {
     render(<LessonStatStrip mode="pronunciation" />);
     expect(within(stat("sentence")).getByRole("definition")).toHaveTextContent("—/194");
   });
+
+  it("pins the Listening strip, format and cover copy in English and Vietnamese", () => {
+    expect(en.workspace.practice.listening).toEqual({
+      format: { word_bank: "Word Bank", typing: "Typing" },
+      strip: { submitted: "{format} · Submitted" },
+      cover: { title: "Listen only", show: "Show video" },
+    });
+    expect(viMessages.workspace.practice.listening).toEqual({
+      format: { word_bank: "Xếp cụm từ", typing: "Gõ chính tả" },
+      strip: { submitted: "{format} · Đã nộp" },
+      cover: { title: "Chỉ nghe", show: "Hiện video" },
+    });
+  });
+
+  it.each([["typing", "Typing"], ["word_bank", "Word Bank"]] as const)("labels a Listening %s strip with its format only, as a percentage (formats never averaged)", (mode, label) => {
+    render(<LessonStatStrip mode={mode} />);
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", mode);
+    expect(within(stat("scored")).getByRole("term")).toHaveTextContent(`${label} · Submitted`);
+    expect(within(stat("scored")).getByRole("definition")).toHaveTextContent("12/194");
+    expect(within(stat("average")).getByRole("definition")).toHaveTextContent("84%");
+    expect(within(stat("sentence")).getByRole("definition")).toHaveTextContent("51/194");
+  });
+
+  it("keeps Pronunciation's own label and a bare average", () => {
+    render(<LessonStatStrip mode="pronunciation" />);
+    expect(within(stat("scored")).getByRole("term")).toHaveTextContent(/^Scored$/);
+    expect(within(stat("average")).getByRole("definition")).toHaveTextContent(/^84$/);
+  });
 });

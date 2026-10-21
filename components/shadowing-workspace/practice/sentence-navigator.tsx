@@ -10,13 +10,14 @@ import { usePracticeStats } from "./practice-stats-context";
 const WINDOW = 8;
 const BEFORE_CURRENT = 3;
 const CONTROL = "flex h-control-sm aspect-square shrink-0 items-center justify-center rounded-full text-caption font-bold tabular-nums aria-disabled:opacity-50";
+const REVIEW_TONE = "bg-muted text-accent-strong ring-1 ring-accent";
 const TONES = {
   none: "bg-muted text-muted-foreground",
   scored: "bg-muted text-success-strong ring-1 ring-success",
-  needs_review: "bg-muted text-accent-strong ring-1 ring-accent",
+  needs_review: REVIEW_TONE,
   unscored: "bg-muted text-muted-foreground ring-1 ring-border",
   // P4: a shown answer reads as review.
-  revealed: "bg-muted text-accent-strong ring-1 ring-accent",
+  revealed: REVIEW_TONE,
 };
 
 /** Current and returned sentence indices are zero-based. */

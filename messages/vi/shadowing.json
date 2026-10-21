@@ -236,6 +236,11 @@
         "micHint": "Cho phép truy cập micrô trong cài đặt trình duyệt để thu âm."
       },
       "strip": { "label": "Tiến độ bài học", "sentence": "Câu", "scored": "Đã chấm", "average": "Điểm TB", "noScore": "Chưa có điểm" },
+      "listening": {
+        "format": { "word_bank": "Xếp cụm từ", "typing": "Gõ chính tả" },
+        "strip": { "submitted": "{format} · Đã nộp" },
+        "cover": { "title": "Chỉ nghe", "show": "Hiện video" }
+      },
       "navigator": {
         "label": "Điều hướng câu",
         "earlier": "Các câu trước",

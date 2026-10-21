@@ -230,6 +230,11 @@
         "micHint": "Allow microphone access in your browser settings to record."
       },
       "strip": { "label": "Lesson progress", "sentence": "Sentence", "scored": "Scored", "average": "Average", "noScore": "No score yet" },
+      "listening": {
+        "format": { "word_bank": "Word Bank", "typing": "Typing" },
+        "strip": { "submitted": "{format} · Submitted" },
+        "cover": { "title": "Listen only", "show": "Show video" }
+      },
       "navigator": {
         "label": "Sentence navigator",
         "earlier": "Earlier sentences",

@@ -2,6 +2,8 @@
 
 import { forwardRef, useEffect, useRef, useState, type PointerEvent } from "react";
 import { useTranslations } from "@/lib/i18n";
+import { usePathname } from "@/lib/i18n/navigation";
+import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
 import { YouTubePlayer } from "@/components/video-player/youtube-player";
 import { usePlayerWiring } from "./playback-root";
 import {
@@ -12,6 +14,8 @@ import { ProgressBar } from "./progress-bar";
 import { POPOVER_ID as LOOP_POPOVER, SentenceLoopControl } from "./sentence-loop-control";
 import { POPOVER_ID as SPEED_POPOVER, SpeedControl } from "./speed-control";
 import { useCurrentSentence, useLesson, usePlaybackController, useSession, useStartPosition } from "./workspace-context";
+import { ListenCover } from "./practice/listen-cover";
+import { useListeningReveal } from "./practice/listening-reveal-context";
 
 const IDLE_HIDE_MS = 2500;
 
@@ -30,6 +34,9 @@ const PIP_HIDDEN_BUTTON = `${ICON_BUTTON} group-data-[pip]/pip:hidden`;
  * YouTube's own bar is left ON: with `controls: 0` the embed refused an unmuted `playVideo()` from this page in a
  * fresh Chrome profile (live Ep.729 gate, 2026-10-02: state stayed -1; the same build with controls on played). The
  * surface keeps the pointer from ever reaching it, so it only shows while paused, under our bar.
+ *
+ * Listening (spec §5.8, §5.9): the subtitle shows only once the current line's attempt is checked or revealed,
+ * whatever the CC toggle says, and the listen-only cover hides the picture until "Show video" for this attempt.
  */
 export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: HTMLElement): void; fullscreenAvailable: boolean }>(function WorkspacePlayer({ onFullscreen, fullscreenAvailable }, ref) {
   const t = useTranslations("shadowing");
@@ -42,6 +49,13 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
   const [muted, setMuted] = useState(false);
   const [playerError, setPlayerError] = useState<number | null>(null);
   const subtitle = index === null ? null : lines[index]?.textJp ?? null;
+  const listening = practiceModeFromPath(usePathname()) === "listening";
+  const reveal = useListeningReveal();
+  const playPauseRef = useRef<HTMLButtonElement>(null);
+  const showVideo = () => {
+    reveal.showVideo(reveal.attempt);
+    playPauseRef.current?.focus(); // the cover and its button unmount; keep focus in the player
+  };
   const [pointerActive, setPointerActive] = useState(false);
   const idleTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => () => clearTimeout(idleTimer.current), []);
@@ -81,6 +95,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
           onError={setPlayerError}
         />
         <div aria-hidden data-testid="workspace-player-surface" className="absolute inset-0 group-data-[pip]/pip:cursor-grab" onPointerDown={(event) => { pressType.current = event.pointerType; }} onClick={onSurfaceClick} />
+        {listening && !reveal.videoVisible && <ListenCover onShow={showVideo} />}
         {!playing && playerError === null && (
           <button
             type="button"
@@ -99,7 +114,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
         )}
         {/* A failed embed keeps only its alert: a bar of dead controls would sit on top of it. */}
         {playerError === null && <div className="pointer-events-none absolute inset-x-0 bottom-0 flex flex-col">
-          {subtitles && subtitle !== null && (
+          {subtitles && subtitle !== null && (!listening || reveal.answerVisible) && (
             <p lang="ja" data-type-exempt="reading-jp-body" className="reading-foreground reading-jp-body bg-[hsl(var(--reading-surface)/0.85)] px-md py-2xs text-center font-jp" data-testid="workspace-subtitle">
               {subtitle}
             </p>
@@ -119,7 +134,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
                 <button type="button" className={ICON_BUTTON} aria-label={t("workspace.player.previous")} onClick={() => controller.previousSentence()}>
                   <PreviousGlyph className="size-icon-sm" />
                 </button>
-                <button type="button" className={ICON_BUTTON} aria-label={t(playing ? "workspace.player.pause" : "workspace.player.play")} onClick={() => controller.togglePlay()}>
+                <button ref={playPauseRef} type="button" className={ICON_BUTTON} aria-label={t(playing ? "workspace.player.pause" : "workspace.player.play")} onClick={() => controller.togglePlay()}>
                   {playing ? <PauseGlyph className="size-icon-sm" /> : <PlayGlyph className="size-icon-sm" />}
                 </button>
                 <button type="button" className={ICON_BUTTON} aria-label={t("workspace.player.next")} onClick={() => controller.nextSentence()}>

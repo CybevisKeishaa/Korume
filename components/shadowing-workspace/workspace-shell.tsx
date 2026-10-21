@@ -6,9 +6,10 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { usePathname } from "@/lib/i18n/navigation";
-import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
+import { listeningFormat, practiceModeFromPath, practiceStatsMode, type ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
+import { ListeningRevealProvider } from "./practice/listening-reveal-context";
 import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
 import { UnsavedTakeGuard } from "./practice/unsaved-take-guard";
@@ -17,7 +18,7 @@ import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
 import { WorkspacePlayer } from "./workspace-player";
-import { tabPreference, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
+import { tabPreference, useCurrentSentence, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
 import { useFullscreen } from "./use-fullscreen";
@@ -126,8 +127,19 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
   return { gridTemplateRows: `auto minmax(0, 1fr) ${height}`, ["--workspace-drawer-height" as string]: height };
 }
 
+/** Keys the reveal state by the current line (P11); its own component, so a line change re-renders only this. */
+function CurrentLineReveal({ format, children }: { format: ListeningFormat; children: React.ReactNode }) {
+  const { lines } = useLesson();
+  const { index } = useCurrentSentence();
+  return <ListeningRevealProvider lineId={index === null ? null : lines[index]?.id ?? null} format={format}>{children}</ListeningRevealProvider>;
+}
+
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const mode = practiceModeFromPath(usePathname());
+  // P10: the URL is the one source of the Listening format; the strip, the stats and the reveal key all read this.
+  const format = listeningFormat(useSearchParams().get("format"));
+  const statsMode = practiceStatsMode(mode, format);
+  const listening = mode === "listening";
   const { video } = useLesson();
   usePracticePlayback(mode);
   const t = useTranslations("shadowing");
@@ -149,11 +161,12 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const { requestFullscreen, supported: fullscreenSupported } = useFullscreen(rootRef, playerRef, setFullscreen);
   const focusFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("workspace", trigger), [requestFullscreen]);
   const playerFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("player", trigger), [requestFullscreen]);
-  // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all.
+  // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all. Listening hides it
+  // like the drawer, because both can quote the sentence (spec §3.2).
   const korumeEnabled = preferences.companionEnabled;
   const korume = useKorumeOverlay(rootRef);
   const mascotRef = useRef<HTMLDivElement>(null);
-  const korumeVisible = korumeEnabled && session.view !== "focus" && session.fullscreen === "none";
+  const korumeVisible = korumeEnabled && !listening && session.view !== "focus" && session.fullscreen === "none";
   const openKorume = korume.openSheet;
   const closeKorume = korume.close;
   const returnFocusToMascot = useCallback(() => mascotRef.current?.querySelector<HTMLElement>("button")?.focus(), []);
@@ -163,7 +176,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     ...(korumeVisible ? { askKorume: openKorume } : {}),
   }), [controller, dispatch, korumeVisible, openKorume, toggleLoop]);
   useWorkspaceShortcuts(shortcuts);
-  const drawerShown = session.view !== "focus";
+  const drawerShown = session.view !== "focus" && !listening;
   const drawerOpen = drawerShown && drawer.state.level !== "collapsed";
   const drawerDispatch = drawer.dispatch;
 
@@ -184,7 +197,8 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
   return (
-    <PracticeStatsProvider videoId={video.id} mode={mode}>
+    <PracticeStatsProvider videoId={video.id} mode={statsMode}>
+    <CurrentLineReveal format={format}>
     <div
       ref={rootRef}
       className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
@@ -219,7 +233,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
         {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
-        {!fullTranscript && (mode === "shadowing" ? <LiveSentence /> : <LessonStatStrip mode={mode} />)}
+        {!fullTranscript && (statsMode === null ? <LiveSentence /> : <LessonStatStrip mode={statsMode} />)}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && (
@@ -246,6 +260,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
         </div>
       )}
     </div>
+    </CurrentLineReveal>
     </PracticeStatsProvider>
   );
 }

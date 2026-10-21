@@ -22,3 +22,16 @@ export function practiceModeFromPath(pathname: string): PracticeModeId {
   const segment = pathname.replace(/\/+$/, "").match(/\/shadowing\/[^/]+\/([^/]+)$/)?.[1];
   return segment === "pronunciation" || segment === "listening" ? segment : "shadowing";
 }
+
+export type ListeningFormat = "word_bank" | "typing";
+export type PracticeStatsMode = "pronunciation" | ListeningFormat;
+
+/** P10: the URL's `?format=` is the one source of the active format; anything but "typing" is Word Bank. */
+export function listeningFormat(param: string | null): ListeningFormat {
+  return param === "typing" ? "typing" : "word_bank";
+}
+
+/** The stats a mode reads; Listening reads its active format only (formats are never averaged). */
+export function practiceStatsMode(mode: PracticeModeId, format: ListeningFormat): PracticeStatsMode | null {
+  return mode === "shadowing" ? null : mode === "listening" ? format : mode;
+}

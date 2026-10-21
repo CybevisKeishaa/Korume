@@ -7,6 +7,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { PlaybackRoot } from "./playback-root";
 import { WorkspacePlayer } from "./workspace-player";
+import { ListeningRevealProvider } from "./practice/listening-reveal-context";
 import { usePlaybackController, usePositionStore, useSession, WorkspaceProviders } from "./workspace-context";
 
 vi.mock("@/lib/i18n/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }), usePathname: () => "/shadowing/video-1" }));
@@ -39,8 +40,10 @@ function renderPlayer(onFullscreen = vi.fn(), workspaceBootstrap = bootstrap) {
   return render(
     <WorkspaceProviders bootstrap={workspaceBootstrap}>
       <PlaybackRoot userId="user-1" initialSyncedServerAt={null}>
-        <WorkspacePlayer onFullscreen={onFullscreen} fullscreenAvailable />
-        <Probe />
+        <ListeningRevealProvider lineId={null} format="word_bank">
+          <WorkspacePlayer onFullscreen={onFullscreen} fullscreenAvailable />
+          <Probe />
+        </ListeningRevealProvider>
       </PlaybackRoot>
     </WorkspaceProviders>,
   );

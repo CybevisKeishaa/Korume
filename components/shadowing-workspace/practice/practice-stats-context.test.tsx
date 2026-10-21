@@ -20,9 +20,9 @@ describe("PracticeStatsProvider", () => {
   beforeEach(() => { fetchMock.mockReset(); vi.stubGlobal("fetch", fetchMock); });
   afterEach(() => vi.unstubAllGlobals());
 
-  it("fetches only on entering pronunciation and refreshes the same lesson", async () => {
+  it("fetches only for a stats mode, per mode, and refreshes the same lesson", async () => {
     fetchMock.mockResolvedValue(response());
-    const view = render(<PracticeStatsProvider videoId="lesson-a" mode="shadowing"><Probe /></PracticeStatsProvider>);
+    const view = render(<PracticeStatsProvider videoId="lesson-a" mode={null}><Probe /></PracticeStatsProvider>);
     expect(fetchMock).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button"));
     expect(fetchMock).not.toHaveBeenCalled();
@@ -33,9 +33,18 @@ describe("PracticeStatsProvider", () => {
     fireEvent.click(screen.getByRole("button"));
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2));
     await act(async () => { await Promise.resolve(); });
-    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode="listening"><Probe /></PracticeStatsProvider>);
+    const typing = deferred();
+    fetchMock.mockReturnValueOnce(typing.promise);
+    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode="typing"><Probe /></PracticeStatsProvider>);
+    // Another mode's numbers are never shown under this one, not even while its own request is in flight.
     expect(screen.getByRole("status")).toHaveTextContent("unavailable");
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/shadowing/lesson-a/practice-stats?mode=typing", expect.anything());
+    await act(async () => { typing.resolve(response({ ...stats, mean: 72 })); });
+    expect(screen.getByRole("status")).toHaveTextContent('"mean":72');
+    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode={null}><Probe /></PracticeStatsProvider>);
+    expect(screen.getByRole("status")).toHaveTextContent("unavailable");
+    expect(fetchMock).toHaveBeenCalledTimes(3);
   });
 
   it.each(["mode", "lesson"])("aborts and drops late responses after a %s change", async (change) => {
@@ -43,11 +52,11 @@ describe("PracticeStatsProvider", () => {
     fetchMock.mockReturnValueOnce(old.promise).mockResolvedValue(response({ ...stats, mean: 95 }));
     const view = render(<PracticeStatsProvider videoId="lesson-a" mode="pronunciation"><Probe /></PracticeStatsProvider>);
     const signal = fetchMock.mock.calls[0]?.[1]?.signal;
-    view.rerender(<PracticeStatsProvider videoId={change === "lesson" ? "lesson-b" : "lesson-a"} mode={change === "mode" ? "shadowing" : "pronunciation"}><Probe /></PracticeStatsProvider>);
+    view.rerender(<PracticeStatsProvider videoId={change === "lesson" ? "lesson-b" : "lesson-a"} mode={change === "mode" ? "word_bank" : "pronunciation"}><Probe /></PracticeStatsProvider>);
     expect(signal?.aborted).toBe(true);
-    if (change === "lesson") await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent('"mean":95'));
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent('"mean":95'));
     await act(async () => { old.resolve(response()); });
-    expect(screen.getByRole("status")).toHaveTextContent(change === "lesson" ? '"mean":95' : "unavailable");
+    expect(screen.getByRole("status")).toHaveTextContent('"mean":95');
   });
 
   it("prevents an older refresh from overwriting a newer result even when fetch ignores abort", async () => {

@@ -2,6 +2,7 @@ import "server-only";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { REVIEW_DICTATION_BELOW, REVIEW_PRONUNCIATION_BELOW } from "@/lib/summary/thresholds";
+import type { PracticeStatsMode } from "@/lib/shadowing-workspace/learning-modes";
 
 const numeric = z.coerce.number();
 const statsSchema = z.object({
@@ -17,8 +18,7 @@ const statsSchema = z.object({
 
 export type PracticeLineState = "none" | "scored" | "needs_review" | "unscored" | "revealed";
 /** The one review cut per mode; Listening's two formats share `REVIEW_DICTATION_BELOW` (R2). */
-const REVIEW_BELOW = { pronunciation: REVIEW_PRONUNCIATION_BELOW, word_bank: REVIEW_DICTATION_BELOW, typing: REVIEW_DICTATION_BELOW } as const;
-export type PracticeStatsMode = keyof typeof REVIEW_BELOW;
+const REVIEW_BELOW: Record<PracticeStatsMode, number> = { pronunciation: REVIEW_PRONUNCIATION_BELOW, word_bank: REVIEW_DICTATION_BELOW, typing: REVIEW_DICTATION_BELOW };
 export interface PracticeStats {
   lineCount: number;
   scoredLines: number;
