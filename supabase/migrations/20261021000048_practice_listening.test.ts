@@ -31,6 +31,15 @@ describe("practice listening SQL contract (spec §5.3, §6.2, §7, §7.1; plan P
       "update dictation_attempts set format = 'typing', status = case when accuracy_score is null then 'unscored' else 'submitted' end;",
     );
     expect(sql.indexOf("update dictation_attempts set format")).toBeLessThan(sql.indexOf("alter column format set not null"));
+  });
+
+  it("the listening gate runs the migration's own backfill on its temp copy (case 2)", () => {
+    const gate = readFileSync(join(process.cwd(), "supabase/tests/practice-listening.sql"), "utf8")
+      .replace(/--[^\n]*/g, "").replace(/\s+/g, " ").toLowerCase();
+    const migrationBackfill = sql.match(/update dictation_attempts (set format [^;]*;)/)?.[1];
+    const gateBackfill = gate.match(/update legacy_copy (set [^;]*;)/)?.[1];
+    expect(migrationBackfill).toBeDefined();
+    expect(gateBackfill).toBe(migrationBackfill);
     expect(sql).toContain("alter column format set not null, alter column status set not null");
   });
 

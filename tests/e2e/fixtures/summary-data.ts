@@ -14,7 +14,7 @@ export async function seedSummaryEvidence(
   if (sessions.error) throw sessions.error;
   const dictation = await admin.from("dictation_attempts").insert({
     user_id: userId, video_id: videoId, transcript_line_id: lineIds[2],
-    user_input: "今日は3番目の文を読みます", accuracy_score: 70,
+    user_input: "今日は3番目の文を読みます", accuracy_score: 70, format: "typing", status: "submitted",
   }).select("id").single();
   if (dictation.error) throw dictation.error;
   const mark = await admin.from("sentence_marks").insert({ user_id: userId, transcript_line_id: lineIds[3], kind: "difficult" });

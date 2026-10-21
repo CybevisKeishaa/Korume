@@ -52,7 +52,7 @@ export async function seedDashboardData(
         next_review_at: earlier, last_reviewed_at: earlier,
       }),
       admin.from("user_video_progress").insert({ user_id: userId, video_id: lesson.videoId, last_watched_position: 30 }),
-      admin.from("dictation_attempts").insert(scores.map((row) => ({ ...row, user_input: "今日は", accuracy_score: 55 }))),
+      admin.from("dictation_attempts").insert(scores.map((row) => ({ ...row, user_input: "今日は", accuracy_score: 55, format: "typing", status: "submitted" }))),
       admin.from("shadowing_sessions").insert(scores.map((row) => ({ ...row, pronunciation_score: 65, pitch_score: 60, rhythm_score: 70 }))),
       admin.from("learning_outcomes").insert({ user_id: userId, source_type: "dictation", item_key: lesson.lineIds[0], created_at: now.toISOString() }),
     ]);

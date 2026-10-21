@@ -79,6 +79,9 @@ begin
   if (l->>'pronunciation')::numeric <> 60.0 or (l->>'pitch')::numeric <> 45 then
     raise exception 'FAIL 3: line 1 must carry the LATEST session (60 / 45), got %', l;
   end if;
+  if l->'listening' is distinct from '[]'::jsonb then
+    raise exception 'FAIL 3: pronunciation-only line 1 must carry listening [], got %', l->'listening';
+  end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '5ca1ab1e-0000-4000-8000-0000000000d2';
   if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもんをおねがいします"}]'::jsonb
      or (e->>'typingMean')::numeric is distinct from 70::numeric or jsonb_typeof(e->'wordBankMean') <> 'null' then
