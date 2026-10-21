@@ -48,6 +48,12 @@ describe("scoreTyping", () => {
   it("hint offset: typed text shifted against the hint", () => {
     expect(scoreTyping(BASE, "お願いします", [FIRST], []).score).toBe(66.7);
   });
+  it("hint range after punctuation uses the strip map", () => {
+    const r = scoreTyping("はい、注文をお願いします。", "はい注文を", [{ start: 6, end: 13 }], []);
+    expect(r.score).toBe(45.5);
+    expect(r.diff.filter((d) => d.type === "hinted")).toHaveLength(6);
+    expect(r.diff.some((d) => d.type === "missing")).toBe(false);
+  });
   it("fully hinted scores 0", () => {
     expect(scoreTyping(BASE, "注文をお願いします", [{ start: 0, end: 10 }], []).score).toBe(0);
   });
@@ -59,6 +65,9 @@ describe("scoreTyping", () => {
     const g = scoreTyping("今日は雨です。", "今日は雨", [], [{ start: 4, end: 7 }]);
     expect(g.metrics.grammar).toBe(0);
     expect(scoreTyping("今日は雨です。", "今日は雨です", [], []).metrics.grammar).toBeUndefined();
+  });
+  it("grammar range after punctuation uses the strip map", () => {
+    expect(scoreTyping("今日、雨です。", "今日雨で", [], [{ start: 4, end: 6 }]).metrics.grammar).toBe(50);
   });
 });
 

@@ -93,7 +93,7 @@ export function scoreTyping(
   const ref = stripPunctuation(base);
   const hyp = stripPunctuation(normalizeJa(input)).chars;
   const inRanges = (ranges: Range[], p: number) => ranges.some((r) => p >= r.start && p < r.end);
-  const hintedRef = new Set(ref.chars.keys().filter((i) => inRanges(hintedRanges, ref.map[i] ?? -1)));
+  const hintedRef = new Set([...ref.chars.keys()].filter((i) => inRanges(hintedRanges, ref.map[i] ?? -1)));
 
   if (ref.chars.length === 0) {
     return { score: 0, diff: hyp.map((actual) => ({ type: "extra" as const, actual })), metrics: { recall: 0 } };
