@@ -53,9 +53,17 @@
   - **Hint:** how many units are hinted so far and that hinted parts do not count toward recall; when every unit is hinted, that this attempt scores 0 for recall.
   - **Check, Word Bank:** own-correct / hinted / wrong counts out of the total; all own-correct with no hint → "You arranged the whole sentence yourself!" / "Bạn đã tự sắp xếp đúng toàn bộ câu!"; otherwise e.g. "You got 3/5 chunks right. Listen again and watch the order of the 2 chunks still wrong." / "Bạn đúng 3/5 cụm. Hãy nghe lại câu và chú ý thứ tự 2 cụm còn sai."
   - **Check, Typing:** wrong / missing / extra character counts and the expected characters that were wrong or missing (shown as raw slices, P13, at most 8, then "…"), plus "replay the sentence and listen for them"; a Kanji or Grammar remark only when that metric exists (§5.6) and is strictly below Recall; perfect with no hint → "Every character written from memory."
-  - **Try again:** a neutral restart line that may state the previous attempt's score for this line and format in this visit — no praise; after the next Check, "You fixed N chunk(s) since your last try" (Word Bank: slots wrong before and own-correct now) or "N fewer character errors than last try" (Typing) only when N > 0.
+  - **Try again:** a neutral restart line that may state the previous attempt's score for this line and format in this visit — no praise. Pressing Try again proves nothing: "You fixed N chunk(s) since your last try" (Word Bank: slots wrong before and own-correct now) or "N fewer character errors than last try" (Typing) appears only after the learner **submits** the new attempt and the server returns its result, comparing two valid submitted results of the same line and format, and only when N > 0 (owner 2026-10-21).
   - **Show answer:** "This sentence is marked for review. This attempt has no score and doesn't count toward today's mission." / "Câu này được đánh dấu cần ôn lại. Lượt này không tính điểm và không tính vào nhiệm vụ."
-  - While answering, feedback never contains the text of an unhinted unit, and nothing after Check names an answer the screen does not already show. The region is a polite live region. The Korume mascot / Companion stays hidden in Listening (spec §3); a mascot reaction is a separate design the owner approves on its own.
+  - While answering, feedback never contains the text of an unhinted unit, and nothing after Check names an answer the screen does not already show. The region is a polite live region. The floating Korume mascot / Companion stays hidden in Listening (spec §3); the only Korume in Listening is P15's small figure.
+- **P15 — Korume beside the feedback (owner 2026-10-21).** After a **successful** Check or Show answer only, a small static Korume figure sits in the Live Feedback area, next to the P14 text. It is not shown while answering, submitting or waiting, and never as a popup, overlay, animation or separate card. Its expression follows the P14 outcome:
+  - all own-correct with no hint → gentle joy (`happy.png`);
+  - partial, or real progress between two submitted results → encouraging (`neutral.png`; no existing pose reads as "encouraging", so the owner's neutral fallback applies — the owner may swap it at the Chrome look);
+  - Show answer → thinking, toward review (`thinking.png`);
+  - any attempt with a hint never gets the joy pose.
+  
+  Korume says nothing of its own: no Companion line, no AI call, no change to Companion memory. Scores and error analysis belong to the practice system; Korume only accompanies. It disappears in the same commit that conceals the answer (Try again, line change, format change: it renders from `answerVisible` plus the current attempt's result, P11), and a late response from a stale attempt can never show it. Existing art only. At 1280×529 it must not push Check, Hint, Show answer or Next out of view; it shrinks or hides when space is short, and the text always stays.
+
 
 ## Review Focus
 
@@ -83,6 +91,7 @@
 | `lib/data/practice-stats.ts`, `app/api/shadowing/[id]/practice-stats/route.ts` | per-format stats | 4 |
 | `lib/dictation/display.ts` (+ test); `PUNCTUATION` + `"`; `LineChunks.display`, reveal `display` | original-character display (P13), `"` | 4b |
 | `lib/dictation/listening-feedback.ts` (+ test) | contextual feedback rules (P14) | 6 |
+| `components/shadowing-workspace/practice/listening-feedback-korume.tsx`, `components/mascot/mascot-poses.ts` | Korume beside the feedback (P15) | 7b |
 | `lib/shadowing-workspace/learning-modes.ts` | `listeningFormat`, `practiceStatsMode` | 5 |
 | `components/shadowing-workspace/practice/listening-reveal-context.tsx` | reveal state keyed by line + format + attempt (P11) | 5 |
 | `components/shadowing-workspace/workspace-shell.tsx`, `workspace-player.tsx`, `practice/listen-cover.tsx`, `practice/practice-stats-context.tsx`, `practice/lesson-stat-strip.tsx`, `practice/sentence-navigator.tsx` | Listening-aware shell | 5 |
@@ -437,7 +446,7 @@ git commit -m "feat(db): listening formats, legacy-only unscored, score write pr
   - **Review Focus 3:** a wrong chunk in slot 0, Hint → chunk 0 locked in slot 0 tagged "Hint", the wrong chunk back in the bank once.
   - Chips, slots and the revealed chunks show `display` strings (P13): a line with `…` shows `…`, never `...`.
   - After 200: coloured slots (correct / wrong / hinted), score + label (cuts `REVIEW_DICTATION_BELOW` / `STRONG_DICTATION_AT`), metrics Recall + Slots only, the P14 Word Bank message, the answer `text_jp`, the subtitle visible, stats `refresh()` called.
-  - Try again after a checked attempt → the `retry` message with the previous score; the next Check with one slot fixed → `wb_fixed` shown; Show answer → the `revealed` message, no score, no `wb_*` message.
+  - Try again after a checked attempt → the `retry` message with the previous score and no `wb_fixed` (pressing Try again proves nothing); the next **successful** Check with one slot fixed → `wb_fixed` shown; a failed Check after Try again → no `wb_fixed`; a Show answer after Try again is not a submitted result and never feeds `previous`; Show answer → the `revealed` message, no score, no `wb_*` message.
   - A response that arrives after the learner moved to the next line is dropped: the new line stays concealed and shows no result.
   - Show answer → `kind: "reveal"` with the hints so far; full answer shown; video stays covered; no score.
   - 409 `line_changed` → "This sentence changed, start again" and a fresh attempt after refetching chunks.
@@ -474,6 +483,29 @@ git commit -m "feat(db): listening formats, legacy-only unscored, score write pr
 - [ ] **Step 2–4: fail, implement, pass; `tsc`; `lint`.**
 - [ ] **Step 5: Mutations.** (a) Drop the `isComposing` check → the IME test RED; (b) render the diff from the normalised `expected` instead of `display` → the half-width / `？` display test RED. Restore both.
 - [ ] **Step 6: Commit** — `feat(listening): typing format, IME-safe submit, format switch with confirm`.
+
+---
+
+### Task 7b: Korume beside the feedback (owner 2026-10-21, P15)
+
+**Files:**
+- Create: `components/shadowing-workspace/practice/listening-feedback-korume.tsx` (+ test)
+- Modify: `components/mascot/mascot-poses.ts` (three entries: `listening-joy` → `happy.png`, `listening-encourage` → `neutral.png`, `listening-review` → `thinking.png`, sizes from the files), `listening-feedback.tsx`, `lib/dictation/listening-feedback.ts` (`feedbackMood(messages): "joy" | "encourage" | "review" | null`), `tests/e2e/practice-listening.spec.ts`
+
+**Interfaces:**
+- Consumes: P14's message ids; `useListeningReveal().answerVisible`; the attempt result of `useListeningAttempt`.
+- Produces: `feedbackMood` — `joy` iff the messages contain `wb_perfect` or `ty_perfect`; `review` iff `revealed`; `encourage` for any other checked outcome; `null` before a successful Check or Show answer. `ListeningFeedbackKorume({ mood })` — decorative (`alt=""`, `aria-hidden`), inline beside the text, renders nothing for `null`.
+
+- [ ] **Step 1: Failing tests.**
+  - `listening-feedback.test.ts`: `feedbackMood` for perfect (joy), perfect-with-one-hint (encourage, never joy), partial (encourage), `wb_fixed` / `ty_fewer` (encourage), revealed (review), hint only while answering (null), error responses (null).
+  - `listening-feedback-korume.test.tsx` inside the mode body, fetch mocked: no figure in the first render, while a Check is pending, or after a 4xx/5xx/network failure; joy after a perfect Check; review after Show answer; Try again / Next / format switch → the figure is gone in the same commit as the concealment (render-recorder probe, as Task 5); a response for a stale attempt resolving after Try again shows no figure; the figure has no accessible name and the P14 text is still read by the live region.
+  - Layout at 1280×529 is checked in Chrome (Task 10), not in jsdom.
+- [ ] **Step 2: Run to verify they fail.**
+- [ ] **Step 3: Implement.** The figure sits in the feedback row (flex, text first in DOM order); its size comes from a token-based clamp so it can shrink; a container query hides it when the panel is too short to keep Check / Hint / Show answer / Next in view.
+- [ ] **Step 4: Pass; `tsc`; `lint`.**
+- [ ] **Step 5: Mutations.** (a) Derive the mood from the score alone, ignoring hints → the perfect-with-hint test RED; (b) render the figure from the stored result without the `answerVisible` gate → the Try-again / stale-response test RED. Restore both.
+- [ ] **Step 6: E2E additions** to `practice-listening.spec.ts` (run in Task 9): in cases 3, 4, 5 and 6, the figure is absent while answering and submitting, shows joy / encourage / encourage-with-hint (never joy) / review after the result, and disappears on Try again and Next. A delayed `POST` (route held, then Try again, then released) never shows the figure.
+- [ ] **Step 7: Commit** — `feat(listening): korume beside the feedback, outcome-based and concealed with the answer`.
 
 ---
 
@@ -533,6 +565,6 @@ git commit -m "feat(db): listening formats, legacy-only unscored, score write pr
 ### Task 10: Gates, Chrome, review, owner look
 
 - [ ] **Step 1: Gates after the last product edit** (L-044): `npx vitest run --reporter=dot`; `npx tsc --noEmit`; `npm run lint`; `npm run verify:protocol`; DB gates `listening, practice, summary, dashboard, erasure, profile, shadowing` (self-cleaning, read/write only their own prefixed fixtures); typography gate (G4) with the listening route; full Playwright on the owner's machine (dictionary imported) — only reds already listed in B1's run state may remain.
-- [ ] **Step 2: Chrome** at 1280×529, 1440×900, 1920×1080 and nav collapsed: the document never scrolls; at 1280×529 the bank, slots and Check are visible without panel scroll for an 8-chunk line, or the panel scrolls on its own (record which); no subtitle frame on entering Listening, changing line or changing format; the cover keeps every control usable; type tokens only.
+- [ ] **Step 2: Chrome** at 1280×529, 1440×900, 1920×1080 and nav collapsed: the document never scrolls; the P15 Korume figure never pushes Check / Hint / Show answer / Next out of view (record its size or that it hid at 1280×529); at 1280×529 the bank, slots and Check are visible without panel scroll for an 8-chunk line, or the panel scrolls on its own (record which); no subtitle frame on entering Listening, changing line or changing format; the cover keeps every control usable; type tokens only.
 - [ ] **Step 3: Reviews.** `code-reviewer` per task during execution; whole-branch review from `git diff master...practice-listening`; the fix wave reviewed on its own (L-012).
 - [ ] **Step 4: Owner look** on the real mode bar (mode enabled in-branch, D24) with screenshots en + vi, and the chunker coverage report (Task 2). Merge `--no-ff` only after the owner's Chrome check and approval; record lessons in `docs/lessons.md`.
