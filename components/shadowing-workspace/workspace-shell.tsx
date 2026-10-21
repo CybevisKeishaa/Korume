@@ -127,11 +127,16 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
   return { gridTemplateRows: `auto minmax(0, 1fr) ${height}`, ["--workspace-drawer-height" as string]: height };
 }
 
-/** Keys the reveal state by the current line (P11); its own component, so a line change re-renders only this. */
-function CurrentLineReveal({ format, children }: { format: ListeningFormat; children: React.ReactNode }) {
+/**
+ * Keys the reveal state by the current line (P11); its own component, so a line change re-renders only this.
+ * Outside Listening the key is `null|…`, which no Listening frame produces (no current line keys as ""), so every
+ * entry into Listening is a key change and starts concealed, even on the same line and format (R28).
+ */
+function CurrentLineReveal({ listening, format, children }: { listening: boolean; format: ListeningFormat; children: React.ReactNode }) {
   const { lines } = useLesson();
   const { index } = useCurrentSentence();
-  return <ListeningRevealProvider lineId={index === null ? null : lines[index]?.id ?? null} format={format}>{children}</ListeningRevealProvider>;
+  const lineId = index === null ? "" : lines[index]?.id ?? "";
+  return <ListeningRevealProvider lineId={listening ? lineId : null} format={format}>{children}</ListeningRevealProvider>;
 }
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
@@ -198,7 +203,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const fullTranscript = session.view === "full-transcript";
   return (
     <PracticeStatsProvider videoId={video.id} mode={statsMode}>
-    <CurrentLineReveal format={format}>
+    <CurrentLineReveal listening={listening} format={format}>
     <div
       ref={rootRef}
       className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}

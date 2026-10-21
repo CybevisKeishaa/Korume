@@ -13,6 +13,10 @@ import { usePracticeStats } from "./practice/practice-stats-context";
 import { usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { useListeningReveal } from "./practice/listening-reveal-context";
 const presence = vi.hoisted(() => vi.fn());
+function required<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new Error("expected a value");
+  return value;
+}
 vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const router = { refresh: vi.fn() };
@@ -514,17 +518,63 @@ describe("ShadowingWorkspaceShell", () => {
       expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
     });
 
+    it("conceals the answer and the video again on re-entering Listening on the same line and format (R28)", async () => {
+      const frames: { answerVisible: boolean; videoVisible: boolean }[] = [];
+      /** Records every render, so the first frame of re-entry is checked, not only the settled one. */
+      function FrameProbe() {
+        reveal = useListeningReveal();
+        frames.push({ answerVisible: reveal.answerVisible, videoVisible: reveal.videoVisible });
+        return <StoreProbe />;
+      }
+      const tree = () => <ShadowingWorkspaceShell bootstrap={lesson}><FrameProbe /></ShadowingWorkspaceShell>;
+      pathname = "/en/shadowing/video-1/listening";
+      const view = render(tree());
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      const current = required(reveal);
+      act(() => { current.markChecked(current.attempt); current.showVideo(current.attempt); });
+      // Positive control: the answer and the video really were shown before leaving.
+      expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent("一つ目");
+      expect(screen.queryByTestId("listen-cover")).toBeNull();
+      pathname = "/en/shadowing/video-1/pronunciation";
+      view.rerender(tree());
+      pathname = "/en/shadowing/video-1/listening";
+      const from = frames.length;
+      view.rerender(tree());
+      const reentry = frames.slice(from);
+      expect(reentry.length).toBeGreaterThan(0);
+      expect(reentry).toEqual(reentry.map(() => ({ answerVisible: false, videoVisible: false })));
+      expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+      expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
+    });
+
+    it("restores the cover on re-entering Listening even with no current line (R28)", async () => {
+      searchParams = new URLSearchParams();
+      pathname = "/en/shadowing/video-1/listening";
+      const view = render(shell());
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      // Position 0 is before the first line (12 s): no current line.
+      expect(observedStore?.get()).toBe(0);
+      fireEvent.click(within(screen.getByTestId("listen-cover")).getByRole("button", { name: "Show video" }));
+      expect(screen.queryByTestId("listen-cover")).toBeNull();
+      pathname = "/en/shadowing/video-1/pronunciation";
+      view.rerender(shell());
+      pathname = "/en/shadowing/video-1/listening";
+      view.rerender(shell());
+      expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
+    });
+
     it("lifts the cover with Show video for this line only; a line or format change restores it", async () => {
       pathname = "/en/shadowing/video-1/listening";
       const view = render(shell());
       await waitFor(() => expect(yt.players).toHaveLength(1));
       const show = () => within(screen.getByTestId("listen-cover")).getByRole("button", { name: "Show video" });
-      expect(show()).toHaveAttribute("aria-pressed", "false");
+      // A plain action, not a toggle: pressing it removes the cover and the button with it (R29).
+      expect(show()).not.toHaveAttribute("aria-pressed");
       show().focus();
       fireEvent.click(show());
       expect(screen.queryByTestId("listen-cover")).toBeNull();
       // The pressed button unmounts with the cover; focus stays in the player instead of falling to the page.
-      expect(document.activeElement).toBe(within(document.querySelector<HTMLElement>("[data-workspace-player-controls]")!).getByRole("button", { name: "Play" }));
+      expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: "Play" }));
       act(() => observedStore?.set(16));
       fireEvent.click(show());
       expect(screen.queryByTestId("listen-cover")).toBeNull();
@@ -537,7 +587,7 @@ describe("ShadowingWorkspaceShell", () => {
       pathname = "/en/shadowing/video-1/listening";
       render(shell());
       await waitFor(() => expect(yt.players).toHaveLength(1));
-      const player = yt.players[0]!;
+      const player = required(yt.players[0]);
       const cover = screen.getByTestId("listen-cover");
       const controls = [
         ...screen.getAllByRole("button", { name: "Play" }),
@@ -576,8 +626,8 @@ describe("ShadowingWorkspaceShell", () => {
         : new Response(null, { status: 200 })));
       vi.stubGlobal("fetch", fetchMock);
       const statsCalls = () => fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("practice-stats"));
-      const scored = () => screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='scored']")!;
-      const average = () => screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='average']")!;
+      const scored = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='scored']"));
+      const average = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='average']"));
       pathname = "/en/shadowing/video-1/listening";
       searchParams = new URLSearchParams("line=line-1&format=typing");
       const view = render(shell());

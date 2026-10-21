@@ -12,7 +12,7 @@ export function ListenCover({ onShow }: { onShow(): void }) {
   return (
     <div data-testid="listen-cover" className="pointer-events-none absolute inset-0 flex flex-col items-center gap-2xs bg-card p-sm text-center">
       <p className="text-caption font-semibold text-muted-foreground">{t("title")}</p>
-      <button type="button" aria-pressed={false} onClick={onShow}
+      <button type="button" onClick={onShow}
         className="pointer-events-auto rounded-md border border-border px-sm py-2xs text-caption font-medium text-foreground transition-colors hover:bg-muted">
         {t("show")}
       </button>

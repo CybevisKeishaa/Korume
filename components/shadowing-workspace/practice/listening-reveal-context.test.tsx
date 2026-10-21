@@ -14,7 +14,11 @@ function Probe() {
   return <button type="button" onClick={() => api.newAttempt()}>Try again</button>;
 }
 const tree = (lineId: string, format: ListeningFormat) => <ListeningRevealProvider lineId={lineId} format={format}><Probe /></ListeningRevealProvider>;
-const current = () => renders.at(-1)!;
+const current = () => {
+  const frame = renders.at(-1);
+  if (!frame) throw new Error("no render recorded");
+  return frame;
+};
 
 /** Every render recorded from `from` on is concealed and already carries the next attempt (no corrective frame). */
 function expectConcealedSince(from: number, attempt: number) {
