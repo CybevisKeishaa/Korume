@@ -38,7 +38,7 @@ async function main() {
       usable++;
       histogram.set(r.chunks.length, (histogram.get(r.chunks.length) ?? 0) + 1);
     } else {
-      fallback.set(r.reason!, [...(fallback.get(r.reason!) ?? []), text]);
+      fallback.set(r.reason ?? "mismatch", [...(fallback.get(r.reason ?? "mismatch") ?? []), text]);
     }
   }
 

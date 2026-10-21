@@ -57,6 +57,21 @@ describe("chunkV1", () => {
     expect(r.chunks.join("")).toBe(line);
   }, T);
 
+  it("single merge: 9 raw chunks lose exactly the leftmost weakest pair", async () => {
+    const line = "昨日私は友達と駅の近くの新しい店でラーメンを食べました。";
+    // raw: 昨日/私は/友達と/駅の/近くの/新しい/店で/ラーメンを/食べました。 (9). 駅の|近くの and 新しい|店で are
+    // both rank 2 at 5 code points; the leftmost wins.
+    const { chunks } = await run(line);
+    expect(chunks).toHaveLength(8);
+    expect(chunks[3]).toBe("駅の近くの");
+    expect(chunks.join("")).toBe(line);
+  }, T);
+
+  it("mid-line opening bracket starts the chunk after it", async () => {
+    const r = await run("私は「はい」と言った。");
+    expect(r.chunks).toEqual(["私は", "「はい」と", "言った。"]);
+  }, T);
+
   it.each([
     ["ABCです", "latin_or_digit"],
     ["3時です", "latin_or_digit"],
