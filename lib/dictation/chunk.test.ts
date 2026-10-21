@@ -81,6 +81,11 @@ describe("chunkV1", () => {
       ["「そうですね…」と言った。", ["「そうですね...」と", "言った。"]],
       ["…今日は雨です", ["...今日は", "雨です"]],
       ["今日は雨です！？", ["今日は", "雨です!?"]],
+      // R20: kuromoji glues these into one UNKNOWN token (`...「`, `!?(`, `)`); each mark binds on its own
+      ["お願い...「はい」と", ["お願い...", "「はい」と"]],
+      ["彼は!?(はい)と言った", ["彼は!?", "(はい)と", "言った"]],
+      ["彼は「「はい」」と言った", ["彼は", "「「はい」」と", "言った"]],
+      ["いいえ」「はい」と言った", ["いいえ」", "「はい」と", "言った"]],
     ])("%s", async (line, chunks) => {
       const r = await run(line);
       expect(r).toEqual({ version: 1, reliable: true, reason: null, chunks });

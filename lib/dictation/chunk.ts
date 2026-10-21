@@ -102,8 +102,13 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
   // latin/digit first: kuromoji marks every latin or digit run UNKNOWN, so the reverse order hides this reason
   if (/[A-Za-z0-9]/.test(base)) return unreliable("latin_or_digit");
   if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunctuation(t))) return unreliable("unknown_token");
-  // retype punctuation-only UNKNOWN tokens as symbols so they bind like any other mark and never start a chunk
-  const toks = tokens.map((t): Tok => (t.word_type === "UNKNOWN" ? { ...t, pos: "記号", pos_detail_1: "一般" } : t));
+  // R20: kuromoji glues punctuation into one UNKNOWN 名詞 (`...「`, `!?(`). Split it per code point into 記号 tokens so
+  // the usual rules apply: openers start the next chunk, other marks attach left, a line-initial run binds forward.
+  const toks = tokens.flatMap((t): Tok[] =>
+    t.word_type === "UNKNOWN"
+      ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
+      : [t],
+  );
 
   let chunks: Tok[][] = [];
   toks.forEach((t, i) => {
@@ -122,7 +127,8 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
   };
 }
 
-// A version is never edited: stored attempts reference it. A rule change ships as a new number.
+// A version is never edited once an attempt references it; a rule change then ships as a new number.
+// v1 was edited in place on 2026-10-21 (R17, Tasks 2b and R20): no attempt row referenced it and Word Bank is not live until Task 9.
 export const CHUNKERS: Readonly<Record<number, (textJp: string) => Promise<ChunkResult>>> = Object.freeze({
   1: chunkV1,
 });
