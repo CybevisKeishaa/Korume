@@ -39,17 +39,25 @@ describe("loadLineChunks", () => {
     asLearner({ id: "a" }, text);
     await expect(loadLineChunks(LINE)).resolves.toEqual({ kind: "ok", data: {
       version: 1, textHash: lineTextHash(text), reliable: true, reason: null,
-      chunks: ["毎日", "日本語を", "勉強しました。"], typingHintUnit: "chunk",
+      chunks: ["毎日", "日本語を", "勉強しました。"], display: ["毎日", "日本語を", "勉強しました。"], typingHintUnit: "chunk",
     } });
     expect(lineQueries).toEqual([[
       { op: "select", columns: "text_jp" }, { op: "eq", column: "id", value: LINE }, { op: "maybeSingle" },
     ]]);
   }, T);
 
+  it("display carries the raw characters while chunks stay normalised", async () => {
+    asLearner({ id: "a" }, "お値段が…みたいな時が結構あるんですね？");
+    await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: {
+      chunks: ["お値段が...みたいな時が", "結構", "あるんですね?"],
+      display: ["お値段が…みたいな時が", "結構", "あるんですね？"],
+    } });
+  }, T);
+
   it("an unreliable line carries its reason and the grapheme4 unit", async () => {
     asLearner({ id: "a" }, "今日は21番目の文を読みます。");
     await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: {
-      reliable: false, reason: "latin_or_digit", chunks: [], typingHintUnit: "grapheme4",
+      reliable: false, reason: "latin_or_digit", chunks: [], display: [], typingHintUnit: "grapheme4",
     } });
   }, T);
 

@@ -1,14 +1,18 @@
 import { alignSequences } from "./align";
+import { displayRange } from "./display";
 import { normalizeJa } from "./normalize";
-import type { DictationDiff } from "./types";
 
 /** Code-point indices into `base`, end exclusive. */
 export type Range = { start: number; end: number };
 
 /** The spec's set plus the NFKC forms `normalizeJa` produces. */
-export const PUNCTUATION = /[。、！？「」『』（）…・!?()\s.,]/u;
+export const PUNCTUATION = /[。、！？「」『』（）…・!?()"\s.,]/u;
 
-export type ListeningDiffOp = DictationDiff | { type: "hinted"; expected: string };
+/** Every op but `extra` points at a reference character; `display` is its raw text (owner 2026-10-21, P13). */
+export type ListeningDiffOp =
+  | { type: "extra"; actual: string }
+  | { type: "match" | "wrong"; expected: string; actual: string; display: string }
+  | { type: "missing" | "hinted"; expected: string; display: string };
 
 export interface ListeningMetrics {
   recall: number;
@@ -33,6 +37,8 @@ export interface ListeningRevealData {
   answer: string;
   /** Reference-order chunks; `[]` on an unreliable line. */
   chunks: string[];
+  /** The raw text of each chunk, same length and order as `chunks`. */
+  display: string[];
 }
 
 const pct = (num: number, den: number): number => Math.round((num / den) * 1000) / 10;
@@ -107,6 +113,7 @@ export function scoreTyping(
   input: string,
   hintedRanges: Range[],
   grammar: Range[],
+  display: string[] | null = null,
 ): { score: number; diff: ListeningDiffOp[]; metrics: ListeningMetrics } {
   const ref = stripPunctuation(base);
   const hyp = stripPunctuation(normalizeJa(input)).chars;
@@ -121,11 +128,13 @@ export function scoreTyping(
   const diff: ListeningDiffOp[] = alignSequences(ref.chars, hyp).map((op) => {
     if (op.type === "extra") return { type: "extra", actual: hyp[op.hypIndex] ?? "" };
     const expected = ref.chars[op.refIndex] ?? "";
-    if (hintedRef.has(op.refIndex)) return { type: "hinted", expected };
+    const at = ref.map[op.refIndex] ?? 0;
+    const shown = displayRange(display, base, { start: at, end: at + 1 });
+    if (hintedRef.has(op.refIndex)) return { type: "hinted", expected, display: shown };
     if (op.type === "match") matched.add(op.refIndex);
     return op.type === "missing"
-      ? { type: "missing", expected }
-      : { type: op.type, expected, actual: hyp[op.hypIndex] ?? "" };
+      ? { type: "missing", expected, display: shown }
+      : { type: op.type, expected, actual: hyp[op.hypIndex] ?? "", display: shown };
   });
 
   const ratio = (indices: number[]) => pct(indices.filter((i) => matched.has(i)).length, indices.length);

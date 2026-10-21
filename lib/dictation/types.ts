@@ -29,5 +29,7 @@ export interface LineChunks {
   reliable: boolean;
   reason: ChunkReason | null;
   chunks: string[];
+  /** The raw `text_jp` characters of each chunk, same length and order as `chunks`; this is what the client shows. */
+  display: string[];
   typingHintUnit: "chunk" | "grapheme4";
 }

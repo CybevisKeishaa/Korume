@@ -24,7 +24,7 @@ describe("GET /api/lines/[lineId]/chunks", () => {
   it("returns the chunks privately and uncached", async () => {
     const data = {
       version: 1, textHash: "a".repeat(64), reliable: true, reason: null,
-      chunks: ["今日は", "雨です。"], typingHintUnit: "chunk" as const,
+      chunks: ["今日は", "雨です。"], display: ["今日は", "雨です。"], typingHintUnit: "chunk" as const,
     };
     vi.mocked(loadLineChunks).mockResolvedValue({ kind: "ok", data });
     await expectPrivate(await get(), 200, { data });

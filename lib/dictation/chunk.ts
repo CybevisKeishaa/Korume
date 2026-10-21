@@ -23,7 +23,8 @@ const OPEN_BRACKETS = "「『（(【";
 
 type Tok = IpadicFeatures;
 
-const isOpenBracket = (t: Tok) => t.pos === "記号" && OPEN_BRACKETS.includes(t.surface_form);
+// An odd `"` is re-tagged 括弧開 below, so it opens like a bracket; an even one closes and binds left.
+const isOpenBracket = (t: Tok) => t.pos === "記号" && (OPEN_BRACKETS.includes(t.surface_form) || t.pos_detail_1 === "括弧開");
 // kuromoji tags runs like `...` or `?」` as UNKNOWN nouns; those are punctuation, not a failure to read the line.
 const isPunctuation = (t: Tok) => [...t.surface_form].every((c) => PUNCTUATION.test(c));
 const isIndependent = (t: Tok) => t.pos_detail_1 === "自立";
@@ -106,11 +107,15 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
   if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunctuation(t))) return unreliable("unknown_token");
   // R20: kuromoji glues punctuation into one UNKNOWN 名詞 (`...「`, `!?(`). Split it per code point into 記号 tokens so
   // the usual rules apply: openers start the next chunk, other marks attach left, a line-initial run binds forward.
-  const toks = tokens.flatMap((t): Tok[] =>
-    t.word_type === "UNKNOWN"
-      ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
-      : [t],
-  );
+  let quotes = 0;
+  const toks = tokens
+    .flatMap((t): Tok[] =>
+      t.word_type === "UNKNOWN"
+        ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
+        : [t],
+    )
+    // owner 2026-10-21: `"` has no direction of its own; the 1st, 3rd... opens, the 2nd, 4th... closes
+    .map((t): Tok => (t.surface_form === '"' && ++quotes % 2 === 1 ? { ...t, pos: "記号", pos_detail_1: "括弧開" } : t));
 
   let chunks: Tok[][] = [];
   toks.forEach((t, i) => {

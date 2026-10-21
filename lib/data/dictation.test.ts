@@ -221,7 +221,8 @@ describe("submitListeningAttempt: submit", () => {
     // 12 reference characters (punctuation stripped), 2 hinted → 10 / 12.
     expect(result).toMatchObject({ ok: true, data: { kind: "submit", score: 83.3, answer: RELIABLE, metrics: { recall: 83.3 } } });
     expect(result.ok && result.data.kind === "submit" && result.data.diff?.slice(0, 3)).toEqual([
-      { type: "hinted", expected: "毎" }, { type: "hinted", expected: "日" }, { type: "match", expected: "日", actual: "日" },
+      { type: "hinted", expected: "毎", display: "毎" }, { type: "hinted", expected: "日", display: "日" },
+      { type: "match", expected: "日", actual: "日", display: "日" },
     ]);
     expect(result.ok && result.data.kind === "submit" && "slots" in result.data).toBe(false);
     expect(inserts).toEqual([{
@@ -254,9 +255,32 @@ describe("submitListeningAttempt: submit", () => {
 });
 
 describe("submitListeningAttempt: reveal (D11)", () => {
+  it("display shows the raw characters; chunks, answer and the stored snapshot stay as before", async () => {
+    const raw = "お値段が…みたいな時が結構あるんですね？";
+    lineText = raw;
+    const result = await submitListeningAttempt({ kind: "reveal", format: "word_bank", ...head(raw), hintedUnits: [] });
+    expect(result).toEqual({ ok: true, data: {
+      kind: "reveal", answer: raw,
+      chunks: ["お値段が...みたいな時が", "結構", "あるんですね?"],
+      display: ["お値段が…みたいな時が", "結構", "あるんですね？"],
+    } });
+    expect(inserts).toMatchObject([{ chunk_snapshot: ["お値段が...みたいな時が", "結構", "あるんですね?"] }]);
+  }, T);
+
+  it("a Typing diff op shows the raw reference character", async () => {
+    lineText = "ｶﾀｶﾅ";
+    const result = await submitListeningAttempt(typing("ｶﾀｶﾅ", { input: "カタ", hintUnit: "grapheme4" }));
+    expect(result.ok && result.data.kind === "submit" && result.data.diff).toEqual([
+      { type: "match", expected: "カ", actual: "カ", display: "ｶ" },
+      { type: "match", expected: "タ", actual: "タ", display: "ﾀ" },
+      { type: "missing", expected: "カ", display: "ｶ" },
+      { type: "missing", expected: "ナ", display: "ﾅ" },
+    ]);
+  }, T);
+
   it("Word Bank: inserts revealed with no score, returns the answer, and never records activity or a mission", async () => {
     const result = await submitListeningAttempt({ kind: "reveal", format: "word_bank", ...head(RELIABLE), hintedUnits: [1] });
-    expect(result).toEqual({ ok: true, data: { kind: "reveal", answer: RELIABLE, chunks: ["毎日", "日本語を", "勉強しました。"] } });
+    expect(result).toEqual({ ok: true, data: { kind: "reveal", answer: RELIABLE, chunks: ["毎日", "日本語を", "勉強しました。"], display: ["毎日", "日本語を", "勉強しました。"] } });
     expect(inserts).toEqual([{
       user_id: USER.id,
       video_id: VIDEO,
@@ -280,7 +304,7 @@ describe("submitListeningAttempt: reveal (D11)", () => {
   it("Typing: same, with the server's hint unit", async () => {
     lineText = DIGITS;
     const result = await submitListeningAttempt({ kind: "reveal", format: "typing", ...head(DIGITS), hintUnit: "grapheme4", hintedUnits: [] });
-    expect(result).toEqual({ ok: true, data: { kind: "reveal", answer: DIGITS, chunks: [] } });
+    expect(result).toEqual({ ok: true, data: { kind: "reveal", answer: DIGITS, chunks: [], display: [] } });
     expect(inserts).toMatchObject([{ format: "typing", status: "revealed", accuracy_score: null, hint_unit: null }]);
     expect(recordActivity).not.toHaveBeenCalled();
     expect(claimActiveMission).not.toHaveBeenCalled();

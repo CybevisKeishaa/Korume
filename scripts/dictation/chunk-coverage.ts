@@ -4,8 +4,11 @@
  *
  *   npx vite-node --config vitest.config.ts scripts/dictation/chunk-coverage.ts
  */
+import { writeFileSync } from "node:fs";
 import { loadEnvConfig } from "@next/env";
 import { createClient } from "@supabase/supabase-js";
+import { chunkDisplays, displayMap } from "../../lib/dictation/display";
+import { normalizeJa } from "../../lib/dictation/normalize";
 import { CHUNKERS, CURRENT_CHUNKER, type ChunkReason } from "../../lib/dictation/chunk";
 
 loadEnvConfig(process.cwd());
@@ -32,8 +35,17 @@ async function main() {
   const fallback = new Map<ChunkReason, string[]>();
   const histogram = new Map<number, number>();
   let usable = 0;
+  const nullMaps: string[] = [];
+  const dump: { text: string; reliable: boolean; reason: string | null; chunks: string[] }[] = [];
   for (const text of texts) {
     const r = await chunk(text);
+    const map = displayMap(text);
+    if (map === null) nullMaps.push(text);
+    // the displays of a reliable line's chunks must rebuild the raw text minus whitespace
+    else if (r.reliable && chunkDisplays(map, normalizeJa(text), r.chunks).join("") !== text.replace(/\s+/g, "")) {
+      throw new Error(`display does not rebuild text_jp: ${text}`);
+    }
+    dump.push({ text, reliable: r.reliable, reason: r.reason, chunks: r.chunks });
     if (r.reliable) {
       usable++;
       histogram.set(r.chunks.length, (histogram.get(r.chunks.length) ?? 0) + 1);
@@ -50,6 +62,10 @@ async function main() {
     console.log(`fallback ${reason}: ${list.length} (${pct(list.length)})`);
     for (const s of list.slice(0, 3)) console.log(`  - ${s}`);
   }
+  // COVERAGE_DUMP=<file> writes every line's result so two chunker versions can be diffed.
+  if (process.env.COVERAGE_DUMP) writeFileSync(process.env.COVERAGE_DUMP, JSON.stringify(dump));
+  console.log(`lines with no display map (shown as normalised): ${nullMaps.length}`);
+  for (const s of nullMaps) console.log(`  - ${s}`);
   console.log("chunk-count histogram:");
   for (const [n, count] of [...histogram].sort((a, b) => a[0] - b[0])) console.log(`  ${n} chunks: ${count}`);
 }

@@ -86,6 +86,9 @@ describe("chunkV1", () => {
       ["彼は!?(はい)と言った", ["彼は!?", "(はい)と", "言った"]],
       ["彼は「「はい」」と言った", ["彼は", "「「はい」」と", "言った"]],
       ["いいえ」「はい」と言った", ["いいえ」", "「はい」と", "言った"]],
+      // owner 2026-10-21: `"` is punctuation; an odd one opens and binds forward, an even one closes and binds back
+      ['"お店の性格"っていうのを', ['"お店の', '性格"っていうのを']],
+      ['彼は"はい"と言った', ["彼は", '"はい"と', "言った"]],
     ])("%s", async (line, chunks) => {
       const r = await run(line);
       expect(r).toEqual({ version: 1, reliable: true, reason: null, chunks });

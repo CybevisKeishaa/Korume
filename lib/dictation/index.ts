@@ -1,5 +1,6 @@
 export { scoreDictation } from "./score";
 export { normalizeJa } from "./normalize";
+export { chunkDisplays, displayMap, displayRange } from "./display";
 export type { ChunkReason, DictationDiff, DictationResult, LineChunks } from "./types";
 export {
   PUNCTUATION,

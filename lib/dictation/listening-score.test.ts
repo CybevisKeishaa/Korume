@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { displayMap } from "./display";
+import { normalizeJa } from "./normalize";
 import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, stripPunctuation } from "./listening-score";
 
 const BASE = "注文をお願いします。";
@@ -29,6 +31,24 @@ describe("scoreWordBank", () => {
 describe("scoreTyping", () => {
   it("ignores punctuation", () => {
     expect(scoreTyping("今日は雨です。", "今日は雨です", [], []).score).toBe(100);
+  });
+  it('strips " from the reference and the input', () => {
+    expect(scoreTyping('"今日は"雨です。', '今日は"雨です', [], []).score).toBe(100);
+    expect(stripPunctuation('"はい"').chars).toEqual(["は", "い"]);
+  });
+  it("a diff op shows the raw reference character, hinted ops too; extra has none", () => {
+    const text = "ｶﾀｶﾅ";
+    const r = scoreTyping(normalizeJa(text), "カタカナで", [{ start: 3, end: 4 }], [], displayMap(text));
+    expect(r.diff).toEqual([
+      { type: "match", expected: "カ", actual: "カ", display: "ｶ" },
+      { type: "match", expected: "タ", actual: "タ", display: "ﾀ" },
+      { type: "match", expected: "カ", actual: "カ", display: "ｶ" },
+      { type: "hinted", expected: "ナ", display: "ﾅ" },
+      { type: "extra", actual: "で" },
+    ]);
+  });
+  it("without a map the display is the base character", () => {
+    expect(scoreTyping("雨", "", [], []).diff).toEqual([{ type: "missing", expected: "雨", display: "雨" }]);
   });
   it("flags kana for kanji", () => {
     const r = scoreTyping("今日は雨です。", "きょうは雨です", [], []);

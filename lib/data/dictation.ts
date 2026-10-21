@@ -2,7 +2,9 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
+  chunkDisplays,
   chunkUnits,
+  displayMap,
   grapheme4Units,
   normalizeJa,
   scoreTyping,
@@ -61,6 +63,7 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
   if (!CHUNKERS[input.version]) return { ok: false, status: 409, error: "chunker_version" };
   const cut = await chunkLine(text, input.version);
   const base = normalizeJa(text);
+  const display = displayMap(text);
 
   // §5.4: the hint unit is the server's, never the client's choice.
   let unit: "chunk" | "grapheme4";
@@ -95,7 +98,7 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
 
   if (input.kind === "reveal") {
     await insert({ user_input: "", status: "revealed", accuracy_score: null, chunk_order: null });
-    return { ok: true, data: { kind: "reveal", answer: text, chunks: cut.chunks } };
+    return { ok: true, data: { kind: "reveal", answer: text, chunks: cut.chunks, display: chunkDisplays(display, base, cut.chunks) } };
   }
 
   try {
@@ -116,7 +119,7 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
     });
   } else {
     const hinted = input.hintedUnits.flatMap((i): Range[] => (units[i] ? [units[i]] : []));
-    const { score, diff, metrics } = scoreTyping(base, input.input, hinted, await grammarRanges(text));
+    const { score, diff, metrics } = scoreTyping(base, input.input, hinted, await grammarRanges(text), display);
     data = { kind: "submit", score, diff, metrics, answer: text };
     await insert({ user_input: input.input, status: "submitted", accuracy_score: score, chunk_order: null });
   }
