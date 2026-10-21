@@ -27,7 +27,8 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 | Task | Status | Commit |
 |---|---|---|
-| plan | APPROVED by the owner 2026-10-21 at `f800a8af` (subagent-driven), plus the Task 1 representativeness condition | `0288a15e`, `b051a539`, `f800a8af`, this commit |
+| plan | APPROVED by the owner 2026-10-21 at `f800a8af` (subagent-driven), plus the Task 1 representativeness condition | `0288a15e`, `b051a539`, `f800a8af`, `b4565f92` |
+| 1 migration 048 | accepted (task review Approved, fix round 1 re-reviewed); owner's DB upgraded once to 048 | `b6d795bc`, `678fa543` |
 
 ## Contracts and decisions
 
@@ -38,7 +39,13 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Verification
 
-- None yet. Worktree dependencies installed from the lockfile (`npm ci`, 2026-10-21).
+- Worktree dependencies installed from the lockfile (`npm ci`, 2026-10-21).
+- Task 1 (2026-10-21): D1 = faithful copy of the owner's DB, representativeness gate PASS (grants, 110 table counts,
+  444 constraints, 130 FKs 0 orphans, Step 0 outputs byte-identical); D0 master replay 0 lines of drift; 048 GREEN on
+  D1 upgrade and D2 fresh replay (6 SQL gates + 4 races), SQL mutations RED (the trigger mutation that stayed green was
+  replaced by two RED ones); owner's DB took one `migration up` (048 only), 107 legacy rows byte-identical; D0–D3
+  dropped. Visible number change on the owner's data, per P9: `practice_activity.dictation_lines` 1 → 0 for 101
+  accounts whose only row has no line (score 70, 2026-10-12..14, test artefacts), 6 → 3 for one account.
 
 ## Working tree and environment
 
@@ -59,4 +66,4 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Task 1 (subagent-driven), starting with Step 0 read-only baseline on the owner's DB.
+1. Task 2 (chunker v1, bank order, coverage report — report to the owner before any chunking-rule change).
