@@ -2,6 +2,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { IpadicFeatures } from "kuromoji";
 import { getTokenizer } from "../japanese/tokenizer";
+import { PUNCTUATION } from "./listening-score";
 import { normalizeJa } from "./normalize";
 
 export type ChunkReason = "mismatch" | "unknown_token" | "latin_or_digit" | "single_chunk";
@@ -21,6 +22,8 @@ const OPEN_BRACKETS = "「『（(【";
 type Tok = IpadicFeatures;
 
 const isOpenBracket = (t: Tok) => t.pos === "記号" && OPEN_BRACKETS.includes(t.surface_form);
+// kuromoji tags runs like `...` or `?」` as UNKNOWN nouns; those are punctuation, not a failure to read the line.
+const isPunctuation = (t: Tok) => [...t.surface_form].every((c) => PUNCTUATION.test(c));
 const isIndependent = (t: Tok) => t.pos_detail_1 === "自立";
 // R1: a 副詞可能 noun (毎日, 今日) does not compound with the noun after it.
 const isCompoundableNoun = (t: Tok) => t.pos === "名詞" && t.pos_detail_1 !== "副詞可能";
@@ -98,12 +101,15 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
   if (tokens.map((t) => t.surface_form).join("") !== base) return unreliable("mismatch");
   // latin/digit first: kuromoji marks every latin or digit run UNKNOWN, so the reverse order hides this reason
   if (/[A-Za-z0-9]/.test(base)) return unreliable("latin_or_digit");
-  if (tokens.some((t) => t.word_type === "UNKNOWN")) return unreliable("unknown_token");
+  if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunctuation(t))) return unreliable("unknown_token");
+  // retype punctuation-only UNKNOWN tokens as symbols so they bind like any other mark and never start a chunk
+  const toks = tokens.map((t): Tok => (t.word_type === "UNKNOWN" ? { ...t, pos: "記号", pos_detail_1: "一般" } : t));
 
   let chunks: Tok[][] = [];
-  tokens.forEach((t, i) => {
+  toks.forEach((t, i) => {
     const last = chunks[chunks.length - 1];
-    if (!last || startsChunk(t, tokens[i - 1])) chunks.push([t]);
+    // a line-initial run of punctuation binds forward to the first lexical token (R18)
+    if (!last || (!last.every(isPunctuation) && startsChunk(t, toks[i - 1]))) chunks.push([t]);
     else last.push(t);
   });
   chunks = mergeDownTo(chunks, MAX_CHUNKS);

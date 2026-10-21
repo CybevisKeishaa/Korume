@@ -72,6 +72,37 @@ describe("chunkV1", () => {
     expect(r.chunks).toEqual(["私は", "「はい」と", "言った。"]);
   }, T);
 
+  describe("punctuation-only UNKNOWN tokens keep Word Bank (owner 2026-10-21)", () => {
+    // kuromoji tags `...` and `?」` as UNKNOWN 名詞; punctuation stays in the chunks (NFKC: … -> ..., ？ -> ?)
+    it.each([
+      ["お値段が…みたいな時が結構あるんですね", ["お値段が...みたいな時が", "結構", "あるんですね"]],
+      ["今日はいい天気ですね？", ["今日は", "いい", "天気ですね?"]],
+      ["「今日はいい天気ですね？」", ["「今日は", "いい", "天気ですね?」"]],
+      ["「そうですね…」と言った。", ["「そうですね...」と", "言った。"]],
+      ["…今日は雨です", ["...今日は", "雨です"]],
+      ["今日は雨です！？", ["今日は", "雨です!?"]],
+    ])("%s", async (line, chunks) => {
+      const r = await run(line);
+      expect(r).toEqual({ version: 1, reliable: true, reason: null, chunks });
+      expect(r.chunks.join("")).toBe(normalizeJa(line));
+    }, T);
+
+    it("a punctuation-only chunk never stands alone", async () => {
+      const { chunks } = await run("…今日は雨です");
+      expect(chunks.length).toBeGreaterThan(1);
+      expect(chunks.every((c) => /[^.。、!?「」]/.test(c))).toBe(true);
+    }, T);
+
+    it("「そうですね…」 alone is one chunk with the … inside it", async () => {
+      expect(await run("「そうですね…」")).toEqual({ version: 1, reliable: false, reason: "single_chunk", chunks: [] });
+    }, T);
+
+    it("an UNKNOWN token that is not punctuation still gives unknown_token", async () => {
+      // ポッドジャスト is the UNKNOWN word; the trailing ... is not what fails the line
+      expect(await run("ポッドジャスト…です")).toEqual({ version: 1, reliable: false, reason: "unknown_token", chunks: [] });
+    }, T);
+  });
+
   it.each([
     ["ABCです", "latin_or_digit"],
     ["3時です", "latin_or_digit"],
