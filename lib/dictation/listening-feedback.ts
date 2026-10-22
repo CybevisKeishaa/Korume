@@ -74,3 +74,17 @@ export function listeningFeedback(event: FeedbackEvent): FeedbackMessage[] {
     }
   }
 }
+
+const CHECKED: ReadonlySet<FeedbackId> = new Set(FEEDBACK_IDS.filter((id) => id.startsWith("wb_") || id.startsWith("ty_")));
+export type FeedbackMood = "joy" | "encourage" | "review";
+
+/**
+ * P15: Korume's expression, from the P14 outcome ids only, never from a score. `wb_perfect` / `ty_perfect` are
+ * emitted only when no part was hinted, so a hinted attempt can never reach joy. Hints and restarts while
+ * answering, and a failed request, carry no checked id: no figure.
+ */
+export function feedbackMood(messages: FeedbackMessage[]): FeedbackMood | null {
+  if (messages.some((m) => m.id === "wb_perfect" || m.id === "ty_perfect")) return "joy";
+  if (messages.some((m) => m.id === "revealed")) return "review";
+  return messages.some((m) => CHECKED.has(m.id)) ? "encourage" : null;
+}

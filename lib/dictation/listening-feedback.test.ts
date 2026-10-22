@@ -2,7 +2,7 @@ import { IntlMessageFormat } from "intl-messageformat";
 import { describe, expect, it } from "vitest";
 import en from "@/messages/en/shadowing.json";
 import vi from "@/messages/vi/shadowing.json";
-import { FEEDBACK_IDS, listeningFeedback, typingErrorCount } from "./listening-feedback";
+import { FEEDBACK_IDS, feedbackMood, listeningFeedback, typingErrorCount } from "./listening-feedback";
 import type { ListeningDiffOp } from "./listening-score";
 
 const ids = (messages: { id: string }[]) => messages.map((message) => message.id);
@@ -105,6 +105,42 @@ describe("listeningFeedback (P14)", () => {
     });
     expect(busy.length).toBeLessThanOrEqual(3);
     expect(ids(busy)[0]).toBe("ty_errors");
+  });
+});
+
+describe("feedbackMood (P15)", () => {
+  const wb = (slots: { correct: boolean; hinted: boolean }[], previous: { wrongSlots: number[] } | null = null) =>
+    feedbackMood(listeningFeedback({ kind: "checked_word_bank", slots, previous }));
+  const ty = (diff: ListeningDiffOp[], previous: { errorCount: number } | null = null) =>
+    feedbackMood(listeningFeedback({ kind: "checked_typing", diff, metrics: { recall: 100 }, previous }));
+
+  it("is joy only for a perfect result with no hint", () => {
+    expect(wb([slot(true), slot(true), slot(true)])).toBe("joy");
+    expect(ty([match("今"), match("日")])).toBe("joy");
+  });
+
+  it("never gives joy to an attempt with a hint, even when every part is right", () => {
+    expect(wb([slot(true, true), slot(true), slot(true)])).toBe("encourage");
+    expect(ty([hinted("今"), match("日")])).toBe("encourage");
+  });
+
+  it("encourages a partial result and real progress between two submitted results", () => {
+    expect(wb([slot(true), slot(false), slot(true)])).toBe("encourage");
+    expect(ty([match("今"), wrong("日")])).toBe("encourage");
+    expect(ty([match("今"), extra])).toBe("encourage");
+    expect(wb([slot(true), slot(false), slot(true)], { wrongSlots: [0, 1] })).toBe("encourage");
+    expect(ty([match("今"), missing("日")], { errorCount: 3 })).toBe("encourage");
+  });
+
+  it("is review after Show answer", () => {
+    expect(feedbackMood(listeningFeedback({ kind: "revealed" }))).toBe("review");
+  });
+
+  it("is null before a successful Check or Show answer: hints, a restart, or a failed request", () => {
+    expect(feedbackMood(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 1, total: 3 }))).toBeNull();
+    expect(feedbackMood(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 3, total: 3 }))).toBeNull();
+    expect(feedbackMood(listeningFeedback({ kind: "retry", previousScore: 40 }))).toBeNull();
+    expect(feedbackMood([])).toBeNull();
   });
 });
 

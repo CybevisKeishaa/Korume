@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/lib/i18n";
 import { usePathname, useRouter } from "@/lib/i18n/navigation";
+import { feedbackMood } from "@/lib/dictation/listening-feedback";
 import { listeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
 import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
@@ -53,7 +54,7 @@ export function ListeningModeBody() {
   const answered = attempt.result !== null || attempt.revealed;
   const ready = chunksStatus === "ready" && chunks !== null && lineId !== null && !fallback;
   return <PracticePanel label={tl("region")} navigator={<SentenceNavigator />}
-    feedback={<ListeningFeedback messages={attempt.feedback} error={attempt.error} submitting={attempt.submitting}
+    feedback={<ListeningFeedback messages={attempt.feedback} mood={answerVisible ? feedbackMood(attempt.feedback) : null} error={attempt.error} submitting={attempt.submitting}
       result={answerVisible ? attempt.result : null} answer={answerVisible ? attempt.answer : null} />}>
     {!fallback && <ListeningFormatSwitch format={format} inProgress={attempt.inProgress} wordBankAvailable={!unreliable} />}
     {lineId !== null && chunksStatus === "loading" && <p className="text-caption text-muted-foreground">{tl("loading")}</p>}

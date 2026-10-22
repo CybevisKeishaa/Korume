@@ -1,9 +1,10 @@
 "use client";
 
 import { useTranslations } from "@/lib/i18n";
-import type { FeedbackMessage } from "@/lib/dictation/listening-feedback";
+import type { FeedbackMessage, FeedbackMood } from "@/lib/dictation/listening-feedback";
 import type { ListeningSubmitData } from "@/lib/dictation/listening-score";
 import { REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT } from "@/lib/summary/thresholds";
+import { ListeningFeedbackKorume } from "./listening-feedback-korume";
 import type { ListeningAttemptError } from "./use-listening-attempt";
 
 const CARD = "rounded-lg border border-border bg-card p-sm";
@@ -13,8 +14,10 @@ const CARD = "rounded-lg border border-border bg-card p-sm";
  * they carry only counts, never the text of a unit. The score, its label, the metrics that exist for this
  * result and the answer appear only once the attempt is checked or revealed.
  */
-export function ListeningFeedback({ messages, error, submitting, result, answer }: {
+export function ListeningFeedback({ messages, mood, error, submitting, result, answer }: {
   messages: FeedbackMessage[];
+  /** P15: null unless the current attempt's answer is visible. */
+  mood: FeedbackMood | null;
   error: ListeningAttemptError | null;
   submitting: boolean;
   result: ListeningSubmitData | null;
@@ -34,9 +37,12 @@ export function ListeningFeedback({ messages, error, submitting, result, answer 
 
   return <div className="flex flex-col gap-sm">
     {error && <p role="alert" className="text-caption text-danger-strong">{t(`listening.error.${error}`)}</p>}
-    <div role="status" aria-live="polite" data-testid="listening-feedback" className="flex flex-col gap-2xs text-body text-foreground">
-      {submitting && <p className="text-muted-foreground">{t("listening.checking")}</p>}
-      {messages.map((message) => <p key={message.id}>{t(`listening.feedback.${message.id}`, message.values)}</p>)}
+    <div className="flex items-start gap-sm">
+      <div role="status" aria-live="polite" data-testid="listening-feedback" className="flex min-w-0 flex-1 flex-col gap-2xs text-body text-foreground">
+        {submitting && <p className="text-muted-foreground">{t("listening.checking")}</p>}
+        {messages.map((message) => <p key={message.id}>{t(`listening.feedback.${message.id}`, message.values)}</p>)}
+      </div>
+      <ListeningFeedbackKorume mood={mood} />
     </div>
     {score !== undefined && label && <div className={`${CARD} flex items-center justify-between gap-md`}>
       <p className="text-caption text-muted-foreground">{t("listening.score")}</p>
