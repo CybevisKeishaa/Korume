@@ -88,8 +88,8 @@ const SCANNED_DIRS = [
   { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: FORBIDDEN, sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: FORBIDDEN, sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: FORBIDDEN, sources: 4 },
-  // Task 4b: the workspace route group only; dictation stays outside this scope.
-  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 3 },
+  // Task 4b: the workspace route group only; B2 Task 9 adds listening/page.tsx (the dictation page is gone).
+  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 4 },
   // The Shadowing Hub renders into this tree and the first pass missed it:
   // hub-import-section imports VideoImportForm, and both it and
   // hub-library-section import LessonCreationProgress. A calibration screen

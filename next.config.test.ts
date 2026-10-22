@@ -56,17 +56,22 @@ describe("next.config.mjs redirects()", () => {
     return group ? group.split("|") : null;
   }
 
-  it("still ships exactly the five rules the specs define", async () => {
+  it("still ships exactly the six rules the specs define", async () => {
     const sources = (await rules).map((r) => r.source);
-    expect(sources).toHaveLength(5);
+    expect(sources).toHaveLength(6);
     expect(sources.map((s) => s.replace(/\(.*?\)/, ""))).toEqual([
       "/:locale/videos",
       "/:locale/videos/:id/shadowing",
       "/:locale/videos/:id/dictation",
+      "/:locale/shadowing/:id/dictation",
       "/:locale/jlpt/:path*",
       "/:locale/sensei",
     ]);
     expect((await rules).find((r) => r.source.endsWith("/sensei"))?.destination).toBe("/:locale/korume/chat");
+    // P2: both dictation links land on Listening's Typing format in one hop.
+    const dictation = (await rules).filter((r) => r.source.endsWith("/dictation"));
+    expect(dictation).toHaveLength(2);
+    for (const rule of dictation) expect(rule.destination).toBe("/:locale/shadowing/:id/listening?format=typing");
   });
 
   it("constrains :locale on EVERY rule, so no rule can match /api/...", async () => {
@@ -91,9 +96,9 @@ describe("next.config.mjs redirects()", () => {
     }
   });
 
-  it("keeps every rule TEMPORARY (307), never permanent", async () => {
-    // A 308 is cached hard by browsers; these routes move again in Plan D.
-    for (const rule of await rules) expect(rule.permanent).toBe(false);
+  it("keeps every rule TEMPORARY (307) except the retired /shadowing/:id/dictation (308, P2)", async () => {
+    // A 308 is cached hard by browsers; these routes move again in Plan D. The retired dictation page does not.
+    for (const rule of await rules) expect(rule.permanent).toBe(rule.source.endsWith("/shadowing/:id/dictation"));
   });
 });
 

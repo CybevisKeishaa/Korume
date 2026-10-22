@@ -38,7 +38,7 @@ export async function resolveRoutes(learner: Learner): Promise<RouteTarget[]> {
     ...dynamic.map(([label, base, id]) => (id ? { label, path: `${base}/${id}` } : { label, unavailable: `no row in the table behind ${label}` })),
     { label: "(focus) shadowing/[id]", path: `shadowing/${videoId}` },
     { label: "(focus) shadowing/[id]/pronunciation", path: `shadowing/${videoId}/pronunciation` },
-    { label: "(focus) shadowing/[id]/dictation", path: `shadowing/${videoId}/dictation` },
+    { label: "(focus) shadowing/[id]/listening", path: `shadowing/${videoId}/listening` },
     { label: "(focus) shadowing/[id]/summary", path: `shadowing/${videoId}/summary` },
   ];
   if (routes.length !== ROUTE_COUNT) throw new Error(`route list has ${routes.length} entries, spec P1 locks ${ROUTE_COUNT}`);
