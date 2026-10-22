@@ -2024,6 +2024,8 @@
 /* Listening's Korume beside the feedback (plan P15). The practice panel is a size container, so the figure scales
    with the panel's height between two density-scaled bounds and hides when the panel is too short to spare it:
    the P14 text and the practice controls always keep the room. Both numbers are calibrated at the Chrome look
-   (1280x529, Task 10). Unlayered, so it wins over MascotPose's `h-24`. */
+   (1280x529, Task 10). Tailwind 3.4 emits no cascade layers: this rule wins over MascotPose's `h-24` because it
+   comes after the utilities at equal specificity. */
+.practice-panel { container: practice-panel / size; }
 .listening-korume { block-size: clamp(var(--space-2xl), 16cqb, calc(96 * var(--density-unit))); flex: none; }
 @container practice-panel (height < 20rem) { .listening-korume { display: none; } }
