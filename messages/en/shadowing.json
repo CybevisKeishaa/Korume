@@ -239,6 +239,14 @@
         "chunksError": "This sentence could not be loaded.",
         "retryLoad": "Retry",
         "unreliable": "This sentence can't be split reliably, so it's Typing only",
+        "formatLabel": "Listening format",
+        "typingLabel": "Type what you hear",
+        "discard": {
+          "title": "Discard this attempt?",
+          "body": "What you placed or typed for this sentence will be cleared.",
+          "keep": "Keep going",
+          "confirm": "Discard and switch"
+        },
         "bank": "Word bank",
         "answerSlots": "Your sentence",
         "slot": "Slot {n} of {total}, {text}",

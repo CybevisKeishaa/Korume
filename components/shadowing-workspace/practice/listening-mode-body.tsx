@@ -8,9 +8,11 @@ import { listeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
 import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
 import { ListeningFeedback } from "./listening-feedback";
+import { ListeningFormatSwitch } from "./listening-format-switch";
 import { useListeningReveal } from "./listening-reveal-context";
 import { PracticeEmptyTranscript, PracticePanel, useFirstPracticeSentence } from "./practice-panel";
 import { SentenceNavigator } from "./sentence-navigator";
+import { TypingPanel } from "./typing-panel";
 import { useListeningAttempt } from "./use-listening-attempt";
 import { WordBankPanel } from "./word-bank-panel";
 
@@ -33,7 +35,8 @@ export function ListeningModeBody() {
   const { index } = useCurrentSentence();
   const controller = usePlaybackController();
   const { attempt: attemptNumber, answerVisible } = useListeningReveal();
-  const lineId = index === null ? null : lines[index]?.id ?? null;
+  const line = index === null ? undefined : lines[index];
+  const lineId = line?.id ?? null;
   const attempt = useListeningAttempt(lineId, format);
   const { chunks, chunksStatus } = attempt;
   const unreliable = chunksStatus === "ready" && chunks !== null && !chunks.reliable;
@@ -52,6 +55,7 @@ export function ListeningModeBody() {
   return <PracticePanel label={tl("region")} navigator={<SentenceNavigator />}
     feedback={<ListeningFeedback messages={attempt.feedback} error={attempt.error} submitting={attempt.submitting}
       result={answerVisible ? attempt.result : null} answer={answerVisible ? attempt.answer : null} />}>
+    {!fallback && <ListeningFormatSwitch format={format} inProgress={attempt.inProgress} wordBankAvailable={!unreliable} />}
     {lineId !== null && chunksStatus === "loading" && <p className="text-caption text-muted-foreground">{tl("loading")}</p>}
     {lineId !== null && chunksStatus === "error" && <div role="alert" className="flex items-center gap-sm text-caption text-danger-strong">
       <p>{tl("chunksError")}</p>
@@ -61,6 +65,9 @@ export function ListeningModeBody() {
     {ready && format === "word_bank" && <WordBankPanel key={`${lineId}|${format}|${attemptNumber}`} lineId={lineId} display={chunks.display}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.slots ?? null : null} revealed={answerVisible && attempt.revealed}
       submitting={attempt.submitting} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })} onProgress={attempt.setInProgress} />}
+    {ready && format === "typing" && <TypingPanel key={`${lineId}|${format}|${attemptNumber}`} text={line?.textJp ?? ""} display={chunks.display}
+      hintUnit={chunks.typingHintUnit} hinted={attempt.hinted} diff={answerVisible ? attempt.result?.diff ?? null : null}
+      revealed={answerVisible && attempt.revealed} submitting={attempt.submitting} onCheck={(input) => void attempt.submit({ input })} onProgress={attempt.setInProgress} />}
     {ready && <div className="flex flex-wrap gap-xs">
       {!answered && <>
         <button type="button" className={ACTION} disabled={attempt.submitting || attempt.allHinted} onClick={attempt.hint}>{tl("hint")}</button>

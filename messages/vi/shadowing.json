@@ -245,6 +245,14 @@
         "chunksError": "Không tải được câu này.",
         "retryLoad": "Thử lại",
         "unreliable": "Câu này không tách cụm chính xác được, nên chỉ luyện gõ chính tả",
+        "formatLabel": "Hình thức luyện nghe",
+        "typingLabel": "Gõ những gì bạn nghe được",
+        "discard": {
+          "title": "Bỏ lượt làm này?",
+          "body": "Những gì bạn đã xếp hoặc gõ cho câu này sẽ bị xóa.",
+          "keep": "Tiếp tục làm",
+          "confirm": "Bỏ và chuyển"
+        },
         "bank": "Kho cụm từ",
         "answerSlots": "Câu của bạn",
         "slot": "Ô {n}/{total}, {text}",

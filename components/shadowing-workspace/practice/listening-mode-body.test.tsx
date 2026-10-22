@@ -7,7 +7,9 @@ import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub"
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { bankOrder } from "@/lib/dictation/shuffle";
-import { scoreWordBank } from "@/lib/dictation/listening-score";
+import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, type Range } from "@/lib/dictation/listening-score";
+import { displayMap } from "@/lib/dictation/display";
+import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
 import { ShadowingWorkspaceShell } from "../workspace-shell";
 import { resetTabWritesForTests } from "../workspace-context";
@@ -30,7 +32,13 @@ const LINES = {
   "line-1": { text: "今日は雨です。でも明日は晴れ…", chunks: ["今日は", "雨です。", "でも", "明日は晴れ..."], display: ["今日は", "雨です。", "でも", "明日は晴れ…"] },
   "line-2": { text: "今日は雨です。", chunks: ["今日は", "雨です。"], display: ["今日は", "雨です。"] },
   "line-3": { text: "ABCの歌です。", chunks: ["ABCの歌です。"], display: ["ABCの歌です。"] },
+  // Half-width kana and a full-width "？" are shown as written (P13); ㌘ expands to three base characters.
+  "line-4": { text: "ﾃｽﾄはいいです？", chunks: ["テストは", "いいです?"], display: ["ﾃｽﾄは", "いいです？"] },
+  "line-5": { text: "砂糖1㌘", chunks: ["砂糖1グラム"], display: ["砂糖1㌘"] },
 } as const;
+const UNRELIABLE = new Set(["line-3", "line-5"]);
+/** kuromoji 助詞/助動詞 ranges over the base, as the server would send them to the scorer. */
+const GRAMMAR: Partial<Record<string, Range[]>> = { "line-2": [{ start: 2, end: 3 }, { start: 4, end: 6 }] };
 type LineId = keyof typeof LINES;
 const lesson: WorkspaceBootstrap = {
   userId: "user-1",
@@ -41,15 +49,21 @@ const lesson: WorkspaceBootstrap = {
   masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
 };
 const chunksOf = (id: LineId): LineChunks => ({
-  version: 1, textHash: "a".repeat(64), reliable: id !== "line-3", reason: id === "line-3" ? "latin_or_digit" : null,
-  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: id === "line-3" ? "grapheme4" : "chunk",
+  version: 1, textHash: "a".repeat(64), reliable: !UNRELIABLE.has(id), reason: UNRELIABLE.has(id) ? "latin_or_digit" : null,
+  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk",
 });
 
 type AttemptBody = { kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
-/** The server's answer to a valid body: the real Word Bank scorer over the line's normalised chunks. */
+/** The server's answer to a valid body: the real scorers over the line's normalised chunks or base. */
 function serve(body: AttemptBody): Response {
   const line = LINES[body.lineId];
   if (body.kind === "reveal") return Response.json({ data: { kind: "reveal", answer: line.text, chunks: line.chunks, display: line.display } });
+  if (body.format === "typing") {
+    const base = normalizeJa(line.text);
+    const units = body.hintUnit === "grapheme4" ? grapheme4Units(base) : chunkUnits([...line.chunks]);
+    const scored = scoreTyping(base, String(body.input), body.hintedUnits.flatMap((i) => units[i] ?? []), GRAMMAR[body.lineId] ?? [], displayMap(line.text));
+    return Response.json({ data: { kind: "submit", ...scored, answer: line.text } });
+  }
   const scored = scoreWordBank([...line.chunks], body.chunkOrder ?? [], new Set(body.hintedUnits));
   return Response.json({ data: { kind: "submit", ...scored, answer: line.text } });
 }
@@ -59,7 +73,7 @@ const calls = (part: string) => fetchMock.mock.calls.filter(([url]) => String(ur
 const attemptBodies = () => calls("/api/dictation/attempt").map(([, init]) => JSON.parse(String((init as RequestInit).body)) as AttemptBody);
 
 let reveal: ReturnType<typeof useListeningReveal> | undefined;
-type Frame = { attempt: number; subtitle: boolean; cover: boolean; filled: number };
+type Frame = { attempt: number; subtitle: boolean; cover: boolean; filled: number; typed: string | null; answer: boolean };
 const frames: Frame[] = [];
 /** Records every commit (layout effect, before paint) so "in the same commit" is checked, not only the settled DOM. */
 function CommitProbe() {
@@ -70,6 +84,8 @@ function CommitProbe() {
       subtitle: document.querySelector("[data-testid='workspace-subtitle']") !== null,
       cover: document.querySelector("[data-testid='listen-cover']") !== null,
       filled: slotList()?.querySelectorAll("button").length ?? 0,
+      typed: document.querySelector<HTMLInputElement>("input[type='text']")?.value ?? null,
+      answer: document.querySelector("[data-testid='listening-answer']") !== null,
     });
   });
   return null;
@@ -92,29 +108,29 @@ async function open(line: LineId = "line-1") {
   return view;
 }
 
-describe("ListeningModeBody — Word Bank", () => {
-  let yt: YouTubeStubHandle;
-  beforeEach(() => {
-    yt = installYouTubeStub();
-    sessionStorage.clear();
-    resetTabWritesForTests();
-    router.replace.mockReset();
-    frames.length = 0;
-    pathname = "/en/shadowing/video-1/listening";
-    searchParams = new URLSearchParams("line=line-1");
-    attemptHandler = (body) => Promise.resolve(serve(body));
-    fetchMock.mockReset();
-    fetchMock.mockImplementation((url: string, init?: RequestInit) => {
-      const chunk = String(url).match(/\/api\/lines\/(line-\d)\/chunks$/);
-      if (chunk) return Promise.resolve(Response.json({ data: chunksOf(chunk[1] as LineId) }));
-      if (String(url) === "/api/dictation/attempt") return attemptHandler(JSON.parse(String(init?.body)) as AttemptBody);
-      if (String(url).includes("practice-stats")) return Promise.resolve(Response.json({ data: { lineCount: 3, scoredLines: 0, mean: null, lines: {} } }));
-      return Promise.resolve(new Response(null, { status: 200 }));
-    });
-    vi.stubGlobal("fetch", fetchMock);
+let yt: YouTubeStubHandle;
+beforeEach(() => {
+  yt = installYouTubeStub();
+  sessionStorage.clear();
+  resetTabWritesForTests();
+  router.replace.mockReset();
+  frames.length = 0;
+  pathname = "/en/shadowing/video-1/listening";
+  searchParams = new URLSearchParams("line=line-1");
+  attemptHandler = (body) => Promise.resolve(serve(body));
+  fetchMock.mockReset();
+  fetchMock.mockImplementation((url: string, init?: RequestInit) => {
+    const chunk = String(url).match(/\/api\/lines\/(line-\d)\/chunks$/);
+    if (chunk) return Promise.resolve(Response.json({ data: chunksOf(chunk[1] as LineId) }));
+    if (String(url) === "/api/dictation/attempt") return attemptHandler(JSON.parse(String(init?.body)) as AttemptBody);
+    if (String(url).includes("practice-stats")) return Promise.resolve(Response.json({ data: { lineCount: 3, scoredLines: 0, mean: null, lines: {} } }));
+    return Promise.resolve(new Response(null, { status: 200 }));
   });
-  afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
+  vi.stubGlobal("fetch", fetchMock);
+});
+afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
 
+describe("ListeningModeBody — Word Bank", () => {
   it("shows the bank in bankOrder; a chip fills the first empty slot and a placed chip goes back", async () => {
     await open();
     const shown = bankOrder(4, "line-1").map((i) => LINES["line-1"].display[i]);
@@ -259,7 +275,7 @@ describe("ListeningModeBody — Word Bank", () => {
     const before = required(reveal).attempt;
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     const first = frames.find((frame) => frame.attempt === before + 1);
-    expect(first).toEqual({ attempt: before + 1, subtitle: false, cover: true, filled: 0 });
+    expect(first).toEqual({ attempt: before + 1, subtitle: false, cover: true, filled: 0, typed: null, answer: false });
     expect(bankTexts()).toEqual(shown);
     expect(feedback()).toHaveTextContent("New attempt. Your last score on this sentence was 25.");
     expect(feedback()).not.toHaveTextContent("You fixed");
@@ -357,6 +373,198 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(screen.getByTestId("lesson-stat-strip")).toHaveTextContent("Typing · Submitted");
     await waitFor(() => expect(String(calls("practice-stats").at(-1)?.[0])).toBe("/api/shadowing/video-1/practice-stats?mode=typing"));
     expect(router.replace).toHaveBeenCalledTimes(1);
+  });
+});
+
+const input = () => screen.getByRole("textbox", { name: "Type what you hear" });
+const radio = (name: string) => screen.getByRole("radio", { name });
+const metricNames = () => within(required(screen.getByText("Recall").closest("dl"))).getAllByRole("term").map((term) => term.textContent);
+const typeInto = (text: string) => fireEvent.change(input(), { target: { value: text } });
+
+async function openTyping(line: LineId) {
+  searchParams = new URLSearchParams(`line=${line}&format=typing`);
+  const view = render(shell());
+  await screen.findByRole("textbox", { name: "Type what you hear" });
+  return view;
+}
+
+describe("ListeningModeBody — Typing and the format switch", () => {
+  it("sends the typed text with the line's hint unit; a hint shows the chunk's raw text and never edits the input", async () => {
+    await openTyping("line-4");
+    expect(screen.getByRole("radio", { name: "Typing" })).toHaveAttribute("aria-checked", "true");
+    typeInto("テスト");
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    expect(screen.getByTestId("typing-hint")).toHaveTextContent("ﾃｽﾄは");
+    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("いいです");
+    expect(input()).toHaveValue("テスト");
+    expect(feedback()).toHaveTextContent("1 chunk hinted so far. Hinted parts don't count toward recall.");
+    expect(feedback().textContent).not.toContain("ﾃｽﾄ");
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
+    expect(attemptBodies()[0]).toEqual({
+      kind: "submit", videoId: "video-1", lineId: "line-4", format: "typing", version: 1, textHash: "a".repeat(64),
+      input: "テスト", hintUnit: "chunk", hintedUnits: [0],
+    });
+  });
+
+  it("hints 4 graphemes on a grapheme4 line and says part", async () => {
+    await openTyping("line-3");
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    expect(screen.getByTestId("typing-hint")).toHaveTextContent("ABCの");
+    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("歌");
+    expect(feedback()).toHaveTextContent("1 part hinted so far.");
+    typeInto("ABCの歌です");
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
+    expect(attemptBodies()[0]).toMatchObject({ format: "typing", hintUnit: "grapheme4", hintedUnits: [0] });
+  });
+
+  it("arrows and Space in the input type and move the caret, never the sentence or playback; Enter submits once, never mid-composition (Review Focus 4)", async () => {
+    const user = userEvent.setup();
+    let resolve: (response: Response) => void = () => undefined;
+    attemptHandler = () => new Promise((done) => { resolve = done; });
+    await openTyping("line-1");
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    // Positive control: outside the input the same key does move the sentence.
+    fireEvent.keyDown(document.body, { key: "ArrowRight" });
+    await waitFor(() => expect(screen.getByRole("button", { name: /^Sentence 2,/ })).toHaveAttribute("aria-current", "true"));
+    await screen.findByRole("textbox", { name: "Type what you hear" });
+    const player = required(yt.players[0]);
+    const seek = vi.spyOn(player, "seekTo");
+    const play = vi.spyOn(player, "playVideo");
+    const pause = vi.spyOn(player, "pauseVideo");
+
+    await user.click(input());
+    await user.keyboard("あ{ArrowLeft}{ArrowRight} い{ArrowLeft}{ArrowLeft}");
+    expect(input()).toHaveValue("あ い");
+    expect(seek).not.toHaveBeenCalled();
+    expect(play).not.toHaveBeenCalled();
+    expect(pause).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /^Sentence 2,/ })).toHaveAttribute("aria-current", "true");
+
+    fireEvent.keyDown(input(), { key: "Enter", isComposing: true });
+    fireEvent.keyDown(input(), { key: "Enter", keyCode: 229 });
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
+    fireEvent.keyDown(input(), { key: "Enter" });
+    fireEvent.keyDown(input(), { key: "Enter" });
+    expect(calls("/api/dictation/attempt")).toHaveLength(1);
+    await act(async () => { resolve(serve(attemptBodies()[0] as AttemptBody)); });
+    await screen.findByTestId("listening-score");
+    expect(calls("/api/dictation/attempt")).toHaveLength(1);
+  });
+
+  it("after Check shows the raw-character diff, Recall only on a line with no kanji or particles, and names the wrong characters", async () => {
+    await openTyping("line-4");
+    typeInto("テストはいいてす");
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("88");
+    expect(screen.getByTestId("typing-diff").textContent).toBe("ﾃｽﾄはいいです");
+    expect(screen.getByTestId("typing-diff").querySelector("[data-op='wrong']")).toHaveTextContent("で");
+    expect(metricNames()).toEqual(["Recall"]);
+    expect(feedback()).toHaveTextContent("1 wrong, 0 missing, 0 extra. Replay the sentence and listen for で.");
+    expect(feedback()).not.toHaveTextContent("Every character");
+    expect(screen.getByTestId("listening-answer")).toHaveTextContent("ﾃｽﾄはいいです？");
+    expect(screen.getByTestId("workspace-subtitle")).toBeInTheDocument();
+
+    // Try again, then a better submitted result: the fewer-errors line appears only now.
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(input()).toHaveValue("");
+    expect(feedback()).not.toHaveTextContent("fewer");
+    typeInto("テストはいいです");
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("100");
+    expect(feedback()).toHaveTextContent("Every character written from memory.");
+    expect(feedback()).toHaveTextContent("1 fewer character error than your last try.");
+  });
+
+  it("shows Kanji and Grammar only when the line has them, and remarks on one only when it is below Recall", async () => {
+    await openTyping("line-2");
+    typeInto("今日わ雨です");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(metricNames()).toEqual(["Recall", "Kanji", "Grammar"]);
+    expect(feedback()).toHaveTextContent("Particles and endings 67%, below your recall.");
+    expect(feedback()).not.toHaveTextContent("Listen for the kanji words");
+  });
+
+  it("never praises a hinted attempt and colours the hinted characters", async () => {
+    await openTyping("line-4");
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    typeInto("テストはいいです");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(screen.getByTestId("typing-diff").querySelectorAll("[data-op='hinted']")).toHaveLength(4);
+    expect(feedback()).toHaveTextContent("4 hinted characters don't count toward recall.");
+    expect(feedback()).not.toHaveTextContent("Every character written from memory.");
+  });
+
+  it("keeps the typed text and stays concealed when the submit fails (Review Focus 2)", async () => {
+    attemptHandler = () => Promise.resolve(new Response(null, { status: 500 }));
+    await openTyping("line-4");
+    typeInto("テスト");
+    fireEvent.click(check());
+    expect(await screen.findByRole("alert")).toHaveTextContent("Your answer could not be checked. It is kept here, so try again.");
+    expect(input()).toHaveValue("テスト");
+    expect(check()).toBeEnabled();
+    expect(screen.queryByTestId("listening-answer")).toBeNull();
+    expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+    expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
+  });
+
+  it("asks before switching away from typed text: Cancel keeps text and format, Confirm switches", async () => {
+    await openTyping("line-4");
+    fireEvent.click(radio("Word Bank"));
+    expect(router.replace).toHaveBeenCalledTimes(1); // nothing typed yet: no confirm
+    expect(screen.queryByRole("dialog")).toBeNull();
+    router.replace.mockReset();
+
+    typeInto("テスト");
+    fireEvent.click(radio("Word Bank"));
+    expect(screen.getByRole("dialog", { name: "Discard this attempt?" })).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Keep going", { selector: "button" }));
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(input()).toHaveValue("テスト");
+    expect(radio("Typing")).toHaveAttribute("aria-checked", "true");
+
+    fireEvent.click(radio("Word Bank"));
+    fireEvent.click(screen.getByRole("button", { name: "Discard and switch" }));
+    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-4&format=word_bank", { scroll: false });
+  });
+
+  it("asks before switching away from a placed chunk", async () => {
+    await open("line-2");
+    place("今日は");
+    fireEvent.click(radio("Typing"));
+    expect(screen.getByRole("dialog", { name: "Discard this attempt?" })).toBeInTheDocument();
+    expect(router.replace).not.toHaveBeenCalled();
+  });
+
+  it("never carries a reveal across formats: the first commit after the URL change is concealed and empty (P11)", async () => {
+    const view = await open("line-2");
+    placeAll(LINES["line-2"].display);
+    fireEvent.click(check());
+    await screen.findByTestId("listening-answer");
+    expect(screen.getByTestId("workspace-subtitle")).toBeInTheDocument();
+    fireEvent.click(radio("Typing"));
+    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-2&format=typing", { scroll: false });
+
+    const before = required(reveal).attempt;
+    searchParams = new URLSearchParams("line=line-2&format=typing");
+    view.rerender(shell());
+    expect(frames.find((frame) => frame.attempt === before + 1)).toEqual({ attempt: before + 1, subtitle: false, cover: true, filled: 0, typed: "", answer: false });
+    expect(screen.queryByTestId("listening-score")).toBeNull();
+
+    searchParams = new URLSearchParams("line=line-2&format=word_bank");
+    view.rerender(shell());
+    expect(frames.find((frame) => frame.attempt === before + 2)).toEqual({ attempt: before + 2, subtitle: false, cover: true, filled: 0, typed: null, answer: false });
+    expect(screen.getByText("Slot 1 of 2, empty")).toBeInTheDocument();
+  });
+
+  it("on an unreliable line disables Word Bank with the reason and shows the notice", async () => {
+    await openTyping("line-3");
+    expect(radio("Word Bank")).toBeDisabled();
+    expect(radio("Word Bank")).toHaveAccessibleDescription("This sentence can't be split reliably, so it's Typing only");
+    expect(screen.getByTestId("listening-unreliable")).toBeVisible();
   });
 });
 
