@@ -44,7 +44,9 @@ describe("TypingPanel", () => {
 
   it("shows each hinted chunk's raw text on the hint line and never edits the learner's text", () => {
     const { rerenderWith } = panel();
-    expect(screen.queryByTestId("typing-hint")).toBeNull();
+    // The live region exists, empty, before the first hint, so that hint is announced.
+    expect(screen.getByTestId("typing-hint")).toHaveAttribute("aria-live", "polite");
+    expect(screen.getByTestId("typing-hint")).toBeEmptyDOMElement();
     fireEvent.change(input(), { target: { value: "abc" } });
     rerenderWith({ hinted: [0] });
     expect(screen.getByTestId("typing-hint")).toHaveTextContent("ﾃｽﾄは");
@@ -52,9 +54,10 @@ describe("TypingPanel", () => {
     expect(input()).toHaveValue("abc");
   });
 
-  it("cuts grapheme4 hints from the raw line", () => {
-    panel({ text: "ABCの歌です。", display: ["ABCの歌です。"], hintUnit: "grapheme4", hinted: [0] });
-    expect(screen.getByTestId("typing-hint").textContent).toBe("HintABCの");
+  it("cuts grapheme4 hints from the raw line, never the normalised one (P13)", () => {
+    // normalizeJa turns ﾃｽﾄ into テスト: the hint must show the half-width characters as written.
+    panel({ text: "ﾃｽﾄ1番です", display: ["ﾃｽﾄ1番です"], hintUnit: "grapheme4", hinted: [0] });
+    expect(screen.getByTestId("typing-hint").textContent).toBe("Hintﾃｽﾄ1");
   });
 
   it("draws the coloured diff from the raw display characters, never the normalised ones (P13)", () => {

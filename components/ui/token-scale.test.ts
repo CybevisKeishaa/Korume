@@ -71,6 +71,7 @@ const SCANNED_DIRS = [
   // Practice-pronunciation owner round 2026-10-19: + practice/take-player, practice/pronunciation-analysis.
   // Practice-listening Task 5: + practice/listen-cover, practice/listening-reveal-context.
   // Practice-listening Task 6: + practice/listening-mode-body, practice/use-listening-attempt, practice/word-bank-panel, practice/listening-feedback.
+  // Practice-listening Task 7: + practice/typing-panel, practice/listening-format-switch.
   { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 68 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).

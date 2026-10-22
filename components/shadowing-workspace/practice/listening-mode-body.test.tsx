@@ -407,13 +407,14 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     });
   });
 
-  it("hints 4 graphemes on a grapheme4 line and says part", async () => {
-    await openTyping("line-3");
+  it("hints 4 graphemes of the raw line on a grapheme4 line and says part", async () => {
+    await openTyping("line-5");
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
-    expect(screen.getByTestId("typing-hint")).toHaveTextContent("ABCの");
-    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("歌");
+    // Base 砂糖1グラム: the first unit 砂糖1グ is shown as written, 砂糖1㌘ (P13).
+    expect(screen.getByTestId("typing-hint")).toHaveTextContent("砂糖1㌘");
+    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("グ");
     expect(feedback()).toHaveTextContent("1 part hinted so far.");
-    typeInto("ABCの歌です");
+    typeInto("砂糖1グラム");
     fireEvent.click(check());
     await waitFor(() => expect(attemptBodies()).toHaveLength(1));
     expect(attemptBodies()[0]).toMatchObject({ format: "typing", hintUnit: "grapheme4", hintedUnits: [0] });
@@ -453,7 +454,7 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     expect(calls("/api/dictation/attempt")).toHaveLength(1);
   });
 
-  it("after Check shows the raw-character diff, Recall only on a line with no kanji or particles, and names the wrong characters", async () => {
+  it("after Check shows the raw-character diff, Recall only on a line with no kanji and no grammar ranges from the scorer, and names the wrong characters", async () => {
     await openTyping("line-4");
     typeInto("テストはいいてす");
     fireEvent.click(check());

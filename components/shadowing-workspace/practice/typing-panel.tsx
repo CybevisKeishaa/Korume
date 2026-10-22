@@ -48,10 +48,13 @@ export function TypingPanel({ text, display, hintUnit, hinted, diff, revealed, s
   };
 
   return <div className="flex flex-col gap-sm">
-    {hinted.length > 0 && <p data-testid="typing-hint" aria-live="polite" className="flex flex-wrap items-baseline gap-xs">
-      <span className="rounded-full bg-accent/20 px-xs text-caption text-accent-strong">{t("hint")}</span>
-      <span lang="ja" className="font-jp text-body text-foreground">{hinted.map((i) => units[i]).join(" ")}</span>
-    </p>}
+    {/* Always mounted, so the first hint is announced too (a live region must exist before its content). */}
+    <p data-testid="typing-hint" aria-live="polite" className="flex flex-wrap items-baseline gap-xs">
+      {hinted.length > 0 && <>
+        <span className="rounded-full bg-accent/20 px-xs text-caption text-accent-strong">{t("hint")}</span>
+        <span lang="ja" className="font-jp text-body text-foreground">{hinted.map((i) => units[i]).join(" ")}</span>
+      </>}
+    </p>
     <Input lang="ja" aria-label={t("typingLabel")} value={input} maxLength={2000} readOnly={locked} autoComplete="off" spellCheck={false}
       className="font-jp" onChange={(event) => { setInput(event.target.value); onProgress(event.target.value !== ""); }}
       onKeyDown={(event) => {
