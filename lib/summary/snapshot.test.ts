@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { buildLessonSnapshot, mistakeSpan, summaryLines, type LessonEvidence, type SummaryLine } from "./snapshot";
+import { buildLessonSnapshot, lessonEvidenceSchema, mistakeSpan, summaryLines, type LessonEvidence, type SummaryLine } from "./snapshot";
 
 const evidence = (overrides: Partial<LessonEvidence> = {}): LessonEvidence => ({
   hasTranscript: true,
   lineCount: 10,
   reachedLine: 0,
   pronunciationMean: null,
-  dictationMean: null,
+  wordBankMean: null,
+  typingMean: null,
   completed: false,
   cards: {
     total: 0,
@@ -38,7 +39,8 @@ describe("buildLessonSnapshot", () => {
     expect(snapshot.status).toEqual({
       shadowing: { kind: "not_started" },
       pronunciation: { kind: "not_started" },
-      listening: { kind: "not_started" },
+      listeningWordBank: { kind: "not_started" },
+      listeningTyping: { kind: "not_started" },
       retention: { kind: "not_enough_data" },
     });
     expect(snapshot.reviewTargets).toEqual([]);
@@ -56,7 +58,15 @@ describe("buildLessonSnapshot", () => {
   it("preserves zero means and rounds non-null pronunciation and dictation means", () => {
     expect(buildLessonSnapshot(evidence({ pronunciationMean: 0 }), lines(1), new Map(), 0).status.pronunciation).toEqual({ kind: "scored", score: 0 });
     expect(buildLessonSnapshot(evidence({ pronunciationMean: 74.5 }), lines(1), new Map(), 0).status.pronunciation).toEqual({ kind: "scored", score: 75 });
-    expect(buildLessonSnapshot(evidence({ dictationMean: 88.4 }), lines(1), new Map(), 0).status.listening).toEqual({ kind: "scored", score: 88 });
+  });
+
+  it("keeps Listening per format, never averaged: Typing 72.4 scores 72 while an untouched Word Bank is not started", () => {
+    const status = buildLessonSnapshot(evidence({ typingMean: 72.4, wordBankMean: null }), lines(1), new Map(), 0).status;
+    expect(status.listeningTyping).toEqual({ kind: "scored", score: 72 });
+    expect(status.listeningWordBank).toEqual({ kind: "not_started" });
+    const swapped = buildLessonSnapshot(evidence({ typingMean: null, wordBankMean: 88.6 }), lines(1), new Map(), 0).status;
+    expect(swapped.listeningWordBank).toEqual({ kind: "scored", score: 89 });
+    expect(swapped.listeningTyping).toEqual({ kind: "not_started" });
   });
 
   it("uses all cards as the retention denominator only after a review", () => {
@@ -82,10 +92,10 @@ describe("buildLessonSnapshot", () => {
     ];
     const snapshot = buildLessonSnapshot(evidence({
       lines: [
-        { lineId: "a", pronunciation: 52, pitch: null, dictation: null, dictationInput: null, difficult: false },
-        { lineId: "b", pronunciation: null, pitch: 48, dictation: 70, dictationInput: "明日は雨です", difficult: false },
-        { lineId: "c", pronunciation: null, pitch: null, dictation: null, dictationInput: null, difficult: true },
-        { lineId: "deleted", pronunciation: 1, pitch: null, dictation: null, dictationInput: null, difficult: false },
+        { lineId: "a", pronunciation: 52, pitch: null, listening: [], difficult: false },
+        { lineId: "b", pronunciation: null, pitch: 48, listening: [{ format: "typing", status: "submitted", score: 70, input: "明日は雨です" }], difficult: false },
+        { lineId: "c", pronunciation: null, pitch: null, listening: [], difficult: true },
+        { lineId: "deleted", pronunciation: 1, pitch: null, listening: [], difficult: false },
       ],
     }), lessonLines, new Map([["a", ["は"]], ["deleted", ["gone"]]]), 0);
 
@@ -98,11 +108,72 @@ describe("buildLessonSnapshot", () => {
 
   it("selects the highest strong pronunciation line", () => {
     const snapshot = buildLessonSnapshot(evidence({ lines: [
-      { lineId: "line-1", pronunciation: 80, pitch: null, dictation: null, dictationInput: null, difficult: false },
-      { lineId: "line-2", pronunciation: 91, pitch: null, dictation: null, dictationInput: null, difficult: false },
+      { lineId: "line-1", pronunciation: 80, pitch: null, listening: [], difficult: false },
+      { lineId: "line-2", pronunciation: 91, pitch: null, listening: [], difficult: false },
     ] }), lines(2), new Map(), 0);
     expect(snapshot.bestLine).toEqual({ lineId: "line-2", lineText: "文2" });
-    expect(buildLessonSnapshot(evidence({ lines: [{ lineId: "line-1", pronunciation: 79, pitch: null, dictation: null, dictationInput: null, difficult: false }] }), lines(1), new Map(), 0).bestLine).toBeNull();
+    expect(buildLessonSnapshot(evidence({ lines: [{ lineId: "line-1", pronunciation: 79, pitch: null, listening: [], difficult: false }] }), lines(1), new Map(), 0).bestLine).toBeNull();
+  });
+});
+
+describe("buildLessonSnapshot · Listening review (spec §6.2, §8)", () => {
+  const one: SummaryLine[] = [{ id: "a", index: 0, textJp: "明日は晴れです", translation: null, startTime: 0, endTime: 1 }];
+  const row = (listening: LessonEvidence["lines"][number]["listening"]): LessonEvidence["lines"][number] => (
+    { lineId: "a", pronunciation: null, pitch: null, listening, difficult: false }
+  );
+
+  it("Typing 95 then Show answer: the average keeps 95 (R1) and the line is in Review as revealed, not as dictation (R2)", () => {
+    const snapshot = buildLessonSnapshot(evidence({
+      typingMean: 95,
+      lines: [row([{ format: "typing", status: "revealed", score: null, input: null }])],
+    }), one, new Map(), 0);
+    expect(snapshot.status.listeningTyping).toEqual({ kind: "scored", score: 95 });
+    expect(snapshot.reviewTargets).toEqual([{ lineId: "a", lineText: "明日は晴れです", reasons: ["revealed"], focusSpan: null }]);
+  });
+
+  it("a weak Typing submission is dictation, focused on its first mistake", () => {
+    const snapshot = buildLessonSnapshot(evidence({
+      lines: [row([{ format: "typing", status: "submitted", score: 70, input: "明日は雨です" }])],
+    }), one, new Map([["a", ["です"]]]), 0);
+    expect(snapshot.reviewTargets).toEqual([{ lineId: "a", lineText: "明日は晴れです", reasons: ["dictation", "grammar"], focusSpan: "晴れ" }]);
+  });
+
+  it("a weak Word Bank submission is dictation, focused on the line's grammar (no typed text to diff)", () => {
+    const snapshot = buildLessonSnapshot(evidence({
+      lines: [row([{ format: "word_bank", status: "submitted", score: 70, input: "明日は雨です" }])],
+    }), one, new Map([["a", ["です"]]]), 0);
+    expect(snapshot.reviewTargets).toEqual([{ lineId: "a", lineText: "明日は晴れです", reasons: ["dictation", "grammar"], focusSpan: "です" }]);
+  });
+
+  it("names each reason once across both formats, and a strong or legacy unscored attempt adds none", () => {
+    const both = buildLessonSnapshot(evidence({
+      lines: [row([
+        { format: "typing", status: "revealed", score: null, input: null },
+        { format: "word_bank", status: "submitted", score: 60, input: null },
+      ])],
+    }), one, new Map(), 0);
+    expect(both.reviewTargets[0]?.reasons).toEqual(["dictation", "revealed"]);
+    const quiet = buildLessonSnapshot(evidence({
+      lines: [row([
+        { format: "typing", status: "unscored", score: null, input: "明日" },
+        { format: "word_bank", status: "submitted", score: 80, input: null },
+      ])],
+    }), one, new Map(), 0);
+    expect(quiet.reviewTargets).toEqual([]);
+  });
+
+  it("parses the SQL shape: listening [] for an untouched line, and a legacy unscored attempt", () => {
+    const parsed = lessonEvidenceSchema.parse({
+      ...evidence({ wordBankMean: null, typingMean: "70.5" as unknown as number }),
+      lines: [
+        { lineId: "a", pronunciation: 52, pitch: null, listening: [], difficult: false },
+        { lineId: "b", pronunciation: null, pitch: null, difficult: false,
+          listening: [{ format: "typing", status: "unscored", score: null, input: "x" }] },
+      ],
+    });
+    expect(parsed.typingMean).toBe(70.5);
+    expect(parsed.lines.map((line) => line.listening.length)).toEqual([0, 1]);
+    expect(() => lessonEvidenceSchema.parse({ ...evidence(), dictationMean: 1, wordBankMean: undefined })).toThrow();
   });
 });
 

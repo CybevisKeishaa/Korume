@@ -580,6 +580,7 @@
         "pronunciation": "Phát âm",
         "pitch": "Trọng âm cao độ",
         "dictation": "Nghe chép",
+        "revealed": "Đã xem đáp án",
         "difficult": "Đã đánh dấu khó",
         "grammar": "Ngữ pháp trong câu"
       }
@@ -588,7 +589,8 @@
       "title": "Tình trạng bài học",
       "shadowing": "Shadowing",
       "pronunciation": "Phát âm",
-      "listening": "Nghe",
+      "listeningWordBank": "Nghe · Xếp cụm từ",
+      "listeningTyping": "Nghe · Gõ chính tả",
       "retention": "Ghi nhớ",
       "notStarted": "Chưa bắt đầu",
       "notEnoughData": "Chưa đủ dữ liệu",

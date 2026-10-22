@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import en from "./shadowing.json";
+import vi from "../vi/shadowing.json";
 
 /**
  * Characterization test for `shadowing.json` (Task 11c): the literal `toBe`
@@ -622,6 +623,16 @@ describe("shadowing.json EN workspace Reading Settings, Study Environment and sh
       open: "Keyboard shortcuts", togglePlay: "Play / pause", previous: "Previous sentence", next: "Next sentence",
       rewind: "Back 5 seconds", loop: "Sentence loop", focus: "Focus Mode",
     });
+  });
+});
+
+describe("shadowing.json — Summary Listening per format (practice-listening, spec §6.2)", () => {
+  it("pins the two Listening status rows and the Answer shown review reason in EN and VI", () => {
+    expect(en.lessonSummary.status).toMatchObject({ listeningWordBank: "Listening · Word Bank", listeningTyping: "Listening · Typing" });
+    expect(vi.lessonSummary.status).toMatchObject({ listeningWordBank: "Nghe · Xếp cụm từ", listeningTyping: "Nghe · Gõ chính tả" });
+    expect(en.lessonSummary.status).not.toHaveProperty("listening");
+    expect(en.lessonSummary.review.reason.revealed).toBe("Answer shown");
+    expect(vi.lessonSummary.review.reason.revealed).toBe("Đã xem đáp án");
   });
 });
 

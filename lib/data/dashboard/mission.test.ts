@@ -48,7 +48,7 @@ describe("getDailyMission", () => {
     const expected = { kind: "ok", data: { rewarded: false, items: [
       { type: "review", current: 1, target: 3, title: null, href: "/mining/review", playbackPercent: null },
       { type: "finish_lesson", current: 0, target: 1, title: "Café", href: "/shadowing/v1", playbackPercent: 80 },
-      { type: "dictation_lines", current: 1, target: 5, title: "Café", href: "/shadowing/v1/dictation", playbackPercent: null },
+      { type: "dictation_lines", current: 1, target: 5, title: "Café", href: "/shadowing/v1/listening", playbackPercent: null },
       { type: "shadow_lines", current: 0, target: 3, title: "Café", href: "/shadowing/v1/pronunciation", playbackPercent: null },
     ] } };
     await expect(Promise.all([getDailyMission(), getDailyMission()])).resolves.toEqual([expected, expected]);

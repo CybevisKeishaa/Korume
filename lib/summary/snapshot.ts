@@ -16,10 +16,12 @@ export type ModeState =
   | { kind: "scored"; score: number }
   | { kind: "not_enough_data" };
 
+/** Listening is two rows, one per format, never averaged together (spec §6.2, P6). */
 export interface LessonStatus {
   shadowing: ModeState;
   pronunciation: ModeState;
-  listening: ModeState;
+  listeningWordBank: ModeState;
+  listeningTyping: ModeState;
   retention: ModeState;
 }
 
@@ -32,7 +34,7 @@ export interface SavedKnowledge {
   retention: RetentionTile;
 }
 
-export type ReviewReason = "pronunciation" | "pitch" | "dictation" | "difficult" | "grammar";
+export type ReviewReason = "pronunciation" | "pitch" | "dictation" | "revealed" | "difficult" | "grammar";
 
 export interface ReviewTarget {
   lineId: string;
@@ -88,7 +90,8 @@ export const lessonEvidenceSchema = z.object({
   lineCount: numeric,
   reachedLine: numeric,
   pronunciationMean: numeric.nullable(),
-  dictationMean: numeric.nullable(),
+  wordBankMean: numeric.nullable(),
+  typingMean: numeric.nullable(),
   completed: z.boolean(),
   cards: z.object({
     total: numeric,
@@ -103,8 +106,13 @@ export const lessonEvidenceSchema = z.object({
     lineId: z.string(),
     pronunciation: numeric.nullable(),
     pitch: numeric.nullable(),
-    dictation: numeric.nullable(),
-    dictationInput: z.string().nullable(),
+    /** Per format, the latest attempt of any status (R2); `[]` when the line has none (R10). `unscored` = legacy. */
+    listening: z.array(z.object({
+      format: z.enum(["word_bank", "typing"]),
+      status: z.enum(["submitted", "revealed", "unscored"]),
+      score: numeric.nullable(),
+      input: z.string().nullable(),
+    })),
     difficult: z.boolean(),
   })),
   saved: z.array(z.object({
@@ -164,8 +172,11 @@ export function buildLessonSnapshot(
     const reasons: ReviewReason[] = [];
     if (row.pronunciation !== null && row.pronunciation < REVIEW_PRONUNCIATION_BELOW) reasons.push("pronunciation");
     if (row.pitch !== null && row.pitch < REVIEW_PRONUNCIATION_BELOW) reasons.push("pitch");
-    const dictationWeak = row.dictation !== null && row.dictation < REVIEW_DICTATION_BELOW;
-    if (dictationWeak) reasons.push("dictation");
+    // Only a submitted attempt has a score (DB check), so a weak score is a weak submission.
+    const weak = row.listening.filter((attempt) => attempt.score !== null && attempt.score < REVIEW_DICTATION_BELOW);
+    if (weak.length > 0) reasons.push("dictation");
+    // R2: the line's state is its latest attempt of any status, so a later Show answer puts it in Review (spec §8).
+    if (row.listening.some((attempt) => attempt.status === "revealed")) reasons.push("revealed");
     if (row.difficult) reasons.push("difficult");
     if (row.pronunciation !== null && row.pronunciation >= STRONG_PRONUNCIATION_AT && (!best || row.pronunciation > best.score)) {
       best = { lineId: line.id, lineText: line.textJp, score: row.pronunciation };
@@ -173,8 +184,11 @@ export function buildLessonSnapshot(
     if (reasons.length === 0) continue;
     const grammar = grammarSpans.get(line.id)?.[0] ?? null;
     if (grammar) reasons.push("grammar");
-    const dictationSpan = dictationWeak && row.dictationInput ? mistakeSpan(line.textJp, row.dictationInput) : null;
-    const scores = [row.pronunciation, row.pitch, row.dictation].filter((score): score is number => score !== null);
+    // Only Typing has typed text to diff; a weak Word Bank line falls back to its grammar.
+    const typed = weak.find((attempt) => attempt.format === "typing")?.input;
+    const dictationSpan = typed ? mistakeSpan(line.textJp, typed) : null;
+    const scores = [row.pronunciation, row.pitch, ...row.listening.map((attempt) => attempt.score)]
+      .filter((score): score is number => score !== null);
     targets.push({
       lineId: line.id,
       lineText: line.textJp,
@@ -190,7 +204,8 @@ export function buildLessonSnapshot(
     status: {
       shadowing: shadowingState(evidence),
       pronunciation: meanState(evidence.pronunciationMean),
-      listening: meanState(evidence.dictationMean),
+      listeningWordBank: meanState(evidence.wordBankMean),
+      listeningTyping: meanState(evidence.typingMean),
       retention: retentionState(evidence.cards),
     },
     savedKnowledge: {

@@ -30,7 +30,7 @@ test("1 · deterministic status, review reasons and AI-off fallback", async ({ p
   await learner(page);
   await summary(page);
   const status = area(page, "status");
-  await expect(status.locator("dd")).toHaveText(["Watched to sentence 2/30", "70", "70", "Not enough data"]);
+  await expect(status.locator("dd")).toHaveText(["Watched to sentence 2/30", "70", "Not started", "70", "Not enough data"]);
   await expect(area(page, "saved").locator("dd")).toHaveText(["0", "0", "0", "Not enough data"]);
   const rows = area(page, "review").locator("li");
   await expect(rows).toHaveCount(3);
@@ -52,7 +52,7 @@ test("1 · deterministic status, review reasons and AI-off fallback", async ({ p
 test("2 · a learner with no evidence sees not-started status and an invitation", async ({ page }) => {
   await learner(page, false);
   await summary(page);
-  await expect(area(page, "status").locator("dd")).toHaveText(["Not started", "Not started", "Not started", "Not enough data"]);
+  await expect(area(page, "status").locator("dd")).toHaveText(["Not started", "Not started", "Not started", "Not started", "Not enough data"]);
   await expect(area(page, "saved")).toContainText("Not enough data");
   await expect(area(page, "reflection")).toContainText("Start shadowing this lesson");
 });

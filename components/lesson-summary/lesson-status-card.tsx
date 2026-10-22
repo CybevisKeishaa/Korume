@@ -5,9 +5,9 @@ import { modeQuality } from "@/lib/summary/thresholds";
 import { cn } from "@/lib/utils";
 import { areaProps } from "./area";
 
-const MODES = ["shadowing", "pronunciation", "listening", "retention"] as const;
+const MODES = ["shadowing", "pronunciation", "listeningWordBank", "listeningTyping", "retention"] as const;
 
-/** Spec §3.1: four rows, read from the tables; "Not started" and a real 0 are different things. */
+/** Spec §3.1: five rows (Listening per format, B2 §6.2), read from the tables; "Not started" and a real 0 differ. */
 export function LessonStatusCard({ status }: { status: LessonStatus }) {
   const t = useTranslations("shadowing.lessonSummary.status");
   const value = (state: ModeState) => {

@@ -9,8 +9,8 @@ describe("modeQuality (spec §5.1 table)", () => {
       .toEqual(["needs_work", "practiced", "practiced", "strong"]);
   });
 
-  it("keeps listening boundary scores on the intended quality side", () => {
-    expect([79, 80, 94, 95].map((score) => modeQuality("listening", scored(score))))
+  it.each(["listeningWordBank", "listeningTyping"] as const)("keeps %s boundary scores on the one Listening cut", (mode) => {
+    expect([79, 80, 94, 95].map((score) => modeQuality(mode, scored(score))))
       .toEqual(["needs_work", "practiced", "practiced", "strong"]);
   });
 

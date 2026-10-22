@@ -4,14 +4,14 @@ import { WeaknessCard } from "./weakness-card";
 
 describe("WeaknessCard", () => {
   it("renders scored rows and leaves Reading without a practice link", () => {
-    render(<WeaknessCard rows={[{ family: "reading", metric: "score", score: 42, practiceHref: null }, { family: "listening", metric: "accuracy", score: 55, practiceHref: "/shadowing/v1/dictation" }]} />);
+    render(<WeaknessCard rows={[{ family: "reading", metric: "score", score: 42, practiceHref: null }, { family: "listening", metric: "accuracy", score: 55, practiceHref: "/shadowing/v1/listening?format=typing" }]} />);
     expect(screen.getByText("Reading")).toBeInTheDocument();
     expect(screen.getByText("42%")).toBeInTheDocument();
     expect(screen.getAllByRole("meter")).toHaveLength(2);
     expect(screen.getByRole("meter", { name: "Reading" })).toHaveAttribute("value", "42");
-    expect(screen.getByRole("meter", { name: "Listening" })).toHaveAttribute("value", "55");
+    expect(screen.getByRole("meter", { name: "Listening (Typing)" })).toHaveAttribute("value", "55");
     expect(screen.queryByRole("link", { name: "Reading" })).not.toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Listening" })).toHaveAttribute("href", "/en/shadowing/v1/dictation");
+    expect(screen.getByRole("link", { name: "Listening (Typing)" })).toHaveAttribute("href", "/en/shadowing/v1/listening?format=typing");
     // The explorer lives on the Roadmap screen (Figma 64:2061); owner ruling 2026-10-13 restores the link.
     expect(screen.getByRole("link", { name: "Open weakness explorer" })).toHaveAttribute("href", "/en/roadmap");
   });

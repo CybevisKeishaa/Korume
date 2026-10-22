@@ -574,6 +574,7 @@
         "pronunciation": "Pronunciation",
         "pitch": "Pitch accent",
         "dictation": "Listening",
+        "revealed": "Answer shown",
         "difficult": "Marked difficult",
         "grammar": "Grammar in this line"
       }
@@ -582,7 +583,8 @@
       "title": "Lesson status",
       "shadowing": "Shadowing",
       "pronunciation": "Pronunciation",
-      "listening": "Listening",
+      "listeningWordBank": "Listening · Word Bank",
+      "listeningTyping": "Listening · Typing",
       "retention": "Retention",
       "notStarted": "Not started",
       "notEnoughData": "Not enough data",

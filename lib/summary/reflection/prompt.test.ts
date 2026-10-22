@@ -8,7 +8,8 @@ const evidence: ReflectionEvidence = projectEvidence({
   status: {
     shadowing: { kind: "in_progress", percent: 43 },
     pronunciation: { kind: "scored", score: 57 },
-    listening: { kind: "scored", score: 83 },
+    listeningWordBank: { kind: "scored", score: 83 },
+    listeningTyping: { kind: "not_started" },
     retention: { kind: "not_enough_data" },
   },
   savedKnowledge: { vocabulary: 4, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },
@@ -27,7 +28,7 @@ const view: LessonAnalysisView = {
 describe("buildReflectionInput", () => {
   it("hands the model qualities, a yes/no, the named lines and the lesson points", () => {
     const { user, lines } = buildReflectionInput(evidence, view, "Ep.729 At the café", "en");
-    expect(user).toContain("<practice>shadowing: practiced\npronunciation: needs_work\nlistening: practiced\nretention: not_started</practice>");
+    expect(user).toContain("<practice>shadowing: practiced\npronunciation: needs_work\nlisteningWordBank: practiced\nlisteningTyping: not_started\nretention: not_started</practice>");
     expect(user).toContain("<saved>yes</saved>");
     expect(user).toContain("R1 (said well): ありがとうございました");
     expect(user).toContain("R2 (worth another pass, pronunciation): 注文をお願いします");

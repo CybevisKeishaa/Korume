@@ -114,7 +114,7 @@ export const getWeaknessFacts = cache(async (context: DashboardContext): Promise
   };
   return weaknessRows((scores.data as WeaknessScoreRow[] | null) ?? []).map((row) => {
     const videoId = row.family === "reading" ? null : fallback(row.family);
-    return { ...row, score: Math.round(row.score), practiceHref: videoId ? `/shadowing/${videoId}${row.family === "listening" ? "/dictation" : ""}` : null };
+    return { ...row, score: Math.round(row.score), practiceHref: videoId ? `/shadowing/${videoId}${row.family === "listening" ? "/listening?format=typing" : ""}` : null };
   });
 });
 
