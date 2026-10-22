@@ -8,7 +8,7 @@ describe("resolvePageRoute", () => {
     ["static, one segment", `${P}/(protected)/(app)/dashboard/page.tsx`, "/dashboard", "app"],
     ["static, nested", `${P}/(protected)/(app)/community/peer-review/page.tsx`, "/community/peer-review", "app"],
     ["one dynamic segment", `${P}/(protected)/(app)/kanji/[id]/page.tsx`, "/kanji/[id]", "app"],
-    ["static AFTER dynamic", `${P}/(protected)/(focus)/shadowing/[id]/dictation/page.tsx`, "/shadowing/[id]/dictation", "focus"],
+    ["static AFTER dynamic, inside a group", `${P}/(protected)/(focus)/shadowing/[id]/(workspace)/listening/page.tsx`, "/shadowing/[id]/listening", "focus"],
     ["two dynamic segments (no repo counterpart)", `${P}/(protected)/(app)/a/[x]/b/[y]/page.tsx`, "/a/[x]/b/[y]", "app"],
     ["immersive chrome", `${P}/(protected)/(immersive)/journal/page.tsx`, "/journal", "immersive"],
     ["admin chrome", `${P}/(admin)/admin/style-guide/page.tsx`, "/admin/style-guide", "admin"],
