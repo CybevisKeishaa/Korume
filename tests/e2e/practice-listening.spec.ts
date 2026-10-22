@@ -12,7 +12,6 @@ import { toFurigana } from "@/lib/japanese/furigana";
  * surface, not from one snapshot. The owner's viewport, a fresh learner per test.
  */
 test.use({ viewport: { width: 1280, height: 529 } });
-test.describe.configure({ mode: "serial" });
 
 const LINES = [
   { text: "毎日日本語を勉強しました。", chunks: ["毎日", "日本語を", "勉強しました。"] },
@@ -44,6 +43,10 @@ const SURFACES = {
 } as const;
 type Surface = { kind: keyof typeof SURFACES; text: string };
 
+/**
+ * Walks up from each mutation's target only, so a reveal by toggling hidden/class/style on an ANCESTOR of a
+ * surface that stays mounted is not recorded. Safe here: every concealed state also asserts toHaveCount(0).
+ */
 async function installSurfaceObserver(page: Page): Promise<void> {
   await page.addInitScript((selectors: Record<string, string>) => {
     const seen: { kind: string; text: string }[] = [];
@@ -80,7 +83,7 @@ async function expectNoSurface(page: Page, kinds: Surface["kind"][] = ANSWER_KIN
   expect(await surfaces(page, kinds)).toEqual([]);
 }
 
-async function registerLearner(page: Page): Promise<string> {
+async function registerLearner(page: Page): Promise<void> {
   await page.route(/youtube\.com|youtube-nocookie\.com|googlevideo\.com/, (route) => route.abort());
   await installFakeYouTube(page, { duration: VIDEO_DURATION });
   await installSurfaceObserver(page);
@@ -88,7 +91,6 @@ async function registerLearner(page: Page): Promise<string> {
   await page.goto("/en/register");
   await registerViaUi(page, { name: "E2E Listening", email, password: "password123" });
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
-  return email;
 }
 
 async function openLesson(page: Page, path = "/listening"): Promise<void> {
@@ -157,10 +159,12 @@ test("1 · one player instance across three modes (spec §3.1 B2 gate)", async (
   await modeBar(page).getByRole("link", { name: "Listening" }).click();
   await expect(page).toHaveURL(/\/listening$/);
   await expect(bank(page)).toBeVisible();
+  await expectConcealed(page);
   await expect(kept).toHaveCount(1);
   await formatRadio(page, "Typing").click();
   await expect(page).toHaveURL(/\/listening\?format=typing$/);
   await expect(typingInput(page)).toBeVisible();
+  await expectConcealed(page);
   await expect(kept).toHaveCount(1);
   await modeBar(page).getByRole("link", { name: "Shadowing" }).click();
   await expect(page).toHaveURL(new RegExp(`/shadowing/${data.videoId}$`));
@@ -342,6 +346,9 @@ test("6 · Show answer: revealed, no score, video still covered; navigator, stri
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
   await expect(page.getByTestId("listen-cover")).toBeVisible();
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-review");
+  // R32: the review figure goes with the line.
+  await button(page, "Next sentence").click();
+  await expectConcealed(page);
 
   await page.reload();
   await expect(practice(page)).toBeVisible();
