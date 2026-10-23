@@ -17,9 +17,7 @@
   "summary": {
     "heading": "Summary",
     "aiGenerated": "AI-generated",
-    "a11y": {
-      "region": "AI video summary"
-    },
+    "a11y": { "region": "AI video summary" },
     "empty": "No summary yet for this video.",
     "generate": "Generate summary",
     "generating": "Generating summary…",
@@ -110,16 +108,12 @@
   },
   "pitch": {
     "contour": {
-      "a11y": {
-        "label": "Your pitch contour for this take"
-      },
+      "a11y": { "label": "Your pitch contour for this take" },
       "analyzing": "Analyzing pitch…",
       "unavailable": "Pitch contour unavailable"
     },
     "overlay": {
-      "a11y": {
-        "label": "Pitch comparison: reference (お手本) vs your take"
-      },
+      "a11y": { "label": "Pitch comparison: reference (お手本) vs your take" },
       "reference": "お手本",
       "user": "あなた",
       "lowConfidence": "Not enough voiced audio to compare reliably — try a longer take.",
@@ -135,7 +129,7 @@
     "waveformUnavailable": "Waveform preview unavailable."
   },
   "hub": {
-    "eyebrow": "Korume · Lesson library",
+    "eyebrow": "Korume \u00b7 Lesson library",
     "title": "Shadowing Hub",
     "subtitle": "A quiet place to discover, import, and continue your Japanese lessons.",
     "railLabel": "Learning continuity",
@@ -149,31 +143,12 @@
       "recommended": "Recommended for you"
     },
     "empty": {
-      "featured": {
-        "title": "Featured lessons are selected editorially",
-        "body": "A featured lesson will appear here when one is available."
-      },
-      "library": {
-        "title": "Your lesson library is ready",
-        "body": "Import a lesson to begin building your library.",
-        "action": "Import a lesson"
-      },
-      "popular": {
-        "title": "Popular lessons are taking shape",
-        "body": "Popular lessons will appear once learners have recorded activity."
-      },
-      "continueLearning": {
-        "title": "Continue when you are ready",
-        "body": "Lessons you begin will wait here for you."
-      },
-      "recentlyAdded": {
-        "title": "New lessons will arrive here",
-        "body": "Recently added lessons will appear once the library grows."
-      },
-      "recommended": {
-        "title": "Recommendations need learning signals",
-        "body": "Recommendations will appear when there is enough learning data."
-      }
+      "featured": { "title": "Featured lessons are selected editorially", "body": "A featured lesson will appear here when one is available." },
+      "library": { "title": "Your lesson library is ready", "body": "Import a lesson to begin building your library.", "action": "Import a lesson" },
+      "popular": { "title": "Popular lessons are taking shape", "body": "Popular lessons will appear once learners have recorded activity." },
+      "continueLearning": { "title": "Continue when you are ready", "body": "Lessons you begin will wait here for you." },
+      "recentlyAdded": { "title": "New lessons will arrive here", "body": "Recently added lessons will appear once the library grows." },
+      "recommended": { "title": "Recommendations need learning signals", "body": "Recommendations will appear when there is enough learning data." }
     },
     "import": {
       "eyebrow": "Import lesson from YouTube",
@@ -195,75 +170,13 @@
       "suggestion": "Suggested next lesson",
       "noSuggestion": "No lesson suggestion is available yet."
     },
-    "actions": {
-      "start": "Start lesson",
-      "continue": "Continue lesson",
-      "openLesson": "Open lesson"
-    },
-    "search": {
-      "label": "Search lessons",
-      "placeholder": "Search by title, expression, anime, movie or topic...",
-      "results": "Search results",
-      "noResults": "No lessons matched your search."
-    },
-    "metadata": {
-      "jlptLabel": "Japanese level",
-      "durationLabel": "Lesson length",
-      "minutes": "{count} min"
-    }
+    "actions": { "start": "Start lesson", "continue": "Continue lesson", "openLesson": "Open lesson" },
+    "search": { "label": "Search lessons", "placeholder": "Search by title, expression, anime, movie or topic...", "results": "Search results", "noResults": "No lessons matched your search." },
+    "metadata": { "jlptLabel": "Japanese level", "durationLabel": "Lesson length", "minutes": "{count} min" }
   },
-  "explore": {
-    "eyebrow": "Shadowing library",
-    "title": "Explore Lessons",
-    "subtitle": "Browse Japanese lessons grounded in real transcripts.",
-    "imported": "My imported lessons",
-    "recent": "Recently added",
-    "recommended": "Recommended for you",
-    "situations": "Browse by situation",
-    "all": "All situations",
-    "preview": "Preview lesson",
-    "empty": "No lessons are available for this selection yet.",
-    "moreAvailable": "This collection contains more lessons than are shown here.",
-    "card": {
-      "minutes": "{count} min",
-      "lines": "{count} lines",
-      "grammarWords": "{grammar} grammar · {words} words",
-      "grammarUnavailable": "Grammar unavailable"
-    },
-    "drawer": {
-      "close": "Close preview",
-      "start": "Start lesson",
-      "add": "Add to My Lessons",
-      "added": "Added to My Lessons",
-      "adding": "Adding lesson",
-      "addFailed": "Could not add lesson",
-      "transcript": "Transcript preview",
-      "transcriptUnavailable": "Transcript preview unavailable",
-      "jlpt": "JLPT",
-      "duration": "Duration",
-      "vocabulary": "Vocabulary",
-      "sentences": "Sentences"
-    }
-  },
-  "situations": {
-    "conversation": "Conversation",
-    "restaurant": "Restaurant",
-    "business": "Business",
-    "daily-life": "Daily life",
-    "travel": "Travel",
-    "office": "Office",
-    "shopping": "Shopping",
-    "cafe": "Café"
-  },
-  "sources": {
-    "youtube": "YouTube",
-    "nhk": "NHK",
-    "podcast": "Podcast",
-    "drama": "Drama",
-    "anime": "Anime",
-    "vlog": "Vlog",
-    "news": "News"
-  },
+  "explore": { "eyebrow": "Shadowing library", "title": "Explore Lessons", "subtitle": "Browse Japanese lessons grounded in real transcripts.", "imported": "My imported lessons", "recent": "Recently added", "recommended": "Recommended for you", "situations": "Browse by situation", "all": "All situations", "preview": "Preview lesson", "empty": "No lessons are available for this selection yet.", "moreAvailable": "This collection contains more lessons than are shown here.", "card": { "minutes": "{count} min", "lines": "{count} lines", "grammarWords": "{grammar} grammar · {words} words", "grammarUnavailable": "Grammar unavailable" }, "drawer": { "close": "Close preview", "start": "Start lesson", "add": "Add to My Lessons", "added": "Added to My Lessons", "adding": "Adding lesson", "addFailed": "Could not add lesson", "transcript": "Transcript preview", "transcriptUnavailable": "Transcript preview unavailable", "jlpt": "JLPT", "duration": "Duration", "vocabulary": "Vocabulary", "sentences": "Sentences" } },
+  "situations": { "conversation": "Conversation", "restaurant": "Restaurant", "business": "Business", "daily-life": "Daily life", "travel": "Travel", "office": "Office", "shopping": "Shopping", "cafe": "Caf\u00e9" },
+  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Drama", "anime": "Anime", "vlog": "Vlog", "news": "News" },
   "workspace": {
     "practice": {
       "pronunciation": {
@@ -301,20 +214,8 @@
           "rhythm": "Fluency {from} → {to}",
           "pronunciation": "Pronunciation {from} → {to}"
         },
-        "wordGrade": {
-          "needsWork": "Needs practice: {words}.",
-          "good": "Good: {words}.",
-          "strong": "Strong: {words}."
-        },
-        "analysis": {
-          "title": "Pronunciation score",
-          "subtitle": "For the whole sentence",
-          "words": "Word by word",
-          "wordsHelpLabel": "How to read the colours",
-          "wordsHelp": "Green is strong, amber is good, red needs practice. A struck-through word was not heard.",
-          "notHeard": "not heard",
-          "mismatch": "What you read doesn't match this sentence yet. Listen again and read the sentence shown."
-        },
+        "wordGrade": { "needsWork": "Needs practice: {words}.", "good": "Good: {words}.", "strong": "Strong: {words}." },
+        "analysis": { "title": "Pronunciation score", "subtitle": "For the whole sentence", "words": "Word by word", "wordsHelpLabel": "How to read the colours", "wordsHelp": "Green is strong, amber is good, red needs practice. A struck-through word was not heard.", "notHeard": "not heard", "mismatch": "What you read doesn't match this sentence yet. Listen again and read the sentence shown." },
         "remarkUnaligned": "Overall score only: the words could not be matched to this sentence reliably.",
         "historyLoading": "Loading takes…",
         "historyError": "Could not load your takes.",
@@ -328,25 +229,11 @@
         "unheard": "The scorer could not hear speech in this take. Record it again, a little closer to the microphone.",
         "micHint": "Allow microphone access in your browser settings to record."
       },
-      "strip": {
-        "label": "Lesson progress",
-        "sentence": "Sentence",
-        "scored": "Scored",
-        "average": "Average",
-        "noScore": "No score yet"
-      },
+      "strip": { "label": "Lesson progress", "sentence": "Sentence", "scored": "Scored", "average": "Average", "noScore": "No score yet" },
       "listening": {
-        "format": {
-          "word_bank": "Word Bank",
-          "typing": "Typing"
-        },
-        "strip": {
-          "submitted": "{format} · Submitted"
-        },
-        "cover": {
-          "title": "Listen only",
-          "show": "Show video"
-        },
+        "format": { "word_bank": "Word Bank", "typing": "Typing" },
+        "strip": { "submitted": "{format} · Submitted" },
+        "cover": { "title": "Listen only", "show": "Show video" },
         "region": "Listening practice",
         "loading": "Loading this sentence…",
         "chunksError": "This sentence could not be loaded.",
@@ -364,81 +251,31 @@
         "answerSlots": "Your sentence",
         "slot": "Slot {n} of {total}, {text}",
         "slotEmpty": "Slot {n} of {total}, empty",
-        "slotState": {
-          "correct": "correct",
-          "wrong": "wrong",
-          "hinted": "hint",
-          "selected": "selected"
-        },
+        "slotState": {"correct": "correct", "wrong": "wrong", "hinted": "hint", "selected": "selected"},
+        "replay": {"audio": "Replay audio", "loop": "Loop", "rate": "{rate}× speed"},
+        "puzzle": {"wordBank": "Dictation puzzle", "typing": "Type what you hear", "remaining": "{count, plural, one {{count} word remaining} other {{count} words remaining}}"},
+        "removeSelected": "Remove Selected Word",
+        "liveFeedback": "Live Feedback",
+        "saved": "Saved to your personal listening memory.",
         "check": "Check",
         "checking": "Checking…",
         "hint": "Hint",
         "showAnswer": "Show answer",
         "tryAgain": "Try again",
-        "error": {
-          "network": "Your answer could not be checked. It is kept here, so try again.",
-          "line_changed": "This sentence changed, start again",
-          "rate_limited": "Too many attempts. Wait a moment, then try again."
-        },
+        "error": {"network": "Your answer could not be checked. It is kept here, so try again.", "line_changed": "This sentence changed, start again", "rate_limited": "Too many attempts. Wait a moment, then try again."},
         "score": "Score",
-        "metrics": {
-          "recall": "Recall",
-          "slots": "Slots",
-          "kanji": "Kanji",
-          "grammar": "Grammar"
-        },
+        "metrics": {"recall": "Recall", "slots": "Slots", "kanji": "Kanji", "grammar": "Grammar"},
         "answer": "Answer",
-        "feedback": {
-          "hint_used": "{count, plural, one {{count} {unit, select, chunk {chunk} other {part}}} other {{count} {unit, select, chunk {chunks} other {parts}}}} hinted so far. Hinted parts don't count toward recall.",
-          "hint_all": "Every part is hinted, so this attempt scores 0 for recall.",
-          "wb_perfect": "You arranged the whole sentence yourself!",
-          "wb_partial": "You got {correct}/{total} chunks right.{wrong, plural, =0 {} one { Listen again and watch the order of the {wrong} chunk still wrong.} other { Listen again and watch the order of the {wrong} chunks still wrong.}}",
-          "wb_hinted": "{hinted, plural, one {{hinted} hinted chunk doesn't} other {{hinted} hinted chunks don't}} count as your own.",
-          "wb_fixed": "You fixed {fixed, plural, one {{fixed} chunk} other {{fixed} chunks}} since your last try.",
-          "ty_errors": "{wrong} wrong, {missing} missing, {extra} extra. Replay the sentence and listen for {chars}.",
-          "ty_extra": "{extra, plural, one {{extra} extra character} other {{extra} extra characters}} typed. Replay the sentence and compare.",
-          "ty_perfect": "Every character written from memory.",
-          "ty_hinted": "{hinted, plural, one {{hinted} hinted character doesn't} other {{hinted} hinted characters don't}} count toward recall.",
-          "ty_kanji": "Kanji {kanji}%, below your recall. Listen for the kanji words.",
-          "ty_grammar": "Particles and endings {grammar}%, below your recall. Listen for the small words.",
-          "ty_fewer": "{fewer, plural, one {{fewer} fewer character error} other {{fewer} fewer character errors}} than your last try.",
-          "retry": "New attempt. Your last score on this sentence was {score}.",
-          "retry_first": "New attempt. Listen and start from the beginning.",
-          "revealed": "This sentence is marked for review. This attempt has no score and doesn't count toward today's mission."
-        },
-        "replay": {
-          "audio": "Replay audio",
-          "loop": "Loop",
-          "rate": "{rate}× speed"
-        },
-        "puzzle": {
-          "wordBank": "Dictation puzzle",
-          "typing": "Type what you hear",
-          "remaining": "{count, plural, one {{count} word remaining} other {{count} words remaining}}"
-        },
-        "removeSelected": "Remove Selected Word",
-        "liveFeedback": "Live Feedback",
-        "saved": "Saved to your personal listening memory."
+        "feedback": {"hint_used": "{count, plural, one {{count} {unit, select, chunk {chunk} other {part}}} other {{count} {unit, select, chunk {chunks} other {parts}}}} hinted so far. Hinted parts don't count toward recall.", "hint_all": "Every part is hinted, so this attempt scores 0 for recall.", "wb_perfect": "You arranged the whole sentence yourself!", "wb_partial": "You got {correct}/{total} chunks right.{wrong, plural, =0 {} one { Listen again and watch the order of the {wrong} chunk still wrong.} other { Listen again and watch the order of the {wrong} chunks still wrong.}}", "wb_hinted": "{hinted, plural, one {{hinted} hinted chunk doesn't} other {{hinted} hinted chunks don't}} count as your own.", "wb_fixed": "You fixed {fixed, plural, one {{fixed} chunk} other {{fixed} chunks}} since your last try.", "ty_errors": "{wrong} wrong, {missing} missing, {extra} extra. Replay the sentence and listen for {chars}.", "ty_extra": "{extra, plural, one {{extra} extra character} other {{extra} extra characters}} typed. Replay the sentence and compare.", "ty_perfect": "Every character written from memory.", "ty_hinted": "{hinted, plural, one {{hinted} hinted character doesn't} other {{hinted} hinted characters don't}} count toward recall.", "ty_kanji": "Kanji {kanji}%, below your recall. Listen for the kanji words.", "ty_grammar": "Particles and endings {grammar}%, below your recall. Listen for the small words.", "ty_fewer": "{fewer, plural, one {{fewer} fewer character error} other {{fewer} fewer character errors}} than your last try.", "retry": "New attempt. Your last score on this sentence was {score}.", "retry_first": "New attempt. Listen and start from the beginning.", "revealed": "This sentence is marked for review. This attempt has no score and doesn't count toward today's mission."}
       },
       "navigator": {
         "label": "Sentence navigator",
         "earlier": "Earlier sentences",
         "later": "Later sentences",
         "chip": "Sentence {number}, {state}",
-        "state": {
-          "none": "not practised",
-          "scored": "scored {score}",
-          "needs_review": "needs review",
-          "unscored": "not scored yet",
-          "revealed": "answer shown"
-        }
+        "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet", "revealed": "answer shown" }
       },
-      "leave": {
-        "title": "Leave this take unsaved?",
-        "body": "This recording has not been saved yet. If you leave, it will be discarded.",
-        "stay": "Stay",
-        "discard": "Leave and discard"
-      }
+      "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" }
     },
     "mining": {
       "loading": "Loading your cards…",
@@ -475,11 +312,7 @@
       "mine": "Add to Mining",
       "mineTooLong": "Select {max} characters or fewer to add to Mining."
     },
-    "inspector": {
-      "label": "Look-up: {title}",
-      "back": "Back",
-      "close": "Close"
-    },
+    "inspector": { "label": "Look-up: {title}", "back": "Back", "close": "Close" },
     "drawer": {
       "region": "Study tools",
       "tabList": "Study tools",
