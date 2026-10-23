@@ -38,11 +38,13 @@ export function ListeningFeedback({ messages, mood, error, submitting, result, a
     ...messages.map((message) => t(`listening.feedback.${message.id}`, message.values)),
   ];
 
-  return <section className="flex flex-col gap-sm border-t border-border pt-md">
+  // The divider and eyebrow belong to content; the live region stays mounted so a first message is announced.
+  const content = error !== null || heading !== undefined || result !== null || answer !== null;
+  return <section className={`flex flex-col gap-sm ${content ? "border-t border-border pt-md" : ""}`}>
     {error && <p role="alert" className="text-caption text-danger-strong">{t(`listening.error.${error}`)}</p>}
     <div className="flex items-start justify-between gap-sm">
       <div className="flex min-w-0 flex-1 flex-col gap-2xs">
-        {(heading !== undefined || result || answer !== null) && <p className={`${EYEBROW} text-primary-strong`}>{t("listening.liveFeedback")}</p>}
+        {content && <p className={`${EYEBROW} text-primary-strong`}>{t("listening.liveFeedback")}</p>}
         <div role="status" aria-live="polite" data-testid="listening-feedback" className="flex flex-col gap-xs">
           {heading !== undefined && <p data-feedback-heading className="text-body font-semibold text-foreground">{heading}</p>}
           {tips.map((tip, i) => <p key={i} data-feedback-tip className="flex items-center gap-xs rounded-lg bg-primary/5 px-sm py-xs text-caption text-foreground">

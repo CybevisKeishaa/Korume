@@ -37,7 +37,7 @@ function ReplayRow({ index }: { index: number | null }) {
         className="flex flex-col items-center rounded-full px-sm py-2xs text-caption font-semibold text-muted-foreground aria-pressed:bg-primary/15 aria-pressed:text-primary-strong">
         <PracticeGlyph name="listening-loop" />{tl("replay.loop")}
       </button>
-      {[0.75, 1].map((value) => <button key={value} type="button" aria-label={tl("replay.rate", { rate: value })} aria-pressed={rate === value} onClick={() => setRate(value)} className={RATE}>{value}×</button>)}
+      {[0.75, 1].map((value) => <button key={value} type="button" aria-label={tl("replay.rate", { rate: String(value) })} aria-pressed={rate === value} onClick={() => setRate(value)} className={RATE}>{value}×</button>)}
     </div>
   </div>;
 }

@@ -78,7 +78,7 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
         const label = (text: string) => t("slot", { n: i + 1, total: n, text: state ? `${text}, ${t(`slotState.${state}`)}` : text });
         return <li key={i} data-slot={i} data-result={verdict ? tone : undefined}>
           {chunk === null
-            ? <span className="inline-flex h-control-md min-w-[var(--control-md)] items-center justify-center rounded-full border border-dashed border-border px-xs">
+            ? <span className="inline-flex h-control-md min-w-[var(--control-md)] items-center justify-center rounded-full border border-dashed border-muted-foreground/50 px-xs">
               <span className="sr-only">{t("slotEmpty", { n: i + 1, total: n })}</span>
             </span>
             : <button type="button" aria-label={label(display[chunk] ?? "")} aria-pressed={locked || isHinted ? undefined : picked === i}

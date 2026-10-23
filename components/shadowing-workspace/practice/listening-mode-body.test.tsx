@@ -3,7 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
-import { attemptBodies, calls, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
+import { attemptBodies, calls, lesson, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
 import { bankOrder } from "@/lib/dictation/shuffle";
 import { resetTabWritesForTests } from "../workspace-context";
 
@@ -303,14 +303,14 @@ describe("ListeningModeBody — Word Bank", () => {
 });
 
 describe("ListeningModeBody — Figma composition (Task 9c)", () => {
-  it("Replay audio seeks the current sentence and plays", async () => {
-    await open();
+  it("Replay audio seeks the CURRENT sentence's start and plays", async () => {
+    await open("line-2");
     await waitFor(() => expect(yt.players).toHaveLength(1));
     const player = required(yt.players[0]);
     const play = vi.spyOn(player, "playVideo");
     const seek = vi.spyOn(player, "seekTo");
     fireEvent.click(screen.getByRole("button", { name: "Replay audio" }));
-    expect(seek).toHaveBeenCalled();
+    expect(seek.mock.calls.at(-1)?.[0]).toBe(lesson.transcript?.lines[1]?.startTime);
     expect(play).toHaveBeenCalled();
   });
 
@@ -330,6 +330,21 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
     expect(required(yt.players[0]).getPlaybackRate()).toBe(0.75);
     fireEvent.click(normal);
     expect(required(yt.players[0]).getPlaybackRate()).toBe(1);
+  });
+
+  it("the rate buttons' accessible name contains their visible text in every locale (WCAG 2.5.3)", async () => {
+    searchParams = new URLSearchParams("line=line-1");
+    render(shell(), { locale: "vi" });
+    const slow = (await screen.findByText("0.75×")).closest("button");
+    expect(slow).toHaveAccessibleName(expect.stringContaining("0.75×"));
+  });
+
+  it("draws the Live Feedback divider only once there is something to show; the live region stays mounted", async () => {
+    await open();
+    const section = feedback().closest("section");
+    expect(section).not.toHaveClass("border-t");
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    expect(section).toHaveClass("border-t");
   });
 
   it("shows no footnote before an attempt is stored, and the remaining count follows the bank", async () => {
