@@ -92,6 +92,7 @@
   - duplicates: chunks `["私","を","見","を","待つ"]`, order `[0,3,2,1,4]` (the two `を` swapped) → all correct, score 100; same for two `は` and two `です`.
   - hinted prefix: chunks `["A","B","C"]`, order `[0,2,1]`, k 1 → slot 0 `hinted:true, correct:false`; score counts only one of B/C as correct → 33.3.
   - all hinted (k = n) → score 0.
+  - **hinted prefix is removed from the reference too** (owner 2026-10-23): chunks `["A","B","A"]`, k 1, order `[0,2,1]` (self-placed `A B` against the remaining reference `B A`) → `correct` = `[false,false,true]`, score 33.3. Comparing against the full reference `A B A` would give 66.7 — that is the mutation in Step 6. Same shape with real repeated tokens: `["は","…","は"]` and `["です","…","です"]`.
   - stable tie-break: chunks `["A","B"]`, order `[1,0]` (answer `B A`, two equally long LCS) → `correct` = `[false,true]` (the earliest reference piece `A` is the match), identical on a second call.
   - Typing hint unit with v2 (spec §3.6): `typingHintUnit` of a reliable v2 cut is `"chunk"` and `chunkUnits(v2 chunks)` gives one range per word.
 - [ ] **Step 2: Failing route tests:** (a) v2 submit with `hintedUnits: [1]` → 400; (b) v2 submit with `hintedUnits: [0,1]` but `chunkOrder` not starting `[0,1]` → 400; (c) v2 reveal with `hintedUnits: [2]` → 400; (d) `v1 attempts keep positional scoring`: a `version: 1` submit of `[1,2,3,0]`-shaped order scores 0 positional, not 75.
@@ -106,7 +107,7 @@
 ```
 
 - [ ] **Step 5: Wire the server** (`submitListeningAttempt`): for `format === "word_bank"` and `input.version >= 2`, require `[...hintedUnits].sort()` equal `0..k-1` (submit and reveal) and, on submit, `chunkOrder.slice(0, k)` equal `0..k-1`, else `{ ok:false, status:400 }`; scorer = `input.version === 1 ? scoreWordBank(cut.chunks, order, new Set(hinted)) : scoreWordBankLcs(cut.chunks, order, k)`.
-- [ ] **Step 6: Run** → PASS. **Mutations:** (a) tie-break `>=` → `>` → stable-tie test RED; (b) skip the prefix check → route test (a) RED. Restore.
+- [ ] **Step 6: Run** → PASS. **Mutations:** (a) tie-break `>=` → `>` → stable-tie test RED; (b) skip the prefix check → route test (a) RED; (c) LCS against the full reference (`r` from index 0) → the `A B A` hinted-prefix test RED. Restore.
 - [ ] **Step 7: Commit** `feat(listening): server LCS scoring for word pieces; hinted prefix validated`.
 
 ---
@@ -134,7 +135,7 @@
 
 **Interfaces:**
 - Consumes: Task 2 `withHints`, `insertPiece`, `removePiece`, `movePiece`; Task 3 result `slots` (per answer position, `chunkIndex`).
-- Produces: `WordBankPanel` props unchanged except `results` is per answer position; `PreviousResult.wrongPieces?: number[]` (chunk indices of wrong, non-hinted pieces) replaces `wrongSlots`; feedback event `{ kind: "checked_word_bank"; slots; display: string[]; previous: { wrongPieces: number[] } | null }`.
+- Produces: `WordBankPanel` props unchanged except `results` is per answer position; `PreviousResult.wrongPieces?: number[]` (chunk indices of wrong, non-hinted pieces) replaces `wrongSlots`, and `PreviousResult` gains `version: number; textHash: string` — `wb_fixed` / `ty_fewer` compare only with a previous result of the same line, format, chunker version and textHash (owner 2026-10-23: never v1 against v2; stored scores never recomputed); feedback event `{ kind: "checked_word_bank"; slots; display: string[]; previous: { wrongPieces: number[] } | null }`.
 
 - [ ] **Step 1: Failing unit tests** (`word-bank-panel.test.tsx`), each by name:
   - `tap in the bank appends`; `tap on a placed piece returns exactly that piece` (with two identical-text pieces placed, tapping the second returns the second: assert by `data-piece` index);
@@ -144,7 +145,7 @@
   - `hint moves a placed piece into the prefix` (Review Focus 2); `locks the answer while submitting` (taps and drops do nothing; Review Focus 1);
   - `drop inserts at the indicated index`: fire `dragstart` on a bank chip with `dataTransfer` mock, `dragover` on placed chip 1's right half, `drop` → piece inserted at 2 (the index math is a pure helper `dropIndex(rects: DOMRect[], x: number): number` exported from the panel file and unit-tested directly);
   - `wraps`: the tray and bank use `flex-wrap` and chips `max-w-full break-all` (class assertion; the visual check is Task 8).
-- [ ] **Step 2: Failing feedback tests** (`listening-feedback.test.ts`): `wb_partial` carries `pieces` = wrong pieces' display joined (≤ 8 chars + "…"); `wb_fixed` counts previous `wrongPieces` now correct and not hinted; `wb_perfect` never when any piece is hinted; while answering (hint event) no piece text appears.
+- [ ] **Step 2: Failing feedback tests** (`listening-feedback.test.ts`): `wb_partial` carries `pieces` = wrong pieces' display joined (≤ 8 chars + "…"); `wb_fixed` counts previous `wrongPieces` now correct and not hinted; `no comparison across versions` — a previous result with another `version` or `textHash` yields no `wb_fixed` / `ty_fewer` (hook test in `listening-mode-body.test.tsx`); `wb_perfect` never when any piece is hinted; while answering (hint event) no piece text appears.
 - [ ] **Step 3: Run** → FAIL.
 - [ ] **Step 4: Implement.** Panel state = `answer: number[]` (piece indices, prefix enforced by `withHints` on every render from `hinted`); bank = `bankOrder(n, lineId)` minus `answer`; chips carry `data-piece={index}`, keys by index; native DnD (`draggable`, `onDragStart` sets `text/plain` = index, `onDragOver` `preventDefault` + indicator at `dropIndex`, `onDrop` → `insertPiece`; a drop outside the tray of a placed piece → `removePiece`); locked when `submitting || results || revealed`. Delete the selection state, the Remove button and their copy. Check enabled when `answer.length === n`; `onCheck(answer)`. `onProgress` true when any non-hinted piece is placed. Feedback: `summarize` → `wrongPieces`; `listeningFeedback` per Step 2 (`wb_partial` VI/EN copy gains `{pieces}`, e.g. vi "…Mảnh sai: {pieces}").
 - [ ] **Step 5: E2E** (`practice-listening.spec.ts`, L-025): replace case 14 (select + Remove) with `drag a bank piece between two placed pieces` (`locator.dragTo` with a target position), `tap a placed piece returns it`, and `drag across a line change` (Review Focus 3: start a drag, press Next via keyboard, drop → new line's answer empty); cases 3/4/5/8 place pieces by tap in order from `chunks` (they now have word pieces: read the order from the `GET …/chunks` response the page made, never hard-code); scores in `%`.
