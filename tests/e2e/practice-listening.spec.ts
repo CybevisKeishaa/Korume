@@ -230,7 +230,7 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
   await expect(korume(page)).toHaveCount(0);
   await place(page, LINES[0].chunks);
   await heldSubmit(page, () => button(page, "Check").click());
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   for (const index of [0, 1, 2]) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
   await expect(feedback(page)).toContainText("You arranged the whole sentence yourself!");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
@@ -281,7 +281,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   const [a, b, c] = LINES[0].chunks;
   await place(page, [b, a, c]);
   await heldSubmit(page, () => button(page, "Check").click());
-  const score = Number(await page.getByTestId("listening-score").textContent());
+  const score = parseInt((await page.getByTestId("listening-score").textContent()) ?? "", 10);
   expect(score).toBeLessThan(100);
   await expect(slot(page, 0)).toHaveAttribute("data-result", "wrong");
   await expect(slot(page, 1)).toHaveAttribute("data-result", "wrong");
@@ -297,7 +297,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   await expect(feedback(page)).toContainText(`New attempt. Your last score on this sentence was ${score}.`);
   await place(page, LINES[0].chunks);
   await heldSubmit(page, () => button(page, "Check").click());
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(feedback(page)).toContainText("You fixed 2 chunks since your last try.");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
 });
@@ -392,7 +392,7 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
   await expect(page.getByTestId("typing-diff")).toBeVisible();
   expect((await surfaces(page, ["diff"])).length).toBeGreaterThan(0); // the observer's positive control for the diff
   await expect(page.getByTestId("typing-diff").locator("[data-op='wrong'], [data-op='missing']")).not.toHaveCount(0);
-  expect(Number(await page.getByTestId("listening-score").textContent())).toBeLessThan(100);
+  expect(parseInt((await page.getByTestId("listening-score").textContent()) ?? "", 10)).toBeLessThan(100);
   await expect(practice(page).locator("dt", { hasText: "Kanji" })).toHaveCount(1);
   await expect(practice(page).locator("dt", { hasText: "Grammar" })).toHaveCount(1);
   expect(posts).toEqual(["POST"]);
@@ -415,7 +415,7 @@ test("8 · changing sentence mid-attempt discards it; returning shows a fresh, c
   // A checked line, left and returned to, shows no old answer.
   await place(page, LINES[0].chunks);
   await button(page, "Check").click();
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await navigator(page).getByRole("button", { name: /^Sentence 2,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await resetSurfaces(page);
@@ -456,7 +456,7 @@ test("9 · changing format: confirm before discarding; a checked Word Bank answe
 
   await place(page, LINES[0].chunks);
   await button(page, "Check").click();
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(page.getByTestId("workspace-subtitle")).toBeVisible();
   await resetSurfaces(page);
   const stats = page.waitForRequest((request) => request.url().includes("/practice-stats?mode=typing"));
@@ -504,7 +504,7 @@ test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; 
   }
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
   await button(page, "Check").click();
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(practice(page).getByRole("alert")).toHaveCount(0);
 
   await button(page, "Next sentence").click();
@@ -565,11 +565,11 @@ test("13 · the mission counts one line for Word Bank + Typing on it, and nothin
   await openLesson(page);
   await place(page, LINES[0].chunks);
   await button(page, "Check").click();
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await formatRadio(page, "Typing").click();
   await typingInput(page).fill(LINES[0].text);
   await button(page, "Check").click();
-  await expect(page.getByTestId("listening-score")).toHaveText("100");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await button(page, "Next sentence").click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await button(page, "Show answer").click();
@@ -579,4 +579,25 @@ test("13 · the mission counts one line for Word Bank + Typing on it, and nothin
   const listening = page.locator("[data-area='mission']").getByRole("listitem").filter({ hasText: "Practise listening to" });
   await expect(listening).toHaveCount(1);
   await expect(listening).toContainText("1/5");
+});
+
+test("14 · a tap on a placed chunk selects it; Remove Selected Word returns it and keeps the focus on the button", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await place(page, LINES[0].chunks.slice(0, 2));
+  const remove = button(page, "Remove Selected Word");
+  await expect(remove).toHaveAttribute("aria-disabled", "true");
+  const [a, b] = LINES[0].chunks;
+  await slot(page, 0).getByRole("button").click();
+  await expect(slot(page, 0).getByRole("button")).toHaveAttribute("aria-pressed", "true");
+  await expect(slot(page, 0).getByRole("button")).toHaveAccessibleName(`Slot 1 of 3, ${a}, selected`);
+  await expect(bank(page).getByRole("button", { name: a, exact: true })).toHaveCount(0); // a tap alone removes nothing
+  await remove.focus();
+  await remove.press("Enter");
+  await expect(slots(page).getByRole("button")).toHaveCount(1);
+  await expect(slot(page, 1).getByRole("button")).toHaveAccessibleName(`Slot 2 of 3, ${b}`);
+  await expect(bank(page).getByRole("button", { name: a, exact: true })).toBeVisible();
+  await expect(remove).toHaveAttribute("aria-disabled", "true");
+  await expect(remove).toBeFocused(); // aria-disabled, not disabled: focus must not drop to the body
+  await expect(practice(page)).toContainText("2 words remaining");
 });

@@ -51,3 +51,67 @@ describe("WordBankPanel", () => {
     expect(screen.queryByRole("list", { name: "Word bank" })).toBeNull();
   });
 });
+
+describe("WordBankPanel — select and remove (Task 9c)", () => {
+  const remove = () => screen.getByRole("button", { name: "Remove Selected Word" });
+  const slotBtn = (i: number, text: string, extra = "") => screen.getByRole("button", { name: `Slot ${i} of 3, ${text}${extra}` });
+  const placeTwo = () => {
+    const shown = bank().map((chip) => chip.textContent ?? "");
+    fireEvent.click(bank()[0]!);
+    fireEvent.click(bank()[0]!);
+    return shown;
+  };
+
+  it("a tap on a placed chip selects it, a second tap deselects, another tap moves the selection; nothing leaves its slot", () => {
+    panel();
+    const [first, second] = placeTwo() as [string, string];
+    fireEvent.click(slotBtn(1, first));
+    expect(slotBtn(1, first, ", selected")).toHaveAttribute("aria-pressed", "true");
+    expect(bank()).toHaveLength(1);
+    fireEvent.click(slotBtn(1, first, ", selected"));
+    expect(slotBtn(1, first)).toHaveAttribute("aria-pressed", "false");
+    fireEvent.click(slotBtn(1, first));
+    fireEvent.click(slotBtn(2, second));
+    expect(slotBtn(2, second, ", selected")).toHaveAttribute("aria-pressed", "true");
+    expect(slotBtn(1, first)).toHaveAttribute("aria-pressed", "false");
+    expect(bank()).toHaveLength(1);
+  });
+
+  it("Remove Selected Word sends the selected chip back to the bank, not another, and clears the selection", () => {
+    const { onProgress } = panel();
+    const [first, second] = placeTwo() as [string, string];
+    fireEvent.click(slotBtn(1, first));
+    fireEvent.click(remove());
+    expect(screen.getByText("Slot 1 of 3, empty")).toBeInTheDocument();
+    expect(slotBtn(2, second)).toBeInTheDocument();
+    expect(bank().map((chip) => chip.textContent)).toContain(first);
+    expect(remove()).toHaveAttribute("aria-disabled", "true");
+    expect(onProgress).toHaveBeenLastCalledWith(true);
+  });
+
+  it("with nothing selected Remove is aria-disabled (still focusable) and does nothing", () => {
+    panel();
+    placeTwo();
+    expect(remove()).toHaveAttribute("aria-disabled", "true");
+    expect(remove()).not.toBeDisabled();
+    fireEvent.click(remove());
+    expect(bank()).toHaveLength(1);
+  });
+
+  it("a hinted chip cannot be selected", () => {
+    panel({ hinted: [1] });
+    expect(slotBtn(2, "そうです。", ", hint")).toBeDisabled();
+  });
+
+  it("counts the words still in the bank", () => {
+    panel();
+    expect(screen.getByText("3 words remaining")).toBeInTheDocument();
+    fireEvent.click(bank()[0]!);
+    expect(screen.getByText("2 words remaining")).toBeInTheDocument();
+  });
+
+  it("hides Remove after Check", () => {
+    panel({ results: [{ correct: true, hinted: false }, { correct: true, hinted: false }, { correct: true, hinted: false }] });
+    expect(screen.queryByRole("button", { name: "Remove Selected Word" })).toBeNull();
+  });
+});

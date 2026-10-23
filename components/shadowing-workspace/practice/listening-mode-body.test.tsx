@@ -24,6 +24,7 @@ const bankTexts = () => within(bank()).getAllByRole("button").map((chip) => chip
 const check = () => screen.getByRole("button", { name: /^(Check|Checking…)$/ });
 const feedback = () => screen.getByTestId("listening-feedback");
 const nextSentence = () => within(screen.getByTestId("practice-panel")).getByRole("button", { name: /^Next sentence/ });
+const removeButton = () => screen.getByRole("button", { name: "Remove Selected Word" });
 const place = (text: string) => fireEvent.click(within(bank()).getByRole("button", { name: text }));
 const placeAll = (texts: readonly string[]) => texts.forEach(place);
 
@@ -59,6 +60,8 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(within(required(slotList())).getByRole("button", { name: "Slot 2 of 4, 雨です。" })).toBeInTheDocument();
     expect(bankTexts()).toEqual(shown.filter((text) => text !== "今日は" && text !== "雨です。"));
     fireEvent.click(screen.getByRole("button", { name: "Slot 1 of 4, 今日は" }));
+    expect(bankTexts()).toEqual(shown.filter((text) => text !== "今日は" && text !== "雨です。")); // a tap only selects
+    fireEvent.click(removeButton());
     expect(screen.getByText("Slot 1 of 4, empty")).toBeInTheDocument();
     expect(bankTexts()).toEqual(shown.filter((text) => text !== "雨です。"));
   });
@@ -77,6 +80,9 @@ describe("ListeningModeBody — Word Bank", () => {
     const placed = screen.getByRole("button", { name: "Slot 1 of 4, でも" });
     placed.focus();
     await user.keyboard(" ");
+    expect(placed).toHaveAttribute("aria-pressed", "true");
+    removeButton().focus();
+    await user.keyboard("{Enter}");
     expect(screen.getByText("Slot 1 of 4, empty")).toBeInTheDocument();
     expect(bankTexts()).toContain("でも");
   });
@@ -159,7 +165,9 @@ describe("ListeningModeBody — Word Bank", () => {
     placeAll(["今日は", "雨です。", "明日は晴れ…", "でも"]);
     fireEvent.click(check());
     expect(await screen.findByTestId("listening-score")).toHaveTextContent("50");
-    expect(screen.getByText("Keep practising")).toBeInTheDocument();
+    expect(screen.getByTestId("listening-score")).toHaveTextContent("50%");
+    expect(screen.queryByText("Keep practising")).toBeNull(); // the P14 heading carries the verdict
+    expect(screen.getByText("Saved to your personal listening memory.")).toBeInTheDocument();
     const results = [...required(slotList()).querySelectorAll("li")].map((slot) => slot.getAttribute("data-result"));
     expect(results).toEqual(["correct", "correct", "wrong", "wrong"]);
     expect(screen.getAllByRole("term").map((term) => term.textContent)).toEqual(expect.arrayContaining(["Recall", "Slots"]));
@@ -178,8 +186,9 @@ describe("ListeningModeBody — Word Bank", () => {
     placeAll(LINES["line-1"].display);
     fireEvent.click(check());
     expect(await screen.findByTestId("listening-score")).toHaveTextContent("100");
-    expect(screen.getByText("Excellent")).toBeInTheDocument();
+    expect(screen.queryByText("Excellent")).toBeNull();
     expect(feedback()).toHaveTextContent("You arranged the whole sentence yourself!");
+    expect(feedback().querySelector("[data-feedback-heading]")).toHaveTextContent("You arranged the whole sentence yourself!");
   });
 
   it("Try again restarts concealed in the click's own commit, says the last score, and names a fix only after a new submitted result", async () => {
@@ -293,6 +302,74 @@ describe("ListeningModeBody — Word Bank", () => {
   });
 });
 
+describe("ListeningModeBody — Figma composition (Task 9c)", () => {
+  it("Replay audio seeks the current sentence and plays", async () => {
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = required(yt.players[0]);
+    const play = vi.spyOn(player, "playVideo");
+    const seek = vi.spyOn(player, "seekTo");
+    fireEvent.click(screen.getByRole("button", { name: "Replay audio" }));
+    expect(seek).toHaveBeenCalled();
+    expect(play).toHaveBeenCalled();
+  });
+
+  it("Loop and the 0.75x / 1x buttons drive the shared player state and show it", async () => {
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const loop = screen.getByRole("button", { name: "Loop" });
+    const pressed = loop.getAttribute("aria-pressed");
+    fireEvent.click(loop);
+    expect(loop).toHaveAttribute("aria-pressed", pressed === "true" ? "false" : "true");
+    const slow = screen.getByRole("button", { name: "0.75× speed" });
+    const normal = screen.getByRole("button", { name: "1× speed" });
+    expect(normal).toHaveAttribute("aria-pressed", "true");
+    fireEvent.click(slow);
+    expect(slow).toHaveAttribute("aria-pressed", "true");
+    expect(normal).toHaveAttribute("aria-pressed", "false");
+    expect(required(yt.players[0]).getPlaybackRate()).toBe(0.75);
+    fireEvent.click(normal);
+    expect(required(yt.players[0]).getPlaybackRate()).toBe(1);
+  });
+
+  it("shows no footnote before an attempt is stored, and the remaining count follows the bank", async () => {
+    await open();
+    expect(screen.queryByText("Saved to your personal listening memory.")).toBeNull();
+    expect(screen.getByText("4 words remaining")).toBeInTheDocument();
+    place("今日は");
+    expect(screen.getByText("3 words remaining")).toBeInTheDocument();
+  });
+
+  it("Show answer is stored, so the footnote follows it", async () => {
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    await screen.findByTestId("listening-answer");
+    expect(screen.getByText("Saved to your personal listening memory.")).toBeInTheDocument();
+  });
+
+  it("renders the 2nd and 3rd P14 messages as tips inside the same live region, the first as the heading", async () => {
+    await open();
+    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    placeAll(["雨です。", "でも", "明日は晴れ…"]);
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    const heading = feedback().querySelector("[data-feedback-heading]");
+    expect(heading).toHaveTextContent("You got 3/4 chunks right.");
+    const tips = feedback().querySelectorAll("[data-feedback-tip]");
+    expect(tips).toHaveLength(1);
+    expect(tips[0]).toHaveTextContent("1 hinted chunk doesn't count as your own.");
+  });
+
+  it("puts the Hint pill in the puzzle header and hides it once answered", async () => {
+    await open();
+    expect(screen.getByRole("button", { name: "Hint" }).closest("[data-puzzle-header]")).not.toBeNull();
+    placeAll(LINES["line-1"].display);
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
+  });
+});
+
 const input = () => screen.getByRole("textbox", { name: "Type what you hear" });
 const radio = (name: string) => screen.getByRole("radio", { name });
 const metricNames = () => within(required(screen.getByText("Recall").closest("dl"))).getAllByRole("term").map((term) => term.textContent);
@@ -379,6 +456,7 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     expect(screen.getByTestId("typing-diff").textContent).toBe("ﾃｽﾄはいいです");
     expect(screen.getByTestId("typing-diff").querySelector("[data-op='wrong']")).toHaveTextContent("で");
     expect(metricNames()).toEqual(["Recall"]);
+    expect(screen.queryByText("Saved to your personal listening memory.")).not.toBeNull();
     expect(feedback()).toHaveTextContent("1 wrong, 0 missing, 0 extra. Replay the sentence and listen for で.");
     expect(feedback()).not.toHaveTextContent("Every character");
     expect(screen.getByTestId("listening-answer")).toHaveTextContent("ﾃｽﾄはいいです？");
@@ -400,7 +478,7 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     typeInto("今日わ雨です");
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
-    expect(metricNames()).toEqual(["Recall", "Kanji", "Grammar"]);
+    expect(metricNames()).toEqual(["Grammar", "Kanji", "Recall"]); // the frame's order
     expect(feedback()).toHaveTextContent("Particles and endings 67%, below your recall.");
     expect(feedback()).not.toHaveTextContent("Listen for the kanji words");
   });

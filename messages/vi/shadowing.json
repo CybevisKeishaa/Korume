@@ -135,54 +135,135 @@
     "waveformUnavailable": "Chưa có bản xem trước dạng sóng."
   },
   "hub": {
-    "eyebrow": "Korume \u00b7 Th\u01b0 vi\u1ec7n b\u00e0i h\u1ecdc",
+    "eyebrow": "Korume · Thư viện bài học",
     "title": "Shadowing Hub",
-    "subtitle": "M\u1ed9t n\u01a1i y\u00ean t\u0129nh \u0111\u1ec3 kh\u00e1m ph\u00e1, t\u1ea1o v\u00e0 ti\u1ebfp t\u1ee5c c\u00e1c b\u00e0i h\u1ecdc ti\u1ebfng Nh\u1eadt c\u1ee7a b\u1ea1n.",
-    "railLabel": "Ti\u1ebfn tr\u00ecnh h\u1ecdc t\u1eadp",
+    "subtitle": "Một nơi yên tĩnh để khám phá, tạo và tiếp tục các bài học tiếng Nhật của bạn.",
+    "railLabel": "Tiến trình học tập",
     "sections": {
-      "featured": "B\u00e0i h\u1ecdc n\u1ed5i b\u1eadt",
-      "library": "B\u00e0i h\u1ecdc c\u1ee7a b\u1ea1n",
-      "search": "T\u00ecm b\u00e0i h\u1ecdc",
-      "popular": "B\u00e0i h\u1ecdc ph\u1ed5 bi\u1ebfn",
-      "continueLearning": "Ti\u1ebfp t\u1ee5c h\u1ecdc",
-      "recentlyAdded": "M\u1edbi th\u00eam",
-      "recommended": "G\u1ee3i \u00fd cho b\u1ea1n"
+      "featured": "Bài học nổi bật",
+      "library": "Bài học của bạn",
+      "search": "Tìm bài học",
+      "popular": "Bài học phổ biến",
+      "continueLearning": "Tiếp tục học",
+      "recentlyAdded": "Mới thêm",
+      "recommended": "Gợi ý cho bạn"
     },
     "empty": {
-      "featured": { "title": "B\u00e0i h\u1ecdc n\u1ed5i b\u1eadt \u0111\u01b0\u1ee3c ch\u1ecdn k\u1ef9", "body": "B\u00e0i h\u1ecdc n\u1ed5i b\u1eadt s\u1ebd xu\u1ea5t hi\u1ec7n \u1edf \u0111\u00e2y khi c\u00f3 n\u1ed9i dung ph\u00f9 h\u1ee3p." },
-      "library": { "title": "Th\u01b0 vi\u1ec7n b\u00e0i h\u1ecdc \u0111\u00e3 s\u1eb5n s\u00e0ng", "body": "H\u00e3y t\u1ea1o m\u1ed9t b\u00e0i h\u1ecdc \u0111\u1ec3 b\u1eaft \u0111\u1ea7u x\u00e2y d\u1ef1ng th\u01b0 vi\u1ec7n c\u1ee7a b\u1ea1n.", "action": "T\u1ea1o b\u00e0i h\u1ecdc" },
-      "popular": { "title": "B\u00e0i h\u1ecdc ph\u1ed5 bi\u1ebfn \u0111ang d\u1ea7n h\u00ecnh th\u00e0nh", "body": "B\u00e0i h\u1ecdc ph\u1ed5 bi\u1ebfn s\u1ebd xu\u1ea5t hi\u1ec7n khi c\u00f3 d\u1eef li\u1ec7u ho\u1ea1t \u0111\u1ed9ng ph\u00f9 h\u1ee3p." },
-      "continueLearning": { "title": "Ti\u1ebfp t\u1ee5c khi b\u1ea1n s\u1eb5n s\u00e0ng", "body": "Nh\u1eefng b\u00e0i h\u1ecdc b\u1ea1n \u0111\u00e3 b\u1eaft \u0111\u1ea7u s\u1ebd ch\u1edd \u1edf \u0111\u00e2y." },
-      "recentlyAdded": { "title": "B\u00e0i h\u1ecdc m\u1edbi s\u1ebd \u0111\u1ebfn \u1edf \u0111\u00e2y", "body": "B\u00e0i h\u1ecdc m\u1edbi th\u00eam s\u1ebd xu\u1ea5t hi\u1ec7n khi th\u01b0 vi\u1ec7n c\u00f3 th\u00eam n\u1ed9i dung." },
-      "recommended": { "title": "G\u1ee3i \u00fd c\u1ea7n t\u00edn hi\u1ec7u h\u1ecdc t\u1eadp", "body": "G\u1ee3i \u00fd s\u1ebd xu\u1ea5t hi\u1ec7n khi c\u00f3 \u0111\u1ee7 d\u1eef li\u1ec7u h\u1ecdc t\u1eadp." }
+      "featured": {
+        "title": "Bài học nổi bật được chọn kỹ",
+        "body": "Bài học nổi bật sẽ xuất hiện ở đây khi có nội dung phù hợp."
+      },
+      "library": {
+        "title": "Thư viện bài học đã sẵn sàng",
+        "body": "Hãy tạo một bài học để bắt đầu xây dựng thư viện của bạn.",
+        "action": "Tạo bài học"
+      },
+      "popular": {
+        "title": "Bài học phổ biến đang dần hình thành",
+        "body": "Bài học phổ biến sẽ xuất hiện khi có dữ liệu hoạt động phù hợp."
+      },
+      "continueLearning": {
+        "title": "Tiếp tục khi bạn sẵn sàng",
+        "body": "Những bài học bạn đã bắt đầu sẽ chờ ở đây."
+      },
+      "recentlyAdded": {
+        "title": "Bài học mới sẽ đến ở đây",
+        "body": "Bài học mới thêm sẽ xuất hiện khi thư viện có thêm nội dung."
+      },
+      "recommended": {
+        "title": "Gợi ý cần tín hiệu học tập",
+        "body": "Gợi ý sẽ xuất hiện khi có đủ dữ liệu học tập."
+      }
     },
     "import": {
-      "eyebrow": "Nh\u1eadp b\u00e0i h\u1ecdc t\u1eeb YouTube",
-      "title": "Bi\u1ebfn b\u1ea5t k\u1ef3 video ti\u1ebfng Nh\u1eadt n\u00e0o th\u00e0nh m\u1ed9t b\u00e0i h\u1ecdc t\u01b0\u01a1ng t\u00e1c.",
-      "body": "Th\u00eam li\u00ean k\u1ebft YouTube \u0111\u1ec3 t\u1ea1o b\u00e0i h\u1ecdc v\u1edbi t\u1eeb v\u1ef1ng, ng\u1eef ph\u00e1p v\u00e0 luy\u1ec7n shadowing.",
-      "support": "Video c\u00f3 h\u1ed9i tho\u1ea1i ti\u1ebfng Nh\u1eadt v\u00e0 ph\u1ee5 \u0111\u1ec1 s\u1ebd gi\u00fap c\u1ea3i thi\u1ec7n ch\u1ea5t l\u01b0\u1ee3ng b\u00e0i h\u1ecdc.",
-      "freePlan": "G\u00f3i mi\u1ec5n ph\u00ed",
-      "importsRemaining": "L\u1ea7n nh\u1eadp c\u00f2n l\u1ea1i",
-      "quotaUnlimited": "Nh\u1eadp b\u00e0i h\u1ecdc kh\u00f4ng gi\u1edbi h\u1ea1n."
+      "eyebrow": "Nhập bài học từ YouTube",
+      "title": "Biến bất kỳ video tiếng Nhật nào thành một bài học tương tác.",
+      "body": "Thêm liên kết YouTube để tạo bài học với từ vựng, ngữ pháp và luyện shadowing.",
+      "support": "Video có hội thoại tiếng Nhật và phụ đề sẽ giúp cải thiện chất lượng bài học.",
+      "freePlan": "Gói miễn phí",
+      "importsRemaining": "Lần nhập còn lại",
+      "quotaUnlimited": "Nhập bài học không giới hạn."
     },
     "rail": {
-      "preparation": "Chu\u1ea9n b\u1ecb b\u00e0i h\u1ecdc",
-      "noPreparation": "Hi\u1ec7n kh\u00f4ng c\u00f3 b\u00e0i h\u1ecdc n\u00e0o \u0111ang \u0111\u01b0\u1ee3c chu\u1ea9n b\u1ecb.",
-      "todayGoal": "M\u1ee5c ti\u00eau h\u00f4m nay",
-      "noGoal": "B\u1ea1n ch\u01b0a \u0111\u1eb7t m\u1ee5c ti\u00eau h\u00e0ng ng\u00e0y.",
-      "dailyGoal": "M\u1ee5c ti\u00eau m\u1ed7i ng\u00e0y: {minutes} ph\u00fat",
-      "weeklyProgress": "Ti\u1ebfn \u0111\u1ed9 tu\u1ea7n",
-      "noWeeklyActivity": "Ch\u01b0a c\u00f3 ho\u1ea1t \u0111\u1ed9ng shadowing n\u00e0o trong tu\u1ea7n \u0111\u01b0\u1ee3c ghi nh\u1eadn.",
-      "suggestion": "B\u00e0i h\u1ecdc n\u00ean h\u1ecdc ti\u1ebfp",
-      "noSuggestion": "Ch\u01b0a c\u00f3 g\u1ee3i \u00fd b\u00e0i h\u1ecdc ph\u00f9 h\u1ee3p."
+      "preparation": "Chuẩn bị bài học",
+      "noPreparation": "Hiện không có bài học nào đang được chuẩn bị.",
+      "todayGoal": "Mục tiêu hôm nay",
+      "noGoal": "Bạn chưa đặt mục tiêu hàng ngày.",
+      "dailyGoal": "Mục tiêu mỗi ngày: {minutes} phút",
+      "weeklyProgress": "Tiến độ tuần",
+      "noWeeklyActivity": "Chưa có hoạt động shadowing nào trong tuần được ghi nhận.",
+      "suggestion": "Bài học nên học tiếp",
+      "noSuggestion": "Chưa có gợi ý bài học phù hợp."
     },
-    "actions": { "start": "B\u1eaft \u0111\u1ea7u b\u00e0i h\u1ecdc", "continue": "Ti\u1ebfp t\u1ee5c b\u00e0i h\u1ecdc", "openLesson": "M\u1edf b\u00e0i h\u1ecdc" },
-    "search": { "label": "T\u00ecm b\u00e0i h\u1ecdc", "placeholder": "T\u00ecm theo ti\u00eau \u0111\u1ec1, c\u1ee5m t\u1eeb, anime, phim ho\u1eb7c ch\u1ee7 \u0111\u1ec1...", "results": "K\u1ebft qu\u1ea3 t\u00ecm ki\u1ebfm", "noResults": "Kh\u00f4ng c\u00f3 b\u00e0i h\u1ecdc n\u00e0o kh\u1edbp v\u1edbi t\u00ecm ki\u1ebfm c\u1ee7a b\u1ea1n." },
-    "metadata": { "jlptLabel": "Tr\u00ecnh \u0111\u1ed9 ti\u1ebfng Nh\u1eadt", "durationLabel": "Th\u1eddi l\u01b0\u1ee3ng b\u00e0i h\u1ecdc", "minutes": "{count} ph\u00fat" }
+    "actions": {
+      "start": "Bắt đầu bài học",
+      "continue": "Tiếp tục bài học",
+      "openLesson": "Mở bài học"
+    },
+    "search": {
+      "label": "Tìm bài học",
+      "placeholder": "Tìm theo tiêu đề, cụm từ, anime, phim hoặc chủ đề...",
+      "results": "Kết quả tìm kiếm",
+      "noResults": "Không có bài học nào khớp với tìm kiếm của bạn."
+    },
+    "metadata": {
+      "jlptLabel": "Trình độ tiếng Nhật",
+      "durationLabel": "Thời lượng bài học",
+      "minutes": "{count} phút"
+    }
   },
-  "explore": { "eyebrow": "Thư viện shadowing", "title": "Khám phá bài học", "subtitle": "Khám phá bài học tiếng Nhật từ phụ đề có thật.", "imported": "Bài học bạn đã nhập", "recent": "Mới thêm", "recommended": "Gợi ý cho bạn", "situations": "Khám phá theo tình huống", "all": "Mọi tình huống", "preview": "Xem trước bài học", "empty": "Chưa có bài học cho lựa chọn này.", "moreAvailable": "Bộ sưu tập này có thêm bài học ngoài những bài đang hiển thị.", "card": { "minutes": "{count} phút", "lines": "{count} dòng", "grammarWords": "{grammar} ngữ pháp · {words} từ", "grammarUnavailable": "Chưa có ngữ pháp" }, "drawer": { "close": "Đóng xem trước", "start": "Bắt đầu bài học", "add": "Thêm vào bài học của tôi", "added": "Đã thêm vào bài học của tôi", "adding": "Đang thêm bài học", "addFailed": "Chưa thể thêm bài học", "transcript": "Xem trước phụ đề", "transcriptUnavailable": "Chưa có phần xem trước phụ đề", "jlpt": "JLPT", "duration": "Thời lượng", "vocabulary": "Từ vựng", "sentences": "Câu" } },
-  "situations": { "conversation": "H\u1ed9i tho\u1ea1i", "restaurant": "Nh\u00e0 h\u00e0ng", "business": "C\u00f4ng vi\u1ec7c", "daily-life": "\u0110\u1eddi s\u1ed1ng h\u1eb1ng ng\u00e0y", "travel": "Du l\u1ecbch", "office": "V\u0103n ph\u00f2ng", "shopping": "Mua s\u1eafm", "cafe": "Qu\u00e1n c\u00e0 ph\u00ea" },
-  "sources": { "youtube": "YouTube", "nhk": "NHK", "podcast": "Podcast", "drama": "Phim truy\u1ec7n", "anime": "Anime", "vlog": "Vlog", "news": "Tin t\u1ee9c" },
+  "explore": {
+    "eyebrow": "Thư viện shadowing",
+    "title": "Khám phá bài học",
+    "subtitle": "Khám phá bài học tiếng Nhật từ phụ đề có thật.",
+    "imported": "Bài học bạn đã nhập",
+    "recent": "Mới thêm",
+    "recommended": "Gợi ý cho bạn",
+    "situations": "Khám phá theo tình huống",
+    "all": "Mọi tình huống",
+    "preview": "Xem trước bài học",
+    "empty": "Chưa có bài học cho lựa chọn này.",
+    "moreAvailable": "Bộ sưu tập này có thêm bài học ngoài những bài đang hiển thị.",
+    "card": {
+      "minutes": "{count} phút",
+      "lines": "{count} dòng",
+      "grammarWords": "{grammar} ngữ pháp · {words} từ",
+      "grammarUnavailable": "Chưa có ngữ pháp"
+    },
+    "drawer": {
+      "close": "Đóng xem trước",
+      "start": "Bắt đầu bài học",
+      "add": "Thêm vào bài học của tôi",
+      "added": "Đã thêm vào bài học của tôi",
+      "adding": "Đang thêm bài học",
+      "addFailed": "Chưa thể thêm bài học",
+      "transcript": "Xem trước phụ đề",
+      "transcriptUnavailable": "Chưa có phần xem trước phụ đề",
+      "jlpt": "JLPT",
+      "duration": "Thời lượng",
+      "vocabulary": "Từ vựng",
+      "sentences": "Câu"
+    }
+  },
+  "situations": {
+    "conversation": "Hội thoại",
+    "restaurant": "Nhà hàng",
+    "business": "Công việc",
+    "daily-life": "Đời sống hằng ngày",
+    "travel": "Du lịch",
+    "office": "Văn phòng",
+    "shopping": "Mua sắm",
+    "cafe": "Quán cà phê"
+  },
+  "sources": {
+    "youtube": "YouTube",
+    "nhk": "NHK",
+    "podcast": "Podcast",
+    "drama": "Phim truyện",
+    "anime": "Anime",
+    "vlog": "Vlog",
+    "news": "Tin tức"
+  },
   "workspace": {
     "practice": {
       "pronunciation": {
@@ -220,8 +301,20 @@
           "rhythm": "Độ trôi chảy {from} → {to}",
           "pronunciation": "Phát âm {from} → {to}"
         },
-        "wordGrade": { "needsWork": "Cần luyện thêm: {words}.", "good": "Tốt: {words}.", "strong": "Rất tốt: {words}." },
-        "analysis": { "title": "Điểm phát âm", "subtitle": "Điểm phát âm cho cả câu", "words": "Chi tiết từng từ", "wordsHelpLabel": "Cách đọc màu", "wordsHelp": "Xanh lá: rất tốt, vàng: tốt, đỏ: cần luyện thêm. Từ bị gạch là từ máy không nghe thấy.", "notHeard": "không nghe thấy", "mismatch": "Câu bạn vừa đọc chưa khớp với câu mẫu. Hãy nghe lại và đọc đúng nội dung câu đang hiển thị." },
+        "wordGrade": {
+          "needsWork": "Cần luyện thêm: {words}.",
+          "good": "Tốt: {words}.",
+          "strong": "Rất tốt: {words}."
+        },
+        "analysis": {
+          "title": "Điểm phát âm",
+          "subtitle": "Điểm phát âm cho cả câu",
+          "words": "Chi tiết từng từ",
+          "wordsHelpLabel": "Cách đọc màu",
+          "wordsHelp": "Xanh lá: rất tốt, vàng: tốt, đỏ: cần luyện thêm. Từ bị gạch là từ máy không nghe thấy.",
+          "notHeard": "không nghe thấy",
+          "mismatch": "Câu bạn vừa đọc chưa khớp với câu mẫu. Hãy nghe lại và đọc đúng nội dung câu đang hiển thị."
+        },
         "remarkUnaligned": "Chỉ có điểm tổng: không khớp được từng từ với câu một cách đáng tin.",
         "historyLoading": "Đang tải các lượt thu…",
         "historyError": "Không tải được các lượt thu.",
@@ -235,11 +328,25 @@
         "unheard": "Máy chấm không nghe thấy giọng nói trong bản thu này. Hãy thu lại, để micro gần hơn một chút.",
         "micHint": "Cho phép truy cập micrô trong cài đặt trình duyệt để thu âm."
       },
-      "strip": { "label": "Tiến độ bài học", "sentence": "Câu", "scored": "Đã chấm", "average": "Điểm TB", "noScore": "Chưa có điểm" },
+      "strip": {
+        "label": "Tiến độ bài học",
+        "sentence": "Câu",
+        "scored": "Đã chấm",
+        "average": "Điểm TB",
+        "noScore": "Chưa có điểm"
+      },
       "listening": {
-        "format": { "word_bank": "Xếp cụm từ", "typing": "Gõ chính tả" },
-        "strip": { "submitted": "{format} · Đã nộp" },
-        "cover": { "title": "Chỉ nghe", "show": "Hiện video" },
+        "format": {
+          "word_bank": "Xếp cụm từ",
+          "typing": "Gõ chính tả"
+        },
+        "strip": {
+          "submitted": "{format} · Đã nộp"
+        },
+        "cover": {
+          "title": "Chỉ nghe",
+          "show": "Hiện video"
+        },
         "region": "Luyện nghe",
         "loading": "Đang tải câu…",
         "chunksError": "Không tải được câu này.",
@@ -257,26 +364,81 @@
         "answerSlots": "Câu của bạn",
         "slot": "Ô {n}/{total}, {text}",
         "slotEmpty": "Ô {n}/{total}, trống",
-        "slotState": {"correct": "đúng", "wrong": "sai", "hinted": "gợi ý"},
+        "slotState": {
+          "correct": "đúng",
+          "wrong": "sai",
+          "hinted": "gợi ý",
+          "selected": "đang chọn"
+        },
         "check": "Kiểm tra",
         "checking": "Đang kiểm tra…",
         "hint": "Gợi ý",
         "showAnswer": "Xem đáp án",
         "tryAgain": "Thử lại",
-        "error": {"network": "Chưa kiểm tra được bài làm. Bài làm vẫn được giữ, hãy thử lại.", "line_changed": "Câu này đã thay đổi, hãy làm lại từ đầu", "rate_limited": "Bạn thử quá nhiều lần. Hãy đợi một chút rồi thử lại."},
+        "error": {
+          "network": "Chưa kiểm tra được bài làm. Bài làm vẫn được giữ, hãy thử lại.",
+          "line_changed": "Câu này đã thay đổi, hãy làm lại từ đầu",
+          "rate_limited": "Bạn thử quá nhiều lần. Hãy đợi một chút rồi thử lại."
+        },
         "score": "Điểm",
-        "metrics": {"recall": "Nhớ lại", "slots": "Ô đúng", "kanji": "Kanji", "grammar": "Ngữ pháp"},
+        "metrics": {
+          "recall": "Nhớ lại",
+          "slots": "Ô đúng",
+          "kanji": "Kanji",
+          "grammar": "Ngữ pháp"
+        },
         "answer": "Đáp án",
-        "feedback": {"hint_used": "Đã dùng gợi ý cho {count, plural, other {{count} {unit, select, chunk {cụm} other {phần}}}}. Phần được gợi ý không được tính vào điểm nhớ lại.", "hint_all": "Bạn đã xem gợi ý toàn bộ câu nên lượt này được 0 điểm nhớ lại.", "wb_perfect": "Bạn đã tự sắp xếp đúng toàn bộ câu!", "wb_partial": "Bạn đúng {correct}/{total} cụm.{wrong, plural, =0 {} other { Hãy nghe lại câu và chú ý thứ tự {wrong} cụm còn sai.}}", "wb_hinted": "{hinted, plural, other {{hinted} cụm dùng gợi ý}} không được tính là bạn tự làm.", "wb_fixed": "Bạn đã sửa đúng {fixed, plural, other {{fixed} cụm}} so với lần trước.", "ty_errors": "{wrong} ký tự sai, {missing} ký tự thiếu, {extra} ký tự thừa. Hãy nghe lại câu và chú ý: {chars}.", "ty_extra": "Bạn gõ thừa {extra, plural, other {{extra} ký tự}}. Hãy nghe lại câu và so sánh.", "ty_perfect": "Bạn đã tự viết đúng mọi ký tự!", "ty_hinted": "{hinted, plural, other {{hinted} ký tự được gợi ý}} không được tính vào điểm nhớ lại.", "ty_kanji": "Kanji đạt {kanji}%, thấp hơn mức nhớ lại chung. Hãy chú ý các từ kanji.", "ty_grammar": "Trợ từ và đuôi câu đạt {grammar}%, thấp hơn mức nhớ lại chung. Hãy chú ý các từ nhỏ.", "ty_fewer": "Ít hơn {fewer, plural, other {{fewer} lỗi ký tự}} so với lần trước.", "retry": "Lượt mới. Điểm lần trước của câu này là {score}.", "retry_first": "Lượt mới. Hãy nghe và làm lại từ đầu.", "revealed": "Câu này được đánh dấu cần ôn lại. Lượt này không tính điểm và không tính vào nhiệm vụ."}
+        "feedback": {
+          "hint_used": "Đã dùng gợi ý cho {count, plural, other {{count} {unit, select, chunk {cụm} other {phần}}}}. Phần được gợi ý không được tính vào điểm nhớ lại.",
+          "hint_all": "Bạn đã xem gợi ý toàn bộ câu nên lượt này được 0 điểm nhớ lại.",
+          "wb_perfect": "Bạn đã tự sắp xếp đúng toàn bộ câu!",
+          "wb_partial": "Bạn đúng {correct}/{total} cụm.{wrong, plural, =0 {} other { Hãy nghe lại câu và chú ý thứ tự {wrong} cụm còn sai.}}",
+          "wb_hinted": "{hinted, plural, other {{hinted} cụm dùng gợi ý}} không được tính là bạn tự làm.",
+          "wb_fixed": "Bạn đã sửa đúng {fixed, plural, other {{fixed} cụm}} so với lần trước.",
+          "ty_errors": "{wrong} ký tự sai, {missing} ký tự thiếu, {extra} ký tự thừa. Hãy nghe lại câu và chú ý: {chars}.",
+          "ty_extra": "Bạn gõ thừa {extra, plural, other {{extra} ký tự}}. Hãy nghe lại câu và so sánh.",
+          "ty_perfect": "Bạn đã tự viết đúng mọi ký tự!",
+          "ty_hinted": "{hinted, plural, other {{hinted} ký tự được gợi ý}} không được tính vào điểm nhớ lại.",
+          "ty_kanji": "Kanji đạt {kanji}%, thấp hơn mức nhớ lại chung. Hãy chú ý các từ kanji.",
+          "ty_grammar": "Trợ từ và đuôi câu đạt {grammar}%, thấp hơn mức nhớ lại chung. Hãy chú ý các từ nhỏ.",
+          "ty_fewer": "Ít hơn {fewer, plural, other {{fewer} lỗi ký tự}} so với lần trước.",
+          "retry": "Lượt mới. Điểm lần trước của câu này là {score}.",
+          "retry_first": "Lượt mới. Hãy nghe và làm lại từ đầu.",
+          "revealed": "Câu này được đánh dấu cần ôn lại. Lượt này không tính điểm và không tính vào nhiệm vụ."
+        },
+        "replay": {
+          "audio": "Nghe lại câu",
+          "loop": "Lặp",
+          "rate": "Tốc độ {rate}×"
+        },
+        "puzzle": {
+          "wordBank": "Ghép câu",
+          "typing": "Gõ lại câu",
+          "remaining": "{count, plural, other {Còn {count} mảnh}}"
+        },
+        "removeSelected": "Bỏ mảnh đã chọn",
+        "liveFeedback": "Phản hồi",
+        "saved": "Đã lưu vào lịch sử luyện nghe của bạn."
       },
       "navigator": {
         "label": "Điều hướng câu",
         "earlier": "Các câu trước",
         "later": "Các câu sau",
         "chip": "Câu {number}, {state}",
-        "state": { "none": "chưa luyện", "scored": "{score} điểm", "needs_review": "cần ôn lại", "unscored": "chưa chấm", "revealed": "đã xem đáp án" }
+        "state": {
+          "none": "chưa luyện",
+          "scored": "{score} điểm",
+          "needs_review": "cần ôn lại",
+          "unscored": "chưa chấm",
+          "revealed": "đã xem đáp án"
+        }
       },
-      "leave": { "title": "Bỏ bản thu chưa lưu?", "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.", "stay": "Ở lại", "discard": "Rời đi và bỏ bản thu" }
+      "leave": {
+        "title": "Bỏ bản thu chưa lưu?",
+        "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.",
+        "stay": "Ở lại",
+        "discard": "Rời đi và bỏ bản thu"
+      }
     },
     "mining": {
       "loading": "Đang tải thẻ của bạn…",
@@ -313,7 +475,11 @@
       "mine": "Thêm vào thẻ câu",
       "mineTooLong": "Chọn tối đa {max} ký tự để thêm vào thẻ câu."
     },
-    "inspector": { "label": "Tra cứu: {title}", "back": "Quay lại", "close": "Đóng" },
+    "inspector": {
+      "label": "Tra cứu: {title}",
+      "back": "Quay lại",
+      "close": "Đóng"
+    },
     "drawer": {
       "region": "Công cụ học",
       "tabList": "Công cụ học",
