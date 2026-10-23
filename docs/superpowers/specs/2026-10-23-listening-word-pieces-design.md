@@ -28,7 +28,7 @@ Goals
 - The stat strip looks like the frame's bottom bar (orange progress line + four stats) in Pronunciation and Listening.
 
 Non-goals
-- Typing format: unchanged (its hint unit already works per chunk / 4 graphemes; see §3.6 for the hint unit only).
+- Typing format: unchanged except its hint unit (§3.6) and the optional-symbol scoring rule (§3.6).
 - The "Optional reports" section and the other frame cards under the video: still out (D1/D3).
 - Re-scoring stored attempts. Stored scores stay as they were scored.
 
@@ -44,6 +44,10 @@ Anti-goals (a failure even if it works)
 Owner review 2026-10-23 (second pass, pasted into the session): approved the direction and asked for §3.1 no cap,
 §3.2 identity by index, §3.3 I1 closure, §3.4 server-side LCS with duplicate and hint tests, §3.5 no player remount
 and the D19/E2E amendment, §3.7 a position marker that does not read as completion and real-data stats, §3.8.
+Owner review 2026-10-23 (third pass): Typing ignores the optional symbols ♪ 〜 → ※ (§3.6); "Chỉ nghe" is a
+remembered switch and "Hiện video" turns it off (§3.5); collapse the video area by reusing Shadowing's re-layout if
+safe, decided in a Chrome trial (§3.5). Approved the rest (v2 tokens, no cap, drag/click, server LCS, real stats,
+feedback + Korume).
 
 ## 3. The design
 
@@ -131,34 +135,62 @@ and the D19/E2E amendment, §3.7 a position marker that does not read as complet
   example; a hinted prefix is excluded from self-recall; all-hinted → 0; the tie-break is stable; v1 attempts still
   score positionally. Route test: a non-prefix `hintedUnits` → 400.
 
-### 3.5 Video visible by default (amends D4 / §5.9 D19)
-- Listening opens with **no cover**; the video plays visibly. The cover stays available as an optional "Chỉ nghe"
-  (listen only) switch the learner turns on. The switch **persists for the session** (a learner who wants audio-only
-  should not re-press it each line). While the switch is on, each line starts covered and the cover's "Hiện video"
-  lifts it **for that line only** (§5.9 as today); the switch stays on. Turning the switch off removes the cover.
-  (Controller's call: switch = session preference, "Hiện video" = a peek for the current **attempt**, as the code
-  keys it today: Next or Try again covers again while the switch is on.)
+### 3.5 Video visible by default; "Chỉ nghe" is a remembered choice (amends D4 / §5.9 D19)
+- Listening opens with the **video visible**. "Chỉ nghe" (listen only) is a switch whose state is **kept for the whole
+  session** (owner 2026-10-23, second review):
+
+  | Action | Result |
+  |---|---|
+  | Open Listening | video visible |
+  | Press the headphones button | "Chỉ nghe" on, video hidden |
+  | Next sentence / Try again while "Chỉ nghe" is on | stays hidden |
+  | Press "Hiện video" (or the headphones button again) | "Chỉ nghe" off, video visible |
+  | Next sentence / Try again after that | stays visible, nothing to press again |
+
+  There is no per-line or per-attempt peek any more: "Hiện video" simply turns the switch off.
 - **Where the switch sits (owner 2026-10-23):** the frame's headphones button at the end of the Replay row (restores
-  the button Task 9c dropped), icon only — the frame's own vector, downloaded to
-  `public/images/practice/listening-only.svg`. Hover (and keyboard focus) shows the text "Chỉ nghe" / "Listen only"
-  through the existing `components/ui/tooltip.tsx`; the button's accessible name is the same text and
-  `aria-pressed` reflects the switch. Pressed look = the Loop button's pressed look.
+  the button Task 9c dropped), icon only — the frame's own vector, `public/images/practice/listening-only.svg`. Hover
+  (and keyboard focus) shows "Chỉ nghe" / "Listen only" through the existing `components/ui/tooltip.tsx`; the
+  accessible name is the same text; `aria-pressed` reflects the switch. Pressed look = the Loop button's.
+- **How "hidden" looks — reuse first, decided in Chrome (owner):** the owner prefers collapsing the video area to an
+  audio/controls strip over a large black cover, so the practice column gains room for 15–20 pieces. Figma shows no
+  collapsed state, so nothing is invented from the frame. What exists to reuse: the Shadowing workspace's
+  **full-transcript view** already re-lays the page by restyling the same player pane (`#workspace-player-pane`,
+  `workspace-shell.tsx`: the pane becomes a small floating window and the other column takes the width) without
+  remounting the iframe. The plan's first task is a **Chrome trial** (injected CSS in the owner's tab, at 1280×529) of
+  (a) the pane collapsed in place to the player's control bar and (b) the existing full-transcript-style re-layout, with
+  today's cover as the fallback; the owner picks, then it is built. Hard requirements for any option: one YouTube
+  player instance (no iframe remount, `onReady` once), playback position and current sentence / attempt untouched,
+  the control bar (play, previous/next, speed, loop) still usable, and no important control moves off screen at
+  1280×529. The iframe is never `display:none` (that can reload the embed); it is collapsed or covered.
 - Still concealed while answering (D4/§5.8 unchanged): the app's subtitle overlay, YouTube CC, transcript, drawer,
   LiveSentence, feedback text. Burned-in subtitles inside the video are accepted (owner).
-- Toggling the switch (or lifting the cover) never remounts the YouTube player and never changes the current
-  sentence or the attempt in progress: the cover is an overlay sibling of the iframe, as today. E2E proves it with
-  the existing one-player marker (`fake-yt` marker kept, `onReady` fired once) across switch on/off.
-- **Amends the B2 spec:** D19 and §5.9 ("cover on by default; a line change or new attempt restores it") become: no
-  cover by default; with "Chỉ nghe" on, every line starts covered and "Hiện video" lifts it for that line. The B2
-  spec file gets a dated amendment note pointing here, so the two documents do not contradict.
-- **E2E to change** (`tests/e2e/practice-listening.spec.ts`): case 2 (asserted "the cover is on" from the first frame
-  and controls working "with the cover on") → video visible on entry, then the same control checks with "Chỉ nghe"
-  on; case 3 and any case asserting "cover back" after Next / Try again → only with "Chỉ nghe" on. Concealment of
-  the subtitle surfaces stays asserted everywhere.
+- **Amends the B2 spec:** D19 and §5.9 ("cover on by default; a line change or new attempt restores it; Show video
+  lifts it for the current line") are replaced by this section. The B2 spec file gets a dated amendment note
+  pointing here, so the two documents do not contradict.
+- **E2E to change** (`tests/e2e/practice-listening.spec.ts`): case 2 → video visible on entry; the player controls
+  are checked with "Chỉ nghe" on as well; the switch survives Next and Try again; "Hiện video" turns it off and the
+  video stays visible across Next and Try again; the one-player marker (`fake-yt` marker kept, `onReady` once) holds
+  across every toggle. Every "cover back after Next / Try again" assertion is removed. Concealment of the subtitle
+  surfaces stays asserted everywhere.
 
-### 3.6 Typing hint unit
-Typing's chunk hint (`hintUnit: "chunk"`) shows one piece per press. With v2 the pieces are words, so a hint shows
-one word. No other Typing change.
+### 3.6 Typing: hint unit and optional symbols
+- Typing's chunk hint (`hintUnit: "chunk"`) shows one piece per press. With v2 the pieces are words, so a hint shows
+  one word.
+- **Optional symbols (owner 2026-10-23, second review):** a learner may leave out `♪ 〜 → ※` when typing and lose
+  nothing. `今日は楽しいですね♪` typed as `今日は楽しいですね` scores 100%.
+  - A **Typing-only allowlist** `TYPING_OPTIONAL = ♪ 〜 ～ → ※` (the owner's four, plus the full-width tilde `～`
+    U+FF5E that Japanese text uses interchangeably with the wave dash `〜` U+301C — controller's call). It is **not** all
+    `記号` tokens and not all Unicode symbols: `% ¥ + −` and every other symbol stay required.
+  - Where: `scoreTyping` already strips `PUNCTUATION` from both the reference and the input before alignment
+    (`stripPunctuation`, with an index map back to the base text). The allowlist is stripped in that same step, from
+    both sides, so score, Recall, Kanji, Grammar, the diff and the hint ranges all use one filtered reference: an
+    omitted symbol is never in the denominator, never `missing`; a typed one is never `extra`.
+  - Not touched: `text_jp`, normalisation, chunkers v1/v2 (Word Bank keeps the symbols attached to their word, §3.1),
+    the answer shown after Check (full original text), stored scores (not recomputed).
+  - Tests: each of `♪ 〜 ～ → ※` omitted → no loss, typed → no `extra`; ordinary punctuation unchanged; `% ¥ + −`
+    omitted → counted missing; a hinted range next to a stripped symbol still maps to the right characters; Kanji /
+    Grammar ratios unchanged by a stripped symbol.
 
 ### 3.7 Stat strip = the frame's bottom bar (owner agreed)
 - `LessonStatStrip` (shared by Pronunciation and Listening) gets the bar's look: an orange line on the left, then
@@ -207,7 +239,8 @@ one word. No other Typing change.
 ## 5. What this supersedes
 - Task 9c owner ruling "tap selects + Remove Selected Word" → §3.3.
 - Task 9c's empty dashed slot placeholders → §3.2 (no slots).
-- D19 / §5.9 "cover on by default, restored on each line" → §3.5.
+- D19 / §5.9 "cover on by default, restored on each line, Show video lifts it for one line" → §3.5 (a remembered
+  switch).
 - Spec D1/D3 "bottom strip out" → §3.7 (as a restyle of the existing strip, not a new bar).
 
 ## 6. Baseline
@@ -219,7 +252,8 @@ selection code (select + Remove, review finding I1) is replaced by §3.3, not fi
   possible line (e.g. 64), with a test; the server's permutation check still binds it to the real piece count.
 - The result's `slots` carry one verdict per answer position; `wb_fixed` compares by piece index.
 - The hinted-prefix check applies to v2 Word Bank submits and reveals; Typing's hint validation is unchanged.
-- The "Chỉ nghe" switch lives in `ListeningRevealProvider` for the page visit; the strip's line uses `primary`.
+- The "Chỉ nghe" switch lives in `ListeningRevealProvider` (or above it) for the page visit, not keyed by line or
+  attempt; the strip's line uses `primary`.
 
 ## 8. Left to the builder
 Drag mechanics and library choice within §3.3; the announcement wording; the position marker's exact geometry
