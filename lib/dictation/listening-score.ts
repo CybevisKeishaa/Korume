@@ -29,8 +29,12 @@ export interface ListeningSubmitData {
   slots?: ReturnType<typeof scoreWordBank>["slots"];
   /** Typing only. */
   diff?: ListeningDiffOp[];
+  /** Cloze only: one per blank, in blank order; `hinted` = characters given by 💡. */
+  blanks?: { correct: boolean; hinted: number }[];
   metrics: ListeningMetrics;
   answer: string;
+  /** Help used on this attempt (spec §3.6, `isHelped`). */
+  helped: boolean;
 }
 export interface ListeningRevealData {
   kind: "reveal";

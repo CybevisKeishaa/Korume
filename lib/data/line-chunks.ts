@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
-import { chunkLine, lineTextHash, typingHintUnit } from "@/lib/dictation/chunk";
+import { chunkLine, lineTextHash, lineTokens, typingHintUnit } from "@/lib/dictation/chunk";
+import { lineRomaji } from "@/lib/japanese/romaji";
 import { chunkDisplays, displayMap, normalizeJa, type LineChunks } from "@/lib/dictation";
 
 export type LineChunksResult = { kind: "ok"; data: LineChunks } | { kind: "unauthorized" } | { kind: "not_found" };
@@ -31,5 +32,6 @@ export async function loadLineChunks(lineId: string): Promise<LineChunksResult> 
     chunks: cut.chunks,
     display: chunkDisplays(displayMap(text), normalizeJa(text), cut.chunks),
     typingHintUnit: typingHintUnit(cut),
+    romaji: lineRomaji(await lineTokens(text)),
   } };
 }

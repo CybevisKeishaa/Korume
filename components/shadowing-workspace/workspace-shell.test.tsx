@@ -99,6 +99,7 @@ describe("ShadowingWorkspaceShell", () => {
     expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
     for (const mode of ["pronunciation", "listening"]) {
       pathname = `/en/shadowing/video-1/${mode}`;
+      if (mode === "listening") searchParams = new URLSearchParams("line=line-1&format=dictation");
       view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
       expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
       expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
@@ -620,9 +621,9 @@ describe("ShadowingWorkspaceShell", () => {
       expect(screen.getByTestId("listen-cover")).toBe(cover);
     });
 
-    it("labels the strip and fetches stats for the URL's format only, refetching when it changes (P10)", async () => {
+    it("labels the strip and fetches stats for the URL's exercise only, refetching when it changes (P10, spec §3.0)", async () => {
       const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(url.includes("practice-stats")
-        ? Response.json({ data: { lineCount: 2, scoredLines: 1, mean: url.endsWith("typing") ? 72 : 91, lines: {} } })
+        ? Response.json({ data: { lineCount: 2, scoredLines: 1, mean: url.endsWith("dictation") ? 72 : 91, lines: {} } })
         : new Response(null, { status: 200 })));
       vi.stubGlobal("fetch", fetchMock);
       const statsCalls = () => fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("practice-stats"));
@@ -631,15 +632,26 @@ describe("ShadowingWorkspaceShell", () => {
       pathname = "/en/shadowing/video-1/listening";
       searchParams = new URLSearchParams("line=line-1&format=typing");
       const view = render(shell());
-      expect(within(scored()).getByRole("term")).toHaveTextContent("Typing · Submitted");
+      // A legacy `typing` link reads Chép chính tả's stats.
+      expect(within(scored()).getByRole("term")).toHaveTextContent("Dictation · Submitted");
       await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("72%"));
       expect(within(scored()).getByRole("definition")).toHaveTextContent("1/2");
-      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=typing"]);
+      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation"]);
+      // `word_bank` is the same exercise: no refetch.
+      searchParams = new URLSearchParams("line=line-1&format=word_bank");
+      view.rerender(shell());
+      expect(within(scored()).getByRole("term")).toHaveTextContent("Dictation · Submitted");
+      searchParams = new URLSearchParams("line=line-1&format=cloze");
+      view.rerender(shell());
+      expect(within(scored()).getByRole("term")).toHaveTextContent("Fill in the blanks · Submitted");
+      await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("91%"));
+      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation", "/api/shadowing/video-1/practice-stats?mode=cloze"]);
+      // No exercise: no strip, and never the live sentence (it is the answer).
       searchParams = new URLSearchParams("line=line-1");
       view.rerender(shell());
-      expect(within(scored()).getByRole("term")).toHaveTextContent("Word Bank · Submitted");
-      await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("91%"));
-      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=typing", "/api/shadowing/video-1/practice-stats?mode=word_bank"]);
+      expect(screen.queryByTestId("lesson-stat-strip")).not.toBeInTheDocument();
+      expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
+      expect(statsCalls()).toHaveLength(2);
     });
   });
 });

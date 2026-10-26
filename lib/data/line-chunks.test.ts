@@ -40,6 +40,7 @@ describe("loadLineChunks", () => {
     await expect(loadLineChunks(LINE)).resolves.toEqual({ kind: "ok", data: {
       version: 2, textHash: lineTextHash(text), reliable: true, reason: null,
       chunks: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], display: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], typingHintUnit: "chunk",
+      romaji: "mainichi nihongo o benkyou shi mashi ta .",
     } });
     expect(lineQueries).toEqual([[
       { op: "select", columns: "text_jp" }, { op: "eq", column: "id", value: LINE }, { op: "maybeSingle" },

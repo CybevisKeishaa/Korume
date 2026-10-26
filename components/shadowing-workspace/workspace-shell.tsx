@@ -6,7 +6,7 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { usePathname } from "@/lib/i18n/navigation";
-import { listeningFormat, practiceModeFromPath, practiceStatsMode, type ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
+import { listeningExercise, panelFormat, practiceModeFromPath, practiceStatsMode, type ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
 import { ListeningRevealProvider } from "./practice/listening-reveal-context";
@@ -141,9 +141,10 @@ function CurrentLineReveal({ listening, format, children }: { listening: boolean
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const mode = practiceModeFromPath(usePathname());
-  // P10: the URL is the one source of the Listening format; the strip, the stats and the reveal key all read this.
-  const format = listeningFormat(useSearchParams().get("format"));
-  const statsMode = practiceStatsMode(mode, format);
+  // P10: the URL is the one source of the Listening exercise; the strip, the stats and the reveal key all read it.
+  const formatParam = useSearchParams().get("format");
+  const format = panelFormat(formatParam);
+  const statsMode = practiceStatsMode(mode, listeningExercise(formatParam).exercise);
   const listening = mode === "listening";
   const { video } = useLesson();
   usePracticePlayback(mode);
@@ -238,7 +239,8 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
         {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
-        {!fullTranscript && (statsMode === null ? <LiveSentence /> : <LessonStatStrip mode={statsMode} />)}
+        {/* Listening never shows the live sentence (it is the answer); without an exercise it has no strip either. */}
+        {!fullTranscript && (statsMode !== null ? <LessonStatStrip mode={statsMode} /> : !listening && <LiveSentence />)}
       </div>
       {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && (

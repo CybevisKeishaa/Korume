@@ -37,7 +37,7 @@ export const lesson: WorkspaceBootstrap = {
 };
 const chunksOf = (id: LineId): LineChunks => ({
   version: 1, textHash: "a".repeat(64), reliable: !UNRELIABLE.has(id), reason: UNRELIABLE.has(id) ? "latin_or_digit" : null,
-  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk",
+  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk", romaji: "",
 });
 
 export type AttemptBody = { kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;

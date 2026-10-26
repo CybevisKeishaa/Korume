@@ -29,7 +29,8 @@ const place = (text: string) => fireEvent.click(within(bank()).getByRole("button
 const placeAll = (texts: readonly string[]) => texts.forEach(place);
 
 async function open(line: LineId = "line-1") {
-  searchParams = new URLSearchParams(`line=${line}`);
+  // Ruling P2: the legacy `word_bank` link renders today's Word Bank panel until the picker lands.
+  searchParams = new URLSearchParams(`line=${line}&format=word_bank`);
   const view = render(shell());
   await screen.findByRole("list", { name: "Your sentence" });
   return view;
@@ -281,7 +282,7 @@ describe("ListeningModeBody — Word Bank", () => {
   });
 
   it("moves an unreliable Word Bank line to format=typing by the URL, rendering no practice control until it agrees (D9, P10)", async () => {
-    searchParams = new URLSearchParams("line=line-3&mode=x");
+    searchParams = new URLSearchParams("line=line-3&mode=x&format=word_bank");
     const view = render(shell());
     await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1));
     expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-3&mode=x&format=typing", { scroll: false });
@@ -290,14 +291,14 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(screen.queryByRole("textbox")).toBeNull();
     expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
     expect(screen.queryByTestId("listening-unreliable")).toBeNull();
-    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "word_bank");
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
 
     searchParams = new URLSearchParams("line=line-3&mode=x&format=typing");
     view.rerender(shell());
     expect(await screen.findByTestId("listening-unreliable")).toHaveTextContent("This sentence can't be split reliably, so it's Typing only");
     expect(slotList()).toBeNull();
-    expect(screen.getByTestId("lesson-stat-strip")).toHaveTextContent("Typing · Submitted");
-    await waitFor(() => expect(String(calls("practice-stats").at(-1)?.[0])).toBe("/api/shadowing/video-1/practice-stats?mode=typing"));
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveTextContent("Dictation · Submitted");
+    await waitFor(() => expect(String(calls("practice-stats").at(-1)?.[0])).toBe("/api/shadowing/video-1/practice-stats?mode=dictation"));
     expect(router.replace).toHaveBeenCalledTimes(1);
   });
 });

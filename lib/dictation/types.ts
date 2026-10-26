@@ -35,4 +35,19 @@ export interface LineChunks {
   /** The raw `text_jp` characters of each chunk, same length and order as `chunks`; this is what the client shows. */
   display: string[];
   typingHintUnit: "chunk" | "grapheme4";
+  /** Hepburn romaji of the whole line (spec §3.5); in Chép chính tả an answer surface, shown only after Check. */
+  romaji: string;
+}
+
+/** `GET /api/lines/[lineId]/cloze` payload (spec §3.4). */
+export interface LineCloze {
+  /** The cloze selector version; echoed back on submit as `version`. */
+  version: number;
+  textHash: string;
+  /** Ascending token indices of the blanks; `[]` when the line has no candidate. */
+  blanks: number[];
+  /** Cover the raw `text_jp` in order (P13 display characters); `blank` indexes `blanks`; a blank's romaji is `___`. */
+  segments: { text: string; blank: number | null; romaji: string }[];
+  /** Hiragana reading of each blank, same order as `blanks` (the 💡 hint fills from it). */
+  readings: string[];
 }

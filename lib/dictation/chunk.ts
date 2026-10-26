@@ -1,7 +1,8 @@
 import "server-only";
 import { createHash } from "node:crypto";
 import type { IpadicFeatures } from "kuromoji";
-import { getTokenizer } from "../japanese/tokenizer";
+import { getTokenizer, tokenize as tokenizeMorphemes } from "../japanese/tokenizer";
+import type { Token } from "../japanese/types";
 import { PUNCTUATION } from "./listening-score";
 import { normalizeJa } from "./normalize";
 import { MAX_WORD_PIECES, type ChunkReason } from "./types";
@@ -190,6 +191,20 @@ export function chunkLine(textJp: string, version: number = CURRENT_CHUNKER): Pr
     memo.set(key, hit);
     // do not cache a failure
     hit.catch(() => memo.delete(key));
+  }
+  return hit;
+}
+
+const tokenMemo = new Map<string, Promise<Token[]>>();
+
+/** Tokens of `normalizeJa(textJp)` from chunker v2's kuromoji pipeline (cloze, romaji); memoised like `chunkLine` (P12). */
+export function lineTokens(textJp: string): Promise<Token[]> {
+  const key = lineTextHash(textJp);
+  let hit = tokenMemo.get(key);
+  if (!hit) {
+    hit = tokenizeMorphemes(normalizeJa(textJp));
+    tokenMemo.set(key, hit);
+    hit.catch(() => tokenMemo.delete(key));
   }
   return hit;
 }

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { PracticeStats } from "@/lib/data/practice-stats";
 import { PracticeStatsProvider, usePracticeStats } from "./practice-stats-context";
 
-const stats: PracticeStats = { lineCount: 194, scoredLines: 12, mean: 84, lines: {} };
+const stats: PracticeStats = { lineCount: 194, scoredLines: 12, mean: 84, helpedLines: null, lines: {} };
 function Probe() {
   const value = usePracticeStats();
   return <><output>{value.stats ? JSON.stringify(value.stats) : "unavailable"}</output><button onClick={value.refresh}>Refresh</button></>;
@@ -35,11 +35,11 @@ describe("PracticeStatsProvider", () => {
     await act(async () => { await Promise.resolve(); });
     const typing = deferred();
     fetchMock.mockReturnValueOnce(typing.promise);
-    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode="typing"><Probe /></PracticeStatsProvider>);
+    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode="dictation"><Probe /></PracticeStatsProvider>);
     // Another mode's numbers are never shown under this one, not even while its own request is in flight.
     expect(screen.getByRole("status")).toHaveTextContent("unavailable");
     expect(fetchMock).toHaveBeenCalledTimes(3);
-    expect(fetchMock).toHaveBeenLastCalledWith("/api/shadowing/lesson-a/practice-stats?mode=typing", expect.anything());
+    expect(fetchMock).toHaveBeenLastCalledWith("/api/shadowing/lesson-a/practice-stats?mode=dictation", expect.anything());
     await act(async () => { typing.resolve(response({ ...stats, mean: 72 })); });
     expect(screen.getByRole("status")).toHaveTextContent('"mean":72');
     view.rerender(<PracticeStatsProvider videoId="lesson-a" mode={null}><Probe /></PracticeStatsProvider>);
@@ -52,7 +52,7 @@ describe("PracticeStatsProvider", () => {
     fetchMock.mockReturnValueOnce(old.promise).mockResolvedValue(response({ ...stats, mean: 95 }));
     const view = render(<PracticeStatsProvider videoId="lesson-a" mode="pronunciation"><Probe /></PracticeStatsProvider>);
     const signal = fetchMock.mock.calls[0]?.[1]?.signal;
-    view.rerender(<PracticeStatsProvider videoId={change === "lesson" ? "lesson-b" : "lesson-a"} mode={change === "mode" ? "word_bank" : "pronunciation"}><Probe /></PracticeStatsProvider>);
+    view.rerender(<PracticeStatsProvider videoId={change === "lesson" ? "lesson-b" : "lesson-a"} mode={change === "mode" ? "cloze" : "pronunciation"}><Probe /></PracticeStatsProvider>);
     expect(signal?.aborted).toBe(true);
     await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent('"mean":95'));
     await act(async () => { old.resolve(response()); });

@@ -20,7 +20,7 @@ const stat = (name: "sentence" | "scored" | "average") => {
 
 describe("LessonStatStrip", () => {
   beforeEach(() => {
-    state.stats = { lineCount: 194, scoredLines: 12, mean: 83.6, lines: {} };
+    state.stats = { lineCount: 194, scoredLines: 12, mean: 83.6, helpedLines: null, lines: {} };
     state.index = 50;
   });
 
@@ -40,7 +40,7 @@ describe("LessonStatStrip", () => {
   });
 
   it("says there is no score yet instead of fabricating one", () => {
-    state.stats = { lineCount: 194, lines: {}, mean: null, scoredLines: 0 };
+    state.stats = { lineCount: 194, lines: {}, mean: null, scoredLines: 0, helpedLines: null };
     render(<LessonStatStrip mode="pronunciation" />);
     expect(within(stat("average")).getByRole("definition")).toHaveTextContent("—");
     expect(within(stat("average")).getByText("No score yet")).toHaveClass("sr-only");
@@ -64,18 +64,18 @@ describe("LessonStatStrip", () => {
   it("pins the Listening strip, format and cover copy in English and Vietnamese", () => {
     const pinned = ({ format, strip, cover }: typeof en.workspace.practice.listening) => ({ format, strip, cover });
     expect(pinned(en.workspace.practice.listening)).toEqual({
-      format: { word_bank: "Word Bank", typing: "Typing" },
+      format: { word_bank: "Word Bank", typing: "Typing", dictation: "Dictation", cloze: "Fill in the blanks" },
       strip: { submitted: "{format} · Submitted" },
       cover: { title: "Listen only", show: "Show video" },
     });
     expect(pinned(viMessages.workspace.practice.listening)).toEqual({
-      format: { word_bank: "Xếp cụm từ", typing: "Gõ chính tả" },
+      format: { word_bank: "Xếp cụm từ", typing: "Gõ chính tả", dictation: "Chép chính tả", cloze: "Điền từ" },
       strip: { submitted: "{format} · Đã nộp" },
       cover: { title: "Chỉ nghe", show: "Hiện video" },
     });
   });
 
-  it.each([["typing", "Typing"], ["word_bank", "Word Bank"]] as const)("labels a Listening %s strip with its format only, as a percentage (formats never averaged)", (mode, label) => {
+  it.each([["dictation", "Dictation"], ["cloze", "Fill in the blanks"]] as const)("labels a Listening %s strip with its exercise only, as a percentage (exercises never averaged)", (mode, label) => {
     render(<LessonStatStrip mode={mode} />);
     expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", mode);
     expect(within(stat("scored")).getByRole("term")).toHaveTextContent(`${label} · Submitted`);

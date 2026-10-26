@@ -18,6 +18,8 @@ const TONES = {
   unscored: "bg-muted text-muted-foreground ring-1 ring-border",
   // P4: a shown answer reads as review.
   revealed: REVIEW_TONE,
+  // ponytail: reads as scored until help gets its own chip tone (spec §3.6, §3.8).
+  helped: "bg-muted text-success-strong ring-1 ring-success",
 };
 
 /** Current and returned sentence indices are zero-based. */

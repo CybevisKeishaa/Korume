@@ -59,12 +59,12 @@ describe("SentenceNavigator", () => {
     expect(en.workspace.practice.navigator).toEqual({
       label: "Sentence navigator", earlier: "Earlier sentences", later: "Later sentences",
       chip: "Sentence {number}, {state}",
-      state: { none: "not practised", scored: "scored {score}", needs_review: "needs review", unscored: "not scored yet", revealed: "answer shown" },
+      state: { none: "not practised", scored: "scored {score}", needs_review: "needs review", unscored: "not scored yet", revealed: "answer shown", helped: "with help" },
     });
     expect(viMessages.workspace.practice.navigator).toEqual({
       label: "Điều hướng câu", earlier: "Các câu trước", later: "Các câu sau",
       chip: "Câu {number}, {state}",
-      state: { none: "chưa luyện", scored: "{score} điểm", needs_review: "cần ôn lại", unscored: "chưa chấm", revealed: "đã xem đáp án" },
+      state: { none: "chưa luyện", scored: "{score} điểm", needs_review: "cần ôn lại", unscored: "chưa chấm", revealed: "đã xem đáp án", helped: "có trợ giúp" },
     });
   });
 
@@ -161,10 +161,11 @@ describe("SentenceNavigator", () => {
     ["needs_review", 86, "needs review", "text-accent-strong"],
     // P4: Show answer reads as review even when an older attempt scored high.
     ["revealed", 92, "answer shown", "text-accent-strong"],
+    ["helped", 86, "with help", "text-success-strong"],
     ["unscored", null, "not scored yet", "ring-border"],
     ["none", null, "not practised", "text-muted-foreground"],
   ] as const)("uses the latest %s state and its token tone", (status, score, label, tone) => {
-    state.stats = { lineCount: 194, scoredLines: 1, mean: score, lines: { "line-50": { state: status, score } } };
+    state.stats = { lineCount: 194, scoredLines: 1, mean: score, helpedLines: null, lines: { "line-50": { state: status, score } } };
     render(<SentenceNavigator />);
     const chip = screen.getByRole("button", { name: `Sentence 51, ${label}` });
     expect(chip).toHaveAttribute("data-state", status);
@@ -174,7 +175,7 @@ describe("SentenceNavigator", () => {
   it("updates labels and tones from refreshed stats without selecting another sentence", () => {
     const view = render(<SentenceNavigator />);
     expect(screen.getByRole("button", { name: "Sentence 51, not practised" })).toHaveAttribute("data-state", "none");
-    state.stats = { lineCount: 194, scoredLines: 1, mean: 86, lines: { "line-50": { state: "scored", score: 86 } } };
+    state.stats = { lineCount: 194, scoredLines: 1, mean: 86, helpedLines: null, lines: { "line-50": { state: "scored", score: 86 } } };
     view.rerender(<SentenceNavigator />);
     expect(screen.getByRole("button", { name: "Sentence 51, scored 86" })).toHaveClass("text-success-strong");
     expect(screen.getByRole("button", { name: "Sentence 50, not practised" })).toHaveAttribute("aria-current", "true");

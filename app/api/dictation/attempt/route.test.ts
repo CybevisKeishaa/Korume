@@ -37,6 +37,18 @@ describe("POST /api/dictation/attempt", () => {
     expect(submitListeningAttempt).toHaveBeenCalledWith(BODY);
   });
 
+  it("forwards a cloze submit and a Typing star-hint submit (spec §3.3, §3.4)", async () => {
+    vi.mocked(submitListeningAttempt).mockResolvedValue({ ok: false, status: 400 });
+    const cloze = { kind: "submit", format: "cloze", videoId: BODY.videoId, lineId: BODY.lineId, version: 1, textHash: BODY.textHash,
+      blanks: [1, 3], answers: ["にほんご", "勉強"], easy: true, hintedUnits: [] };
+    const stars = { kind: "submit", format: "typing", videoId: BODY.videoId, lineId: BODY.lineId, version: 2, textHash: BODY.textHash,
+      input: "x", hintUnit: "grapheme1", hintedUnits: [2] };
+    await post(cloze);
+    await post(stars);
+    expect(submitListeningAttempt).toHaveBeenNthCalledWith(1, cloze);
+    expect(submitListeningAttempt).toHaveBeenNthCalledWith(2, stars);
+  });
+
   it("maps 401, 400, both 409s and 429 privately", async () => {
     vi.mocked(submitListeningAttempt).mockResolvedValueOnce({ ok: false, status: 401 });
     await expectPrivate(await post(BODY), 401, { error: "Unauthorized" });

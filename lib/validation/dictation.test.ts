@@ -7,10 +7,26 @@ const wordBank = { kind: "submit", format: "word_bank", ...head, chunkOrder: [1,
 const typing = { kind: "submit", format: "typing", ...head, input: "きょう", hintUnit: "chunk", hintedUnits: [0] };
 const revealWordBank = { kind: "reveal", format: "word_bank", ...head, hintedUnits: [] };
 const revealTyping = { kind: "reveal", format: "typing", ...head, hintUnit: "grapheme4", hintedUnits: [] };
+const typingStars = { ...typing, hintUnit: "grapheme1", hintedUnits: [2] };
+const cloze = { kind: "submit", format: "cloze", ...head, blanks: [1, 4], answers: ["べんきょう", "日本"], easy: false, hintedUnits: [0] };
+const revealCloze = { kind: "reveal", format: "cloze", ...head, blanks: [1], easy: true, hintedUnits: [] };
 
 describe("dictationAttemptSchema (spec §5.4)", () => {
-  it.each([wordBank, typing, revealWordBank, revealTyping])("accepts the four shapes", (body) => {
+  it.each([wordBank, typing, revealWordBank, revealTyping, typingStars, cloze, revealCloze])("accepts the shapes", (body) => {
     expect(dictationAttemptSchema.parse(body)).toEqual(body);
+  });
+
+  it.each([
+    ["4 cloze answers", { ...cloze, blanks: [0, 2, 4, 6], answers: ["a", "b", "c", "d"] }],
+    ["a 51-character cloze answer", { ...cloze, answers: ["あ".repeat(51), "日本"] }],
+    ["answers not matching the blanks", { ...cloze, answers: ["日本"] }],
+    ["no blank", { ...cloze, blanks: [], answers: [] }],
+    ["a cloze submit without easy", { ...cloze, easy: undefined }],
+    ["a cloze reveal carrying answers", { ...revealCloze, answers: ["x"] }],
+    ["a cloze body carrying hintUnit", { ...cloze, hintUnit: "grapheme1" }],
+    ["a negative blank", { ...cloze, blanks: [-1, 4] }],
+  ])("rejects %s", (_, body) => {
+    expect(dictationAttemptSchema.safeParse(body).success).toBe(false);
   });
 
   it("accepts a 20-piece Word Bank order", () => {

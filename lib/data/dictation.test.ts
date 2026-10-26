@@ -61,8 +61,13 @@ const head = (text: string) => ({ videoId: VIDEO, lineId: LINE, version: 1, text
 const wordBank = (over: Partial<{ chunkOrder: number[]; hintedUnits: number[] }> = {}): Shape<"submit", "word_bank"> => (
   { kind: "submit", format: "word_bank", ...head(RELIABLE), chunkOrder: [0, 1, 2], hintedUnits: [], ...over }
 );
-const typing = (text: string, over: Partial<{ input: string; hintUnit: "chunk" | "grapheme4"; hintedUnits: number[] }> = {}): Shape<"submit", "typing"> => (
+const typing = (text: string, over: Partial<{ input: string; hintUnit: "chunk" | "grapheme4" | "grapheme1"; hintedUnits: number[] }> = {}): Shape<"submit", "typing"> => (
   { kind: "submit", format: "typing", ...head(text), input: "", hintUnit: "chunk", hintedUnits: [], ...over }
+);
+
+/** Cloze on RELIABLE: candidates 毎日(0) 日本語(1) 勉強(3); readings にほんご (flat 0..3) and べんきょう (flat 4..8). */
+const cloze = (over: Partial<{ blanks: number[]; answers: string[]; hintedUnits: number[]; easy: boolean }> = {}): Shape<"submit", "cloze"> => (
+  { kind: "submit", format: "cloze", ...head(RELIABLE), blanks: [1, 3], answers: ["にほんご", "勉強"], hintedUnits: [], easy: false, ...over }
 );
 
 function expectNothingWritten() {
@@ -210,6 +215,7 @@ describe("submitListeningAttempt: submit", () => {
       ],
       metrics: { recall: 0, slots: { correct: 0, total: 3 } },
       answer: RELIABLE,
+      helped: true,
     } });
     expect(inserts).toEqual([{
       user_id: USER.id,
@@ -222,6 +228,7 @@ describe("submitListeningAttempt: submit", () => {
       hint_unit: "chunk",
       hinted_units: [0],
       chunk_order: [0, 2, 1],
+      easy_mode: true,
       chunker_version: 1,
       chunk_snapshot: ["毎日", "日本語を", "勉強しました。"],
     }]);
@@ -260,6 +267,7 @@ describe("submitListeningAttempt: submit", () => {
       hint_unit: "chunk",
       hinted_units: [0],
       chunk_order: null,
+      easy_mode: false,
       chunker_version: 1,
       chunk_snapshot: ["毎日", "日本語を", "勉強しました。"],
     }]);
@@ -275,6 +283,122 @@ describe("submitListeningAttempt: submit", () => {
       { format: "typing", status: "submitted", hint_unit: "grapheme4", hinted_units: [3], chunk_snapshot: [] },
       { format: "typing", status: "submitted", hint_unit: null, hinted_units: [] },
     ]);
+  }, T);
+});
+
+describe("submitListeningAttempt: star hints and easy mode (spec §3.3, §3.6)", () => {
+  it("Typing with hintUnit grapheme1 scores the hinted character as hinted and stores the unit", async () => {
+    const result = await submitListeningAttempt(typing(RELIABLE, { input: "毎日日本語を勉強しました", hintUnit: "grapheme1", hintedUnits: [2] }));
+    // 12 reference characters, 1 hinted → 11 / 12.
+    expect(result).toMatchObject({ ok: true, data: { kind: "submit", score: 91.7, helped: true } });
+    expect(result.ok && result.data.kind === "submit" && result.data.diff?.slice(1, 4)).toEqual([
+      { type: "match", expected: "日", actual: "日", display: "日" },
+      { type: "hinted", expected: "日", display: "日" },
+      { type: "match", expected: "本", actual: "本", display: "本" },
+    ]);
+    expect(inserts).toMatchObject([{ format: "typing", hint_unit: "grapheme1", hinted_units: [2], easy_mode: false }]);
+  }, T);
+
+  it("Typing grapheme1: 400 for an index past the line's character count", async () => {
+    await expect(submitListeningAttempt(typing(RELIABLE, { hintUnit: "grapheme1", hintedUnits: [12] }))).resolves.toEqual({ ok: false, status: 400 });
+    expectNothingWritten();
+  }, T);
+
+  it("an unhinted Typing submit is not helped", async () => {
+    await expect(submitListeningAttempt(typing(RELIABLE, { input: "毎日" }))).resolves.toMatchObject({ ok: true, data: { helped: false } });
+  }, T);
+
+  it("Word Bank is always Chế độ dễ: easy_mode true and helped, even without hints", async () => {
+    await expect(submitListeningAttempt(wordBank())).resolves.toMatchObject({ ok: true, data: { score: 100, helped: true } });
+    expect(inserts).toMatchObject([{ format: "word_bank", easy_mode: true }]);
+  }, T);
+});
+
+describe("submitListeningAttempt: cloze (spec §3.4)", () => {
+  it.each([
+    ["a non-candidate index (し, an inflected verb)", { blanks: [1, 4] }],
+    ["a non-candidate particle (を)", { blanks: [2] , answers: ["を"] }],
+    ["adjacent blanks (毎日 + 日本語)", { blanks: [0, 1] }],
+    ["blanks not ascending", { blanks: [3, 1], answers: ["勉強", "にほんご"] }],
+    ["a repeated blank", { blanks: [1, 1] }],
+    ["a blank past the tokens", { blanks: [1, 30] }],
+    ["hints that are not a prefix of their blank", { hintedUnits: [5] }],
+    ["a hint past the readings", { hintedUnits: [9] }],
+    ["a duplicate hint", { hintedUnits: [4, 4] }],
+  ])("400 for %s", async (_, over) => {
+    await expect(submitListeningAttempt(cloze(over))).resolves.toEqual({ ok: false, status: 400 });
+    expectNothingWritten();
+  }, T);
+
+  it("409 chunker_version for a cloze selector version the server does not hold", async () => {
+    await expect(submitListeningAttempt({ ...cloze(), version: 2 })).resolves.toEqual({ ok: false, status: 409, error: "chunker_version" });
+    expectNothingWritten();
+  }, T);
+
+  it("a valid submit scores kana or kanji, inserts the cloze columns and easy_mode from the body, and returns helped", async () => {
+    const result = await submitListeningAttempt(cloze({ easy: true }));
+    expect(result).toEqual({ ok: true, data: {
+      kind: "submit", score: 100,
+      blanks: [{ correct: true, hinted: 0 }, { correct: true, hinted: 0 }],
+      metrics: { recall: 100, slots: { correct: 2, total: 2 } },
+      answer: RELIABLE, helped: true,
+    } });
+    expect(inserts).toEqual([{
+      user_id: USER.id,
+      video_id: VIDEO,
+      transcript_line_id: LINE,
+      user_input: "にほんご 勉強",
+      format: "cloze",
+      status: "submitted",
+      accuracy_score: 100,
+      hint_unit: null,
+      hinted_units: [],
+      chunk_order: null,
+      easy_mode: true,
+      chunker_version: 2,
+      chunk_snapshot: ["日本語", "勉強"],
+      cloze_selector_version: 1,
+      cloze_blanks: [1, 3],
+      cloze_answers: ["にほんご", "勉強"],
+    }]);
+    expect(recordActivity).toHaveBeenCalledTimes(1);
+    expect(claimActiveMission).toHaveBeenCalledTimes(1);
+  }, T);
+
+  it("hinted characters are a per-blank prefix of the readings, stored as grapheme1, and cost their share", async () => {
+    const result = await submitListeningAttempt(cloze({ answers: ["日本語", "べんきょう"], hintedUnits: [5, 4] }));
+    // blank 0 correct 4/4, blank 1 correct (5 - 2) / 5 → mean 0.8.
+    expect(result).toMatchObject({ ok: true, data: { score: 80, blanks: [{ correct: true, hinted: 0 }, { correct: true, hinted: 2 }], helped: true } });
+    expect(inserts).toMatchObject([{ format: "cloze", easy_mode: false, hint_unit: "grapheme1", hinted_units: [5, 4], accuracy_score: 80 }]);
+  }, T);
+
+  it("an unhelped cloze submit is not helped", async () => {
+    await expect(submitListeningAttempt(cloze({ answers: ["にほんご", "x"] }))).resolves.toMatchObject({ ok: true, data: { score: 50, helped: false } });
+  }, T);
+
+  it("a reveal stores cloze_answers null and no score, returns the answer, records no activity", async () => {
+    const result = await submitListeningAttempt({ kind: "reveal", format: "cloze", ...head(RELIABLE), blanks: [1, 3], easy: false, hintedUnits: [0] });
+    expect(result).toEqual({ ok: true, data: { kind: "reveal", answer: RELIABLE, chunks: ["日本語", "勉強"], display: ["日本語", "勉強"] } });
+    expect(inserts).toEqual([{
+      user_id: USER.id,
+      video_id: VIDEO,
+      transcript_line_id: LINE,
+      user_input: "",
+      format: "cloze",
+      status: "revealed",
+      accuracy_score: null,
+      hint_unit: "grapheme1",
+      hinted_units: [0],
+      chunk_order: null,
+      easy_mode: false,
+      chunker_version: 2,
+      chunk_snapshot: ["日本語", "勉強"],
+      cloze_selector_version: 1,
+      cloze_blanks: [1, 3],
+      cloze_answers: null,
+    }]);
+    expect(recordActivity).not.toHaveBeenCalled();
+    expect(claimActiveMission).not.toHaveBeenCalled();
   }, T);
 });
 
@@ -316,6 +440,7 @@ describe("submitListeningAttempt: reveal (D11)", () => {
       hint_unit: "chunk",
       hinted_units: [1],
       chunk_order: null,
+      easy_mode: true,
       chunker_version: 1,
       chunk_snapshot: ["毎日", "日本語を", "勉強しました。"],
     }]);

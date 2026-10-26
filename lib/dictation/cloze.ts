@@ -1,5 +1,6 @@
 import type { Token } from "@/lib/japanese/types";
 import { toHiraganaReading } from "@/lib/japanese/romaji";
+import { chunkUnits, type Range } from "./listening-score";
 import { normalizeJa } from "./normalize";
 
 export const CURRENT_CLOZE_SELECTOR = 1;
@@ -42,7 +43,19 @@ export function selectBlanks(tokens: Token[], known: Set<string>, max = 3): numb
 
 export type ClozeBlank = { token: number; surface: string; reading: string };
 
-const graphemes = (s: string) => Array.from(new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(s)).length;
+/** Each token's code-point range over the normalised line `base`, or `null` when the tokens do not cover it (no blanks). */
+export function tokenRanges(tokens: Token[], base: string): Range[] | null {
+  const surfaces = tokens.map((t) => t.surface);
+  return surfaces.join("") === base ? chunkUnits(surfaces) : null;
+}
+
+/** The blank of token `i`; a reading-less token (some 固有名詞) reads as written. */
+export function clozeBlank(tokens: Token[], i: number): ClozeBlank {
+  const t = tokens[i]!;
+  return { token: i, surface: t.surface, reading: toHiraganaReading(t.reading ?? t.surface) };
+}
+
+export const graphemes = (s: string) => Array.from(new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(s)).length;
 
 export function scoreCloze(
   blanks: ClozeBlank[],

@@ -231,7 +231,7 @@
       },
       "strip": { "label": "Lesson progress", "sentence": "Sentence", "scored": "Scored", "average": "Average", "noScore": "No score yet" },
       "listening": {
-        "format": { "word_bank": "Word Bank", "typing": "Typing" },
+        "format": { "word_bank": "Word Bank", "typing": "Typing", "dictation": "Dictation", "cloze": "Fill in the blanks" },
         "strip": { "submitted": "{format} · Submitted" },
         "cover": { "title": "Listen only", "show": "Show video" },
         "region": "Listening practice",
@@ -273,7 +273,7 @@
         "earlier": "Earlier sentences",
         "later": "Later sentences",
         "chip": "Sentence {number}, {state}",
-        "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet", "revealed": "answer shown" }
+        "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet", "revealed": "answer shown", "helped": "with help" }
       },
       "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" }
     },

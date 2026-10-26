@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { useTranslations } from "@/lib/i18n";
 import { usePathname, useRouter } from "@/lib/i18n/navigation";
 import { feedbackMood } from "@/lib/dictation/listening-feedback";
-import { listeningFormat } from "@/lib/shadowing-workspace/learning-modes";
+import { panelFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
 import { usePlayerWiring } from "../playback-root";
 import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
@@ -54,7 +54,7 @@ export function ListeningModeBody() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const query = searchParams.toString();
-  const format = listeningFormat(searchParams.get("format"));
+  const format = panelFormat(searchParams.get("format"));
   const { transcriptId, lines } = useLesson();
   const { index } = useCurrentSentence();
   const controller = usePlaybackController();
