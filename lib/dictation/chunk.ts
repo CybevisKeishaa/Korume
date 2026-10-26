@@ -4,7 +4,7 @@ import type { IpadicFeatures } from "kuromoji";
 import { getTokenizer } from "../japanese/tokenizer";
 import { PUNCTUATION } from "./listening-score";
 import { normalizeJa } from "./normalize";
-import type { ChunkReason } from "./types";
+import { MAX_WORD_PIECES, type ChunkReason } from "./types";
 
 // Defined in the client-safe `./types` so client code can name it without this server-only module (R5).
 export type { ChunkReason };
@@ -139,6 +139,7 @@ async function chunkV2(textJp: string): Promise<ChunkResult> {
   }
   if (pending && pieces.length) pieces[pieces.length - 1] += pending;
   if (pieces.length < 2) return unreliable("single_chunk", 2);
+  if (pieces.length > MAX_WORD_PIECES) return unreliable("too_many_pieces", 2);
   return { version: 2, reliable: true, reason: null, chunks: pieces };
 }
 

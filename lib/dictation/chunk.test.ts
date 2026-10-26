@@ -55,6 +55,12 @@ describe("v2", () => {
     expect((await run2(line + line)).chunks).toHaveLength(20);
   }, T);
 
+  it("more than 64 pieces is unreliable (the submit schema caps chunkOrder at 64)", async () => {
+    const line = "お店を検索すると思うんですけど。".repeat(7); // 70 tokens
+    expect(await run2(line)).toEqual({ version: 2, reliable: false, reason: "too_many_pieces", chunks: [] });
+    expect((await run2("お店を検索すると思うんですけど。".repeat(6) + "お店を")).chunks).toHaveLength(63);
+  }, T);
+
   it.each([
     ["ABCです", "latin_or_digit"],
     ["3時です", "latin_or_digit"],

@@ -19,7 +19,10 @@ export interface DictationResult {
 }
 
 /** Why a line cannot be cut for Word Bank (spec §5.2). */
-export type ChunkReason = "mismatch" | "unknown_token" | "latin_or_digit" | "single_chunk";
+export type ChunkReason = "mismatch" | "unknown_token" | "latin_or_digit" | "single_chunk" | "too_many_pieces";
+
+/** Most Word Bank pieces a line may have; the submit schema and chunker v2 share it. */
+export const MAX_WORD_PIECES = 64;
 
 /** `GET /api/lines/[lineId]/chunks` payload; chunks are in reference order (P8). */
 export interface LineChunks {
