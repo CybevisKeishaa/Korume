@@ -26,12 +26,13 @@ insert into transcript_lines (id, transcript_id, start_time, end_time, text_jp) 
 
 -- Attempts are written by the server (postgres here), never by the learner. Times are relative to the transaction's
 -- now(), so every comparison below is exact. Newest of A's rows is the revealed one, which must not move last_at.
-insert into dictation_attempts (id, user_id, video_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order, created_at) values
-  ('1157e000-0000-4000-8000-000000000101', :'uid_a', :'vid', :'l1', '今日は雨です', 95, 'typing', 'submitted', null, now() - interval '3 days'),
-  ('1157e000-0000-4000-8000-000000000102', :'uid_a', :'vid', :'l2', 'ちゅうもん', 70, 'typing', 'submitted', null, now() - interval '2 days'),
-  ('1157e000-0000-4000-8000-000000000103', :'uid_a', :'vid', :'l2', '注文をお願いします', 90, 'word_bank', 'submitted', '{1,0}', now() - interval '1 day'),
-  ('1157e000-0000-4000-8000-000000000104', :'uid_a', :'vid', :'l1', '', null, 'typing', 'revealed', null, now() - interval '1 hour'),
-  ('1157e000-0000-4000-8000-000000000105', :'uid_b', :'vid', :'l2', 'b', 99, 'typing', 'submitted', null, now() - interval '1 hour');
+-- Since 049 every Word Bank row is easy mode.
+insert into dictation_attempts (id, user_id, video_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order, easy_mode, created_at) values
+  ('1157e000-0000-4000-8000-000000000101', :'uid_a', :'vid', :'l1', '今日は雨です', 95, 'typing', 'submitted', null, false, now() - interval '3 days'),
+  ('1157e000-0000-4000-8000-000000000102', :'uid_a', :'vid', :'l2', 'ちゅうもん', 70, 'typing', 'submitted', null, false, now() - interval '2 days'),
+  ('1157e000-0000-4000-8000-000000000103', :'uid_a', :'vid', :'l2', '注文をお願いします', 90, 'word_bank', 'submitted', '{1,0}', true, now() - interval '1 day'),
+  ('1157e000-0000-4000-8000-000000000104', :'uid_a', :'vid', :'l1', '', null, 'typing', 'revealed', null, false, now() - interval '1 hour'),
+  ('1157e000-0000-4000-8000-000000000105', :'uid_b', :'vid', :'l2', 'b', 99, 'typing', 'submitted', null, false, now() - interval '1 hour');
 -- A legacy unscored row can only exist from the backfill; the trigger is lifted for this one fixture row only,
 -- inside the transaction, so a failed run restores it on rollback.
 alter table dictation_attempts disable trigger dictation_attempts_no_new_unscored;
@@ -88,11 +89,11 @@ begin
     raise exception 'FAIL 3b: revealed with a score accepted';
   exception when check_violation then null; end;
   begin
-    insert into dictation_attempts (user_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order) values (a, l, 'x', 10, 'word_bank', 'submitted', null);
+    insert into dictation_attempts (user_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order, easy_mode) values (a, l, 'x', 10, 'word_bank', 'submitted', null, true);
     raise exception 'FAIL 3c: submitted Word Bank without chunk_order accepted';
   exception when check_violation then null; end;
-  insert into dictation_attempts (id, user_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order)
-    values ('1157e000-0000-4000-8000-000000000301', a, l, '', null, 'word_bank', 'revealed', null);
+  insert into dictation_attempts (id, user_id, transcript_line_id, user_input, accuracy_score, format, status, chunk_order, easy_mode)
+    values ('1157e000-0000-4000-8000-000000000301', a, l, '', null, 'word_bank', 'revealed', null, true);
   delete from dictation_attempts where id = '1157e000-0000-4000-8000-000000000301';
   raise notice 'PASS 3 score/status and word_bank/chunk_order checks';
 end $$;
@@ -116,53 +117,50 @@ begin
   raise notice 'PASS 4 unscored trigger: insert and update-into refused, legacy row kept';
 end $$;
 
--- 5. practice_stats per format: score = latest submitted in that format (R1), state = latest of any status (R2).
+-- 5. practice_stats Chép chính tả (049): typing + word_bank, score = latest submitted across both (R1), state = latest
+-- of any status across both (R2). The later Word Bank 90 is easy mode, so l2 reads helped.
 set local role authenticated;
 do $$
 declare e jsonb; l jsonb;
 begin
-  e := practice_stats('1157e000-0000-4000-8000-0000000000f1', 'typing', 80);
-  if (e->>'lineCount')::int is distinct from 3 or (e->>'scoredLines')::int is distinct from 2
-     or (e->>'mean')::numeric is distinct from 82.5 or jsonb_array_length(e->'lines') is distinct from 3 then raise exception 'FAIL 5a: typing stats %', e; end if;
+  e := practice_stats('1157e000-0000-4000-8000-0000000000f1', 'dictation', 80);
+  if (e->>'lineCount')::int is distinct from 3 or (e->>'scoredLines')::int is distinct from 2 or (e->>'helpedLines')::int is distinct from 1
+     or (e->>'mean')::numeric is distinct from 92.5 or jsonb_array_length(e->'lines') is distinct from 3 then raise exception 'FAIL 5a: dictation stats %', e; end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d1';
-  if l->>'state' is distinct from 'revealed' or (l->>'score')::numeric is distinct from 95 then raise exception 'FAIL 5a: typing l1 %', l; end if;
+  if l->>'state' is distinct from 'revealed' or (l->>'score')::numeric is distinct from 95 then raise exception 'FAIL 5a: dictation l1 %', l; end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d2';
-  if l->>'state' is distinct from 'needs_review' or (l->>'score')::numeric is distinct from 70 then raise exception 'FAIL 5a: typing l2 %', l; end if;
+  if l->>'state' is distinct from 'helped' or (l->>'score')::numeric is distinct from 90 then raise exception 'FAIL 5a: dictation l2 %', l; end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d3';
-  if l->>'state' is distinct from 'unscored' or jsonb_typeof(l->'score') is distinct from 'null' then raise exception 'FAIL 5a: typing l3 %', l; end if;
-  e := practice_stats('1157e000-0000-4000-8000-0000000000f1', 'word_bank', 80);
-  if (e->>'scoredLines')::int is distinct from 1 or (e->>'mean')::numeric is distinct from 90
-     or jsonb_array_length(e->'lines') is distinct from 1 then raise exception 'FAIL 5b: word_bank stats %', e; end if;
-  l := e->'lines'->0;
-  if l->>'lineId' is distinct from '1157e000-0000-4000-8000-0000000000d2' or l->>'state' is distinct from 'scored'
-     or (l->>'score')::numeric is distinct from 90 then raise exception 'FAIL 5b: word_bank l2 %', l; end if;
+  if l->>'state' is distinct from 'unscored' or jsonb_typeof(l->'score') is distinct from 'null' then raise exception 'FAIL 5a: dictation l3 %', l; end if;
   begin
     perform practice_stats('1157e000-0000-4000-8000-0000000000f1', 'listening', 80);
     raise exception 'FAIL 5c: mode listening accepted';
   exception when invalid_parameter_value then null; end;
-  raise notice 'PASS 5 practice_stats per format, B invisible, unknown mode refused';
+  raise notice 'PASS 5 practice_stats dictation across formats, B invisible, unknown mode refused';
 end $$;
 
--- 6. Summary evidence: one mean per format (R1), latest attempt of any status per format per line (R2).
+-- 6. Summary evidence: the Chép chính tả row over each line's latest submitted (R1, 049), the latest attempt of any
+-- status per format per line (R2).
 do $$
 declare e jsonb := lesson_summary_evidence('1157e000-0000-4000-8000-0000000000f1', 2); l jsonb;
 begin
-  if e ? 'dictationMean' then raise exception 'FAIL 6: dictationMean still present %', e; end if;
-  if (e->>'typingMean')::numeric is distinct from 82.5 or (e->>'wordBankMean')::numeric is distinct from 90 then
-    raise exception 'FAIL 6: means typing % word_bank %', e->'typingMean', e->'wordBankMean';
+  if e ? 'dictationMean' or e ? 'typingMean' or e ? 'wordBankMean' then raise exception 'FAIL 6: old means still present %', e; end if;
+  if e->'dictation' is distinct from '{"mean":92.5,"done":2,"selfDone":1}'::jsonb
+     or e->'cloze' is distinct from '{"mean":null,"done":0,"selfDone":0}'::jsonb then
+    raise exception 'FAIL 6: dictation % cloze %', e->'dictation', e->'cloze';
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d1';
   if l ? 'dictation' or l ? 'dictationInput'
-     or l->'listening' is distinct from '[{"format":"typing","status":"revealed","score":null,"input":""}]'::jsonb then
+     or l->'listening' is distinct from '[{"format":"typing","status":"revealed","score":null,"input":"","helped":false}]'::jsonb then
     raise exception 'FAIL 6: l1 %', l;
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d2';
-  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもん"},
-                                        {"format":"word_bank","status":"submitted","score":90,"input":"注文をお願いします"}]'::jsonb then
+  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもん","helped":false},
+                                        {"format":"word_bank","status":"submitted","score":90,"input":"注文をお願いします","helped":true}]'::jsonb then
     raise exception 'FAIL 6: l2 %', l;
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d3';
-  if l->'listening' is distinct from '[{"format":"typing","status":"unscored","score":null,"input":"ありがとう!"}]'::jsonb then
+  if l->'listening' is distinct from '[{"format":"typing","status":"unscored","score":null,"input":"ありがとう!","helped":false}]'::jsonb then
     raise exception 'FAIL 6: l3 %', l;
   end if;
   raise notice 'PASS 6 summary evidence per format';

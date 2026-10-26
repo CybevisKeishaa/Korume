@@ -85,12 +85,13 @@ describe("practice listening SQL contract (spec §5.3, §6.2, §7, §7.1; plan P
     expect(sql).toContain("from dictation_attempts where user_id = auth.uid() and created_at >= p_since and status = 'submitted';");
   });
 
-  it("is the single home of every function that reads a B2 column (AGENTS §6, plan P3)", () => {
-    const files = readdirSync(directory).filter((file) => file.endsWith(".sql"));
+  // 049 redefines four of these; its own test pins the later homes (20261026000049_listening_two_exercises.test.ts).
+  it("is the first home of every function that reads a B2 column (AGENTS §6, plan P3)", () => {
+    const files = readdirSync(directory).filter((file) => file.endsWith(".sql")).sort();
     expect(files.length).toBeGreaterThan(40);
     for (const { name } of READ_FUNCTIONS) {
       const homes = files.filter((file) => new RegExp(`create (or replace )?function (public\\.)?${name}\\(`).test(normalized(file)));
-      expect(homes, name).toEqual([filename]);
+      expect(homes[0], name).toBe(filename);
     }
   });
 });

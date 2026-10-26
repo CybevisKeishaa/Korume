@@ -46,9 +46,9 @@ begin
   if (e->>'hasTranscript')::boolean is not true then raise exception 'FAIL 1: hasTranscript is %', e->'hasTranscript'; end if;
   if (e->>'lineCount')::int <> 2 then raise exception 'FAIL 1: lineCount % (whitespace line must not count)', e->'lineCount'; end if;
   if (e->>'reachedLine')::int is distinct from 0 then raise exception 'FAIL 1: reachedLine %', e->'reachedLine'; end if;
-  if jsonb_typeof(e->'pronunciationMean') <> 'null' or jsonb_typeof(e->'wordBankMean') <> 'null'
-     or jsonb_typeof(e->'typingMean') <> 'null' then
-    raise exception 'FAIL 1: means must be null, got % / % / %', e->'pronunciationMean', e->'wordBankMean', e->'typingMean';
+  if jsonb_typeof(e->'pronunciationMean') <> 'null' or e->'dictation' is distinct from '{"mean":null,"done":0,"selfDone":0}'::jsonb
+     or e->'cloze' is distinct from '{"mean":null,"done":0,"selfDone":0}'::jsonb then
+    raise exception 'FAIL 1: means must be null, got % / % / %', e->'pronunciationMean', e->'dictation', e->'cloze';
   end if;
   if (e->'cards'->>'total')::int <> 0 or e->'lines' <> '[]'::jsonb or e->'saved' <> '[]'::jsonb then
     raise exception 'FAIL 1: expected no cards, lines or saved, got %', e;
@@ -83,9 +83,9 @@ begin
     raise exception 'FAIL 3: pronunciation-only line 1 must carry listening [], got %', l->'listening';
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '5ca1ab1e-0000-4000-8000-0000000000d2';
-  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもんをおねがいします"}]'::jsonb
-     or (e->>'typingMean')::numeric is distinct from 70::numeric or jsonb_typeof(e->'wordBankMean') <> 'null' then
-    raise exception 'FAIL 3: line 2 listening evidence wrong: % (typingMean %, wordBankMean %)', l, e->'typingMean', e->'wordBankMean';
+  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもんをおねがいします","helped":false}]'::jsonb
+     or e->'dictation' is distinct from '{"mean":70,"done":1,"selfDone":1}'::jsonb or (e->'cloze'->>'done')::int <> 0 then
+    raise exception 'FAIL 3: line 2 listening evidence wrong: % (dictation %, cloze %)', l, e->'dictation', e->'cloze';
   end if;
   raise notice 'PASS 3 latest-scored mean and latest-per-line scores';
 end $$;
