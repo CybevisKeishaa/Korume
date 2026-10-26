@@ -79,7 +79,7 @@ describe("listening two exercises SQL contract (spec 2026-10-26 §3.6, §3.10)",
           `from latest_submitted where exercise = '${exercise}')`,
       );
     }
-    expect(sql).toContain("'input', la.user_input, 'helped', la.helped)");
+    expect(sql).toContain("'input', la.user_input, 'helped', la.status = 'submitted' and la.helped)");
   });
 
   it("counts Dashboard Listening as typed without help only (narrows D20)", () => {

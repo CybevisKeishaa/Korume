@@ -145,7 +145,11 @@ begin
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '10ad0049-0000-4000-8000-0000000000d3';
   if l->'listening' is distinct from '[{"format":"cloze","status":"submitted","score":60,"input":"勉強","helped":false}]'::jsonb then
     raise exception 'FAIL 5: l3 %', l; end if;
-  raise notice 'PASS 5 summary rows dictation/cloze, helped per line';
+  -- §3.6: revealed is not helped, even for a Word Bank (easy mode) row.
+  select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '10ad0049-0000-4000-8000-0000000000d4';
+  if l->'listening' is distinct from '[{"format":"word_bank","status":"revealed","score":null,"input":"","helped":false}]'::jsonb then
+    raise exception 'FAIL 5: l4 %', l; end if;
+  raise notice 'PASS 5 summary rows dictation/cloze, helped per line, revealed never helped';
 end $$;
 
 -- 6. Missions count the cloze line; the revealed Word Bank (newest) never counts nor moves last_at.

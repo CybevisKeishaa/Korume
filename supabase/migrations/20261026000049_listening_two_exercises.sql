@@ -104,7 +104,8 @@ grant execute on function practice_stats(uuid, text, numeric) to authenticated;
 -- Status, Saved Knowledge and the review targets need, aggregated here so no PostgREST row read can be truncated by
 -- max_rows. Runs as the caller: RLS and auth.uid() scope every row. Listening (§3.10): two rows, never averaged,
 -- Chép chính tả (typing + word_bank) and Điền từ (cloze), each over every line's latest submitted attempt in that
--- exercise: { mean, done, selfDone = done without help }. Per line, the latest attempt of any status per format (R2).
+-- exercise: { mean, done, selfDone = done without help }. Per line, the latest attempt of any status per format (R2);
+-- its helped is false unless submitted (§3.6: revealed is not helped).
 create or replace function lesson_summary_evidence(p_video uuid, p_mastery int) returns jsonb
 language sql stable security invoker set search_path = public as $$
   with lesson_transcript as (
@@ -146,7 +147,8 @@ language sql stable security invoker set search_path = public as $$
   ), per_line as (
     select l.id as line_id, ls.pronunciation_score, lp.pitch_score,
       (select jsonb_agg(jsonb_build_object('format', la.format, 'status', la.status, 'score', la.accuracy_score,
-                                           'input', la.user_input, 'helped', la.helped) order by la.format)
+                                           'input', la.user_input, 'helped', la.status = 'submitted' and la.helped)
+                         order by la.format)
        from latest_attempt la where la.line_id = l.id) as listening,
       exists (select 1 from difficult d where d.line_id = l.id) as is_difficult
     from lines l

@@ -75,7 +75,9 @@ describe("practice listening SQL contract (spec §5.3, §6.2, §7, §7.1; plan P
     }
   });
 
-  it("reads Listening per format: R1 scores, R2 states, Typing-only Dashboard, submitted missions", () => {
+  // Historical: the per-format reads below (d.format = p_mode, wordBankMean/typingMean, Typing-only Dashboard) are 048
+  // as written; 049 supersedes them and 20261026000049_listening_two_exercises.test.ts pins the live bodies.
+  it("048 as written — superseded by 049: reads Listening per format, Typing-only Dashboard, submitted missions", () => {
     expect(sql).toContain("where d.user_id = auth.uid() and d.format = p_mode");
     expect(sql).toContain("'wordbankmean', (select avg(accuracy_score) from latest_submitted where format = 'word_bank')");
     expect(sql).toContain("'typingmean', (select avg(accuracy_score) from latest_submitted where format = 'typing')");
