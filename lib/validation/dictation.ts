@@ -16,7 +16,7 @@ const hintUnit = z.enum(["chunk", "grapheme4"]);
  * against the line it reads (`submitListeningAttempt`).
  */
 export const dictationAttemptSchema = z.union([
-  z.object({ kind: z.literal("submit"), format: z.literal("word_bank"), ...head, chunkOrder: z.array(index).max(8) }).strict(),
+  z.object({ kind: z.literal("submit"), format: z.literal("word_bank"), ...head, chunkOrder: z.array(index).max(64) }).strict(),
   z.object({ kind: z.literal("submit"), format: z.literal("typing"), ...head, input: z.string().max(2000), hintUnit }).strict(),
   z.object({ kind: z.literal("reveal"), format: z.literal("word_bank"), ...head }).strict(),
   z.object({ kind: z.literal("reveal"), format: z.literal("typing"), ...head, hintUnit }).strict(),

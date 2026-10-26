@@ -17,7 +17,7 @@ export interface ChunkResult {
   chunks: string[];
 }
 
-export const CURRENT_CHUNKER = 1;
+export const CURRENT_CHUNKER = 2;
 const MAX_CHUNKS = 8;
 const OPEN_BRACKETS = "「『（(【";
 
@@ -96,26 +96,55 @@ function mergeDownTo(chunks: Tok[][], max: number): Tok[][] {
   return out;
 }
 
-const unreliable = (reason: ChunkReason): ChunkResult => ({ version: 1, reliable: false, reason, chunks: [] });
+const unreliable = (reason: ChunkReason, version = 1): ChunkResult => ({ version, reliable: false, reason, chunks: [] });
 
-async function chunkV1(textJp: string): Promise<ChunkResult> {
+/** Shared by every version: normalise, reject lines the tokenizer cannot be trusted on, split punctuation runs. */
+async function tokenize(textJp: string, version: number, isPunct = isPunctuation): Promise<ChunkResult | Tok[]> {
   const base = normalizeJa(textJp);
   const tokens = (await getTokenizer()).tokenize(base);
-  if (tokens.map((t) => t.surface_form).join("") !== base) return unreliable("mismatch");
+  if (tokens.map((t) => t.surface_form).join("") !== base) return unreliable("mismatch", version);
   // latin/digit first: kuromoji marks every latin or digit run UNKNOWN, so the reverse order hides this reason
-  if (/[A-Za-z0-9]/.test(base)) return unreliable("latin_or_digit");
-  if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunctuation(t))) return unreliable("unknown_token");
+  if (/[A-Za-z0-9]/.test(base)) return unreliable("latin_or_digit", version);
+  if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunct(t))) return unreliable("unknown_token", version);
   // R20: kuromoji glues punctuation into one UNKNOWN 名詞 (`...「`, `!?(`). Split it per code point into 記号 tokens so
   // the usual rules apply: openers start the next chunk, other marks attach left, a line-initial run binds forward.
   let quotes = 0;
-  const toks = tokens
-    .flatMap((t): Tok[] =>
-      t.word_type === "UNKNOWN"
-        ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
-        : [t],
-    )
-    // owner 2026-10-21: `"` has no direction of its own; the 1st, 3rd... opens, the 2nd, 4th... closes
-    .map((t): Tok => (t.surface_form === '"' && ++quotes % 2 === 1 ? { ...t, pos: "記号", pos_detail_1: "括弧開" } : t));
+  return (
+    tokens
+      .flatMap((t): Tok[] =>
+        t.word_type === "UNKNOWN"
+          ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
+          : [t],
+      )
+      // owner 2026-10-21: `"` has no direction of its own; the 1st, 3rd... opens, the 2nd, 4th... closes
+      .map((t): Tok => (t.surface_form === '"' && ++quotes % 2 === 1 ? { ...t, pos: "記号", pos_detail_1: "括弧開" } : t))
+  );
+}
+
+// v2 (WP §3.1): symbols such as ♪ 〜 → ※ are punctuation too; kuromoji tags them UNKNOWN 名詞.
+const isSymbol = (t: Tok) => isPunctuation(t) || /^[\p{P}\p{S}]+$/u.test(t.surface_form);
+
+async function chunkV2(textJp: string): Promise<ChunkResult> {
+  const toks = await tokenize(textJp, 2, isSymbol);
+  if (!Array.isArray(toks)) return toks;
+  const pieces: string[] = [];
+  let pending = ""; // openers and a line-initial run wait here for the next word
+  for (const t of toks) {
+    const s = t.surface_form;
+    if (t.pos !== "記号" && !isPunctuation(t)) {
+      pieces.push(pending + s);
+      pending = "";
+    } else if (isOpenBracket(t) || pieces.length === 0 || pending) pending += s;
+    else pieces[pieces.length - 1] += s;
+  }
+  if (pending && pieces.length) pieces[pieces.length - 1] += pending;
+  if (pieces.length < 2) return unreliable("single_chunk", 2);
+  return { version: 2, reliable: true, reason: null, chunks: pieces };
+}
+
+async function chunkV1(textJp: string): Promise<ChunkResult> {
+  const toks = await tokenize(textJp, 1);
+  if (!Array.isArray(toks)) return toks;
 
   let chunks: Tok[][] = [];
   toks.forEach((t, i) => {
@@ -138,6 +167,7 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
 // v1 was edited in place on 2026-10-21 (R17, Tasks 2b and R20): no attempt row referenced it and Word Bank is not live until Task 9.
 export const CHUNKERS: Readonly<Record<number, (textJp: string) => Promise<ChunkResult>>> = Object.freeze({
   1: chunkV1,
+  2: chunkV2,
 });
 
 export function lineTextHash(textJp: string): string {

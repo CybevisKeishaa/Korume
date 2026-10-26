@@ -38,8 +38,8 @@ describe("loadLineChunks", () => {
     const text = "毎日日本語を勉強しました。";
     asLearner({ id: "a" }, text);
     await expect(loadLineChunks(LINE)).resolves.toEqual({ kind: "ok", data: {
-      version: 1, textHash: lineTextHash(text), reliable: true, reason: null,
-      chunks: ["毎日", "日本語を", "勉強しました。"], display: ["毎日", "日本語を", "勉強しました。"], typingHintUnit: "chunk",
+      version: 2, textHash: lineTextHash(text), reliable: true, reason: null,
+      chunks: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], display: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], typingHintUnit: "chunk",
     } });
     expect(lineQueries).toEqual([[
       { op: "select", columns: "text_jp" }, { op: "eq", column: "id", value: LINE }, { op: "maybeSingle" },
@@ -49,8 +49,8 @@ describe("loadLineChunks", () => {
   it("display carries the raw characters while chunks stay normalised", async () => {
     asLearner({ id: "a" }, "お値段が…みたいな時が結構あるんですね？");
     await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: {
-      chunks: ["お値段が...みたいな時が", "結構", "あるんですね?"],
-      display: ["お値段が…みたいな時が", "結構", "あるんですね？"],
+      chunks: ["お", "値段", "が...", "みたい", "な", "時", "が", "結構", "ある", "ん", "です", "ね?"],
+      display: ["お", "値段", "が…", "みたい", "な", "時", "が", "結構", "ある", "ん", "です", "ね？"],
     } });
   }, T);
 

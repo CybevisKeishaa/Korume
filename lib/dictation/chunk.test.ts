@@ -10,9 +10,60 @@ vi.mock("../japanese/tokenizer", async (orig) => {
 
 // kuromoji dictionary load is slow under suite contention (see lib/japanese/tokenizer.test.ts).
 const T = 60000;
-const chunkV1 = CHUNKERS[CURRENT_CHUNKER];
-if (!chunkV1) throw new Error("no current chunker");
+const chunkV1 = CHUNKERS[1];
+const chunkV2 = CHUNKERS[2];
+if (!chunkV1 || !chunkV2) throw new Error("chunker missing");
 const run = (s: string) => chunkV1(s);
+const run2 = (s: string) => chunkV2(s);
+
+describe("v2", () => {
+  it("is the current chunker", () => expect(CURRENT_CHUNKER).toBe(2));
+
+  it("one piece per word; punctuation binds back", async () => {
+    expect(await run2("お店を検索すると思うんですけど。")).toEqual({
+      version: 2,
+      reliable: true,
+      reason: null,
+      chunks: ["お", "店", "を", "検索", "する", "と", "思う", "ん", "です", "けど。"],
+    });
+  }, T);
+
+  it("♪ binds back", async () => {
+    const { chunks } = await run2("今日は楽しいですね♪");
+    expect(chunks.at(-1)).toMatch(/♪$/);
+    expect(chunks.join("")).toBe("今日は楽しいですね♪");
+  }, T);
+
+  it("quotes: opener binds forward, closer back, no punctuation-only piece", async () => {
+    const { chunks } = await run2("「こんにちは」と言った");
+    expect(chunks).toContain("「こんにちは」");
+    expect(chunks.every((c) => /[^「」]/.test(c))).toBe(true);
+  }, T);
+
+  it("a line-initial run binds forward", async () => {
+    expect((await run2("…今日は雨です")).chunks[0]).toBe("...今日");
+  }, T);
+
+  it('an odd " opens, an even one closes', async () => {
+    const { chunks } = await run2('彼は"はい"と言った');
+    expect(chunks).toContain('"はい"');
+    expect(chunks.join("")).toBe('彼は"はい"と言った');
+  }, T);
+
+  it("does not merge down: a doubled line gives twice the pieces", async () => {
+    const line = "お店を検索すると思うんですけど。";
+    expect((await run2(line + line)).chunks).toHaveLength(20);
+  }, T);
+
+  it.each([
+    ["ABCです", "latin_or_digit"],
+    ["3時です", "latin_or_digit"],
+    ["はい。", "single_chunk"],
+    ["ぱぽぴぷぺ", "unknown_token"],
+  ])("unreliable %s -> %s", async (line, reason) => {
+    expect(await run2(line)).toEqual({ version: 2, reliable: false, reason, chunks: [] });
+  }, T);
+});
 
 describe("chunkV1", () => {
   it("cuts topic noun + copula", async () => {

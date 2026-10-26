@@ -13,6 +13,11 @@ describe("dictationAttemptSchema (spec §5.4)", () => {
     expect(dictationAttemptSchema.parse(body)).toEqual(body);
   });
 
+  it("accepts a 20-piece Word Bank order", () => {
+    const body = { ...wordBank, chunkOrder: Array.from({ length: 20 }, (_, i) => i) };
+    expect(dictationAttemptSchema.parse(body)).toEqual(body);
+  });
+
   it.each([
     ["a Word Bank body carrying hintUnit", { ...wordBank, hintUnit: "chunk" }],
     ["a Word Bank reveal carrying hintUnit", { ...revealWordBank, hintUnit: "chunk" }],
@@ -25,7 +30,7 @@ describe("dictationAttemptSchema (spec §5.4)", () => {
     ["a fractional version", { ...wordBank, version: 1.5 }],
     ["a short textHash", { ...wordBank, textHash: "a".repeat(63) }],
     ["an upper-case textHash", { ...wordBank, textHash: "A".repeat(64) }],
-    ["more than 8 chunks", { ...wordBank, chunkOrder: [0, 1, 2, 3, 4, 5, 6, 7, 8] }],
+    ["more than 64 pieces", { ...wordBank, chunkOrder: Array.from({ length: 65 }, (_, i) => i) }],
     ["a fractional chunk index", { ...wordBank, chunkOrder: [0.5, 1] }],
     ["more than 200 hints", { ...typing, hintedUnits: Array.from({ length: 201 }, (_, i) => i) }],
     ["a fractional hint", { ...typing, hintedUnits: [0.5] }],
