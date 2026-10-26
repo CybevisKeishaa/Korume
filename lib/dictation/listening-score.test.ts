@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { displayMap } from "./display";
 import { normalizeJa } from "./normalize";
-import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, scoreWordBankLcs, stripPunctuation } from "./listening-score";
+import { chunkUnits, grapheme1Units, grapheme4Units, scoreTyping, scoreWordBank, scoreWordBankLcs, stripPunctuation } from "./listening-score";
+import { TYPING_OPTIONAL } from "./listening-score";
 
 const BASE = "注文をお願いします。";
 const FIRST = { start: 0, end: 3 };
@@ -137,5 +138,46 @@ describe("units", () => {
     expect(units[0]).toEqual({ start: 0, end: 5 + 3 });
     expect(units).toHaveLength(2);
     expect(units[1]).toEqual({ start: 8, end: Array.from(base).length });
+  });
+});
+
+describe("Typing optional symbols", () => {
+  const sc = (base: string, input: string, hinted: { start: number; end: number }[] = []) =>
+    scoreTyping(normalizeJa(base), input, hinted, []);
+  it.each(["♪", "〜", "～", "→", "※"])("%s omitted costs nothing, typed is not extra", (sym) => {
+    const base = `今日は楽しいですね${sym}`;
+    const omitted = sc(base, "今日は楽しいですね");
+    expect(omitted.score).toBe(100);
+    expect(omitted.diff.some((d) => d.type === "missing")).toBe(false);
+    const typed = sc(base, base);
+    expect(typed.diff.some((d) => d.type === "extra")).toBe(false);
+    expect(typed.score).toBe(100);
+  });
+  it.each(["%", "¥", "+", "−"])("%s stays required", (sym) => {
+    const r = sc(`50${sym}`, "50");
+    expect(r.diff.filter((d) => d.type === "missing")).toHaveLength(1);
+  });
+  it("a hinted range after a stripped symbol marks exactly those chars", () => {
+    const r = sc("あ♪いう", "", [{ start: 2, end: 3 }]);
+    expect(r.diff.map((d) => d.type)).toEqual(["missing", "hinted", "missing"]);
+  });
+  it("Kanji ratio ignores a stripped symbol", () => {
+    expect(sc("漢字♪", "漢字").metrics.kanji).toBe(100);
+  });
+  it("exports the allowlist", () => expect(TYPING_OPTIONAL.test("♪")).toBe(true));
+});
+
+describe("grapheme1Units", () => {
+  it("one range per grapheme", () => expect(grapheme1Units(normalizeJa("今は英語"))).toHaveLength(4));
+  it("skips optional symbols and punctuation, maps to base offsets", () => {
+    expect(grapheme1Units("あ♪、い")).toEqual([{ start: 0, end: 1 }, { start: 3, end: 4 }]);
+  });
+  it("never splits an emoji", () => {
+    expect(grapheme1Units("あ👨‍👩‍👧")).toEqual([{ start: 0, end: 1 }, { start: 1, end: 6 }]);
+  });
+  it("a hinted unit marks exactly its char", () => {
+    const base = "今日は楽しい";
+    const r = scoreTyping(base, "", [grapheme1Units(base)[2]!], []);
+    expect(r.diff.map((d) => d.type)).toEqual(["missing", "missing", "hinted", "missing", "missing", "missing"]);
   });
 });

@@ -44,12 +44,16 @@ export interface ListeningRevealData {
 const pct = (num: number, den: number): number => Math.round((num / den) * 1000) / 10;
 const HAN = /\p{Script=Han}/u;
 
+/** Typing-only: a learner may leave these out (or type them) at no cost (WP spec §3.6). */
+/** `~` is what NFKC makes of `～`, which is the form both sides carry by the time they are compared. */
+export const TYPING_OPTIONAL = /[♪〜～~→※]/u;
+
 /** `chars[i]` is the i-th kept code point; `map[i]` its index in `Array.from(base)`. */
-export function stripPunctuation(base: string): { chars: string[]; map: number[] } {
+export function stripPunctuation(base: string, extra?: RegExp): { chars: string[]; map: number[] } {
   const chars: string[] = [];
   const map: number[] = [];
   Array.from(base).forEach((c, i) => {
-    if (PUNCTUATION.test(c)) return;
+    if (PUNCTUATION.test(c) || extra?.test(c)) return;
     chars.push(c);
     map.push(i);
   });
@@ -81,6 +85,19 @@ export function grapheme4Units(base: string): Range[] {
     }
   }
   if (count > 0) units.push({ start, end: pos });
+  return units;
+}
+
+/** One unit per grapheme of the reference Typing scores (punctuation and optional symbols skipped), in `base` offsets. */
+export function grapheme1Units(base: string): Range[] {
+  const units: Range[] = [];
+  let pos = 0;
+  for (const { segment } of new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(base)) {
+    const end = pos + Array.from(segment).length;
+    const first = Array.from(segment)[0] ?? "";
+    if (!PUNCTUATION.test(first) && !TYPING_OPTIONAL.test(first)) units.push({ start: pos, end });
+    pos = end;
+  }
   return units;
 }
 
@@ -153,8 +170,8 @@ export function scoreTyping(
   grammar: Range[],
   display: string[] | null = null,
 ): { score: number; diff: ListeningDiffOp[]; metrics: ListeningMetrics } {
-  const ref = stripPunctuation(base);
-  const hyp = stripPunctuation(normalizeJa(input)).chars;
+  const ref = stripPunctuation(base, TYPING_OPTIONAL);
+  const hyp = stripPunctuation(normalizeJa(input), TYPING_OPTIONAL).chars;
   const inRanges = (ranges: Range[], p: number) => ranges.some((r) => p >= r.start && p < r.end);
   const hintedRef = new Set([...ref.chars.keys()].filter((i) => inRanges(hintedRanges, ref.map[i] ?? -1)));
 
