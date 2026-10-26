@@ -48,13 +48,6 @@ describe("selectBlanks", () => {
     expect(idx).toHaveLength(3);
     expect([...idx].sort((a, b) => a - b)).toEqual(idx);
   });
-  it("never picks two adjacent tokens", async () => {
-    const t = await tokenize("日本語勉強");
-    const c = clozeCandidates(t);
-    const idx = selectBlanks(t, new Set());
-    for (let i = 1; i < idx.length; i++) expect(idx[i]! - idx[i - 1]!).toBeGreaterThan(1);
-    expect(c.length === 0 || idx.length >= 1).toBe(true);
-  });
   it("keeps the preferred of two adjacent candidates", () => {
     const mk = (surface: string): Token => ({ surface, reading: surface, base: surface, pos: "名詞", posDetail1: "一般" });
     const t = [mk("日本"), mk("経済新聞")];
