@@ -198,6 +198,7 @@ export function chunkLine(textJp: string, version: number = CURRENT_CHUNKER): Pr
 const tokenMemo = new Map<string, Promise<Token[]>>();
 
 /** Tokens of `normalizeJa(textJp)` from chunker v2's kuromoji pipeline (cloze, romaji); memoised like `chunkLine` (P12). */
+// Cloze selector v1: its token indices are these raw tokens; never edit once attempts reference it, add v2 instead.
 export function lineTokens(textJp: string): Promise<Token[]> {
   const key = lineTextHash(textJp);
   let hit = tokenMemo.get(key);

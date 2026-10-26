@@ -9,6 +9,7 @@ const JA = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
 const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;
 const EXCLUDED_NOUN_DETAIL = new Set(["数", "代名詞", "非自立", "接尾"]);
 
+// Cloze selector v1 (with `lineTokens`): never edit once attempts reference it; add v2 instead.
 /** Spec §3.4: nouns (minus 数/代名詞/非自立/接尾 and 1-char kana) and dictionary-form verbs/adjectives. */
 export function clozeCandidates(tokens: Token[]): number[] {
   const out: number[] = [];

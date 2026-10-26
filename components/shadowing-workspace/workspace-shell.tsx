@@ -6,7 +6,7 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { usePathname } from "@/lib/i18n/navigation";
-import { listeningExercise, panelFormat, practiceModeFromPath, practiceStatsMode, type ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
+import { panelFormat, practiceModeFromPath, practiceStatsMode, type ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
 import { ListeningRevealProvider } from "./practice/listening-reveal-context";
@@ -142,9 +142,10 @@ function CurrentLineReveal({ listening, format, children }: { listening: boolean
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const mode = practiceModeFromPath(usePathname());
   // P10: the URL is the one source of the Listening exercise; the strip, the stats and the reveal key all read it.
-  const formatParam = useSearchParams().get("format");
-  const format = panelFormat(formatParam);
-  const statsMode = practiceStatsMode(mode, listeningExercise(formatParam).exercise);
+  const format = panelFormat(useSearchParams().get("format"));
+  // ponytail: every format renders a dictation panel until the picker (Task 9), so the strip reads dictation stats;
+  // the picker replaces this with `listeningExercise(param).exercise`.
+  const statsMode = practiceStatsMode(mode, mode === "listening" ? "dictation" : null);
   const listening = mode === "listening";
   const { video } = useLesson();
   usePracticePlayback(mode);
