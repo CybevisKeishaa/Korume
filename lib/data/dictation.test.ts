@@ -146,6 +146,30 @@ describe("submitListeningAttempt: refusals before any write", () => {
     expectNothingWritten();
   }, T);
 
+  describe("v2 hinted prefix (毎日|日本語|を|勉強|し|まし|た。)", () => {
+    const v2 = { ...head(RELIABLE), version: 2 };
+    const ID = [0, 1, 2, 3, 4, 5, 6];
+    it("400 when the hints are not the prefix 0..k-1 (submit and reveal)", async () => {
+      await expect(submitListeningAttempt({ ...wordBank({ chunkOrder: ID, hintedUnits: [1] }), ...v2 })).resolves.toEqual({ ok: false, status: 400 });
+      await expect(submitListeningAttempt({ kind: "reveal", format: "word_bank", ...v2, hintedUnits: [2] })).resolves.toEqual({ ok: false, status: 400 });
+      expectNothingWritten();
+    }, T);
+    it("400 when chunkOrder does not start with the hinted prefix", async () => {
+      await expect(submitListeningAttempt({ ...wordBank({ chunkOrder: [1, 0, 2, 3, 4, 5, 6], hintedUnits: [0, 1] }), ...v2 })).resolves.toEqual({ ok: false, status: 400 });
+      expectNothingWritten();
+    }, T);
+    it("scores by LCS and accepts a valid prefix", async () => {
+      const r = await submitListeningAttempt({ ...wordBank({ chunkOrder: ID, hintedUnits: [0, 1] }), ...v2 });
+      expect(r).toMatchObject({ ok: true, data: { score: 71.4, metrics: { slots: { correct: 5, total: 7 } } } });
+      const shifted = await submitListeningAttempt({ ...wordBank({ chunkOrder: [1, 2, 3, 4, 5, 6, 0] }), ...v2 });
+      expect(shifted).toMatchObject({ ok: true, data: { score: 85.7 } });
+    }, T);
+    it("v1 attempts keep positional scoring", async () => {
+      const r = await submitListeningAttempt(wordBank({ chunkOrder: [1, 2, 0] }));
+      expect(r).toMatchObject({ ok: true, data: { score: 0 } });
+    }, T);
+  });
+
   it("400 when the Typing hintUnit disagrees with the line, both ways", async () => {
     await expect(submitListeningAttempt(typing(RELIABLE, { hintUnit: "grapheme4" }))).resolves.toEqual({ ok: false, status: 400 });
     lineText = DIGITS;

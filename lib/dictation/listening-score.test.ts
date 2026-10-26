@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { displayMap } from "./display";
 import { normalizeJa } from "./normalize";
-import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, stripPunctuation } from "./listening-score";
+import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, scoreWordBankLcs, stripPunctuation } from "./listening-score";
 
 const BASE = "注文をお願いします。";
 const FIRST = { start: 0, end: 3 };
@@ -25,6 +25,37 @@ describe("scoreWordBank", () => {
   });
   it("identical texts count as correct in any order", () => {
     expect(scoreWordBank(["はい、", "はい、", "はい。"], [1, 0, 2], new Set()).score).toBe(100);
+  });
+});
+
+describe("scoreWordBankLcs", () => {
+  const correct = (r: ReturnType<typeof scoreWordBankLcs>) => r.slots.map((s) => s.correct);
+  it("marks the pieces outside the longest common subsequence", () => {
+    const r = scoreWordBankLcs(["A", "B", "C", "D"], [1, 2, 3, 0], 0);
+    expect(correct(r)).toEqual([true, true, true, false]);
+    expect(r.score).toBe(75);
+    expect(r.slots[0]).toEqual({ chunkIndex: 1, correct: true, hinted: false });
+    expect(r.metrics).toEqual({ recall: 75, slots: { correct: 3, total: 4 } });
+  });
+  it("identical texts are interchangeable", () => {
+    expect(scoreWordBankLcs(["私", "を", "見", "を", "待つ"], [0, 3, 2, 1, 4], 0).score).toBe(100);
+    expect(scoreWordBankLcs(["は", "A", "は"], [2, 1, 0], 0).score).toBe(100);
+    expect(scoreWordBankLcs(["です", "A", "です"], [2, 1, 0], 0).score).toBe(100);
+  });
+  it("hinted slots never score and leave the reference", () => {
+    const r = scoreWordBankLcs(["A", "B", "C"], [0, 2, 1], 1);
+    expect(r.slots[0]?.hinted).toBe(true);
+    expect(r.slots[1]?.hinted).toBe(false);
+    expect(r.score).toBe(33.3);
+    expect(scoreWordBankLcs(["A", "B"], [0, 1], 2).score).toBe(0);
+    const dup = scoreWordBankLcs(["A", "B", "A"], [0, 2, 1], 1);
+    expect(correct(dup)).toEqual([false, false, true]);
+    expect(dup.score).toBe(33.3);
+  });
+  it("breaks ties the same way every call", () => {
+    const run = () => correct(scoreWordBankLcs(["A", "B"], [1, 0], 0));
+    expect(run()).toEqual([false, true]);
+    expect(run()).toEqual([false, true]);
   });
 });
 

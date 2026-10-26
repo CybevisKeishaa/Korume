@@ -9,6 +9,7 @@ import {
   normalizeJa,
   scoreTyping,
   scoreWordBank,
+  scoreWordBankLcs,
   type ListeningRevealData,
   type ListeningSubmitData,
   type Range,
@@ -81,6 +82,14 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
     return { ok: false, status: 400 };
   }
 
+  // v2 Word Bank (WP spec §3.4): the hinted pieces are exactly the prefix 0..k-1, placed first in the answer.
+  const k = input.hintedUnits.length;
+  if (input.format === "word_bank" && input.version >= 2) {
+    const prefix = (xs: number[]) => xs.every((x, p) => x === p);
+    if (!prefix([...input.hintedUnits].sort((x, y) => x - y))) return { ok: false, status: 400 };
+    if (input.kind === "submit" && !prefix(input.chunkOrder.slice(0, k))) return { ok: false, status: 400 };
+  }
+
   const row = {
     user_id: user.id,
     video_id: input.videoId,
@@ -109,7 +118,9 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
 
   let data: ListeningSubmitData;
   if (input.format === "word_bank") {
-    const { score, slots, metrics } = scoreWordBank(cut.chunks, input.chunkOrder, new Set(input.hintedUnits));
+    const { score, slots, metrics } = input.version >= 2
+      ? scoreWordBankLcs(cut.chunks, input.chunkOrder, k)
+      : scoreWordBank(cut.chunks, input.chunkOrder, new Set(input.hintedUnits));
     data = { kind: "submit", score, slots, metrics, answer: text };
     await insert({
       user_input: input.chunkOrder.map((i) => cut.chunks[i]).join(""),

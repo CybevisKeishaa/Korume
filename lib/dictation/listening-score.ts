@@ -108,6 +108,44 @@ export function scoreWordBank(
   };
 }
 
+/**
+ * v2 Word Bank (WP spec §3.2-§3.4): a piece is correct when it lies on a longest common subsequence of the
+ * answer and the reference. The hinted prefix (answer slots `0..hintedCount-1`) leaves both sides, is never
+ * correct and never scores. Ties walk forward and skip the answer side first, so the result is stable.
+ */
+export function scoreWordBankLcs(
+  chunks: string[],
+  order: number[],
+  hintedCount: number,
+): ReturnType<typeof scoreWordBank> {
+  const n = chunks.length;
+  const a = order.slice(hintedCount).map((i) => chunks[i]);
+  const r = chunks.slice(hintedCount);
+  const dp = Array.from({ length: a.length + 1 }, () => new Array<number>(r.length + 1).fill(0));
+  for (let i = a.length - 1; i >= 0; i--) {
+    for (let j = r.length - 1; j >= 0; j--) {
+      dp[i]![j] = a[i] === r[j] ? dp[i + 1]![j + 1]! + 1 : Math.max(dp[i + 1]![j]!, dp[i]![j + 1]!);
+    }
+  }
+  const onLcs = new Array<boolean>(a.length).fill(false);
+  for (let i = 0, j = 0; i < a.length && j < r.length; ) {
+    if (a[i] === r[j] && dp[i]![j] === dp[i + 1]![j + 1]! + 1) {
+      onLcs[i++] = true;
+      j++;
+    }
+    else if (dp[i + 1]![j]! >= dp[i]![j + 1]!) i++;
+    else j++;
+  }
+  const slots = order.map((chunkIndex, p) => ({
+    chunkIndex,
+    correct: p >= hintedCount && onLcs[p - hintedCount] === true,
+    hinted: p < hintedCount,
+  }));
+  const correct = slots.filter((s) => s.correct).length;
+  const score = n === 0 ? 0 : pct(correct, n);
+  return { score, slots, metrics: { recall: score, slots: { correct, total: n } } };
+}
+
 export function scoreTyping(
   base: string,
   input: string,

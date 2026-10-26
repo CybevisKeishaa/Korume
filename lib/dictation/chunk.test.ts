@@ -203,6 +203,7 @@ describe("helpers", () => {
   it("typingHintUnit is chunk only for a reliable 2+ chunk result", () => {
     const ok = { version: 1, reliable: true, reason: null, chunks: ["a", "b"] };
     expect(typingHintUnit(ok)).toBe("chunk");
+    expect(typingHintUnit({ ...ok, version: 2 })).toBe("chunk");
     expect(typingHintUnit({ ...ok, chunks: ["a"] })).toBe("grapheme4");
     expect(typingHintUnit({ ...ok, reliable: false })).toBe("grapheme4");
   });
