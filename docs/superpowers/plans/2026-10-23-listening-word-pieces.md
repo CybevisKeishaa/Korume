@@ -1,5 +1,8 @@
 # Listening word pieces Implementation Plan
 
+> **SUPERSEDED 2026-10-26 (never executed)** by `docs/superpowers/plans/2026-10-26-listening-two-exercises.md`, which
+> carries Tasks 1–5 and 7 over (amended) and folds Task 6 into its Task 9. Do not execute this file.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Word Bank pieces become words (chunker v2) placed by drag / tap with server-side LCS scoring; Typing ignores ♪ 〜 ～ → ※; Listening opens with the video visible behind a remembered "Chỉ nghe" switch; the stat strip takes the frame's bottom-bar look.
