@@ -165,6 +165,44 @@ describe("WordBankPanel", () => {
     expect(placed()).toEqual([2, 0, 1, 3]);
   });
 
+  it("the drop marker never sits inside the hinted prefix: over a hinted chip it shows at k", () => {
+    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[0, 1]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    tap(2);
+    layOut();
+    const dt = dataTransfer();
+    fireEvent.dragStart(piece(3), { dataTransfer: dt });
+    fireEvent.dragOver(piece(0), { clientX: 10, clientY: 10, dataTransfer: dt }); // hinted chip 0's left half
+    const items = tray().querySelectorAll("li");
+    expect([...items].map((li) => li.querySelector("[data-drop-marker]") !== null)).toEqual([false, false, true]);
+    fireEvent.drop(piece(0), { clientX: 10, clientY: 10, dataTransfer: dt });
+    expect(placed()).toEqual([0, 1, 3, 2]);
+  });
+
+  it("drop reads the pointer's index from the drop event, even after a dragleave cleared the marker", () => {
+    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    tap(0, 1, 2);
+    layOut();
+    const dt = dataTransfer();
+    fireEvent.dragStart(piece(3), { dataTransfer: dt });
+    fireEvent.dragOver(piece(1), { clientX: 80, clientY: 10, dataTransfer: dt });
+    fireEvent.dragLeave(tray().parentElement as HTMLElement, { relatedTarget: null, dataTransfer: dt }); // Chrome often sends null
+    expect(document.querySelector("[data-drop-marker]")).toBeNull();
+    fireEvent.drop(piece(1), { clientX: 80, clientY: 10, dataTransfer: dt });
+    expect(placed()).toEqual([0, 1, 3, 2]);
+  });
+
+  it("Alt+Arrow on a bank chip keeps the browser from going Back; movable placed chips announce their shortcut", () => {
+    panel({ hinted: [0] });
+    tap(1);
+    expect(fireEvent.keyDown(piece(2), { key: "ArrowLeft", altKey: true })).toBe(false);
+    expect(fireEvent.keyDown(piece(2), { key: "ArrowRight", altKey: true })).toBe(false);
+    expect(fireEvent.keyDown(piece(2), { key: "ArrowLeft" })).toBe(true); // a plain arrow is left alone
+    expect(banked()).toEqual([2]);
+    expect(piece(1)).toHaveAttribute("aria-keyshortcuts", "Alt+ArrowLeft Alt+ArrowRight");
+    expect(piece(0)).not.toHaveAttribute("aria-keyshortcuts"); // the hinted piece cannot move
+    expect(piece(2)).not.toHaveAttribute("aria-keyshortcuts");
+  });
+
   it("dropIndex counts the pieces whose centre is left of the pointer", () => {
     const row = [rect(0), rect(50), rect(100)];
     expect(dropIndex(row, -5)).toBe(0);

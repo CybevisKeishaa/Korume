@@ -49,6 +49,9 @@ describe("listeningFeedback (P14)", () => {
       .toEqual([{ id: "wb_partial", values: { correct: 2, total: 4, wrong: 2, pieces: "検索 店" } }]);
     const long = wb([slot(false, false, 3), slot(false, false, 4), slot(false, false, 6), slot(false, false, 9)]);
     expect(long[0]?.values.pieces).toBe("検索 する 思う…");
+    // The 8-character cut lands on a space: no "… …" gap before the ellipsis.
+    const onSpace = wb([slot(false, false, 1), slot(false, false, 3), slot(false, false, 4), slot(false, false, 0)]);
+    expect(onSpace[0]?.values.pieces).toBe("店 検索 する…");
   });
 
   it("v2: a hinted piece is never wrong, never named and never perfect", () => {

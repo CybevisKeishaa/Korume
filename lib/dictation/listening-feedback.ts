@@ -50,7 +50,7 @@ export function listeningFeedback(event: FeedbackEvent): FeedbackMessage[] {
       const hinted = slots.filter((s) => s.hinted).length;
       const fixed = previous ? own.filter((s) => previous.wrongPieces.includes(s.chunkIndex)).length : 0;
       const shown = Array.from(wrong.map((s) => display[s.chunkIndex] ?? "").join(" "));
-      const pieces = shown.slice(0, MAX_CHARS).join("") + (shown.length > MAX_CHARS ? "…" : "");
+      const pieces = shown.length > MAX_CHARS ? `${shown.slice(0, MAX_CHARS).join("").trimEnd()}…` : shown.join("");
       const out = own.length === slots.length
         ? [msg("wb_perfect")]
         : [msg("wb_partial", { correct: own.length, total: slots.length, wrong: wrong.length, pieces }), ...(hinted > 0 ? [msg("wb_hinted", { hinted })] : [])];

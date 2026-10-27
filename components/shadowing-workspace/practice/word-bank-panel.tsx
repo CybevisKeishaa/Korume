@@ -74,9 +74,14 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
     onProgress(next.length > k);
   };
   const focusedPiece = (target: EventTarget, p: number) => target === document.activeElement ? p : null;
+  /** Alt+ArrowLeft is also the browser's Back: on any chip it must never leave the page and the answer. */
+  const altArrow = (event: KeyboardEvent) => {
+    const hit = event.altKey && (event.key === "ArrowLeft" || event.key === "ArrowRight");
+    if (hit) event.preventDefault();
+    return hit;
+  };
   const move = (event: KeyboardEvent, p: number) => {
-    if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
-    event.preventDefault(); // Alt+ArrowLeft is also the browser's Back
+    if (!altArrow(event)) return;
     if (locked) return;
     const next = movePiece(placed, p, event.key === "ArrowLeft" ? -1 : 1, k);
     update(next, p);
@@ -93,23 +98,27 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
     dragged.current = null;
     setDropAt(null);
   };
-  const dragOver = (event: DragEvent<HTMLElement>) => {
-    if (locked || dragged.current === null) return;
-    event.preventDefault();
-    event.dataTransfer.dropEffect = "move";
+  /** The insertion index under the pointer, never inside the hinted prefix; null off every row of chips. */
+  const pointerIndex = (event: DragEvent<HTMLElement>) => {
     // Flex-wrap rows: only the chips on the pointer's row decide the index.
     const rects = [...event.currentTarget.querySelectorAll("[data-piece]")].map((chip) => chip.getBoundingClientRect());
     const inRow = (r: DOMRect) => event.clientY >= r.top && event.clientY <= r.bottom;
     const first = rects.findIndex(inRow);
-    if (first >= 0) setDropAt(first + dropIndex(rects.filter(inRow), event.clientX));
-    else if (dropAt === null) setDropAt(placed.length);
+    return first < 0 ? null : Math.max(k, first + dropIndex(rects.filter(inRow), event.clientX));
   };
-  const drop = (event: DragEvent) => {
+  const dragOver = (event: DragEvent<HTMLElement>) => {
+    if (locked || dragged.current === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    setDropAt(pointerIndex(event) ?? dropAt ?? placed.length);
+  };
+  const drop = (event: DragEvent<HTMLElement>) => {
     event.preventDefault();
     const p = dragged.current;
     dragged.current = null;
     setDropAt(null);
-    if (p !== null) update(insertPiece(placed, p, dropAt ?? placed.length, k));
+    // From the drop event itself: a dragleave between chips may have cleared the marker since the last dragover.
+    if (p !== null) update(insertPiece(placed, p, pointerIndex(event) ?? dropAt ?? placed.length, k));
   };
 
   return <div ref={root} className="flex flex-col gap-sm">
@@ -126,6 +135,7 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
             {dropAt === i && <span data-drop-marker aria-hidden="true" className={cn(MARKER, "-start-2xs")} />}
             <button type="button" data-piece={p} aria-label={t("slot", { n: i + 1, total: n, text: tone ? `${text}, ${t(`slotState.${tone}`)}` : text })}
               disabled={locked || isHinted} draggable={!locked && !isHinted}
+              aria-keyshortcuts={locked || isHinted ? undefined : "Alt+ArrowLeft Alt+ArrowRight"}
               onClick={(event) => update(removePiece(placed, p, k), focusedPiece(event.currentTarget, p))}
               onKeyDown={(event) => move(event, p)} onDragStart={(event) => dragStart(event, p)} onDragEnd={() => dragEnd(p)}
               className={cn(PLACED, tone ? RESULT_TONE[tone] : "cursor-grab border-primary/40 border-b-2 bg-primary/5 text-primary-strong hover:bg-primary/10")}>
@@ -144,7 +154,7 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
         {bank.map((p) => <li key={p} className="flex max-w-full">
           <button type="button" lang="ja" data-piece={p} disabled={locked} draggable={!locked}
             onClick={(event) => update(insertPiece(placed, p, placed.length, k), focusedPiece(event.currentTarget, p))}
-            onDragStart={(event) => dragStart(event, p)} onDragEnd={() => dragEnd(p)}
+            onKeyDown={altArrow} onDragStart={(event) => dragStart(event, p)} onDragEnd={() => dragEnd(p)}
             className={cn(CHIP, "min-h-control-sm cursor-grab rounded-full border-border bg-card px-sm text-body font-semibold text-foreground hover:bg-muted")}>{display[p]}</button>
         </li>)}
       </ul>}

@@ -655,7 +655,7 @@ test("15 · tap a placed piece returns it; Alt+Arrow moves a placed piece and th
   await expect(page).toHaveURL(/\/listening/); // Alt+ArrowLeft is not the browser's Back here
 });
 
-test("16 · a drag across a line change drops nothing: the new line starts empty", async ({ page }) => {
+test("16 · a drag across a line change (simulated via the workspace shortcut) drops nothing: the new line starts empty", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
   const [first, second] = (await cut(page, 0)) as [string, string];
@@ -679,8 +679,9 @@ test("16 · a drag across a line change drops nothing: the new line starts empty
   await expect.poll(() => placedTexts(page)).toEqual([first]);
 
   await dragFromBank(second);
-  // Next by keyboard, through the workspace shortcut (ArrowRight outside a control). Chromium holds native key input
-  // while Playwright's drag is in flight, so the keydown is dispatched as a DOM event.
+  // The line change is simulated: the workspace shortcut's keydown (ArrowRight outside a control) is dispatched as a
+  // DOM event, because Chromium holds native key input while Playwright's drag is in flight. This case proves the
+  // drop is ignored after a line change; it is not a keyboard-reachability test.
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.locator("body").dispatchEvent("keydown", { key: "ArrowRight", bubbles: true });
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
