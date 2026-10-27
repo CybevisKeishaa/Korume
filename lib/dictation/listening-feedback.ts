@@ -12,7 +12,8 @@ export interface FeedbackMessage { id: FeedbackId; values: Record<string, string
 
 export type FeedbackEvent =
   | { kind: "hint"; unit: "chunk" | "grapheme4"; hinted: number; total: number }
-  | { kind: "checked_word_bank"; slots: { correct: boolean; hinted: boolean }[]; previous: { wrongSlots: number[] } | null }
+  /** `slots` per answer position (the piece placed there is `chunkIndex`); `display` is the line's raw piece text. */
+  | { kind: "checked_word_bank"; slots: { chunkIndex: number; correct: boolean; hinted: boolean }[]; display: string[]; previous: { wrongPieces: number[] } | null }
   | { kind: "checked_typing"; diff: ListeningDiffOp[]; metrics: ListeningMetrics; previous: { errorCount: number } | null }
   | { kind: "retry"; previousScore: number | null }
   | { kind: "revealed" };
@@ -29,8 +30,8 @@ export function typingErrorCount(diff: ListeningDiffOp[]): number {
 
 /**
  * P14: what the learner's own action did, from the attempt's real data only. It reads no answer text but the
- * diff's own `display` characters (already on screen after Check), so a hint message cannot leak an unhinted
- * unit. A hinted part is never praised as the learner's work (D10); "fixed" and "fewer" compare two submitted
+ * diff's own `display` characters and the wrong pieces' `display` (both on screen after Check only), so a hint
+ * message cannot leak an unhinted unit. A hinted part is never praised as the learner's work (D10); "fixed" and "fewer" compare two submitted
  * results and appear only when the number is above zero.
  */
 export function listeningFeedback(event: FeedbackEvent): FeedbackMessage[] {
@@ -42,14 +43,17 @@ export function listeningFeedback(event: FeedbackEvent): FeedbackMessage[] {
     case "revealed":
       return [msg("revealed")];
     case "checked_word_bank": {
-      const { slots, previous } = event;
-      const own = (i: number) => slots[i]?.correct === true && !slots[i]?.hinted;
-      const correct = slots.filter((_, i) => own(i)).length;
+      const { slots, display, previous } = event;
+      const own = slots.filter((s) => s.correct && !s.hinted);
+      // v2 marks the hinted prefix `correct: false`: a hinted piece is neither wrong nor named.
+      const wrong = slots.filter((s) => !s.correct && !s.hinted);
       const hinted = slots.filter((s) => s.hinted).length;
-      const fixed = previous ? previous.wrongSlots.filter(own).length : 0;
-      const out = correct === slots.length
+      const fixed = previous ? own.filter((s) => previous.wrongPieces.includes(s.chunkIndex)).length : 0;
+      const shown = Array.from(wrong.map((s) => display[s.chunkIndex] ?? "").join(" "));
+      const pieces = shown.slice(0, MAX_CHARS).join("") + (shown.length > MAX_CHARS ? "…" : "");
+      const out = own.length === slots.length
         ? [msg("wb_perfect")]
-        : [msg("wb_partial", { correct, total: slots.length, wrong: slots.filter((s) => !s.correct).length }), ...(hinted > 0 ? [msg("wb_hinted", { hinted })] : [])];
+        : [msg("wb_partial", { correct: own.length, total: slots.length, wrong: wrong.length, pieces }), ...(hinted > 0 ? [msg("wb_hinted", { hinted })] : [])];
       if (fixed > 0) out.push(msg("wb_fixed", { fixed }));
       return out.slice(0, MAX_MESSAGES);
     }

@@ -3,7 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
-import { attemptBodies, calls, lesson, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
+import { attemptBodies, calls, fetchMock, lesson, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
+import type { LineChunks } from "@/lib/dictation/types";
 import { bankOrder } from "@/lib/dictation/shuffle";
 import { resetTabWritesForTests } from "../workspace-context";
 
@@ -24,7 +25,23 @@ const bankTexts = () => within(bank()).getAllByRole("button").map((chip) => chip
 const check = () => screen.getByRole("button", { name: /^(Check|Checking…)$/ });
 const feedback = () => screen.getByTestId("listening-feedback");
 const nextSentence = () => within(screen.getByTestId("practice-panel")).getByRole("button", { name: /^Next sentence/ });
-const removeButton = () => screen.getByRole("button", { name: "Remove Selected Word" });
+/** The pieces placed in the answer, as shown. */
+const placedTexts = () => [...required(slotList()).querySelectorAll("[data-piece]")].map((chip) => chip.textContent);
+/** A fresh, empty attempt on `line`: every piece in the bank, none placed. */
+const expectEmpty = async (line: LineId) => {
+  await waitFor(() => expect([...bankTexts()].sort()).toEqual([...LINES[line].display].sort()));
+  expect(placedTexts()).toEqual([]);
+};
+/** From now on the chunks route answers with `change` applied: another chunker version or line text on the server. */
+const serveChunksWith = (change: Partial<LineChunks>) => {
+  const base = required(fetchMock.getMockImplementation());
+  fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+    const response = await base(url, init) as Response;
+    if (!/\/chunks$/.test(String(url))) return response;
+    const { data } = await response.json() as { data: LineChunks };
+    return Response.json({ data: { ...data, ...change } });
+  });
+};
 const place = (text: string) => fireEvent.click(within(bank()).getByRole("button", { name: text }));
 const placeAll = (texts: readonly string[]) => texts.forEach(place);
 
@@ -50,20 +67,18 @@ beforeEach(() => {
 afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
 
 describe("ListeningModeBody — Word Bank", () => {
-  it("shows the bank in bankOrder; a chip fills the first empty slot and a placed chip goes back", async () => {
+  it("shows the bank in bankOrder; a tap appends a chip and a tap on a placed chip sends it back", async () => {
     await open();
     const shown = bankOrder(4, "line-1").map((i) => LINES["line-1"].display[i]);
     expect(bankTexts()).toEqual(shown);
-    expect(screen.getByText("Slot 2 of 4, empty")).toBeInTheDocument();
+    expect(placedTexts()).toEqual([]);
     place("今日は");
     place("雨です。");
     expect(within(required(slotList())).getByRole("button", { name: "Slot 1 of 4, 今日は" })).toBeInTheDocument();
     expect(within(required(slotList())).getByRole("button", { name: "Slot 2 of 4, 雨です。" })).toBeInTheDocument();
     expect(bankTexts()).toEqual(shown.filter((text) => text !== "今日は" && text !== "雨です。"));
     fireEvent.click(screen.getByRole("button", { name: "Slot 1 of 4, 今日は" }));
-    expect(bankTexts()).toEqual(shown.filter((text) => text !== "今日は" && text !== "雨です。")); // a tap only selects
-    fireEvent.click(removeButton());
-    expect(screen.getByText("Slot 1 of 4, empty")).toBeInTheDocument();
+    expect(placedTexts()).toEqual(["雨です。"]);
     expect(bankTexts()).toEqual(shown.filter((text) => text !== "雨です。"));
   });
 
@@ -81,10 +96,7 @@ describe("ListeningModeBody — Word Bank", () => {
     const placed = screen.getByRole("button", { name: "Slot 1 of 4, でも" });
     placed.focus();
     await user.keyboard(" ");
-    expect(placed).toHaveAttribute("aria-pressed", "true");
-    removeButton().focus();
-    await user.keyboard("{Enter}");
-    expect(screen.getByText("Slot 1 of 4, empty")).toBeInTheDocument();
+    expect(placedTexts()).toEqual([]);
     expect(bankTexts()).toContain("でも");
   });
 
@@ -137,14 +149,15 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
   });
 
-  it("locks the hinted chunk in its slot and returns the chunk that sat there to the bank once (Review Focus 3)", async () => {
+  it("locks the hinted chunk at the front and keeps every placed chunk exactly once (Review Focus 3)", async () => {
     await open();
     place("でも");
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
     const hinted = screen.getByRole("button", { name: "Slot 1 of 4, 今日は, hint" });
     expect(hinted).toBeDisabled();
     expect(hinted).toHaveTextContent("Hint");
-    expect(bankTexts().filter((text) => text === "でも")).toHaveLength(1);
+    expect(placedTexts()).toEqual(["今日はHint", "でも"]);
+    expect(bankTexts()).not.toContain("でも");
     expect(bankTexts()).not.toContain("今日は");
     expect(feedback()).toHaveTextContent("1 chunk hinted so far.");
   });
@@ -220,6 +233,27 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(feedback()).toHaveTextContent("You fixed 1 chunk since your last try.");
   });
 
+  it("no comparison across versions: Word Bank compares only with a result of the same chunker version and line text", async () => {
+    await open();
+    placeAll(["今日は", "明日は晴れ…", "雨です。", "でも"]); // slots 1, 2, 3 wrong
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("25");
+    // The line's text changed on the server: a 409 refetches chunks that carry another hash.
+    serveChunksWith({ textHash: "b".repeat(64) });
+    server.attempt = () => Promise.resolve(Response.json({ error: "line_changed" }, { status: 409 }));
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    placeAll(LINES["line-1"].display);
+    fireEvent.click(check());
+    await waitFor(() => expect(calls("/api/lines/line-1/chunks")).toHaveLength(2));
+    await expectEmpty("line-1");
+    server.attempt = (body) => Promise.resolve(serve(body));
+    placeAll(["今日は", "雨です。", "明日は晴れ…", "でも"]); // against the first result this is 1 fixed (the Try again case)
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("50");
+    expect(attemptBodies().at(-1)).toMatchObject({ textHash: "b".repeat(64) });
+    expect(feedback()).not.toHaveTextContent("You fixed");
+  });
+
   it("Show answer reveals the answer with the hints so far, keeps the video covered, scores nothing and never feeds the retry score", async () => {
     await open();
     placeAll(LINES["line-1"].display);
@@ -247,12 +281,12 @@ describe("ListeningModeBody — Word Bank", () => {
     placeAll(LINES["line-1"].display);
     fireEvent.click(check());
     fireEvent.click(nextSentence());
-    await screen.findByText("Slot 2 of 2, empty");
+    await expectEmpty("line-2");
     await act(async () => { resolve(serve(attemptBodies()[0] as AttemptBody)); });
     expect(screen.queryByTestId("listening-score")).toBeNull();
     expect(screen.queryByTestId("listening-answer")).toBeNull();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
-    expect(screen.getByText("Slot 1 of 2, empty")).toBeInTheDocument();
+    await expectEmpty("line-2");
   });
 
   it("Next sentence moves the controller and the new line starts concealed and empty", async () => {
@@ -260,7 +294,7 @@ describe("ListeningModeBody — Word Bank", () => {
     await waitFor(() => expect(yt.players).toHaveLength(1));
     place("今日は");
     fireEvent.click(nextSentence());
-    expect(await screen.findByText("Slot 1 of 2, empty")).toBeInTheDocument();
+    await expectEmpty("line-2");
     expect(screen.getByRole("button", { name: /^Sentence 2,/ })).toHaveAttribute("aria-current", "true");
     expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
@@ -276,9 +310,8 @@ describe("ListeningModeBody — Word Bank", () => {
     fireEvent.click(check());
     expect(await screen.findByRole("alert")).toHaveTextContent("This sentence changed, start again");
     await waitFor(() => expect(calls("/api/lines/line-1/chunks")).toHaveLength(2));
-    expect(await screen.findByText("Slot 1 of 4, empty")).toBeInTheDocument();
+    await expectEmpty("line-1");
     expect(screen.getByRole("alert")).toHaveTextContent("This sentence changed, start again");
-    expect(bankTexts()).toHaveLength(4);
   });
 
   it("moves an unreliable Word Bank line to format=typing by the URL, rendering no practice control until it agrees (D9, P10)", async () => {
@@ -489,6 +522,27 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     expect(feedback()).toHaveTextContent("1 fewer character error than your last try.");
   });
 
+  it("no comparison across versions: Typing names fewer errors only against a result of the same chunker version", async () => {
+    await openTyping("line-4");
+    typeInto("テストはいいてす");
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("88");
+    serveChunksWith({ version: 2 });
+    server.attempt = () => Promise.resolve(Response.json({ error: "line_changed" }, { status: 409 }));
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    typeInto("テスト");
+    fireEvent.click(check());
+    await waitFor(() => expect(calls("/api/lines/line-4/chunks")).toHaveLength(2));
+    await waitFor(() => expect(input()).toHaveValue(""));
+    server.attempt = (body) => Promise.resolve(serve(body));
+    typeInto("テストはいいです");
+    fireEvent.click(check());
+    expect(await screen.findByTestId("listening-score")).toHaveTextContent("100");
+    expect(attemptBodies().at(-1)).toMatchObject({ version: 2 });
+    expect(feedback()).toHaveTextContent("Every character written from memory.");
+    expect(feedback()).not.toHaveTextContent("fewer");
+  });
+
   it("shows Kanji and Grammar only when the line has them, and remarks on one only when it is below Recall", async () => {
     await openTyping("line-2");
     typeInto("今日わ雨です");
@@ -569,7 +623,7 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     searchParams = new URLSearchParams("line=line-2&format=word_bank");
     view.rerender(shell());
     expect(frames.find((frame) => frame.attempt === before + 2)).toEqual({ attempt: before + 2, subtitle: false, cover: true, filled: 0, typed: null, answer: false, korume: null });
-    expect(screen.getByText("Slot 1 of 2, empty")).toBeInTheDocument();
+    await expectEmpty("line-2");
   });
 
   it("on an unreliable line disables Word Bank with the reason and shows the notice", async () => {

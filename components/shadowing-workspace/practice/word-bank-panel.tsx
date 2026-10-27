@@ -1,35 +1,42 @@
 "use client";
 
-import { useId, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { bankOrder } from "@/lib/dictation/shuffle";
+import { insertPiece, movePiece, removePiece, withHints } from "@/lib/dictation/word-bank-answer";
 import { cn } from "@/lib/utils";
 import { BOX, CheckButton, EYEBROW, PuzzleHeader } from "./listening-puzzle";
-import { PracticeGlyph } from "./practice-glyph";
 
 type SlotResult = { correct: boolean; hinted: boolean };
-const CHIP = "inline-flex items-center gap-xs border font-jp disabled:cursor-default";
-const PLACED = `${CHIP} h-control-md min-w-[var(--control-md)] justify-center rounded-full px-xs text-body font-medium`;
+const CHIP = "inline-flex max-w-full items-center gap-xs break-all border font-jp disabled:cursor-default";
+const PLACED = `${CHIP} min-h-control-md min-w-[var(--control-md)] justify-center rounded-full px-xs text-body font-medium`;
+const MARKER = "pointer-events-none absolute inset-y-0 w-0.5 rounded-full bg-primary";
 const RESULT_TONE = {
   correct: "border-success bg-success/10 text-success-strong",
   wrong: "border-danger bg-danger/10 text-danger-strong",
   hinted: "border-accent bg-accent/10 text-accent-strong",
 } as const;
 
+/** Insertion index for a pointer at `x` over one row of placed pieces: the pieces whose centre lies left of it. */
+export function dropIndex(rects: DOMRect[], x: number): number {
+  return rects.filter((r) => r.left + r.width / 2 < x).length;
+}
+
 /**
- * Word Bank (spec 5.5, 5.7): the line's chunks, shuffled by `bankOrder(n, lineId)`, go into numbered slots.
- * Only the raw `display` strings are shown (P13); the arrangement sent to Check is chunk indices. A hinted chunk
- * is locked in its own slot and whatever sat there goes back to the bank, derived on every render so a chunk is
- * never lost or shown twice (Review Focus 3). A tap on a placed chunk selects it; Remove Selected Word sends it
- * back. Mounted with a key per line + format + attempt (P11), so a new attempt starts with empty slots.
+ * Word Bank (WP spec §3.2-§3.3): the answer is an ordered list of piece indices, never slots. The hinted pieces
+ * form a locked prefix, re-derived from `hinted` on every render (`withHints`), so a hint moves a placed piece to
+ * the front and nothing is lost or shown twice. A piece is identified by its index everywhere: keys, `data-piece`,
+ * drag payloads, `chunkOrder`. Tap or Enter appends a bank piece and returns a placed one; drag inserts at the
+ * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
+ * drag from an older line drops nothing here.
  */
 export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, onCheck, onProgress }: {
   lineId: string;
   display: string[];
   hinted: number[];
-  /** Per-slot verdicts after a successful Check. */
+  /** Per answer position verdicts after a successful Check. */
   results: SlotResult[] | null;
-  /** Show answer: the slots show the reference order. */
+  /** Show answer: the answer shows the reference order. */
   revealed: boolean;
   submitting: boolean;
   /** The Show Hint pill, or null once the attempt is answered. */
@@ -40,69 +47,108 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
   const t = useTranslations("shadowing.workspace.practice.listening");
   const bankLabel = useId();
   const n = display.length;
-  const [placed, setPlaced] = useState<(number | null)[]>(() => Array.from({ length: n }, () => null));
-  const [selected, setSelected] = useState<number | null>(null);
+  const [answer, setAnswer] = useState<number[]>([]);
+  const [dropAt, setDropAt] = useState<number | null>(null);
+  const [announcement, setAnnouncement] = useState("");
+  /** The piece this panel's own drag carries: a drag that began on another panel finds null here. */
+  const dragged = useRef<number | null>(null);
+  /** A chip that had focus and moved (tray <-> bank, or one place): focus follows it after the commit. */
+  const refocus = useRef<number | null>(null);
+  const root = useRef<HTMLDivElement>(null);
   const order = useMemo(() => bankOrder(n, lineId), [n, lineId]);
-  const hintedSet = new Set(hinted);
-  const slots = revealed ? order.map((_, i) => i)
-    : placed.map((chunk, i) => hintedSet.has(i) ? i : chunk !== null && hintedSet.has(chunk) ? null : chunk);
-  const bank = order.filter((chunk) => !slots.includes(chunk));
+  const placed = revealed ? order.map((_, i) => i) : withHints(answer, hinted);
+  const k = revealed ? n : hinted.length;
+  const bank = order.filter((p) => !placed.includes(p));
   const locked = revealed || results !== null || submitting;
-  const complete = slots.every((chunk) => chunk !== null);
-  // A selection survives only while its slot still holds a removable chunk.
-  const picked = !locked && selected !== null && slots[selected] !== null && !hintedSet.has(selected) ? selected : null;
 
-  const update = (next: (number | null)[]) => {
-    setPlaced(next);
-    onProgress(next.some((chunk, i) => chunk !== null && !hintedSet.has(i)));
+  useEffect(() => {
+    if (refocus.current === null) return;
+    root.current?.querySelector<HTMLElement>(`[data-piece='${refocus.current}']`)?.focus();
+    refocus.current = null;
+  });
+
+  const update = (next: number[], focused: number | null = null) => {
+    if (locked) return;
+    refocus.current = focused;
+    setAnswer(next);
+    onProgress(next.length > k);
   };
-  const place = (chunk: number) => {
-    const empty = slots.indexOf(null);
-    if (empty === -1) return;
-    update(slots.map((current, i) => i === empty ? chunk : current));
+  const focusedPiece = (target: EventTarget, p: number) => target === document.activeElement ? p : null;
+  const move = (event: KeyboardEvent, p: number) => {
+    if (!event.altKey || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
+    event.preventDefault(); // Alt+ArrowLeft is also the browser's Back
+    if (locked) return;
+    const next = movePiece(placed, p, event.key === "ArrowLeft" ? -1 : 1, k);
+    update(next, p);
+    setAnnouncement(t("moved", { text: display[p] ?? "", n: next.indexOf(p) + 1, total: n }));
   };
-  const removePicked = () => {
-    if (picked === null) return;
-    update(slots.map((current, i) => i === picked ? null : current));
-    setSelected(null);
+  const dragStart = (event: DragEvent, p: number) => {
+    dragged.current = p;
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", display[p] ?? "");
+  };
+  /** A placed piece dropped anywhere but the answer goes back to the bank; a bank piece stays (spec §3.3). */
+  const dragEnd = (p: number) => {
+    if (dragged.current === p && placed.includes(p)) update(removePiece(placed, p, k));
+    dragged.current = null;
+    setDropAt(null);
+  };
+  const dragOver = (event: DragEvent<HTMLElement>) => {
+    if (locked || dragged.current === null) return;
+    event.preventDefault();
+    event.dataTransfer.dropEffect = "move";
+    // Flex-wrap rows: only the chips on the pointer's row decide the index.
+    const rects = [...event.currentTarget.querySelectorAll("[data-piece]")].map((chip) => chip.getBoundingClientRect());
+    const inRow = (r: DOMRect) => event.clientY >= r.top && event.clientY <= r.bottom;
+    const first = rects.findIndex(inRow);
+    if (first >= 0) setDropAt(first + dropIndex(rects.filter(inRow), event.clientX));
+    else if (dropAt === null) setDropAt(placed.length);
+  };
+  const drop = (event: DragEvent) => {
+    event.preventDefault();
+    const p = dragged.current;
+    dragged.current = null;
+    setDropAt(null);
+    if (p !== null) update(insertPiece(placed, p, dropAt ?? placed.length, k));
   };
 
-  return <div className="flex flex-col gap-sm">
+  return <div ref={root} className="flex flex-col gap-sm">
     <PuzzleHeader eyebrow={t("puzzle.wordBank")} status={t("puzzle.remaining", { count: bank.length })} hint={hint} />
-    <ol aria-label={t("answerSlots")} className={cn(BOX, "flex flex-wrap justify-center gap-xs")}>
-      {slots.map((chunk, i) => {
-        const isHinted = hintedSet.has(i) && !revealed;
-        const verdict = results?.[i];
-        const tone = verdict ? verdict.hinted ? "hinted" : verdict.correct ? "correct" : "wrong" : isHinted ? "hinted" : null;
-        const state = tone ?? (picked === i ? "selected" : null);
-        const label = (text: string) => t("slot", { n: i + 1, total: n, text: state ? `${text}, ${t(`slotState.${state}`)}` : text });
-        return <li key={i} data-slot={i} data-result={verdict ? tone : undefined}>
-          {chunk === null
-            ? <span className="inline-flex h-control-md min-w-[var(--control-md)] items-center justify-center rounded-full border border-dashed border-muted-foreground/50 px-xs">
-              <span className="sr-only">{t("slotEmpty", { n: i + 1, total: n })}</span>
-            </span>
-            : <button type="button" aria-label={label(display[chunk] ?? "")} aria-pressed={locked || isHinted ? undefined : picked === i}
-              disabled={locked || isHinted} onClick={() => setSelected(picked === i ? null : i)}
-              className={cn(PLACED, tone ? RESULT_TONE[tone] : picked === i ? "border-primary bg-primary/10 text-primary-strong ring-2 ring-primary/40" : "border-primary/40 border-b-2 bg-primary/5 text-primary-strong hover:bg-primary/10")}>
-              <span lang="ja">{display[chunk]}</span>
+    <div className={cn(BOX, dropAt !== null && "ring-2 ring-primary/40")} onDragOver={dragOver} onDrop={drop}
+      onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropAt(null); }}>
+      <ol aria-label={t("answerSlots")} className="flex min-h-control-md flex-wrap justify-center gap-xs">
+        {placed.map((p, i) => {
+          const isHinted = i < k && !revealed;
+          const verdict = results?.[i];
+          const tone = verdict ? verdict.hinted ? "hinted" : verdict.correct ? "correct" : "wrong" : isHinted ? "hinted" : null;
+          const text = display[p] ?? "";
+          return <li key={p} data-slot={i} data-result={verdict ? tone : undefined} className="relative flex max-w-full">
+            {dropAt === i && <span data-drop-marker aria-hidden="true" className={cn(MARKER, "-start-2xs")} />}
+            <button type="button" data-piece={p} aria-label={t("slot", { n: i + 1, total: n, text: tone ? `${text}, ${t(`slotState.${tone}`)}` : text })}
+              disabled={locked || isHinted} draggable={!locked && !isHinted}
+              onClick={(event) => update(removePiece(placed, p, k), focusedPiece(event.currentTarget, p))}
+              onKeyDown={(event) => move(event, p)} onDragStart={(event) => dragStart(event, p)} onDragEnd={() => dragEnd(p)}
+              className={cn(PLACED, tone ? RESULT_TONE[tone] : "cursor-grab border-primary/40 border-b-2 bg-primary/5 text-primary-strong hover:bg-primary/10")}>
+              <span lang="ja">{text}</span>
               {isHinted && <span aria-hidden="true" className="rounded-full bg-accent/20 px-xs text-caption text-accent-strong">{t("hint")}</span>}
-            </button>}
-        </li>;
-      })}
-    </ol>
-    {!revealed && results === null && <button type="button" aria-disabled={picked === null} onClick={removePicked}
-      className="inline-flex h-control-sm items-center justify-center gap-xs rounded-full border border-border text-caption font-semibold text-muted-foreground hover:bg-muted aria-disabled:opacity-50">
-      <PracticeGlyph name="listening-remove-word" />{t("removeSelected")}
-    </button>}
+            </button>
+            {dropAt === placed.length && i === placed.length - 1 && <span data-drop-marker aria-hidden="true" className={cn(MARKER, "-end-2xs")} />}
+          </li>;
+        })}
+      </ol>
+    </div>
+    <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className={BOX}>
       <p id={bankLabel} className={cn(EYEBROW, "mb-xs")}>{t("bank")}</p>
       {bank.length > 0 && <ul aria-labelledby={bankLabel} className="flex flex-wrap gap-xs">
-        {bank.map((chunk) => <li key={chunk}>
-          <button type="button" lang="ja" disabled={locked} onClick={() => place(chunk)}
-            className={cn(CHIP, "h-control-sm rounded-full border-border bg-card px-sm text-body font-semibold text-foreground hover:bg-muted")}>{display[chunk]}</button>
+        {bank.map((p) => <li key={p} className="flex max-w-full">
+          <button type="button" lang="ja" data-piece={p} disabled={locked} draggable={!locked}
+            onClick={(event) => update(insertPiece(placed, p, placed.length, k), focusedPiece(event.currentTarget, p))}
+            onDragStart={(event) => dragStart(event, p)} onDragEnd={() => dragEnd(p)}
+            className={cn(CHIP, "min-h-control-sm cursor-grab rounded-full border-border bg-card px-sm text-body font-semibold text-foreground hover:bg-muted")}>{display[p]}</button>
         </li>)}
       </ul>}
     </div>
-    {!revealed && results === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={!complete || submitting} onClick={() => onCheck(slots as number[])} />}
+    {!revealed && results === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={placed.length < n || submitting} onClick={() => onCheck(placed)} />}
   </div>;
 }

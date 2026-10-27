@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import { FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
 import { lineStart, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
@@ -13,11 +13,12 @@ import { toFurigana } from "@/lib/japanese/furigana";
  */
 test.use({ viewport: { width: 1280, height: 529 } });
 
+// The pieces each line is cut into are read from the page's own GET …/chunks response (`cut`), never hard-coded.
 const LINES = [
-  { text: "毎日日本語を勉強しました。", chunks: ["毎日", "日本語を", "勉強しました。"] },
-  { text: "私は「はい」と言った。", chunks: ["私は", "「はい」と", "言った。"] },
-  { text: "今日はいい天気ですね？", chunks: ["今日は", "いい", "天気ですね？"] },
-  { text: "注文をお願いします。", chunks: ["注文を", "お願いします。"] },
+  { text: "毎日日本語を勉強しました。" },
+  { text: "私は「はい」と言った。" },
+  { text: "今日はいい天気ですね？" },
+  { text: "注文をお願いします。" },
 ] as const;
 const UNRELIABLE = 4;
 
@@ -83,7 +84,25 @@ async function expectNoSurface(page: Page, kinds: Surface["kind"][] = ANSWER_KIN
   expect(await surfaces(page, kinds)).toEqual([]);
 }
 
+/** Each line's pieces in reference order (`display`), as the page's own GET /api/lines/{id}/chunks returned them. */
+const cuts = new WeakMap<Page, Map<string, string[]>>();
+function trackCuts(page: Page): void {
+  const seen = new Map<string, string[]>();
+  cuts.set(page, seen);
+  page.on("response", async (response) => {
+    const id = new URL(response.url()).pathname.match(/^\/api\/lines\/([^/]+)\/chunks$/)?.[1];
+    if (!id || !response.ok()) return;
+    try { seen.set(id, ((await response.json()) as { data: { display: string[] } }).data.display); } catch { /* page closed */ }
+  });
+}
+async function cut(page: Page, index: number): Promise<string[]> {
+  const id = data.lineIds[index] ?? "";
+  await expect.poll(() => cuts.get(page)?.has(id)).toBe(true);
+  return cuts.get(page)?.get(id) ?? [];
+}
+
 async function registerLearner(page: Page): Promise<void> {
+  trackCuts(page);
   await page.route(/youtube\.com|youtube-nocookie\.com|googlevideo\.com/, (route) => route.abort());
   await installFakeYouTube(page, { duration: VIDEO_DURATION });
   await installSurfaceObserver(page);
@@ -114,9 +133,11 @@ const typingInput = (page: Page) => practice(page).getByRole("textbox", { name: 
 const formatRadio = (page: Page, name: "Word Bank" | "Typing") => practice(page).getByRole("radiogroup", { name: "Listening format" }).getByRole("radio", { name });
 const button = (page: Page, name: string) => practice(page).getByRole("button", { name, exact: true });
 
-async function place(page: Page, chunks: readonly string[]): Promise<void> {
-  for (const chunk of chunks) await bank(page).getByRole("button", { name: chunk, exact: true }).click();
+/** Taps each piece in the bank, in order; two pieces with the same text are interchangeable (LCS by text). */
+async function place(page: Page, pieces: readonly string[]): Promise<void> {
+  for (const piece of pieces) await bank(page).getByRole("button", { name: piece, exact: true }).first().click();
 }
+const placedTexts = (page: Page) => slots(page).locator("[data-piece] [lang='ja']").allTextContents();
 
 async function expectConcealed(page: Page): Promise<void> {
   await expect(page.getByTestId("listen-cover")).toBeVisible();
@@ -128,10 +149,12 @@ async function expectConcealed(page: Page): Promise<void> {
   await expect(korume(page)).toHaveCount(0);
 }
 
-async function expectEmptyBank(page: Page, n: number): Promise<void> {
-  await expect(slots(page)).toHaveCount(n);
-  await expect(slots(page).getByRole("button")).toHaveCount(0);
-  await expect(bank(page).getByRole("button")).toHaveCount(n);
+/** A fresh attempt on line `index`: nothing placed, every piece of its cut in the bank. */
+async function expectEmptyBank(page: Page, index: number): Promise<void> {
+  const pieces = await cut(page, index);
+  await expect(slots(page)).toHaveCount(0);
+  await expect(bank(page).getByRole("button")).toHaveCount(pieces.length);
+  expect((await bank(page).getByRole("button").allTextContents()).sort()).toEqual([...pieces].sort());
 }
 
 /** Holds the next attempt POST: the figure must be absent while it is pending (P15), then the response lands. */
@@ -228,10 +251,11 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
   await registerLearner(page);
   await openLesson(page);
   await expect(korume(page)).toHaveCount(0);
-  await place(page, LINES[0].chunks);
+  const pieces = await cut(page, 0);
+  await place(page, pieces);
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
-  for (const index of [0, 1, 2]) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
+  for (const index of pieces.keys()) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
   await expect(feedback(page)).toContainText("You arranged the whole sentence yourself!");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
   await expect(page.getByTestId("workspace-subtitle")).toHaveText(LINES[0].text);
@@ -243,7 +267,7 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
   await resetSurfaces(page);
   await button(page, "Next sentence").click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
-  await expectEmptyBank(page, LINES[1].chunks.length);
+  await expectEmptyBank(page, 1);
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
 });
@@ -255,7 +279,7 @@ test("3b · a delayed Check whose attempt was discarded never shows the figure o
   const gate = new Promise<void>((resolve) => { release = resolve; });
   const response = page.waitForResponse((r) => r.url().endsWith("/api/dictation/attempt"));
   await page.route("**/api/dictation/attempt", async (route) => { await gate; await route.continue(); }, { times: 1 });
-  await place(page, LINES[0].chunks);
+  await place(page, await cut(page, 0));
   await button(page, "Check").click();
   await expect(feedback(page)).toContainText("Checking…");
   // Try again is not offered while a Check is pending; leaving the line and coming back discards the attempt
@@ -264,13 +288,13 @@ test("3b · a delayed Check whose attempt was discarded never shows the figure o
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^1\//);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   await resetSurfaces(page);
   release();
   expect((await response).status()).toBe(200);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
   await expectConcealed(page);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
 });
 
 test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is counted", async ({ page }) => {
@@ -278,48 +302,50 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   await openLesson(page);
   await expect(bank(page)).toBeVisible();
   const order = await bank(page).getByRole("button").allTextContents();
-  const [a, b, c] = LINES[0].chunks;
-  await place(page, [b, a, c]);
+  const pieces = await cut(page, 0);
+  const [a, b, ...rest] = pieces as [string, string, ...string[]];
+  // b a …: one of the two is outside the longest in-order run; the earliest reference match keeps a (WP §3.4).
+  await place(page, [b, a, ...rest]);
   await heldSubmit(page, () => button(page, "Check").click());
   const score = parseInt((await page.getByTestId("listening-score").textContent()) ?? "", 10);
   expect(score).toBeLessThan(100);
   await expect(slot(page, 0)).toHaveAttribute("data-result", "wrong");
-  await expect(slot(page, 1)).toHaveAttribute("data-result", "wrong");
-  await expect(slot(page, 2)).toHaveAttribute("data-result", "correct");
-  await expect(feedback(page)).toContainText("You got 1/3 chunks right. Listen again and watch the order of the 2 chunks still wrong.");
+  for (const index of pieces.keys()) if (index > 0) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
+  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} chunks right. Listen again and watch the order of the 1 chunk still wrong. Wrong pieces: ${b}`);
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
 
   await button(page, "Try again").click();
   await expect(korume(page)).toHaveCount(0);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   expect(await bank(page).getByRole("button").allTextContents()).toEqual(order);
   await expectConcealed(page);
   await expect(feedback(page)).toContainText(`New attempt. Your last score on this sentence was ${score}.`);
-  await place(page, LINES[0].chunks);
+  await place(page, pieces);
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
-  await expect(feedback(page)).toContainText("You fixed 2 chunks since your last try.");
+  await expect(feedback(page)).toContainText("You fixed 1 chunk since your last try.");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
 });
 
-test("5 · Hint replaces a wrong chunk in its slot; the hinted slot counts as hinted, never as correct", async ({ page }) => {
+test("5 · Hint moves the next piece to the front, keeping the placed one; the hinted piece counts as hinted, never as correct", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  const [a, b, c] = LINES[0].chunks;
+  const pieces = await cut(page, 0);
+  const [a, b, ...rest] = pieces as [string, string, ...string[]];
   await place(page, [b]);
   await button(page, "Hint").click();
-  await expect(slot(page, 0).getByRole("button")).toHaveAccessibleName(`Slot 1 of 3, ${a}, hint`);
+  await expect(slot(page, 0).getByRole("button")).toHaveAccessibleName(`Slot 1 of ${pieces.length}, ${a}, hint`);
   await expect(slot(page, 0).getByRole("button")).toBeDisabled();
   await expect(slot(page, 0)).toContainText("Hint");
-  await expect(bank(page).getByRole("button", { name: b, exact: true })).toBeVisible();
+  await expect(slot(page, 1).getByRole("button")).toHaveAccessibleName(`Slot 2 of ${pieces.length}, ${b}`);
+  await expect(bank(page).getByRole("button", { name: b, exact: true })).toHaveCount(0);
   await expect(bank(page).getByRole("button", { name: a, exact: true })).toHaveCount(0);
   await expect(korume(page)).toHaveCount(0);
-  await place(page, [b, c]);
+  await place(page, rest);
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(slot(page, 0)).toHaveAttribute("data-result", "hinted");
-  await expect(slot(page, 1)).toHaveAttribute("data-result", "correct");
-  await expect(slot(page, 2)).toHaveAttribute("data-result", "correct");
-  await expect(feedback(page)).toContainText("You got 2/3 chunks right.");
+  for (const index of pieces.keys()) if (index > 0) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
+  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} chunks right.`);
   await expect(feedback(page)).toContainText("1 hinted chunk doesn't count as your own.");
   await expect(feedback(page)).not.toContainText("whole sentence yourself");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
@@ -337,7 +363,7 @@ test("6 · Show answer: revealed, no score, video still covered; navigator, stri
   await page.waitForTimeout(300);
   const said = (await surfaces(page, ["feedback"])).map((surface) => surface.text);
   expect(said.length).toBeGreaterThan(0);
-  for (const unhinted of LINES[0].chunks.slice(1)) for (const text of said) expect(text).not.toContain(unhinted);
+  for (const unhinted of (await cut(page, 0)).slice(1)) for (const text of said) expect(text).not.toContain(unhinted);
   await expect(korume(page)).toHaveCount(0);
 
   await heldSubmit(page, () => button(page, "Show answer").click());
@@ -384,7 +410,7 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
   await typingInput(page).evaluate((input) => input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true })));
 
   await button(page, "Hint").click();
-  await expect(practice(page).getByTestId("typing-hint")).toContainText(LINES[0].chunks[0]);
+  await expect(practice(page).getByTestId("typing-hint")).toContainText((await cut(page, 0)).at(0) ?? "");
   await expect(typingInput(page)).toHaveValue("毎日日");
 
   await typingInput(page).fill("毎日日本語お勉強しました。");
@@ -401,19 +427,20 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
 test("8 · changing sentence mid-attempt discards it; returning shows a fresh, concealed attempt", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await place(page, LINES[0].chunks.slice(0, 2));
+  const pieces = await cut(page, 0);
+  await place(page, pieces.slice(0, 2));
   await resetSurfaces(page);
   await button(page, "Next sentence").click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
-  await expectEmptyBank(page, LINES[1].chunks.length);
+  await expectEmptyBank(page, 1);
   await expectConcealed(page);
   await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   await expectConcealed(page);
   await expectNoSurface(page);
 
   // A checked line, left and returned to, shows no old answer.
-  await place(page, LINES[0].chunks);
+  await place(page, pieces);
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await navigator(page).getByRole("button", { name: /^Sentence 2,/ }).click();
@@ -421,7 +448,7 @@ test("8 · changing sentence mid-attempt discards it; returning shows a fresh, c
   await resetSurfaces(page);
   await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^1\//);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
 
@@ -451,26 +478,27 @@ test("9 · changing format: confirm before discarding; a checked Word Bank answe
   await formatRadio(page, "Word Bank").click();
   await dialog.getByRole("button", { name: "Discard and switch" }).click();
   await expect(page).toHaveURL(/format=word_bank/);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   await expectConcealed(page);
 
-  await place(page, LINES[0].chunks);
+  await place(page, await cut(page, 0));
+  // Until the picker (Task 9) every format reads the dictation stats; the saved Check is what refreshes them.
+  const stats = page.waitForRequest((request) => request.url().includes("/practice-stats?mode=dictation"));
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(page.getByTestId("workspace-subtitle")).toBeVisible();
+  await stats;
   await resetSurfaces(page);
-  const stats = page.waitForRequest((request) => request.url().includes("/practice-stats?mode=typing"));
   await formatRadio(page, "Typing").click();
   await expect(page).toHaveURL(/format=typing/);
-  await stats;
   await expect(typingInput(page)).toHaveValue("");
-  await expect(strip(page)).toHaveAttribute("data-mode", "typing");
-  await expect(strip(page).locator("[data-stat='scored'] dt")).toHaveText("Typing · Submitted");
+  await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
+  await expect(strip(page).locator("[data-stat='scored'] dt")).toHaveText("Dictation · Submitted");
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
   await formatRadio(page, "Word Bank").click();
   await expect(page).toHaveURL(/format=word_bank/);
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 0);
   await expectConcealed(page);
 });
 
@@ -484,7 +512,7 @@ test("10 · D9: an unreliable line opened as Word Bank moves to Typing in the UR
   await expect(formatRadio(page, "Word Bank")).toBeDisabled();
   await expect(formatRadio(page, "Word Bank")).toHaveAttribute("title", "This sentence can't be split reliably, so it's Typing only");
   await expect(formatRadio(page, "Typing")).toHaveAttribute("aria-checked", "true");
-  await expect(strip(page)).toHaveAttribute("data-mode", "typing");
+  await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
   await expect(typingInput(page)).toBeVisible();
   await expect(bank(page)).toHaveCount(0);
 });
@@ -492,13 +520,14 @@ test("10 · D9: an unreliable line opened as Word Bank moves to Typing in the UR
 test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; a chunks failure offers Retry", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await place(page, LINES[0].chunks);
+  const pieces = await cut(page, 0);
+  await place(page, pieces);
   await resetSurfaces(page);
   for (const fail of ["abort", "500"] as const) {
     await page.route("**/api/dictation/attempt", (route) => fail === "abort" ? route.abort() : route.fulfill({ status: 500, json: { error: "server" } }), { times: 1 });
     await button(page, "Check").click();
     await expect(practice(page).getByRole("alert")).toHaveText("Your answer could not be checked. It is kept here, so try again.");
-    await expect(slots(page).getByRole("button")).toHaveCount(3);
+    expect(await placedTexts(page)).toEqual(pieces);
     await expect(button(page, "Check")).toBeEnabled();
     await expectConcealed(page);
   }
@@ -509,11 +538,11 @@ test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; 
 
   await button(page, "Next sentence").click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
-  await place(page, LINES[1].chunks);
+  await place(page, await cut(page, 1));
   await page.route("**/api/dictation/attempt", (route) => route.fulfill({ status: 409, json: { error: "line_changed" } }), { times: 1 });
   await button(page, "Check").click();
   await expect(practice(page).getByRole("alert")).toHaveText("This sentence changed, start again");
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 1);
   await expectConcealed(page);
 
   await page.route("**/api/lines/*/chunks", (route) => route.fulfill({ status: 500, json: { error: "server" } }));
@@ -524,7 +553,7 @@ test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; 
   await expectConcealed(page);
   await page.unroute("**/api/lines/*/chunks");
   await practice(page).getByRole("button", { name: "Retry" }).click();
-  await expectEmptyBank(page, 3);
+  await expectEmptyBank(page, 2);
   await expectConcealed(page);
 });
 
@@ -554,7 +583,7 @@ test("12 · legacy dictation deep links land on Listening's Typing format, in bo
     await expect(page).toHaveURL(new RegExp(`line=${line}`));
     await expect(page.getByTestId("practice-panel").locator("input")).toBeVisible();
     await expect(stat(page, "sentence")).toHaveText(/^3\//);
-    await expect(strip(page)).toHaveAttribute("data-mode", "typing");
+    await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
     await expectConcealed(page);
     await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
   }
@@ -563,7 +592,7 @@ test("12 · legacy dictation deep links land on Listening's Typing format, in bo
 test("13 · the mission counts one line for Word Bank + Typing on it, and nothing for Show answer (P9)", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await place(page, LINES[0].chunks);
+  await place(page, await cut(page, 0));
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await formatRadio(page, "Typing").click();
@@ -581,23 +610,80 @@ test("13 · the mission counts one line for Word Bank + Typing on it, and nothin
   await expect(listening).toContainText("1/5");
 });
 
-test("14 · a tap on a placed chunk selects it; Remove Selected Word returns it and keeps the focus on the button", async ({ page }) => {
+/** Drags `source` onto `target`'s left edge, so the drop marker sits before `target` (WP §3.3). */
+async function dragBefore(page: Page, source: Locator, target: Locator): Promise<void> {
+  const box = await target.boundingBox();
+  if (!box) throw new Error("drop target has no box");
+  await source.dragTo(target, { targetPosition: { x: 2, y: box.height / 2 } });
+}
+
+test("14 · drag a bank piece between two placed pieces; drag a placed piece to the front, or out to the bank", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await place(page, LINES[0].chunks.slice(0, 2));
-  const remove = button(page, "Remove Selected Word");
-  await expect(remove).toHaveAttribute("aria-disabled", "true");
-  const [a, b] = LINES[0].chunks;
-  await slot(page, 0).getByRole("button").click();
-  await expect(slot(page, 0).getByRole("button")).toHaveAttribute("aria-pressed", "true");
-  await expect(slot(page, 0).getByRole("button")).toHaveAccessibleName(`Slot 1 of 3, ${a}, selected`);
-  await expect(bank(page).getByRole("button", { name: a, exact: true })).toHaveCount(0); // a tap alone removes nothing
-  await remove.focus();
-  await remove.press("Enter");
-  await expect(slots(page).getByRole("button")).toHaveCount(1);
-  await expect(slot(page, 1).getByRole("button")).toHaveAccessibleName(`Slot 2 of 3, ${b}`);
-  await expect(bank(page).getByRole("button", { name: a, exact: true })).toBeVisible();
-  await expect(remove).toHaveAttribute("aria-disabled", "true");
-  await expect(remove).toBeFocused(); // aria-disabled, not disabled: focus must not drop to the body
-  await expect(practice(page)).toContainText("2 words remaining");
+  const [a, b, c] = (await cut(page, 0)) as [string, string, string];
+  await place(page, [a, c]);
+  await dragBefore(page, bank(page).getByRole("button", { name: b, exact: true }), slots(page).nth(1).getByRole("button"));
+  await expect.poll(() => placedTexts(page)).toEqual([a, b, c]);
+  await dragBefore(page, slots(page).nth(2).getByRole("button"), slots(page).nth(0).getByRole("button"));
+  await expect.poll(() => placedTexts(page)).toEqual([c, a, b]);
+  // Dropped anywhere but the answer, a placed piece goes back to the bank.
+  await slots(page).nth(0).getByRole("button").dragTo(bank(page));
+  await expect.poll(() => placedTexts(page)).toEqual([a, b]);
+  await expect(bank(page).getByRole("button", { name: c, exact: true })).toBeVisible();
+  await expect(practice(page).locator("[data-drop-marker]")).toHaveCount(0);
+});
+
+test("15 · tap a placed piece returns it; Alt+Arrow moves a placed piece and the focus stays on it", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  const pieces = await cut(page, 0);
+  const [a, b, c] = pieces as [string, string, string];
+  await place(page, [a, b, c]);
+  await slots(page).nth(1).getByRole("button").click();
+  await expect.poll(() => placedTexts(page)).toEqual([a, c]);
+  await expect(bank(page).getByRole("button", { name: b, exact: true })).toBeVisible();
+  await expect(practice(page)).toContainText(`${pieces.length - 2} words remaining`);
+  await expect(slots(page).locator("[aria-pressed]")).toHaveCount(0);
+  await expect(button(page, "Remove Selected Word")).toHaveCount(0);
+
+  await slots(page).nth(1).getByRole("button").focus();
+  await page.keyboard.press("Alt+ArrowLeft");
+  await expect.poll(() => placedTexts(page)).toEqual([c, a]);
+  // In Chrome a keyed reorder can drop focus to the body; jsdom cannot show that (lessons: jsdom focus loss).
+  await expect(slots(page).nth(0).getByRole("button")).toBeFocused();
+  await expect(practice(page).getByRole("status").filter({ hasText: "position" })).toHaveText(`${c}, position 1 of ${pieces.length}`);
+  await expect(page).toHaveURL(/\/listening/); // Alt+ArrowLeft is not the browser's Back here
+});
+
+test("16 · a drag across a line change drops nothing: the new line starts empty", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  const [first, second] = (await cut(page, 0)) as [string, string];
+  const tray = practice(page).getByRole("list", { name: "Your sentence" });
+  const dragFromBank = async (text: string) => {
+    const box = await bank(page).getByRole("button", { name: text, exact: true }).first().boundingBox();
+    if (!box) throw new Error("bank chip has no box");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(box.x + box.width / 2 + 30, box.y - 20, { steps: 5 });
+  };
+  const dropOnTray = async () => {
+    const box = await tray.boundingBox();
+    if (!box) throw new Error("answer tray has no box");
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+    await page.mouse.up();
+  };
+  // Positive control: the same gesture without a line change does place the piece.
+  await dragFromBank(first);
+  await dropOnTray();
+  await expect.poll(() => placedTexts(page)).toEqual([first]);
+
+  await dragFromBank(second);
+  // Next by keyboard, through the workspace shortcut (ArrowRight outside a control). Chromium holds native key input
+  // while Playwright's drag is in flight, so the keydown is dispatched as a DOM event.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  await page.locator("body").dispatchEvent("keydown", { key: "ArrowRight", bubbles: true });
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
+  await dropOnTray();
+  await expectEmptyBank(page, 1);
 });

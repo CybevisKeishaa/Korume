@@ -131,7 +131,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     await checkPerfect();
     const before = probe.reveal?.attempt ?? -1;
     fireEvent.click(nextSentence());
-    await screen.findByText("Slot 1 of 2, empty");
+    await waitFor(() => expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent).sort()).toEqual([...LINES["line-2"].display].sort()));
     expect(frames.find((frame) => frame.attempt === before + 1)).toMatchObject({ answer: false, korume: null });
     expect(figure()).toBeNull();
   });
@@ -166,7 +166,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     LINE.forEach(place);
     fireEvent.click(check());
     fireEvent.click(nextSentence());
-    await screen.findByText("Slot 1 of 2, empty");
+    await waitFor(() => expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent).sort()).toEqual([...LINES["line-2"].display].sort()));
     await release();
     expect(figure()).toBeNull();
   });

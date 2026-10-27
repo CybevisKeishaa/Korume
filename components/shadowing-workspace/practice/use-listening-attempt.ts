@@ -11,7 +11,8 @@ import { useListeningReveal } from "./listening-reveal-context";
 import { usePracticeStats } from "./practice-stats-context";
 
 export type ListeningAttemptError = "network" | "line_changed" | "rate_limited";
-export interface PreviousResult { score: number; ownCorrect?: number; wrongSlots?: number[]; errorCount?: number }
+/** A submitted result as later attempts compare with it; `version` + `textHash` say which cut of the line it scored. */
+export interface PreviousResult { score: number; ownCorrect?: number; wrongPieces?: number[]; errorCount?: number; version: number; textHash: string }
 type SubmitPayload = { chunkOrder: number[] } | { input: string };
 /** What a new attempt inherits from the one it replaces: a Try again, or a restart after `line_changed`. */
 type Carry = { lineKey: string; retry: boolean; error: ListeningAttemptError | null };
@@ -36,12 +37,14 @@ const fresh = (key: string, carry: Carry | null): AttemptState => ({
   error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null,
 });
 
-function summarize(data: ListeningSubmitData): PreviousResult {
+function summarize(data: ListeningSubmitData, { version, textHash }: LineChunks): PreviousResult {
   return {
     score: data.score,
     ownCorrect: data.metrics.slots?.correct,
-    wrongSlots: data.slots?.flatMap((slot, i) => slot.correct ? [] : [i]),
+    wrongPieces: data.slots?.flatMap((slot) => slot.correct || slot.hinted ? [] : [slot.chunkIndex]),
     errorCount: data.diff ? typingErrorCount(data.diff) : undefined,
+    version,
+    textHash,
   };
 }
 
@@ -137,8 +140,10 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
     };
     return post(body, (data) => {
       const result = data as ListeningSubmitData;
-      const comparedTo = previousResults.current.get(lineKey) ?? null;
-      previousResults.current.set(lineKey, summarize(result));
+      const last = previousResults.current.get(lineKey);
+      // "fixed" / "fewer" only against the same cut of the line: never v1 against v2, never an edited line.
+      const comparedTo = last?.version === chunks.version && last.textHash === chunks.textHash ? last : null;
+      previousResults.current.set(lineKey, summarize(result, chunks));
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, result, answer: result.answer, comparedTo } : prev);
       markChecked(requestAttempt);
     });
@@ -174,7 +179,7 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
 
   const feedback: FeedbackMessage[] = state.result
     ? listeningFeedback(state.result.slots
-      ? { kind: "checked_word_bank", slots: state.result.slots, previous: state.comparedTo?.wrongSlots ? { wrongSlots: state.comparedTo.wrongSlots } : null }
+      ? { kind: "checked_word_bank", slots: state.result.slots, display: chunks?.display ?? [], previous: state.comparedTo?.wrongPieces ? { wrongPieces: state.comparedTo.wrongPieces } : null }
       : { kind: "checked_typing", diff: state.result.diff ?? [], metrics: state.result.metrics, previous: state.comparedTo?.errorCount !== undefined ? { errorCount: state.comparedTo.errorCount } : null })
     : state.revealed ? listeningFeedback({ kind: "revealed" })
     : [
