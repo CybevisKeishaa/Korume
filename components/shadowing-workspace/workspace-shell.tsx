@@ -9,7 +9,7 @@ import { usePathname } from "@/lib/i18n/navigation";
 import { listeningExercise, practiceModeFromPath, practiceStatsMode } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
-import { ListeningRevealProvider, useListeningReveal } from "./practice/listening-reveal-context";
+import { ListeningRevealProvider } from "./practice/listening-reveal-context";
 import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
 import { UnsavedTakeGuard } from "./practice/unsaved-take-guard";
@@ -17,7 +17,7 @@ import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
-import { WorkspacePlayer } from "./workspace-player";
+import { useListenDock, WorkspacePlayer } from "./workspace-player";
 import { tabPreference, useCurrentSentence, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
@@ -134,7 +134,7 @@ const DOCK_ROWS: CSSProperties = { gridTemplateRows: "auto minmax(0, 1fr) auto",
 
 /**
  * Keys the reveal state by the current line and the URL's exercise (P10, P11); its own component above the layout,
- * so a line change re-renders only this and the layout can read Ẩn video. Outside Listening the key is `null|null`,
+ * so the layout can read Ẩn video (the layout re-renders with each line change, since it reads this context). Outside Listening the key is `null|null`,
  * which no Listening frame produces (no current line keys as ""), so every entry into Listening is a key change and
  * starts concealed, even on the same line and exercise (R28).
  */
@@ -153,8 +153,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const statsMode = practiceStatsMode(mode, listeningExercise(useSearchParams().get("format")).exercise);
   const listening = mode === "listening";
   // Ẩn video docks the player under a full-width practice column; the split ratio is kept for when it goes off.
-  const { listenOnly } = useListeningReveal();
-  const dock = listening && listenOnly;
+  const dock = useListenDock();
   const { video } = useLesson();
   usePracticePlayback(mode);
   const t = useTranslations("shadowing");

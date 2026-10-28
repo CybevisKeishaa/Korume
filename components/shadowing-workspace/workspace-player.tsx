@@ -19,6 +19,14 @@ import { ReplayAudio, ReplayLoopRates } from "./practice/replay-row";
 
 const IDLE_HIDE_MS = 2500;
 
+/** Ẩn video docks the player (Ruling T1), except in Focus, which drops the practice column the dock sits under. */
+export function useListenDock(): boolean {
+  const listening = practiceModeFromPath(usePathname()) === "listening";
+  const { listenOnly } = useListeningReveal();
+  const [session] = useSession();
+  return listening && listenOnly && session.view !== "focus";
+}
+
 const ICON_BUTTON = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-pressed:text-primary-strong";
 // Secondary controls drop out of the Full Transcript PiP (`data-pip` on the pane) so its bar keeps one row.
 const PIP_HIDDEN_BUTTON = `${ICON_BUTTON} group-data-[pip]/pip:hidden`;
@@ -53,7 +61,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
   const subtitle = index === null ? null : lines[index]?.textJp ?? null;
   const listening = practiceModeFromPath(usePathname()) === "listening";
   const reveal = useListeningReveal();
-  const dock = listening && reveal.listenOnly;
+  const dock = useListenDock();
   const playPauseRef = useRef<HTMLButtonElement>(null);
   // "Hiện video" unmounts with the dock; focus moves to the bar's play/pause once it has rendered.
   const focusPlay = useRef(false);

@@ -669,7 +669,7 @@ describe("ListeningModeBody — picker and URL (spec §3.0)", () => {
     expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-2", { scroll: false });
   });
 
-  it("late response after Change exercise: stats refresh, but no result on the picker or back in the exercise (Review Focus 3)", async () => {
+  it("late response after Change exercise: the row is saved, but no result on the picker or back in the exercise (Review Focus 3)", async () => {
     let resolve: (response: Response) => void = () => undefined;
     server.attempt = () => new Promise((done) => { resolve = done; });
     const view = await open();
@@ -683,24 +683,28 @@ describe("ListeningModeBody — picker and URL (spec §3.0)", () => {
     expect(screen.getByRole("heading", { name: "How would you like to practise listening?" })).toBeInTheDocument();
     await waitFor(() => expect(dictationStats()).toBe(2)); // the picker's own progress read
     await act(async () => { resolve(serve(attemptBodies()[0] as AttemptBody)); });
-    await waitFor(() => expect(dictationStats()).toBe(3)); // the saved row refreshes the stats
+    // The saved row reaches the stats on their next read (back in the exercise, below); the stale refresh is a no-op,
+    // so it can never abort or overwrite another exercise's strip.
+    expect(dictationStats()).toBe(2);
     expect(screen.queryByTestId("listening-score")).toBeNull();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
     searchParams = new URLSearchParams("line=line-1&format=dictation");
     view.rerender(shell());
     await expectEmpty("line-1");
+    await waitFor(() => expect(dictationStats()).toBe(3));
     expect(screen.queryByTestId("listening-score")).toBeNull();
     expect(screen.queryByTestId("listening-answer")).toBeNull();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
   });
 
-  it("shows the counter in the exercise header only when the strip does not (spec §3.1)", async () => {
+  it("the sentence counter appears once, in the workspace header, with the video shown or hidden (spec §3.1)", async () => {
     await entry("line=line-2&format=dictation");
-    expect(screen.queryByTestId("listening-counter")).toBeNull();
+    const counters = () => screen.getAllByText(/Sentence 2 ?\/ ?5/);
     expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Hide video" }));
     expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
-    expect(screen.getByTestId("listening-counter")).toHaveTextContent("Sentence 2/5");
+    expect(counters()).toHaveLength(1);
+    expect(counters()[0]).toHaveTextContent("Sentence 2 / 5");
   });
 });
 
@@ -773,6 +777,20 @@ describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
     // The pressed button unmounts with the dock; focus stays in the player instead of falling to the page.
     await waitFor(() => expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: "Play" })));
     expect(yt.players).toHaveLength(1);
+  });
+
+  it("Focus Mode undocks the player: no empty workspace under a dock, and leaving Focus docks it again", async () => {
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(hideVideo());
+    expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Focus Mode" }));
+    expect(document.querySelector("[data-listen-dock]")).toBeNull();
+    expect(required(document.querySelector<HTMLElement>("[data-workspace-player-video]")).closest(".invisible")).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Focus Mode" }));
+    expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+    expect(yt.players).toHaveLength(1);
+    await expectEmpty("line-1"); // the remounted panel's chunk read settles inside the test
   });
 
   it("listen-only survives Next and Try again, and turning it off stays off", async () => {

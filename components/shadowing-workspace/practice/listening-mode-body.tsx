@@ -7,7 +7,7 @@ import { usePathname, useRouter } from "@/lib/i18n/navigation";
 import { feedbackMood } from "@/lib/dictation/listening-feedback";
 import { dictationFormat, listeningExercise, type ListeningExercise } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
-import { useCurrentSentence, useLesson, usePlaybackController, useSession } from "../workspace-context";
+import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
 import { ListeningFeedback } from "./listening-feedback";
 import { ListeningPicker } from "./listening-picker";
 import { useListeningReveal } from "./listening-reveal-context";
@@ -38,7 +38,6 @@ export function ListeningModeBody() {
   const { transcriptId, lines } = useLesson();
   const { index } = useCurrentSentence();
   const controller = usePlaybackController();
-  const [session] = useSession();
   const { attempt: attemptNumber, answerVisible, easy, setEasy, listenOnly } = useListeningReveal();
   const line = index === null ? undefined : lines[index];
   const dictation = exercise === "dictation" && !legacy;
@@ -68,14 +67,10 @@ export function ListeningModeBody() {
   const hint = answered ? null : <button type="button" disabled={attempt.submitting || attempt.allHinted} onClick={attempt.hint}
     className="rounded-full border border-primary bg-primary/10 px-sm py-2xs text-caption font-semibold text-primary-strong disabled:opacity-50">{tl("hint")}</button>;
   const ready = chunksStatus === "ready" && chunks !== null && lineId !== null;
-  // §3.1: the counter only where the stat strip is not shown (listen-only and Full Transcript have no strip).
-  const counter = listenOnly || session.view !== "normal";
+  // §3.1: no counter here — the workspace header carries "Câu n / total" in every state.
   const header = <div className="flex flex-wrap items-center justify-between gap-sm">
     <div className="flex items-center gap-sm">
       <h2 className="text-body-lg font-semibold text-foreground">{tl(`format.${exercise}`)}</h2>
-      {counter && <span data-testid="listening-counter" className="text-caption tabular-nums text-muted-foreground">
-        {t("workspace.practice.strip.sentence")} {index === null ? "—" : index + 1}/{lines.length}
-      </span>}
       <button type="button" className={ACTION} onClick={() => choose(null)}>{tl("changeExercise")}</button>
     </div>
     <ListeningToolbar easyDisabled={dictation && unreliable} />

@@ -1,4 +1,4 @@
-import { fireEvent, screen, within } from "@testing-library/react";
+import { act, fireEvent, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { render, waitFor } from "@/test/render";
 import { lesson } from "@/test/listening-body";
@@ -25,9 +25,11 @@ const picker = (onChoose = vi.fn(), locale?: "vi") => {
 };
 const card = (name: RegExp) => screen.getByRole("button", { name });
 afterEach(() => vi.unstubAllGlobals());
+/** Lets both cards' stats reads settle inside act(), so a test that does not await them ends clean. */
+const settle = () => act(async () => { await new Promise((done) => setTimeout(done, 0)); });
 
 describe("ListeningPicker (spec §3.0)", () => {
-  it("shows the owner's heading and two cards, copy verbatim", () => {
+  it("shows the owner's heading and two cards, copy verbatim", async () => {
     stubStats({});
     picker(vi.fn(), "vi");
     expect(screen.getByRole("heading", { name: "Bạn muốn luyện nghe theo cách nào?" })).toBeInTheDocument();
@@ -39,15 +41,17 @@ describe("ListeningPicker (spec §3.0)", () => {
     expect(cards[1]).toHaveTextContent("Điền từ");
     expect(cards[1]).toHaveTextContent("Nghe rồi điền những từ còn thiếu trong câu. Luyện nhận biết từ vựng trong ngữ cảnh.");
     expect(cards[1]).toHaveTextContent("Tập trung vào từ vựng");
+    await settle();
   });
 
-  it("choosing a card reports its exercise", () => {
+  it("choosing a card reports its exercise", async () => {
     stubStats({});
     const onChoose = picker();
     fireEvent.click(card(/^Dictation/));
     expect(onChoose).toHaveBeenLastCalledWith("dictation");
     fireEvent.click(card(/^Fill in the blanks/));
     expect(onChoose).toHaveBeenLastCalledWith("cloze");
+    await settle();
   });
 
   it("picker progress only from real stats: each exercise's own done/total, nothing without data", async () => {

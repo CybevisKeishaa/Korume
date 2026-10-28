@@ -73,6 +73,22 @@ describe("PracticeStatsProvider", () => {
     expect(screen.getByRole("status")).toHaveTextContent('"mean":95');
   });
 
+  it("a refresh captured before a mode change neither aborts nor overwrites the new mode's read", async () => {
+    const cloze = deferred();
+    fetchMock.mockResolvedValueOnce(response()).mockReturnValueOnce(cloze.promise);
+    let captured: (() => void) | null = null;
+    function Capture() { const { refresh } = usePracticeStats(); captured ??= refresh; return null; }
+    const view = render(<PracticeStatsProvider videoId="lesson-a" mode="dictation"><Capture /><Probe /></PracticeStatsProvider>);
+    await waitFor(() => expect(screen.getByRole("status")).toHaveTextContent('"mean":84'));
+    view.rerender(<PracticeStatsProvider videoId="lesson-a" mode="cloze"><Capture /><Probe /></PracticeStatsProvider>);
+    const signal = fetchMock.mock.calls[1]?.[1]?.signal;
+    act(() => captured?.());
+    expect(signal?.aborted).toBe(false);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    await act(async () => { cloze.resolve(response({ ...stats, mean: 61 })); });
+    expect(screen.getByRole("status")).toHaveTextContent('"mean":61');
+  });
+
   it.each(["http", "network", "json"])("leaves stats unavailable on a %s failure and allows retry", async (failure) => {
     if (failure === "http") fetchMock.mockResolvedValueOnce(new Response(null, { status: 401 }));
     else if (failure === "network") fetchMock.mockRejectedValueOnce(new Error("offline"));

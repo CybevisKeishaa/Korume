@@ -776,7 +776,7 @@ test("20 · Ẩn video survives Next and Try again; turning it off stays off", a
   await expect(dock(page)).toBeVisible();
   await expect(strip(page)).toHaveCount(0);
   await button(page, "Next sentence").click();
-  await expect(practice(page).getByTestId("listening-counter")).toHaveText(/^Sentence 2\//);
+  await expect(page.getByText(/^Sentence 2 \/ \d+$/)).toHaveCount(1); // the workspace header's, the only counter (spec §3.1)
   await expect(dock(page)).toBeVisible();
   await place(page, await cut(page, 1));
   await button(page, "Check").click();
@@ -836,21 +836,19 @@ test("21 · the dock row stays at one height on hover", async ({ page }) => {
 
 test("22 · in listen-only at 1280×529 Show answer is above the dock, on the longest line, pieces and typing", async ({ page }) => {
   await registerLearner(page);
-  // Video shown first: the stat strip carries the sentence counter in view, so the header has none (spec §3.1).
+  // Video shown first; the workspace header carries the one sentence counter in both layouts (spec §3.1).
   await openWordBank(page, `&line=${data.lineIds[LONG.index]}`);
   const pieces = await cut(page, LONG.index);
   await expect(bank(page).getByRole("button")).toHaveCount(pieces.length);
   const stripBox = await strip(page).boundingBox();
   if (!stripBox) throw new Error("strip has no box");
   expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(529);
-  await expect(practice(page).getByTestId("listening-counter")).toHaveCount(0);
   const header = await practice(page).getByRole("heading", { name: "Dictation" }).boundingBox();
   const shownReveal = await button(page, "Show answer").boundingBox();
   console.log(`T9-MEASURE video shown: strip top ${stripBox.y} bottom ${stripBox.y + stripBox.height}, exercise header top ${header?.y}, reveal bottom ${(shownReveal?.y ?? 0) + (shownReveal?.height ?? 0)}`);
 
   await hideVideo(page).click();
   await expect(dock(page)).toBeVisible();
-  await expect(practice(page).getByTestId("listening-counter")).toBeVisible();
   for (const mode of ["pieces", "typing"] as const) {
     if (mode === "typing") {
       await easyMode(page).click();
@@ -859,10 +857,9 @@ test("22 · in listen-only at 1280×529 Show answer is above the dock, on the lo
     const dockBox = await dock(page).boundingBox();
     const reveal = await button(page, "Show answer").boundingBox();
     const panel = await page.getByTestId("practice-panel").boundingBox();
-    const counter = await practice(page).getByTestId("listening-counter").boundingBox();
-    if (!dockBox || !reveal || !panel || !counter) throw new Error("missing box");
+    if (!dockBox || !reveal || !panel) throw new Error("missing box");
     const scroll = await page.getByTestId("practice-panel").evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
-    console.log(`T9-MEASURE listen-only ${mode} (${pieces.length} pieces): reveal bottom ${reveal.y + reveal.height}, panel bottom ${panel.y + panel.height}, dock top ${dockBox.y}, dock height ${dockBox.height}, counter top ${counter.y}, panel scroll ${scroll.scrollHeight}/${scroll.clientHeight}`);
+    console.log(`T9-MEASURE listen-only ${mode} (${pieces.length} pieces): reveal bottom ${reveal.y + reveal.height}, panel bottom ${panel.y + panel.height}, dock top ${dockBox.y}, dock height ${dockBox.height}, panel scroll ${scroll.scrollHeight}/${scroll.clientHeight}`);
     expect(reveal.y + reveal.height).toBeLessThanOrEqual(dockBox.y);
     // In flow: the practice panel ends where the dock begins; nothing of it runs under the dock.
     expect(panel.y + panel.height).toBeLessThanOrEqual(dockBox.y);
