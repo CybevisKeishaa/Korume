@@ -6,7 +6,7 @@ import { installYouTubeStub, YT_PLAYER_STATE, type YouTubeStubHandle } from "@/t
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
+import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences, useSession } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
 import { usePracticeStats } from "./practice/practice-stats-context";
@@ -98,8 +98,9 @@ describe("ShadowingWorkspaceShell", () => {
     const player = yt.players[0];
     expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
     for (const mode of ["pronunciation", "listening"]) {
-      // Listening with no `format` (the mode bar's link) still has its strip until the picker lands.
+      // Listening has its strip once an exercise is chosen (the picker has none).
       pathname = `/en/shadowing/video-1/${mode}`;
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
       view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
       expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
       expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
@@ -488,21 +489,20 @@ describe("ShadowingWorkspaceShell", () => {
     }
     const hideSubtitles = (host: HTMLElement) => [...host.querySelectorAll("button")].find((button) => button.getAttribute("aria-label") === "Hide subtitles");
 
-    it("renders no subtitle, drawer or Korume and the listen-only cover in the first render, with CC still on", () => {
+    it("renders no subtitle, drawer or Korume in the first render, with CC still on and the video shown (spec §3.2)", () => {
       const host = firstFrame("/en/shadowing/video-1/listening");
       expect(host.querySelector("[data-testid='workspace-subtitle']")).toBeNull();
       expect(host.querySelector("[data-testid='workspace-drawer-slot']")).toBeNull();
       expect(host.querySelector("[data-testid='korume-mascot']")).toBeNull();
-      expect(host.querySelector("[data-testid='listen-cover']")).not.toBeNull();
+      expect(host.querySelector("[data-listen-dock]")).toBeNull();
       expect(hideSubtitles(host)).toHaveAttribute("aria-pressed", "true");
     });
 
-    it.each(["/en/shadowing/video-1", "/en/shadowing/video-1/pronunciation"])("still shows the subtitle, drawer and Korume, and no cover, at %s", (path) => {
+    it.each(["/en/shadowing/video-1", "/en/shadowing/video-1/pronunciation"])("still shows the subtitle, drawer and Korume at %s", (path) => {
       const host = firstFrame(path);
       expect(host.querySelector("[data-testid='workspace-subtitle']")).toHaveTextContent("一つ目");
       expect(host.querySelector("[data-testid='workspace-drawer-slot']")).not.toBeNull();
       expect(host.querySelector("[data-testid='korume-mascot']")).not.toBeNull();
-      expect(host.querySelector("[data-testid='listen-cover']")).toBeNull();
     });
 
     it("shows the subtitle only for the current line's checked attempt, and drops it on a line change", async () => {
@@ -519,23 +519,23 @@ describe("ShadowingWorkspaceShell", () => {
       expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
     });
 
-    it("conceals the answer and the video again on re-entering Listening on the same line and format (R28)", async () => {
-      const frames: { answerVisible: boolean; videoVisible: boolean }[] = [];
+    it("conceals the answer again on re-entering Listening on the same line and exercise (R28)", async () => {
+      const frames: boolean[] = [];
       /** Records every render, so the first frame of re-entry is checked, not only the settled one. */
       function FrameProbe() {
         reveal = useListeningReveal();
-        frames.push({ answerVisible: reveal.answerVisible, videoVisible: reveal.videoVisible });
+        frames.push(reveal.answerVisible);
         return <StoreProbe />;
       }
       const tree = () => <ShadowingWorkspaceShell bootstrap={lesson}><FrameProbe /></ShadowingWorkspaceShell>;
       pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
       const view = render(tree());
       await waitFor(() => expect(yt.players).toHaveLength(1));
       const current = required(reveal);
-      act(() => { current.markChecked(current.attempt); current.showVideo(current.attempt); });
-      // Positive control: the answer and the video really were shown before leaving.
+      act(() => current.markChecked(current.attempt));
+      // Positive control: the answer really was shown before leaving.
       expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent("一つ目");
-      expect(screen.queryByTestId("listen-cover")).toBeNull();
       pathname = "/en/shadowing/video-1/pronunciation";
       view.rerender(tree());
       pathname = "/en/shadowing/video-1/listening";
@@ -543,85 +543,54 @@ describe("ShadowingWorkspaceShell", () => {
       view.rerender(tree());
       const reentry = frames.slice(from);
       expect(reentry.length).toBeGreaterThan(0);
-      expect(reentry).toEqual(reentry.map(() => ({ answerVisible: false, videoVisible: false })));
+      expect(reentry).toEqual(reentry.map(() => false));
       expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
-      expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
     });
 
-    it("restores the cover on re-entering Listening even with no current line (R28)", async () => {
-      searchParams = new URLSearchParams();
+    it("docks the player only in Listening: Ẩn video is kept across modes, and other modes keep the split", async () => {
       pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
       const view = render(shell());
       await waitFor(() => expect(yt.players).toHaveLength(1));
-      // Position 0 is before the first line (12 s): no current line.
-      expect(observedStore?.get()).toBe(0);
-      fireEvent.click(within(screen.getByTestId("listen-cover")).getByRole("button", { name: "Show video" }));
-      expect(screen.queryByTestId("listen-cover")).toBeNull();
-      pathname = "/en/shadowing/video-1/pronunciation";
+      act(() => required(reveal).setListenOnly(true));
+      expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+      expect(screen.queryByRole("separator", { name: "Resize workspace panes" })).toBeNull();
+      pathname = "/en/shadowing/video-1";
       view.rerender(shell());
+      expect(document.querySelector("[data-listen-dock]")).toBeNull();
+      expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toBeInTheDocument();
       pathname = "/en/shadowing/video-1/listening";
       view.rerender(shell());
-      expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
+      expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+      expect(yt.players).toHaveLength(1);
     });
 
-    it("lifts the cover with Show video for this line only; a line or format change restores it", async () => {
+    it("turning Ẩn video off restores the split ratio; the dock is the workspace's last row, in flow", async () => {
+      let dispatch: ReturnType<typeof useSession>[1] | undefined;
+      function SplitProbe() { [, dispatch] = useSession(); return <RevealProbe />; }
       pathname = "/en/shadowing/video-1/listening";
-      const view = render(shell());
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
+      render(<ShadowingWorkspaceShell bootstrap={lesson}><SplitProbe /></ShadowingWorkspaceShell>);
       await waitFor(() => expect(yt.players).toHaveLength(1));
-      const show = () => within(screen.getByTestId("listen-cover")).getByRole("button", { name: "Show video" });
-      // A plain action, not a toggle: pressing it removes the cover and the button with it (R29).
-      expect(show()).not.toHaveAttribute("aria-pressed");
-      show().focus();
-      fireEvent.click(show());
-      expect(screen.queryByTestId("listen-cover")).toBeNull();
-      // The pressed button unmounts with the cover; focus stays in the player instead of falling to the page.
-      expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: "Play" }));
-      act(() => observedStore?.set(16));
-      fireEvent.click(show());
-      expect(screen.queryByTestId("listen-cover")).toBeNull();
-      searchParams = new URLSearchParams("line=line-1&format=typing");
-      view.rerender(shell());
-      expect(show()).toBeInTheDocument();
+      act(() => required(dispatch)({ type: "set-split", ratio: 0.3 }));
+      const workspace = screen.getByTestId("shadowing-workspace");
+      expect(workspace.style.gridTemplateColumns).toBe(workspaceGridTemplateColumns(0.3));
+      act(() => required(reveal).setListenOnly(true));
+      // The practice column takes the full width; the pane is the last grid row, never fixed over the panel.
+      expect(workspace.style.gridTemplateColumns).toBe("");
+      expect(workspace).toHaveClass("grid-cols-1");
+      expect(workspace.style.gridTemplateRows).toBe("auto minmax(0, 1fr) auto");
+      const pane = screen.getByTestId("workspace-player-slot");
+      expect(pane).toHaveClass("row-start-3");
+      expect(pane.className).not.toMatch(/(^|\s)(fixed|absolute|sticky)(\s|$)/);
+      expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
+      act(() => required(reveal).setListenOnly(false));
+      expect(workspace.style.gridTemplateColumns).toBe(workspaceGridTemplateColumns(0.3));
+      expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-valuenow", "30");
+      expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
     });
 
-    it("keeps play, previous, next, rewind, speed and loop focusable and working under the cover", async () => {
-      pathname = "/en/shadowing/video-1/listening";
-      render(shell());
-      await waitFor(() => expect(yt.players).toHaveLength(1));
-      const player = required(yt.players[0]);
-      const cover = screen.getByTestId("listen-cover");
-      const controls = [
-        ...screen.getAllByRole("button", { name: "Play" }),
-        screen.getByRole("button", { name: "Previous sentence" }),
-        screen.getByRole("button", { name: "Next sentence" }),
-        screen.getByRole("button", { name: "Back 5 seconds" }),
-        screen.getByRole("button", { name: /^Playback speed/ }),
-        screen.getByRole("button", { name: "Sentence loop" }),
-      ];
-      expect(controls).toHaveLength(7);
-      for (const control of controls) {
-        control.focus();
-        expect(document.activeElement).toBe(control);
-        expect(cover.contains(control)).toBe(false);
-        // Stacking: the bar and the centre button come after the cover, which sets no z-index, so they paint above it.
-        expect(cover.compareDocumentPosition(control) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-      }
-      expect(cover.className).not.toMatch(/(^|\s)z-/);
-      // The cover takes no pointer, so a click on the picture still reaches the surface's click-to-toggle.
-      expect(cover).toHaveClass("pointer-events-none");
-      fireEvent.click(screen.getByTestId("workspace-player-surface"));
-      expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PLAYING);
-      fireEvent.click(screen.getByRole("button", { name: "Pause" }));
-      expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
-      fireEvent.click(screen.getByRole("button", { name: /^Playback speed/ }));
-      expect(screen.getByRole("radiogroup", { name: "Playback speed" })).toBeInTheDocument();
-      fireEvent.click(screen.getByRole("button", { name: "Sentence loop" }));
-      fireEvent.click(within(screen.getByRole("radiogroup", { name: "Plays per sentence" })).getByRole("radio", { name: "3×" }));
-      expect(screen.getByRole("button", { name: "Sentence loop" })).toHaveAttribute("aria-pressed", "true");
-      expect(screen.getByTestId("listen-cover")).toBe(cover);
-    });
-
-    it("until the picker, the strip reads the stats of the panel it renders: Chép chính tả for every format (ruling P2)", async () => {
+    it("the strip reads the stats of the URL's exercise; the picker has no strip and reads none (T7-a)", async () => {
       const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(url.includes("practice-stats")
         ? Response.json({ data: { lineCount: 2, scoredLines: 1, mean: url.endsWith("dictation") ? 72 : 91, lines: {} } })
         : new Response(null, { status: 200 })));
@@ -637,16 +606,19 @@ describe("ShadowingWorkspaceShell", () => {
       await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("72%"));
       expect(within(scored()).getByRole("definition")).toHaveTextContent("1/2");
       expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation"]);
-      // `word_bank`, `cloze` (still a Word Bank panel) and no format all render a dictation panel: same stats, no refetch.
-      for (const query of ["line=line-1&format=word_bank", "line=line-1&format=cloze", "line=line-1"]) {
+      searchParams = new URLSearchParams("line=line-1&format=cloze");
+      view.rerender(shell());
+      expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "cloze");
+      expect(within(scored()).getByRole("term")).toHaveTextContent("Fill in the blanks · Submitted");
+      await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("91%"));
+      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation", "/api/shadowing/video-1/practice-stats?mode=cloze"]);
+      for (const query of ["line=line-1", "line=line-1&format=nope"]) {
         searchParams = new URLSearchParams(query);
         view.rerender(shell());
-        expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
-        expect(within(scored()).getByRole("term")).toHaveTextContent("Dictation · Submitted");
-        expect(within(average()).getByRole("definition")).toHaveTextContent("72%");
+        expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
         expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
       }
-      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation"]);
+      expect(statsCalls()).toHaveLength(2);
     });
   });
 });

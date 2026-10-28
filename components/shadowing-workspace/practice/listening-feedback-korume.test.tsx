@@ -31,8 +31,9 @@ const nextSentence = () => within(screen.getByTestId("practice-panel")).getByRol
 const LINE = LINES["line-1"].display;
 
 async function open() {
-  searchParams = new URLSearchParams("line=line-1&format=word_bank");
+  searchParams = new URLSearchParams("line=line-1&format=dictation");
   const view = render(shell());
+  fireEvent.click(await screen.findByRole("button", { name: "Easy mode" }));
   await screen.findByRole("list", { name: "Your sentence" });
   return view;
 }
@@ -136,12 +137,11 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()).toBeNull();
   });
 
-  it("is gone in the same commit as the concealment on a format switch", async () => {
-    const view = await open();
+  it("is gone in the same commit as the concealment on a Chế độ dễ toggle", async () => {
+    await open();
     await checkPerfect();
     const before = probe.reveal?.attempt ?? -1;
-    searchParams = new URLSearchParams("line=line-1&format=typing");
-    view.rerender(shell());
+    fireEvent.click(screen.getByRole("button", { name: "Easy mode" }));
     expect(frames.find((frame) => frame.attempt === before + 1)).toMatchObject({ answer: false, korume: null });
     expect(figure()).toBeNull();
   });

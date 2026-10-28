@@ -61,17 +61,17 @@ describe("LessonStatStrip", () => {
     expect(within(stat("sentence")).getByRole("definition")).toHaveTextContent("—/194");
   });
 
-  it("pins the Listening strip, format and cover copy in English and Vietnamese", () => {
+  it("pins the Listening strip, exercise names and the dock's Show video copy in English and Vietnamese", () => {
     const pinned = ({ format, strip, cover }: typeof en.workspace.practice.listening) => ({ format, strip, cover });
     expect(pinned(en.workspace.practice.listening)).toEqual({
-      format: { word_bank: "Word Bank", typing: "Typing", dictation: "Dictation", cloze: "Fill in the blanks" },
+      format: { dictation: "Dictation", cloze: "Fill in the blanks" },
       strip: { submitted: "{format} · Submitted" },
-      cover: { title: "Listen only", show: "Show video" },
+      cover: { show: "Show video" },
     });
     expect(pinned(viMessages.workspace.practice.listening)).toEqual({
-      format: { word_bank: "Xếp cụm từ", typing: "Gõ chính tả", dictation: "Chép chính tả", cloze: "Điền từ" },
+      format: { dictation: "Chép chính tả", cloze: "Điền từ" },
       strip: { submitted: "{format} · Đã nộp" },
-      cover: { title: "Chỉ nghe", show: "Hiện video" },
+      cover: { show: "Hiện video" },
     });
   });
 

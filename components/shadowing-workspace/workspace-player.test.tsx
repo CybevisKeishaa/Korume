@@ -40,7 +40,7 @@ function renderPlayer(onFullscreen = vi.fn(), workspaceBootstrap = bootstrap) {
   return render(
     <WorkspaceProviders bootstrap={workspaceBootstrap}>
       <PlaybackRoot userId="user-1" initialSyncedServerAt={null}>
-        <ListeningRevealProvider lineId={null} format="word_bank">
+        <ListeningRevealProvider lineId={null} exercise={null}>
           <WorkspacePlayer onFullscreen={onFullscreen} fullscreenAvailable />
           <Probe />
         </ListeningRevealProvider>

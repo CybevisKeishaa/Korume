@@ -6,14 +6,17 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import { locateSentence } from "@/lib/shadowing-workspace/sentence-lookup";
 import { useCurrentSentence, useLesson, usePlaybackController, useStartPosition } from "../workspace-context";
 
-export function PracticePanel({ label, navigator, feedback, children }: {
+export function PracticePanel({ label, header, navigator, feedback, children }: {
   label: string;
+  /** Listening's exercise header and toolbar (spec §3.1, §3.2), above the navigator. */
+  header?: ReactNode;
   navigator: ReactNode;
   feedback: ReactNode;
   children: ReactNode;
 }) {
   return (
     <section aria-label={label} className="practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md" data-testid="practice-panel">
+      {header}
       <div>{navigator}</div>
       <div className="flex flex-col gap-md">{children}</div>
       <div>{feedback}</div>

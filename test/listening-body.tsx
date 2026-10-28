@@ -78,7 +78,7 @@ export function stubListeningFetch() {
 export function slotList() { return document.querySelector<HTMLElement>("ol[aria-label='Your sentence']"); }
 export const korume = () => document.querySelector<HTMLImageElement>("[data-mascot-pose^='listening-']");
 
-type Frame = { attempt: number; subtitle: boolean; cover: boolean; filled: number; typed: string | null; answer: boolean; korume: string | null };
+type Frame = { attempt: number; subtitle: boolean; dock: boolean; filled: number; typed: string | null; answer: boolean; korume: string | null };
 /** The reveal context and every commit CommitProbe saw; a test empties `frames` in its own `beforeEach`. */
 export const probe: { reveal: ListeningReveal | undefined; frames: Frame[] } = { reveal: undefined, frames: [] };
 /**
@@ -92,7 +92,7 @@ function CommitProbe() {
     probe.frames.push({
       attempt: reveal.attempt,
       subtitle: document.querySelector("[data-testid='workspace-subtitle']") !== null,
-      cover: document.querySelector("[data-testid='listen-cover']") !== null,
+      dock: document.querySelector("[data-listen-dock]") !== null,
       filled: slotList()?.querySelectorAll("button").length ?? 0,
       typed: document.querySelector<HTMLInputElement>("input[type='text']")?.value ?? null,
       answer: document.querySelector("[data-testid='listening-answer']") !== null,

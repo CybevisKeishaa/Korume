@@ -11,11 +11,10 @@ const DISPLAY = ["はい、", "そうです。", "はい、"];
 type Props = Parameters<typeof WordBankPanel>[0];
 const panel = (props: Partial<Props> = {}) => {
   const onCheck = vi.fn();
-  const onProgress = vi.fn();
   const element = (next: Partial<Props>) => <WordBankPanel lineId="line-9" display={DISPLAY} hinted={[]} results={null} revealed={false}
-    submitting={false} onCheck={onCheck} onProgress={onProgress} {...props} {...next} />;
+    submitting={false} onCheck={onCheck} {...props} {...next} />;
   const view = render(element({}));
-  return { ...view, rerender: (next: Partial<Props>) => view.rerender(element(next)), onCheck, onProgress };
+  return { ...view, rerender: (next: Partial<Props>) => view.rerender(element(next)), onCheck };
 };
 const tray = () => screen.getByRole("list", { name: "Your sentence" });
 const piece = (p: number) => {
@@ -35,15 +34,14 @@ const layOut = () => [...tray().querySelectorAll<HTMLElement>("[data-piece]")]
 
 describe("WordBankPanel", () => {
   it("tap in the bank appends", () => {
-    const { onProgress } = panel();
+    panel();
     tap(2, 0);
     expect(placed()).toEqual([2, 0]);
     expect(banked()).toEqual([1]);
-    expect(onProgress).toHaveBeenLastCalledWith(true);
   });
 
   it("tap on a placed piece returns exactly that piece", () => {
-    const { onProgress } = panel();
+    panel();
     tap(0, 1, 2);
     tap(2); // the second "はい、", not the first
     expect(placed()).toEqual([0, 1]);
@@ -52,7 +50,6 @@ describe("WordBankPanel", () => {
     expect(placed()).toEqual([1]);
     tap(1);
     expect(placed()).toEqual([]);
-    expect(onProgress).toHaveBeenLastCalledWith(false);
   });
 
   it("no selection state", () => {
@@ -147,7 +144,7 @@ describe("WordBankPanel", () => {
   });
 
   it("drop inserts at the indicated index", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(0, 1, 2);
     layOut();
     const dt = dataTransfer();
@@ -166,7 +163,7 @@ describe("WordBankPanel", () => {
   });
 
   it("the drop marker never sits inside the hinted prefix: over a hinted chip it shows at k", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[0, 1]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[0, 1]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(2);
     layOut();
     const dt = dataTransfer();
@@ -179,7 +176,7 @@ describe("WordBankPanel", () => {
   });
 
   it("drop reads the pointer's index from the drop event, even after a dragleave cleared the marker", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(0, 1, 2);
     layOut();
     const dt = dataTransfer();
@@ -227,10 +224,10 @@ describe("WordBankPanel", () => {
   });
 
   it("a drag that started on another line's panel drops nothing (Review Focus 3)", () => {
-    const view = render(<WordBankPanel key="a" lineId="line-9" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    const view = render(<WordBankPanel key="a" lineId="line-9" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     const dt = dataTransfer();
     fireEvent.dragStart(piece(1), { dataTransfer: dt });
-    view.rerender(<WordBankPanel key="b" lineId="line-10" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} onProgress={vi.fn()} />);
+    view.rerender(<WordBankPanel key="b" lineId="line-10" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     const box = tray().parentElement as HTMLElement;
     fireEvent.dragOver(box, { clientX: 10, clientY: 10, dataTransfer: dt });
     fireEvent.drop(box, { clientX: 10, clientY: 10, dataTransfer: dt });

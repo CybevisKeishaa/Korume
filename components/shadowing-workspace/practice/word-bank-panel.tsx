@@ -30,7 +30,7 @@ export function dropIndex(rects: DOMRect[], x: number): number {
  * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
  * drag from an older line drops nothing here.
  */
-export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, onCheck, onProgress }: {
+export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, onCheck }: {
   lineId: string;
   display: string[];
   hinted: number[];
@@ -42,7 +42,6 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
   /** The Show Hint pill, or null once the attempt is answered. */
   hint?: ReactNode;
   onCheck(chunkOrder: number[]): void;
-  onProgress(placed: boolean): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
   const bankLabel = useId();
@@ -71,7 +70,6 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
     if (locked) return;
     refocus.current = focused;
     setAnswer(next);
-    onProgress(next.length > k);
   };
   const focusedPiece = (target: EventTarget, p: number) => target === document.activeElement ? p : null;
   /** Alt+ArrowLeft is also the browser's Back: on any chip it must never leave the page and the answer. */

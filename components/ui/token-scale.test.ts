@@ -74,7 +74,9 @@ const SCANNED_DIRS = [
   // Practice-listening Task 7: + practice/typing-panel, practice/listening-format-switch.
   // Practice-listening Task 7b: + practice/listening-feedback-korume.
   // Practice-listening Task 9c: + practice/practice-glyph, practice/listening-puzzle.
-  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 71 },
+  // Listening two exercises Task 9: - practice/listen-cover, practice/listening-format-switch; + practice/listening-picker,
+  // practice/listening-toolbar, practice/listening-shortcuts, practice/replay-row.
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 73 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },

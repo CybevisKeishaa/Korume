@@ -21,11 +21,13 @@ const LINES = [
   { text: "注文をお願いします。" },
 ] as const;
 const UNRELIABLE = 4;
+/** The owner's longest line of lesson b78ce634 (line 272, 14 pieces): the listen-only fit is measured on it (Ruling T1). */
+const LONG = { index: 5, text: "「この前行ったここ本当に美味しかった」とかあるじゃないですか" } as const;
 
 let data: WorkspaceData;
 test.beforeAll(async () => {
   data = await seedWorkspaceData();
-  for (const [index, line] of LINES.entries()) {
+  for (const [index, line] of [...LINES.entries(), [LONG.index, LONG] as const]) {
     const { error } = await data.admin.from("transcript_lines")
       .update({ text_jp: line.text, furigana_json: await toFurigana(line.text) }).eq("id", data.lineIds[index]!);
     if (error) throw error;
@@ -112,10 +114,17 @@ async function registerLearner(page: Page): Promise<void> {
   await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
 }
 
-async function openLesson(page: Page, path = "/listening"): Promise<void> {
+/** Opens the lesson; Listening cases enter Chép chính tả by its deep link (spec §3.0). */
+async function openLesson(page: Page, path = "/listening?format=dictation"): Promise<void> {
   await page.goto(`/en/shadowing/${data.videoId}${path}`);
   await expect(page.getByTestId("fake-yt")).toHaveCount(1);
   await expect.poll(async () => (await fakeYt(page)).seeks.length).toBeGreaterThan(0);
+}
+/** Chép chính tả with Chế độ dễ on: the word pieces. */
+async function openWordBank(page: Page, query = ""): Promise<void> {
+  await openLesson(page, `/listening?format=dictation${query}`);
+  await easyMode(page).click();
+  await expect(easyMode(page)).toHaveAttribute("aria-pressed", "true");
 }
 
 const modeBar = (page: Page) => page.getByRole("navigation", { name: "Learning modes" });
@@ -130,7 +139,11 @@ const slot = (page: Page, index: number) => practice(page).locator(`li[data-slot
 const feedback = (page: Page) => practice(page).getByTestId("listening-feedback");
 const korume = (page: Page) => page.locator(SURFACES.korume);
 const typingInput = (page: Page) => practice(page).getByRole("textbox", { name: "Type what you hear" });
-const formatRadio = (page: Page, name: "Word Bank" | "Typing") => practice(page).getByRole("radiogroup", { name: "Listening format" }).getByRole("radio", { name });
+const easyMode = (page: Page) => practice(page).getByRole("button", { name: "Easy mode", exact: true });
+const hideVideo = (page: Page) => practice(page).getByRole("button", { name: "Hide video", exact: true });
+const dock = (page: Page) => page.locator("[data-listen-dock]");
+const dockRow = (page: Page) => page.locator("[data-listen-dock-controls]");
+const pickerHeading = (page: Page) => page.getByRole("heading", { name: "How would you like to practise listening?" });
 const button = (page: Page, name: string) => practice(page).getByRole("button", { name, exact: true });
 
 /** Taps each piece in the bank, in order; two pieces with the same text are interchangeable (LCS by text). */
@@ -140,7 +153,6 @@ async function place(page: Page, pieces: readonly string[]): Promise<void> {
 const placedTexts = (page: Page) => slots(page).locator("[data-piece] [lang='ja']").allTextContents();
 
 async function expectConcealed(page: Page): Promise<void> {
-  await expect(page.getByTestId("listen-cover")).toBeVisible();
   await expect(page.getByTestId("workspace-subtitle")).toHaveCount(0);
   await expect(page.getByTestId("listening-answer")).toHaveCount(0);
   await expect(page.locator(SURFACES.slotResult)).toHaveCount(0);
@@ -181,12 +193,15 @@ test("1 · one player instance across three modes (spec §3.1 B2 gate)", async (
   await expect(page.getByRole("region", { name: "Pronunciation practice" })).toBeVisible();
   await modeBar(page).getByRole("link", { name: "Listening" }).click();
   await expect(page).toHaveURL(/\/listening$/);
-  await expect(bank(page)).toBeVisible();
+  await expect(pickerHeading(page)).toBeVisible();
+  await expect(kept).toHaveCount(1);
+  await page.getByRole("button", { name: /^Dictation/ }).click();
+  await expect(page).toHaveURL(/\/listening\?format=dictation$/);
+  await expect(typingInput(page)).toBeVisible();
   await expectConcealed(page);
   await expect(kept).toHaveCount(1);
-  await formatRadio(page, "Typing").click();
-  await expect(page).toHaveURL(/\/listening\?format=typing$/);
-  await expect(typingInput(page)).toBeVisible();
+  await easyMode(page).click();
+  await expect(bank(page)).toBeVisible();
   await expectConcealed(page);
   await expect(kept).toHaveCount(1);
   await modeBar(page).getByRole("link", { name: "Shadowing" }).click();
@@ -196,11 +211,12 @@ test("1 · one player instance across three modes (spec §3.1 B2 gate)", async (
   expect((await fakeYt(page)).mounts).toBe(1);
 });
 
-test("2 · entering Listening conceals from the first frame; every player control works under the cover", async ({ page }) => {
+test("2 · entering Listening conceals from the first frame, with the video shown; every player control works", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
-  await expect(bank(page)).toBeVisible();
+  await expect(typingInput(page)).toBeVisible();
   await expectConcealed(page);
+  await expect(dock(page)).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Study tools" })).toHaveCount(0);
   await expect(page.getByTestId("korume-mascot")).toHaveCount(0);
   await expect(player(page).getByRole("button", { name: "Hide subtitles" })).toHaveAttribute("aria-pressed", "true");
@@ -237,19 +253,12 @@ test("2 · entering Listening conceals from the first frame; every player contro
     await page.getByRole("radiogroup", { name: "Plays per sentence" }).getByRole("radio", { name: count }).click();
     await expect(loop).toHaveAttribute("aria-pressed", pressed);
   }
-  await expect(page.getByTestId("listen-cover")).toBeVisible();
-
-  // Show video lifts the cover for this line only.
-  await page.getByTestId("listen-cover").getByRole("button", { name: "Show video" }).click();
-  await expect(page.getByTestId("listen-cover")).toHaveCount(0);
-  await control("Next sentence");
-  await expect(page.getByTestId("listen-cover")).toBeVisible();
   await expectNoSurface(page);
 });
 
 test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; Next conceals again", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   await expect(korume(page)).toHaveCount(0);
   const pieces = await cut(page, 0);
   await place(page, pieces);
@@ -261,8 +270,6 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
   await expect(page.getByTestId("workspace-subtitle")).toHaveText(LINES[0].text);
   // Positive control: the observer every "never" below relies on does see each surface once it is attached.
   expect(new Set((await surfaces(page, [...ANSWER_KINDS, "korume"])).map((surface) => surface.kind))).toEqual(new Set(["subtitle", "answer", "slotResult", "korume"]));
-  await page.getByTestId("listen-cover").getByRole("button", { name: "Show video" }).click();
-  await expect(page.getByTestId("listen-cover")).toHaveCount(0);
 
   await resetSurfaces(page);
   await button(page, "Next sentence").click();
@@ -274,7 +281,7 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
 
 test("3b · a delayed Check whose attempt was discarded never shows the figure or a score", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   let release!: () => void;
   const gate = new Promise<void>((resolve) => { release = resolve; });
   const response = page.waitForResponse((r) => r.url().endsWith("/api/dictation/attempt"));
@@ -299,7 +306,7 @@ test("3b · a delayed Check whose attempt was discarded never shows the figure o
 
 test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is counted", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   await expect(bank(page)).toBeVisible();
   const order = await bank(page).getByRole("button").allTextContents();
   const pieces = await cut(page, 0);
@@ -329,7 +336,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
 
 test("5 · Hint moves the next piece to the front, keeping the placed one; the hinted piece counts as hinted, never as correct", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const pieces = await cut(page, 0);
   const [a, b, ...rest] = pieces as [string, string, ...string[]];
   await place(page, [b]);
@@ -351,9 +358,9 @@ test("5 · Hint moves the next piece to the front, keeping the placed one; the h
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
 });
 
-test("6 · Show answer: revealed, no score, video still covered; navigator, strip and Summary agree", async ({ page }) => {
+test("6 · Show answer: revealed, no score; navigator, strip and Summary agree", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   await expect(bank(page)).toBeVisible();
   await expect(stat(page, "scored")).toHaveText(/^0\//);
   const average = await stat(page, "average").textContent();
@@ -370,7 +377,6 @@ test("6 · Show answer: revealed, no score, video still covered; navigator, stri
   await expect(page.getByTestId("listening-answer")).toHaveText(LINES[0].text);
   await expect(feedback(page)).toContainText("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
-  await expect(page.getByTestId("listen-cover")).toBeVisible();
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-review");
   // R32: the review figure goes with the line.
   await button(page, "Next sentence").click();
@@ -388,7 +394,7 @@ test("6 · Show answer: revealed, no score, video still covered; navigator, stri
 
 test("7 · Typing: coloured diff and metrics; hints never edit the input; keys and IME stay in the input", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page, "/listening?format=typing");
+  await openLesson(page);
   const posts: string[] = [];
   page.on("request", (request) => { if (request.url().endsWith("/api/dictation/attempt")) posts.push(request.method()); });
   await expect(typingInput(page)).toBeVisible();
@@ -426,7 +432,7 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
 
 test("8 · changing sentence mid-attempt discards it; returning shows a fresh, concealed attempt", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const pieces = await cut(page, 0);
   await place(page, pieces.slice(0, 2));
   await resetSurfaces(page);
@@ -453,7 +459,7 @@ test("8 · changing sentence mid-attempt discards it; returning shows a fresh, c
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
 
   // Typing: the typed text does not follow to another line, nor come back.
-  await formatRadio(page, "Typing").click();
+  await easyMode(page).click();
   await typingInput(page).fill("毎日");
   await navigator(page).getByRole("button", { name: /^Sentence 2,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
@@ -464,62 +470,57 @@ test("8 · changing sentence mid-attempt discards it; returning shows a fresh, c
   await expectConcealed(page);
 });
 
-test("9 · changing format: confirm before discarding; a checked Word Bank answer never shows on the Typing side", async ({ page }) => {
+test("9 · Chế độ dễ: the URL stays; a checked Word Bank answer never shows on the Typing side", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page, "/listening?format=typing");
-  await typingInput(page).fill("毎日");
-  await formatRadio(page, "Word Bank").click();
-  const dialog = page.getByRole("dialog", { name: "Discard this attempt?" });
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Keep going" }).last().click();
-  await expect(dialog).toBeHidden();
-  await expect(page).toHaveURL(/format=typing/);
-  await expect(typingInput(page)).toHaveValue("毎日");
-  await formatRadio(page, "Word Bank").click();
-  await dialog.getByRole("button", { name: "Discard and switch" }).click();
-  await expect(page).toHaveURL(/format=word_bank/);
+  await openWordBank(page);
   await expectEmptyBank(page, 0);
   await expectConcealed(page);
 
   await place(page, await cut(page, 0));
-  // Until the picker (Task 9) every format reads the dictation stats; the saved Check is what refreshes them.
+  // The saved Check is what refreshes the exercise's stats.
   const stats = page.waitForRequest((request) => request.url().includes("/practice-stats?mode=dictation"));
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(page.getByTestId("workspace-subtitle")).toBeVisible();
   await stats;
   await resetSurfaces(page);
-  await formatRadio(page, "Typing").click();
-  await expect(page).toHaveURL(/format=typing/);
+  await easyMode(page).click();
+  await expect(easyMode(page)).toHaveAttribute("aria-pressed", "false");
+  await expect(page).toHaveURL(/\?format=dictation$/);
   await expect(typingInput(page)).toHaveValue("");
   await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
   await expect(strip(page).locator("[data-stat='scored'] dt")).toHaveText("Dictation · Submitted");
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
-  await formatRadio(page, "Word Bank").click();
-  await expect(page).toHaveURL(/format=word_bank/);
+  await easyMode(page).click();
+  await expect(page).toHaveURL(/\?format=dictation$/);
   await expectEmptyBank(page, 0);
   await expectConcealed(page);
 });
 
-test("10 · D9: an unreliable line opened as Word Bank moves to Typing in the URL, with its notice", async ({ page }) => {
+test("10 · D9: with Chế độ dễ on, an unreliable line is typed with its notice; Easy mode says why it is unavailable", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page, `/listening?line=${data.lineIds[UNRELIABLE]}`);
-  await expect(page).toHaveURL(/format=typing/);
-  await expect(page).toHaveURL(new RegExp(`line=${data.lineIds[UNRELIABLE]}`));
+  await openWordBank(page, `&line=${data.lineIds[UNRELIABLE - 1]}`);
+  await expect(bank(page)).toBeVisible();
+  await button(page, "Next sentence").click();
+  await expect(page).toHaveURL(/format=dictation/);
   await expect(stat(page, "sentence")).toHaveText(new RegExp(`^${UNRELIABLE + 1}/`));
   await expect(practice(page).getByTestId("listening-unreliable")).toHaveText("This sentence can't be split reliably, so it's Typing only");
-  await expect(formatRadio(page, "Word Bank")).toBeDisabled();
-  await expect(formatRadio(page, "Word Bank")).toHaveAttribute("title", "This sentence can't be split reliably, so it's Typing only");
-  await expect(formatRadio(page, "Typing")).toHaveAttribute("aria-checked", "true");
-  await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
   await expect(typingInput(page)).toBeVisible();
   await expect(bank(page)).toHaveCount(0);
+  await expect(easyMode(page)).toHaveAttribute("aria-disabled", "true");
+  await easyMode(page).hover();
+  await expect(page.getByRole("tooltip")).toHaveText("This sentence can't be split reliably, so it's Typing only");
+  await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
+  // The setting is kept: the next, reliable line has its pieces again.
+  await button(page, "Next sentence").click();
+  await expect(bank(page)).toBeVisible();
+  await expect(easyMode(page)).not.toHaveAttribute("aria-disabled");
 });
 
 test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; a chunks failure offers Retry", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const pieces = await cut(page, 0);
   await place(page, pieces);
   await resetSurfaces(page);
@@ -557,7 +558,7 @@ test("11 · API failures keep the arrangement and reveal nothing; 409 restarts; 
   await expectConcealed(page);
 });
 
-test("12 · legacy dictation deep links land on Listening's Typing format, in both locales (P2)", async ({ page, request }) => {
+test("12 · legacy dictation deep links land on Listening's Chép chính tả (typing), in both locales (P2, spec §3.0)", async ({ page, request }) => {
   const at = (location: string | undefined) => new URL(location ?? "", "http://localhost");
   const line = data.lineIds[2]!;
   for (const locale of ["vi", "en"]) {
@@ -579,7 +580,8 @@ test("12 · legacy dictation deep links land on Listening's Typing format, in bo
   for (const locale of ["vi", "en"]) {
     await page.goto(`/${locale}/shadowing/${data.videoId}/dictation?line=${line}`);
     await expect(page).toHaveURL(new RegExp(`/${locale}/shadowing/${data.videoId}/listening\\?`));
-    await expect(page).toHaveURL(/format=typing/);
+    // The server's `format=typing` is a legacy value: the client replaces it with the exercise.
+    await expect(page).toHaveURL(/format=dictation/);
     await expect(page).toHaveURL(new RegExp(`line=${line}`));
     await expect(page.getByTestId("practice-panel").locator("input")).toBeVisible();
     await expect(stat(page, "sentence")).toHaveText(/^3\//);
@@ -591,11 +593,11 @@ test("12 · legacy dictation deep links land on Listening's Typing format, in bo
 
 test("13 · the mission counts one line for Word Bank + Typing on it, and nothing for Show answer (P9)", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   await place(page, await cut(page, 0));
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
-  await formatRadio(page, "Typing").click();
+  await easyMode(page).click();
   await typingInput(page).fill(LINES[0].text);
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
@@ -619,7 +621,7 @@ async function dragBefore(page: Page, source: Locator, target: Locator): Promise
 
 test("14 · drag a bank piece between two placed pieces; drag a placed piece to the front, or out to the bank", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const [a, b, c] = (await cut(page, 0)) as [string, string, string];
   await place(page, [a, c]);
   await dragBefore(page, bank(page).getByRole("button", { name: b, exact: true }), slots(page).nth(1).getByRole("button"));
@@ -635,7 +637,7 @@ test("14 · drag a bank piece between two placed pieces; drag a placed piece to 
 
 test("15 · tap a placed piece returns it; Alt+Arrow moves a placed piece and the focus stays on it", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const pieces = await cut(page, 0);
   const [a, b, c] = pieces as [string, string, string];
   await place(page, [a, b, c]);
@@ -657,7 +659,7 @@ test("15 · tap a placed piece returns it; Alt+Arrow moves a placed piece and th
 
 test("16 · a drag across a line change (simulated via the workspace shortcut) drops nothing: the new line starts empty", async ({ page }) => {
   await registerLearner(page);
-  await openLesson(page);
+  await openWordBank(page);
   const [first, second] = (await cut(page, 0)) as [string, string];
   const tray = practice(page).getByRole("list", { name: "Your sentence" });
   const dragFromBank = async (text: string) => {
@@ -687,4 +689,187 @@ test("16 · a drag across a line change (simulated via the workspace shortcut) d
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await dropOnTray();
   await expectEmptyBank(page, 1);
+});
+
+test("17 · picker on entry; choosing Dictation opens it by a URL replace; Change exercise returns to the picker", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening");
+  await expect(pickerHeading(page)).toBeVisible();
+  await expect(page.getByRole("button", { name: /^(Dictation|Fill in the blanks)/ })).toHaveCount(2);
+  await expect(strip(page)).toHaveCount(0);
+  await expect(navigator(page)).toHaveCount(0);
+  await page.getByTestId("fake-yt").evaluate((element) => element.setAttribute("data-instance-marker", "kept"));
+  await page.getByRole("button", { name: /^Dictation/ }).click();
+  await expect(page).toHaveURL(/\/listening\?format=dictation$/);
+  await expect(typingInput(page)).toBeVisible();
+  await expect(practice(page).getByRole("heading", { name: "Dictation" })).toBeVisible();
+  await button(page, "Change exercise").click();
+  await expect(page).toHaveURL(/\/listening$/);
+  await expect(pickerHeading(page)).toBeVisible();
+  await expect(page.locator("[data-testid='fake-yt'][data-instance-marker='kept']")).toHaveCount(1);
+  expect((await fakeYt(page)).mounts).toBe(1);
+});
+
+test("18 · a deep link opens the exercise directly, never the picker", async ({ page }) => {
+  await registerLearner(page);
+  await page.addInitScript(() => {
+    const flag = window as unknown as { __pickerSeen: boolean };
+    flag.__pickerSeen = false;
+    new MutationObserver(() => {
+      if ([...document.querySelectorAll("h2")].some((h) => h.textContent === "How would you like to practise listening?")) flag.__pickerSeen = true;
+    }).observe(document, { childList: true, subtree: true });
+  });
+  const pickerSeen = () => page.evaluate(() => (window as unknown as { __pickerSeen: boolean }).__pickerSeen);
+  await openLesson(page, "/listening?format=cloze");
+  await expect(practice(page).getByRole("heading", { name: "Fill in the blanks" })).toBeVisible();
+  await expect(practice(page).getByTestId("listening-cloze-pending")).toBeVisible();
+  await expect(strip(page)).toHaveAttribute("data-mode", "cloze");
+  expect(await pickerSeen()).toBe(false);
+  await openLesson(page);
+  await expect(typingInput(page)).toBeVisible();
+  expect(await pickerSeen()).toBe(false);
+  // Positive control: the observer does see the picker once it renders.
+  await button(page, "Change exercise").click();
+  await expect(pickerHeading(page)).toBeVisible();
+  expect(await pickerSeen()).toBe(true);
+});
+
+test("19 · one player across picker, exercises and Ẩn video: onReady once, the iframe never display:none", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening");
+  await page.getByTestId("fake-yt").evaluate((element) => element.setAttribute("data-instance-marker", "kept"));
+  const kept = page.locator("[data-testid='fake-yt'][data-instance-marker='kept']");
+  /** Every box from the fake iframe up to the workspace: none is display:none. */
+  const displays = () => page.getByTestId("fake-yt").evaluate((element) => {
+    const out: string[] = [];
+    for (let node: Element | null = element; node && node.getAttribute("data-testid") !== "shadowing-workspace"; node = node.parentElement) out.push(getComputedStyle(node).display);
+    return out;
+  });
+  await page.getByRole("button", { name: /^Dictation/ }).click();
+  await expect(typingInput(page)).toBeVisible();
+  await button(page, "Change exercise").click();
+  await page.getByRole("button", { name: /^Fill in the blanks/ }).click();
+  await expect(practice(page).getByTestId("listening-cloze-pending")).toBeVisible();
+  await hideVideo(page).click();
+  await expect(dock(page)).toBeVisible();
+  const docked = await displays();
+  expect(docked.length).toBeGreaterThan(2);
+  expect(docked).not.toContain("none");
+  // The video box is collapsed and hidden, not removed.
+  expect(await page.locator("[data-workspace-player-video]").evaluate((element) => getComputedStyle(element.parentElement as Element).visibility)).toBe("hidden");
+  await button(page, "Change exercise").click();
+  await expect(pickerHeading(page)).toBeVisible();
+  await page.getByRole("button", { name: /^Dictation/ }).click();
+  await easyMode(page).click();
+  await expect(bank(page)).toBeVisible();
+  await dock(page).getByRole("button", { name: "Show video" }).click();
+  await expect(dock(page)).toHaveCount(0);
+  await expect(kept).toHaveCount(1);
+  expect((await fakeYt(page)).mounts).toBe(1);
+});
+
+test("20 · Ẩn video survives Next and Try again; turning it off stays off", async ({ page }) => {
+  await registerLearner(page);
+  await openWordBank(page);
+  await hideVideo(page).click();
+  await expect(hideVideo(page)).toHaveAttribute("aria-pressed", "true");
+  await expect(dock(page)).toBeVisible();
+  await expect(strip(page)).toHaveCount(0);
+  await button(page, "Next sentence").click();
+  await expect(practice(page).getByTestId("listening-counter")).toHaveText(/^Sentence 2\//);
+  await expect(dock(page)).toBeVisible();
+  await place(page, await cut(page, 1));
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
+  await button(page, "Try again").click();
+  await expect(dock(page)).toBeVisible();
+  await expectConcealed(page);
+  // The dock's own controls drive the same player.
+  await dock(page).getByRole("button", { name: "Replay audio" }).click();
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await dock(page).getByRole("button", { name: "Pause" }).click();
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
+  await dock(page).getByRole("button", { name: "Show video" }).click();
+  await expect(dock(page)).toHaveCount(0);
+  await expect(hideVideo(page)).toHaveAttribute("aria-pressed", "false");
+  await expect(player(page).locator("[data-workspace-player-controls]").getByRole("button", { name: "Play", exact: true })).toBeFocused();
+  await button(page, "Next sentence").click();
+  await expect(stat(page, "sentence")).toHaveText(/^3\//);
+  await expect(dock(page)).toHaveCount(0);
+  await place(page, await cut(page, 2));
+  await button(page, "Check").click();
+  await button(page, "Try again").click();
+  await expect(dock(page)).toHaveCount(0);
+});
+
+test("21 · the dock row stays at one height on hover", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await hideVideo(page).click();
+  await expect(dockRow(page)).toBeVisible();
+  // The docked card's height and its control row's: a clipping parent shrinks the first, a changing row the second.
+  const height = async () => [(await dock(page).boundingBox())?.height ?? -1, (await dockRow(page).boundingBox())?.height ?? -1];
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(400); // longer than any transition
+  const paused = await height();
+  expect(paused[1]).toBeGreaterThan(20);
+  expect(paused[0]).toBeGreaterThanOrEqual(paused[1]);
+  // Playing is when the normal bar idles out: the dock must not.
+  await dock(page).getByRole("button", { name: "Play", exact: true }).click();
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await page.mouse.move(5, 5);
+  await page.waitForTimeout(400);
+  expect(await height()).toEqual(paused);
+  // The progress bar is where the owner saw the glitch; the collapsed video box sits at the dock's top edge.
+  const seek = await dock(page).getByRole("slider", { name: "Seek" }).boundingBox();
+  const video = await page.locator("[data-workspace-player-video]").evaluate((element) => { const r = element.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y }; });
+  const row = await dockRow(page).boundingBox();
+  if (!seek || !row) throw new Error("dock has no box");
+  const points = [[seek.x + seek.width / 2, seek.y + seek.height / 2], [video.x, video.y], [row.x + 4, row.y + row.height / 2], [row.x + row.width - 4, row.y + row.height / 2]];
+  for (const [x, y] of points) {
+    await page.mouse.move(x ?? 0, y ?? 0);
+    await page.waitForTimeout(400);
+    expect(await height()).toEqual(paused);
+  }
+  console.log(`T9-MEASURE dock card/row height ${paused.join("/")}px, dock box ${JSON.stringify(await dock(page).boundingBox())}`);
+});
+
+test("22 · in listen-only at 1280×529 Show answer is above the dock, on the longest line, pieces and typing", async ({ page }) => {
+  await registerLearner(page);
+  // Video shown first: the stat strip carries the sentence counter in view, so the header has none (spec §3.1).
+  await openWordBank(page, `&line=${data.lineIds[LONG.index]}`);
+  const pieces = await cut(page, LONG.index);
+  await expect(bank(page).getByRole("button")).toHaveCount(pieces.length);
+  const stripBox = await strip(page).boundingBox();
+  if (!stripBox) throw new Error("strip has no box");
+  expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(529);
+  await expect(practice(page).getByTestId("listening-counter")).toHaveCount(0);
+  const header = await practice(page).getByRole("heading", { name: "Dictation" }).boundingBox();
+  const shownReveal = await button(page, "Show answer").boundingBox();
+  console.log(`T9-MEASURE video shown: strip top ${stripBox.y} bottom ${stripBox.y + stripBox.height}, exercise header top ${header?.y}, reveal bottom ${(shownReveal?.y ?? 0) + (shownReveal?.height ?? 0)}`);
+
+  await hideVideo(page).click();
+  await expect(dock(page)).toBeVisible();
+  await expect(practice(page).getByTestId("listening-counter")).toBeVisible();
+  for (const mode of ["pieces", "typing"] as const) {
+    if (mode === "typing") {
+      await easyMode(page).click();
+      await expect(typingInput(page)).toBeVisible();
+    }
+    const dockBox = await dock(page).boundingBox();
+    const reveal = await button(page, "Show answer").boundingBox();
+    const panel = await page.getByTestId("practice-panel").boundingBox();
+    const counter = await practice(page).getByTestId("listening-counter").boundingBox();
+    if (!dockBox || !reveal || !panel || !counter) throw new Error("missing box");
+    const scroll = await page.getByTestId("practice-panel").evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
+    console.log(`T9-MEASURE listen-only ${mode} (${pieces.length} pieces): reveal bottom ${reveal.y + reveal.height}, panel bottom ${panel.y + panel.height}, dock top ${dockBox.y}, dock height ${dockBox.height}, counter top ${counter.y}, panel scroll ${scroll.scrollHeight}/${scroll.clientHeight}`);
+    expect(reveal.y + reveal.height).toBeLessThanOrEqual(dockBox.y);
+    // In flow: the practice panel ends where the dock begins; nothing of it runs under the dock.
+    expect(panel.y + panel.height).toBeLessThanOrEqual(dockBox.y);
+    expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(529);
+    if (mode === "pieces") {
+      const rows = await bank(page).evaluate((element) => new Set([...element.querySelectorAll("button")].map((chip) => Math.round(chip.getBoundingClientRect().top))).size);
+      expect(rows).toBe(1);
+    }
+  }
 });

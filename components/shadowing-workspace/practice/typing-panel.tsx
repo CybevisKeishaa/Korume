@@ -24,7 +24,7 @@ const OP_TONE: Record<ListeningDiffOp["type"], string> = {
  * diff is drawn from each op's `display` (raw `text_jp`), never the normalised `expected`. Mounted with a key per
  * line + format + attempt (P11), so a new attempt starts empty; a failed Check keeps the text (Review Focus 2).
  */
-export function TypingPanel({ text, display, hintUnit, hinted, diff, revealed, submitting, hint, onCheck, onProgress }: {
+export function TypingPanel({ text, display, hintUnit, hinted, diff, revealed, submitting, hint, onCheck }: {
   /** The line's raw `text_jp`. */
   text: string;
   /** The raw text of each chunk (`LineChunks.display`). */
@@ -38,7 +38,6 @@ export function TypingPanel({ text, display, hintUnit, hinted, diff, revealed, s
   /** The Show Hint pill, or null once the attempt is answered. */
   hint?: ReactNode;
   onCheck(input: string): void;
-  onProgress(typed: boolean): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
   const [input, setInput] = useState("");
@@ -61,7 +60,7 @@ export function TypingPanel({ text, display, hintUnit, hinted, diff, revealed, s
         </>}
       </p>
       <Input lang="ja" aria-label={t("typingLabel")} value={input} maxLength={2000} readOnly={locked} autoComplete="off" spellCheck={false}
-        className="font-jp" onChange={(event) => { setInput(event.target.value); onProgress(event.target.value !== ""); }}
+        className="font-jp" onChange={(event) => setInput(event.target.value)}
         onKeyDown={(event) => {
           if (event.key !== "Enter" || event.nativeEvent.isComposing || event.keyCode === 229) return;
           event.preventDefault();

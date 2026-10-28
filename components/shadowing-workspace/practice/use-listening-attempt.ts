@@ -19,7 +19,6 @@ type Carry = { lineKey: string; retry: boolean; error: ListeningAttemptError | n
 interface AttemptState {
   key: string;
   hinted: number[];
-  touched: boolean;
   submitting: boolean;
   result: ListeningSubmitData | null;
   /** The submitted result `result` is compared with (P14 "fixed" / "fewer"), read before `result` replaced it. */
@@ -33,7 +32,7 @@ interface AttemptState {
 type ChunksState = { lineId: string; load: number; data: LineChunks | null; status: "loading" | "ready" | "error" };
 
 const fresh = (key: string, carry: Carry | null): AttemptState => ({
-  key, hinted: [], touched: false, submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
+  key, hinted: [], submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
   error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null,
 });
 
@@ -49,16 +48,24 @@ function summarize(data: ListeningSubmitData, { version, textHash }: LineChunks)
 }
 
 /**
- * One Listening attempt on the current line and URL format (P10, P11). Its state is keyed by line + format +
+ * One Listening attempt on the current line and requested format (P10, P11). Its state is keyed by line + format +
  * the reveal provider's attempt and resets during render when that key moves, so a line change, a format
  * change or Try again starts empty in the same commit. A request captures the attempt it belongs to; a
  * response for an attempt that is no longer current is dropped, and the reveal provider ignores it too.
- * Reveal state is written only from click handlers and request callbacks, never from an effect.
+ * Reveal state is written only from click handlers and request callbacks, never from an effect. Word pieces on a
+ * line the chunker cannot cut reliably are typed instead (D9): the returned `format` is the one that line uses.
  */
-export function useListeningAttempt(lineId: string | null, format: ListeningFormat) {
+export function useListeningAttempt(lineId: string | null, requested: ListeningFormat) {
   const { video, lines } = useLesson();
   const { attempt, newAttempt, markChecked, markRevealed } = useListeningReveal();
   const { refresh } = usePracticeStats();
+  const [load, setLoad] = useState(0);
+  const [chunksState, setChunksState] = useState<ChunksState | null>(null);
+  const currentChunks = chunksState !== null && chunksState.lineId === lineId && chunksState.load === load ? chunksState : null;
+  const chunks = currentChunks?.data ?? null;
+  const chunksStatus = currentChunks?.status ?? "loading";
+  const format: ListeningFormat = requested === "word_bank" && chunks !== null && !chunks.reliable ? "typing" : requested;
+
   const lineKey = `${lineId}|${format}`;
   const key = `${lineKey}|${attempt}`;
   const [stored, setState] = useState<AttemptState>(() => fresh(key, null));
@@ -74,8 +81,6 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
   /** The last submitted result per line + format in this visit; never persisted. */
   const previousResults = useRef(new Map<string, PreviousResult>());
 
-  const [load, setLoad] = useState(0);
-  const [chunksState, setChunksState] = useState<ChunksState | null>(null);
   useEffect(() => {
     if (!lineId) return;
     const request = new AbortController();
@@ -92,9 +97,6 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
     })();
     return () => request.abort();
   }, [lineId, load]);
-  const currentChunks = chunksState !== null && chunksState.lineId === lineId && chunksState.load === load ? chunksState : null;
-  const chunks = currentChunks?.data ?? null;
-  const chunksStatus = currentChunks?.status ?? "loading";
 
   const unit = format === "word_bank" ? "chunk" : chunks?.typingHintUnit ?? "chunk";
   const lineText = lines.find((line) => line.id === lineId)?.textJp ?? "";
@@ -188,6 +190,7 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
     ];
 
   return {
+    format,
     chunks,
     chunksStatus,
     submitting: state.submitting,
@@ -197,15 +200,12 @@ export function useListeningAttempt(lineId: string | null, format: ListeningForm
     answer: state.answer,
     revealed: state.revealed,
     error: state.error,
-    inProgress: !answered && (state.touched || state.hinted.length > 0),
     previous,
     feedback,
     hint,
     submit,
     reveal,
     tryAgain,
-    /** A panel reports whether the learner has placed or typed anything (consumed by Task 7's format switch). */
-    setInProgress: (touched: boolean) => setState((prev) => prev.key === key ? { ...prev, touched } : prev),
     reloadChunks: () => setLoad((n) => n + 1),
   };
 }

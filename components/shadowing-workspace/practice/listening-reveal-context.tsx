@@ -1,32 +1,39 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
+import { dictationFormat, type ListeningExercise } from "@/lib/shadowing-workspace/learning-modes";
 
 type Phase = "answering" | "checked" | "revealed";
-interface RevealState { key: string; attempt: number; phase: Phase; videoShown: boolean }
+interface RevealState { key: string; attempt: number; phase: Phase }
 export interface ListeningReveal {
   attempt: number;
   phase: Phase;
   answerVisible: boolean;
-  videoVisible: boolean;
+  /** Ẩn video (spec §3.2, Ruling T1): page-visit state, outside the reveal key. */
+  listenOnly: boolean;
+  setListenOnly(on: boolean): void;
+  /** Chế độ dễ (spec §3.2): page-visit state; in Chép chính tả it picks the stored format, so it is in the key. */
+  easy: boolean;
+  setEasy(on: boolean): void;
   markChecked(attempt: number): void;
   markRevealed(attempt: number): void;
-  showVideo(attempt: number): void;
   newAttempt(): void;
 }
 
 const ListeningRevealContext = createContext<ListeningReveal | null>(null);
-const concealed = (key: string, attempt: number): RevealState => ({ key, attempt, phase: "answering", videoShown: false });
+const concealed = (key: string, attempt: number): RevealState => ({ key, attempt, phase: "answering" });
 
 /**
- * P11: what Listening may show for the current line, keyed by line + URL format + attempt. A new key resets to a
- * concealed new attempt DURING RENDER (React's "adjust state when a prop changes"), so the first committed frame
- * after a line or format change is already concealed. A call carrying a stale attempt is a no-op, so a late
- * response from a discarded attempt can never reveal anything.
+ * P11: what Listening may show for the current line, keyed by line + stored format + attempt (no exercise = the
+ * picker). A new key resets to a concealed new attempt DURING RENDER (React's "adjust state when a prop changes"), so
+ * the first committed frame after a line, exercise or Chế độ dễ change is already concealed. A call carrying a stale
+ * attempt is a no-op, so a late response from a discarded attempt can never reveal anything. Ẩn video and Chế độ dễ
+ * live beside the key, so they survive every line, exercise, picker and attempt change of the page visit.
  */
-export function ListeningRevealProvider({ lineId, format, children }: { lineId: string | null; format: ListeningFormat; children: ReactNode }) {
-  const key = `${lineId}|${format}`;
+export function ListeningRevealProvider({ lineId, exercise, children }: { lineId: string | null; exercise: ListeningExercise | null; children: ReactNode }) {
+  const [listenOnly, setListenOnly] = useState(false);
+  const [easy, setEasy] = useState(false);
+  const key = `${lineId}|${exercise === "dictation" ? dictationFormat(easy) : exercise}`;
   const [state, setState] = useState(() => concealed(key, 1));
   if (state.key !== key) setState(concealed(key, state.attempt + 1));
 
@@ -38,13 +45,15 @@ export function ListeningRevealProvider({ lineId, format, children }: { lineId: 
       attempt: state.attempt,
       phase: state.phase,
       answerVisible: current && state.phase !== "answering",
-      videoVisible: current && state.videoShown,
+      listenOnly,
+      setListenOnly,
+      easy,
+      setEasy,
       markChecked: (attempt) => ifCurrent(attempt, { phase: "checked" }),
       markRevealed: (attempt) => ifCurrent(attempt, { phase: "revealed" }),
-      showVideo: (attempt) => ifCurrent(attempt, { videoShown: true }),
       newAttempt: () => setState((previous) => concealed(previous.key, previous.attempt + 1)),
     };
-  }, [key, state]);
+  }, [easy, key, listenOnly, state]);
 
   return <ListeningRevealContext.Provider value={value}>{children}</ListeningRevealContext.Provider>;
 }

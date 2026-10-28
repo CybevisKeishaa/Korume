@@ -40,15 +40,6 @@ export function dictationFormat(easy: boolean): "typing" | "word_bank" {
   return easy ? "word_bank" : "typing";
 }
 
-/**
- * Which of today's two panels the Listening body renders until the exercise picker lands (ruling P2): `dictation`
- * and the legacy links open Chép chính tả (`word_bank` in Chế độ dễ); no or any other value keeps today's Word Bank.
- */
-export function panelFormat(param: string | null): "typing" | "word_bank" {
-  const { exercise, easyFromLegacy } = listeningExercise(param);
-  return dictationFormat(exercise !== "dictation" || easyFromLegacy);
-}
-
 /** The stats a mode reads; Listening reads its active exercise only (exercises are never averaged), none without one. */
 export function practiceStatsMode(mode: PracticeModeId, exercise: ListeningExercise | null): PracticeStatsMode | null {
   return mode === "shadowing" ? null : mode === "listening" ? exercise : mode;

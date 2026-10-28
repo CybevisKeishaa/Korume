@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { completedModes, dictationFormat, LEARNING_MODES, listeningExercise, panelFormat, practiceModeFromPath, practiceStatsMode, shouldRenderModeNav } from "./learning-modes";
+import { completedModes, dictationFormat, LEARNING_MODES, listeningExercise, practiceModeFromPath, practiceStatsMode, shouldRenderModeNav } from "./learning-modes";
 
 describe("learning modes", () => {
   it("all four modes are complete; the bar renders (practice modes D24)", () => {
@@ -41,12 +41,6 @@ describe("listeningExercise / dictationFormat / practiceStatsMode (spec §3.0)",
   ] as const)("format param %j reads as %j", (param, expected) => {
     expect(listeningExercise(param)).toEqual(expected);
   });
-
-  it.each([["typing", "typing"], ["dictation", "typing"], ["word_bank", "word_bank"], [null, "word_bank"], ["cloze", "word_bank"], ["foo", "word_bank"]] as const)(
-    "until the picker, format param %j renders today's %s panel (ruling P2)", (param, expected) => {
-      expect(panelFormat(param)).toBe(expected);
-    },
-  );
 
   it("Chép chính tả writes typing, or word_bank in Chế độ dễ", () => {
     expect(dictationFormat(false)).toBe("typing");

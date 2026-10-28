@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from "vitest";
 import { render, waitFor } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { attemptBodies, calls, fetchMock, lesson, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
@@ -45,10 +45,11 @@ const serveChunksWith = (change: Partial<LineChunks>) => {
 const place = (text: string) => fireEvent.click(within(bank()).getByRole("button", { name: text }));
 const placeAll = (texts: readonly string[]) => texts.forEach(place);
 
+/** Chép chính tả with Chế độ dễ on: the word pieces (spec §3.0, §3.2). */
 async function open(line: LineId = "line-1") {
-  // Ruling P2: the legacy `word_bank` link renders today's Word Bank panel until the picker lands.
-  searchParams = new URLSearchParams(`line=${line}&format=word_bank`);
+  searchParams = new URLSearchParams(`line=${line}&format=dictation`);
   const view = render(shell());
+  fireEvent.click(await screen.findByRole("button", { name: "Easy mode" }));
   await screen.findByRole("list", { name: "Your sentence" });
   return view;
 }
@@ -146,7 +147,6 @@ describe("ListeningModeBody — Word Bank", () => {
     LINES["line-1"].display.forEach((text, i) => expect(screen.getByRole("button", { name: `Slot ${i + 1} of 4, ${text}` })).toBeInTheDocument());
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
     expect(screen.queryByTestId("listening-answer")).toBeNull();
-    expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
   });
 
   it("locks the hinted chunk at the front and keeps every placed chunk exactly once (Review Focus 3)", async () => {
@@ -215,7 +215,7 @@ describe("ListeningModeBody — Word Bank", () => {
     const before = required(probe.reveal).attempt;
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     const first = frames.find((frame) => frame.attempt === before + 1);
-    expect(first).toEqual({ attempt: before + 1, subtitle: false, cover: true, filled: 0, typed: null, answer: false, korume: null });
+    expect(first).toEqual({ attempt: before + 1, subtitle: false, dock: false, filled: 0, typed: null, answer: false, korume: null });
     expect(bankTexts()).toEqual(shown);
     expect(feedback()).toHaveTextContent("New attempt. Your last score on this sentence was 25.");
     expect(feedback()).not.toHaveTextContent("You fixed");
@@ -254,7 +254,7 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(feedback()).not.toHaveTextContent("You fixed");
   });
 
-  it("Show answer reveals the answer with the hints so far, keeps the video covered, scores nothing and never feeds the retry score", async () => {
+  it("Show answer reveals the answer with the hints so far, scores nothing and never feeds the retry score", async () => {
     await open();
     placeAll(LINES["line-1"].display);
     fireEvent.click(check());
@@ -266,7 +266,6 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(attemptBodies().at(-1)).toEqual({ kind: "reveal", videoId: "video-1", lineId: "line-1", format: "word_bank", version: 1, textHash: "a".repeat(64), hintedUnits: [0] });
     expect(feedback().textContent).toBe("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
     expect(screen.queryByTestId("listening-score")).toBeNull();
-    expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
     expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent(LINES["line-1"].text);
     LINES["line-1"].display.forEach((text, i) => expect(screen.getByRole("button", { name: `Slot ${i + 1} of 4, ${text}` })).toBeInTheDocument());
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
@@ -296,7 +295,6 @@ describe("ListeningModeBody — Word Bank", () => {
     fireEvent.click(nextSentence());
     await expectEmpty("line-2");
     expect(screen.getByRole("button", { name: /^Sentence 2,/ })).toHaveAttribute("aria-current", "true");
-    expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
     // The navigator stays live in Listening (D12).
     expect(screen.getByRole("button", { name: /^Sentence 1,/ })).not.toHaveAttribute("aria-disabled", "true");
@@ -314,25 +312,24 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("This sentence changed, start again");
   });
 
-  it("moves an unreliable Word Bank line to format=typing by the URL, rendering no practice control until it agrees (D9, P10)", async () => {
-    searchParams = new URLSearchParams("line=line-3&mode=x&format=word_bank");
-    const view = render(shell());
-    await waitFor(() => expect(router.replace).toHaveBeenCalledTimes(1));
-    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-3&mode=x&format=typing", { scroll: false });
-    expect(slotList()).toBeNull();
-    expect(screen.queryByRole("list", { name: "Word bank" })).toBeNull();
-    expect(screen.queryByRole("textbox")).toBeNull();
-    expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
-    expect(screen.queryByTestId("listening-unreliable")).toBeNull();
-    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
-
-    searchParams = new URLSearchParams("line=line-3&mode=x&format=typing");
-    view.rerender(shell());
+  it("with Chế độ dễ on, an unreliable line is typed with its notice, the URL untouched; the next reliable line has pieces again (D9)", async () => {
+    await open("line-2");
+    fireEvent.click(nextSentence());
     expect(await screen.findByTestId("listening-unreliable")).toHaveTextContent("This sentence can't be split reliably, so it's Typing only");
+    expect(await screen.findByRole("textbox", { name: "Type what you hear" })).toBeInTheDocument();
     expect(slotList()).toBeNull();
-    expect(screen.getByTestId("lesson-stat-strip")).toHaveTextContent("Dictation · Submitted");
-    await waitFor(() => expect(String(calls("practice-stats").at(-1)?.[0])).toBe("/api/shadowing/video-1/practice-stats?mode=dictation"));
-    expect(router.replace).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole("button", { name: "Easy mode" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Easy mode" })).toHaveAttribute("aria-pressed", "true");
+    typeInto("ABC");
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
+    expect(attemptBodies()[0]).toMatchObject({ lineId: "line-3", format: "typing", hintUnit: "grapheme4" });
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
+    expect(router.replace).not.toHaveBeenCalled();
+    await screen.findByTestId("listening-score");
+    fireEvent.click(nextSentence());
+    await screen.findByRole("list", { name: "Your sentence" });
+    expect(screen.getByRole("button", { name: "Easy mode" })).not.toHaveAttribute("aria-disabled");
   });
 });
 
@@ -367,7 +364,7 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
   });
 
   it("the rate buttons' accessible name contains their visible text in every locale (WCAG 2.5.3)", async () => {
-    searchParams = new URLSearchParams("line=line-1");
+    searchParams = new URLSearchParams("line=line-1&format=dictation");
     render(shell(), { locale: "vi" });
     const slow = (await screen.findByText("0.75×")).closest("button");
     expect(slow).toHaveAccessibleName(expect.stringContaining("0.75×"));
@@ -420,21 +417,21 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
 });
 
 const input = () => screen.getByRole("textbox", { name: "Type what you hear" });
-const radio = (name: string) => screen.getByRole("radio", { name });
+const easyMode = () => screen.getByRole("button", { name: "Easy mode" });
 const metricNames = () => within(required(screen.getByText("Recall").closest("dl"))).getAllByRole("term").map((term) => term.textContent);
 const typeInto = (text: string) => fireEvent.change(input(), { target: { value: text } });
 
 async function openTyping(line: LineId) {
-  searchParams = new URLSearchParams(`line=${line}&format=typing`);
+  searchParams = new URLSearchParams(`line=${line}&format=dictation`);
   const view = render(shell());
   await screen.findByRole("textbox", { name: "Type what you hear" });
   return view;
 }
 
-describe("ListeningModeBody — Typing and the format switch", () => {
+describe("ListeningModeBody — Typing and Chế độ dễ", () => {
   it("sends the typed text with the line's hint unit; a hint shows the chunk's raw text and never edits the input", async () => {
     await openTyping("line-4");
-    expect(screen.getByRole("radio", { name: "Typing" })).toHaveAttribute("aria-checked", "true");
+    expect(easyMode()).toHaveAttribute("aria-pressed", "false");
     typeInto("テスト");
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
     expect(screen.getByTestId("typing-hint")).toHaveTextContent("ﾃｽﾄは");
@@ -574,63 +571,227 @@ describe("ListeningModeBody — Typing and the format switch", () => {
     expect(check()).toBeEnabled();
     expect(screen.queryByTestId("listening-answer")).toBeNull();
     expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
-    expect(screen.getByTestId("listen-cover")).toBeInTheDocument();
   });
 
-  it("asks before switching away from typed text: Cancel keeps text and format, Confirm switches", async () => {
-    await openTyping("line-4");
-    fireEvent.click(radio("Word Bank"));
-    expect(router.replace).toHaveBeenCalledTimes(1); // nothing typed yet: no confirm
-    expect(screen.queryByRole("dialog")).toBeNull();
-    router.replace.mockReset();
-
-    typeInto("テスト");
-    fireEvent.click(radio("Word Bank"));
-    expect(screen.getByRole("dialog", { name: "Discard this attempt?" })).toBeInTheDocument();
-    fireEvent.click(screen.getByText("Keep going", { selector: "button" }));
-    expect(router.replace).not.toHaveBeenCalled();
-    expect(input()).toHaveValue("テスト");
-    expect(radio("Typing")).toHaveAttribute("aria-checked", "true");
-
-    fireEvent.click(radio("Word Bank"));
-    fireEvent.click(screen.getByRole("button", { name: "Discard and switch" }));
-    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-4&format=word_bank", { scroll: false });
-  });
-
-  it("asks before switching away from a placed chunk", async () => {
+  it("never carries a reveal across a Chế độ dễ toggle: the first commit after it is concealed and empty, URL untouched (P11)", async () => {
     await open("line-2");
-    place("今日は");
-    fireEvent.click(radio("Typing"));
-    expect(screen.getByRole("dialog", { name: "Discard this attempt?" })).toBeInTheDocument();
-    expect(router.replace).not.toHaveBeenCalled();
-  });
-
-  it("never carries a reveal across formats: the first commit after the URL change is concealed and empty (P11)", async () => {
-    const view = await open("line-2");
     placeAll(LINES["line-2"].display);
     fireEvent.click(check());
     await screen.findByTestId("listening-answer");
     expect(screen.getByTestId("workspace-subtitle")).toBeInTheDocument();
-    fireEvent.click(radio("Typing"));
-    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-2&format=typing", { scroll: false });
 
     const before = required(probe.reveal).attempt;
-    searchParams = new URLSearchParams("line=line-2&format=typing");
-    view.rerender(shell());
-    expect(frames.find((frame) => frame.attempt === before + 1)).toEqual({ attempt: before + 1, subtitle: false, cover: true, filled: 0, typed: "", answer: false, korume: null });
+    fireEvent.click(easyMode());
+    expect(frames.find((frame) => frame.attempt === before + 1)).toEqual({ attempt: before + 1, subtitle: false, dock: false, filled: 0, typed: "", answer: false, korume: null });
     expect(screen.queryByTestId("listening-score")).toBeNull();
+    expect(input()).toHaveValue("");
 
-    searchParams = new URLSearchParams("line=line-2&format=word_bank");
-    view.rerender(shell());
-    expect(frames.find((frame) => frame.attempt === before + 2)).toEqual({ attempt: before + 2, subtitle: false, cover: true, filled: 0, typed: null, answer: false, korume: null });
+    fireEvent.click(easyMode());
+    expect(frames.find((frame) => frame.attempt === before + 2)).toEqual({ attempt: before + 2, subtitle: false, dock: false, filled: 0, typed: null, answer: false, korume: null });
     await expectEmpty("line-2");
+    expect(router.replace).not.toHaveBeenCalled();
   });
 
-  it("on an unreliable line disables Word Bank with the reason and shows the notice", async () => {
+  it("on an unreliable line Chế độ dễ is unavailable with the reason and the notice shows", async () => {
     await openTyping("line-3");
-    expect(radio("Word Bank")).toBeDisabled();
-    expect(radio("Word Bank")).toHaveAccessibleDescription("This sentence can't be split reliably, so it's Typing only");
+    expect(easyMode()).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(easyMode());
+    expect(easyMode()).toHaveAttribute("aria-pressed", "false");
+    expect(input()).toBeInTheDocument();
     expect(screen.getByTestId("listening-unreliable")).toBeVisible();
+  });
+});
+
+describe("ListeningModeBody — picker and URL (spec §3.0)", () => {
+  const panel = () => screen.queryByTestId("practice-panel");
+  async function entry(query: string) {
+    searchParams = new URLSearchParams(query);
+    const view = render(shell());
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    return view;
+  }
+
+  it.each(["line=line-1", "line=line-1&format=nope"])("no or an unknown format shows the picker (%s)", async (query) => {
+    await entry(query);
+    expect(screen.getByRole("heading", { name: "How would you like to practise listening?" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^(Dictation|Fill in the blanks)/ })).toHaveLength(2);
+    expect(panel()).toBeNull();
+    expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
+    expect(router.replace).not.toHaveBeenCalled();
+    expect(calls("/chunks")).toHaveLength(0);
+  });
+
+  it.each([
+    ["Dictation", "dictation"],
+    ["Fill in the blanks", "cloze"],
+  ] as const)("choosing %s replaces the URL with its format, keeping the other params", async (name, format) => {
+    await entry("line=line-2&mode=x");
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(`^${name}`) }));
+    expect(router.replace).toHaveBeenCalledWith(`/shadowing/video-1/listening?line=line-2&mode=x&format=${format}`, { scroll: false });
+  });
+
+  it("format=dictation opens the exercise directly: its name, Change exercise and the typing panel", async () => {
+    await entry("line=line-1&format=dictation");
+    expect(await screen.findByRole("textbox", { name: "Type what you hear" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Dictation" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "How would you like to practise listening?" })).toBeNull();
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
+  });
+
+  it("format=cloze opens Fill in the blanks with its placeholder until its panel lands", async () => {
+    await entry("line=line-1&format=cloze");
+    expect(screen.getByRole("heading", { name: "Fill in the blanks" })).toBeInTheDocument();
+    expect(screen.getByTestId("listening-cloze-pending")).toBeInTheDocument();
+    expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "cloze");
+    expect(screen.queryByRole("textbox")).toBeNull();
+  });
+
+  it.each([
+    ["typing", "false"],
+    ["word_bank", "true"],
+  ] as const)("format=%s maps to dictation by a URL replace (Chế độ dễ %s), with no practice control until the URL agrees", async (legacy, easy) => {
+    const view = await entry(`line=line-1&format=${legacy}&mode=x`);
+    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-1&format=dictation&mode=x", { scroll: false });
+    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(slotList()).toBeNull();
+    expect(calls("/chunks")).toHaveLength(0);
+    searchParams = new URLSearchParams("line=line-1&format=dictation&mode=x");
+    view.rerender(shell());
+    expect(screen.getByRole("button", { name: "Easy mode" })).toHaveAttribute("aria-pressed", easy);
+    if (easy === "true") await screen.findByRole("list", { name: "Your sentence" });
+    else await screen.findByRole("textbox", { name: "Type what you hear" });
+    expect(router.replace).toHaveBeenCalledTimes(1);
+  });
+
+  it("Change exercise removes format, keeping the other params", async () => {
+    await entry("line=line-2&format=dictation");
+    fireEvent.click(screen.getByRole("button", { name: "Change exercise" }));
+    expect(router.replace).toHaveBeenCalledWith("/shadowing/video-1/listening?line=line-2", { scroll: false });
+  });
+
+  it("late response after Change exercise: stats refresh, but no result on the picker or back in the exercise (Review Focus 3)", async () => {
+    let resolve: (response: Response) => void = () => undefined;
+    server.attempt = () => new Promise((done) => { resolve = done; });
+    const view = await open();
+    placeAll(LINES["line-1"].display);
+    fireEvent.click(check());
+    const dictationStats = () => calls("practice-stats?mode=dictation").length;
+    await waitFor(() => expect(dictationStats()).toBe(1)); // the strip's read
+    fireEvent.click(screen.getByRole("button", { name: "Change exercise" }));
+    searchParams = new URLSearchParams("line=line-1");
+    view.rerender(shell());
+    expect(screen.getByRole("heading", { name: "How would you like to practise listening?" })).toBeInTheDocument();
+    await waitFor(() => expect(dictationStats()).toBe(2)); // the picker's own progress read
+    await act(async () => { resolve(serve(attemptBodies()[0] as AttemptBody)); });
+    await waitFor(() => expect(dictationStats()).toBe(3)); // the saved row refreshes the stats
+    expect(screen.queryByTestId("listening-score")).toBeNull();
+    expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+    searchParams = new URLSearchParams("line=line-1&format=dictation");
+    view.rerender(shell());
+    await expectEmpty("line-1");
+    expect(screen.queryByTestId("listening-score")).toBeNull();
+    expect(screen.queryByTestId("listening-answer")).toBeNull();
+    expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+  });
+
+  it("shows the counter in the exercise header only when the strip does not (spec §3.1)", async () => {
+    await entry("line=line-2&format=dictation");
+    expect(screen.queryByTestId("listening-counter")).toBeNull();
+    expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Hide video" }));
+    expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
+    expect(screen.getByTestId("listening-counter")).toHaveTextContent("Sentence 2/5");
+  });
+});
+
+describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
+  const dock = () => required(document.querySelector<HTMLElement>("[data-listen-dock]"));
+  const practicePanel = () => screen.getByTestId("practice-panel");
+  const hideVideo = () => within(practicePanel()).getByRole("button", { name: "Hide video" });
+
+  it("listen-only renders the dock with Nghe lại câu and without the ReplayRow in the panel", async () => {
+    await open("line-2");
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    // Video visible: the ReplayRow sits in the panel, there is no dock.
+    expect(within(practicePanel()).getByRole("button", { name: "Replay audio" })).toBeInTheDocument();
+    expect(within(practicePanel()).getByRole("button", { name: "Loop" })).toBeInTheDocument();
+    expect(document.querySelector("[data-listen-dock]")).toBeNull();
+    fireEvent.click(hideVideo());
+    expect(within(practicePanel()).queryByRole("button", { name: "Replay audio" })).toBeNull();
+    expect(within(practicePanel()).queryByRole("button", { name: "Loop" })).toBeNull();
+    expect(within(practicePanel()).queryByRole("button", { name: "1× speed" })).toBeNull();
+    const replay = within(dock()).getByRole("button", { name: "Replay audio" });
+    for (const name of ["Loop", "0.75× speed", "1× speed", "Previous sentence", "Play", "Next sentence", "Mute", "Show video"]) {
+      expect(within(dock()).getByRole("button", { name })).toBeInTheDocument();
+    }
+    expect(within(dock()).getByRole("slider", { name: "Seek" })).toBeInTheDocument();
+    // The same handlers as the panel's row: Replay audio seeks the current sentence and plays.
+    const player = required(yt.players[0]);
+    const seek = vi.spyOn(player, "seekTo");
+    fireEvent.click(replay);
+    expect(seek.mock.calls.at(-1)?.[0]).toBe(lesson.transcript?.lines[1]?.startTime);
+    // One player: the iframe stays mounted, never display:none, inside a collapsed, hidden box.
+    expect(yt.players).toHaveLength(1);
+    const video = required(document.querySelector<HTMLElement>("[data-workspace-player-video]"));
+    expect(video.closest(".invisible.h-0")).not.toBeNull();
+    for (let node: HTMLElement | null = video; node; node = node.parentElement) expect(node.className).not.toMatch(/(^|\s)hidden(\s|$)/);
+  });
+
+  it("dock has no fullscreen, CC, -5s, loop-count or speed popover", async () => {
+    // jsdom has no Fullscreen API: claim it, so the normal bar's fullscreen button is a real positive control.
+    Object.defineProperty(document, "fullscreenEnabled", { configurable: true, value: true });
+    onTestFinished(() => { delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled; });
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    // Positive control: the normal bar has each of them.
+    const player = screen.getByRole("region", { name: "Player" });
+    for (const name of ["Player fullscreen", "Hide subtitles", "Back 5 seconds", "Sentence loop"]) expect(within(player).getByRole("button", { name })).toBeInTheDocument();
+    expect(within(player).getByRole("button", { name: /^Playback speed/ })).toBeInTheDocument();
+    fireEvent.click(hideVideo());
+    for (const name of ["Player fullscreen", "Hide subtitles", "Show subtitles", "Back 5 seconds", "Sentence loop"]) expect(within(player).queryByRole("button", { name })).toBeNull();
+    expect(within(player).queryByRole("button", { name: /^Playback speed/ })).toBeNull();
+    // No overlay, no idle hide: the dock's row is plain flow, never the auto-hiding grid of the normal bar.
+    expect(player.querySelector("[data-workspace-player-controls]")).toBeNull();
+    expect(dock().querySelector("[class*='grid-rows']")).toBeNull();
+    // The progress fill steps down to a neutral; the normal bar keeps the accent.
+    expect(within(dock()).getByRole("slider", { name: "Seek" })).toHaveClass("accent-muted-foreground");
+    expect(within(dock()).getByTestId("playback-clock")).toHaveTextContent(/^\d+:\d{2} \/ 0:30$/);
+  });
+
+  it("Hiện video in the dock turns listenOnly off and the toolbar's Ẩn video aria-pressed follows", async () => {
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(hideVideo());
+    expect(hideVideo()).toHaveAttribute("aria-pressed", "true");
+    const show = within(dock()).getByRole("button", { name: "Show video" });
+    expect(show).not.toHaveAttribute("aria-pressed");
+    show.focus();
+    fireEvent.click(show);
+    expect(document.querySelector("[data-listen-dock]")).toBeNull();
+    expect(hideVideo()).toHaveAttribute("aria-pressed", "false");
+    expect(required(probe.reveal).listenOnly).toBe(false);
+    // The pressed button unmounts with the dock; focus stays in the player instead of falling to the page.
+    await waitFor(() => expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: "Play" })));
+    expect(yt.players).toHaveLength(1);
+  });
+
+  it("listen-only survives Next and Try again, and turning it off stays off", async () => {
+    await open();
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    fireEvent.click(hideVideo());
+    fireEvent.click(nextSentence());
+    await expectEmpty("line-2");
+    expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+    placeAll(LINES["line-2"].display);
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+    fireEvent.click(within(dock()).getByRole("button", { name: "Show video" }));
+    fireEvent.click(nextSentence());
+    await screen.findByTestId("listening-unreliable"); // line-3
+    expect(document.querySelector("[data-listen-dock]")).toBeNull();
+    expect(hideVideo()).toHaveAttribute("aria-pressed", "false");
   });
 });
 
