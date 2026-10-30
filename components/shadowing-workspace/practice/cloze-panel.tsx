@@ -19,14 +19,14 @@ const VERDICT = { correct: { tone: OP_TONE.match, Icon: Check }, wrong: { tone: 
  * (the server's `hintedPerBlank`). Gives each blank's read-only kana prefix, the next index to hint (the lowest
  * unfinished blank), or null when every reading is given, and the unit total.
  */
-export function clozeHints(readings: readonly string[], hinted: readonly number[]): { prefixes: string[]; next: number | null; total: number } {
+export function clozeHints(readings: readonly string[], hinted: readonly number[], open?: (blank: number, prefix: string) => boolean): { prefixes: string[]; next: number | null; total: number } {
   const prefixes: string[] = [];
   let next: number | null = null;
   let total = 0;
-  for (const reading of readings) {
+  for (const [b, reading] of readings.entries()) {
     const g = Array.from(GRAPHEMES.segment(reading), (s) => s.segment);
     const n = hinted.filter((h) => h >= total && h < total + g.length).length;
-    if (next === null && n < g.length) next = total + n;
+    if (next === null && n < g.length && (open?.(b, g.slice(0, n).join("")) ?? true)) next = total + n;
     prefixes.push(g.slice(0, n).join(""));
     total += g.length;
   }

@@ -66,7 +66,7 @@ function serveCloze(body: AttemptBody): Response {
   return Response.json({ data: { kind: "submit", ...scored, answer: LINES[body.lineId].text, helped: body.easy === true || body.hintedUnits.length > 0 } });
 }
 
-export type AttemptBody ={ kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
+export type AttemptBody = { kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
 /** The server's answer to a valid body: the real scorers over the line's normalised chunks or base. */
 export function serve(body: AttemptBody): Response {
   const line = LINES[body.lineId];

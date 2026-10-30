@@ -115,6 +115,9 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     : !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme1Units(normalizeJa(lineText)).length;
   const answered = state.result !== null || state.revealed;
   const previous = previousResults.current.get(lineKey) ?? null;
+  /** A blank 💡 may still hint: the learner has not typed into it or filled it with a chip (its box holds only its
+   *  hint, if any), so 💡 never overwrites their answer. */
+  const unfinished = (answers: string[]) => (b: number, prefix: string) => (answers[b] ?? "") === prefix;
 
   async function post(body: Record<string, unknown>, done: (data: ListeningSubmitData | ListeningRevealData) => void) {
     const requestKey = key;
@@ -201,7 +204,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   function hintCloze() {
     if (!cloze || answered || state.submitting) return;
     setState((prev) => {
-      const { next } = clozeHints(cloze.readings, prev.hinted);
+      const { next } = clozeHints(cloze.readings, prev.hinted, unfinished(prev.answers));
       if (prev.key !== key || next === null) return prev;
       const hinted = [...prev.hinted, next];
       const { prefixes } = clozeHints(cloze.readings, hinted);
@@ -249,7 +252,8 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     markChipUsed,
     submitting: state.submitting,
     hinted: state.hinted,
-    allHinted: unitCount > 0 && state.hinted.length >= unitCount,
+    allHinted: isCloze && cloze ? clozeHints(cloze.readings, state.hinted, unfinished(state.answers)).next === null
+      : unitCount > 0 && state.hinted.length >= unitCount,
     result: state.result,
     answer: state.answer,
     revealed: state.revealed,

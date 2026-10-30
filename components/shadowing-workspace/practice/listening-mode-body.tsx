@@ -51,7 +51,8 @@ export function ListeningModeBody() {
   const attempt = useListeningAttempt(lineId, cloze ? "cloze" : dictationFormat(easy));
   const { chunks, chunksStatus, format } = attempt;
   const status = cloze ? attempt.clozeStatus : chunksStatus;
-  const unreliable = chunksStatus === "ready" && chunks !== null && !chunks.reliable;
+  // Chunks state outlives a switch to Điền từ on the same line, so the Typing-only notice is dictation's alone.
+  const unreliable = !cloze && chunksStatus === "ready" && chunks !== null && !chunks.reliable;
   const ready = status === "ready" && (cloze ? attempt.cloze : chunks) !== null && lineId !== null;
   const answered = attempt.result !== null || attempt.revealed;
   const noBlank = cloze && attempt.cloze?.blanks.length === 0;

@@ -920,27 +920,44 @@ describe("ListeningModeBody — Điền từ (spec §3.4)", () => {
     await openCloze("line-1");
     expect(bulb()).toHaveAttribute("aria-keyshortcuts", "Alt+H");
     fill(1, "あお");
+    fill(2, "あさ");
+    expect(bulb()).toBeDisabled(); // every blank holds the learner's answer: nothing left to hint
+    altH(blank(1));
+    expect(blank(1)).not.toHaveAccessibleDescription();
+    fill(2, "");
     altH(blank(1), { isComposing: true });
     altH(blank(1), { keyCode: 229 });
     altH(blank(1), { ctrlKey: true });
     altH(blank(1), { repeat: true });
-    expect(blank(1)).not.toHaveAccessibleDescription();
+    expect(blank(2)).not.toHaveAccessibleDescription();
     altH(blank(1));
-    expect(blank(1)).toHaveAccessibleDescription("Hint: あ");
-    expect(blank(1)).toHaveValue("お"); // the typed あ became the hint, the rest stays the learner's
-    fireEvent.click(bulb());
-    expect(blank(1)).toHaveAccessibleDescription("Hint: あめ");
-    expect(blank(1)).toHaveValue(""); // お did not continue the reading: a hinted blank is finished in kana
-    altH();
+    expect(blank(1)).toHaveValue("あお"); // 💡 never overwrites a typed answer: it hints the lowest untouched blank
+    expect(blank(1)).not.toHaveAccessibleDescription();
     expect(blank(2)).toHaveAccessibleDescription("Hint: あ");
+    fill(1, "");
+    fireEvent.click(bulb());
+    expect(blank(1)).toHaveAccessibleDescription("Hint: あ");
+    altH();
+    expect(blank(1)).toHaveAccessibleDescription("Hint: あめ");
+    expect(blank(1)).toHaveValue("");
     expect(feedback()).toHaveTextContent("3 characters hinted so far.");
     expect(calls("/api/dictation/attempt")).toHaveLength(0);
     expect(check()).toBeEnabled(); // a hinted prefix is text
     fill(2, "した");
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
-    expect(attemptBodies()).toEqual([{ kind: "submit", ...HEAD, lineId: "line-1", hintedUnits: [0, 1, 2], blanks: [2, 6], answers: ["あめ", "あした"], easy: false }]);
+    expect(attemptBodies()).toEqual([{ kind: "submit", ...HEAD, lineId: "line-1", hintedUnits: [2, 0, 1], blanks: [2, 6], answers: ["あめ", "あした"], easy: false }]);
     expect(verdicts()).toEqual(["hinted", "hinted"]);
+  });
+
+  it("the Typing-only notice stays in Chép chính tả: switching to Điền từ on the same unreliable line drops it", async () => {
+    searchParams = new URLSearchParams("line=line-3&format=dictation");
+    const view = render(shell());
+    expect(await screen.findByTestId("listening-unreliable")).toBeVisible();
+    searchParams = new URLSearchParams("line=line-3&format=cloze");
+    view.rerender(shell());
+    await screen.findByText("This sentence has no word to fill");
+    expect(screen.queryByTestId("listening-unreliable")).toBeNull();
   });
 
   it("Chế độ dễ: a chip fills the first empty blank and latches easy: true, even after the chip is returned and easy is off", async () => {
