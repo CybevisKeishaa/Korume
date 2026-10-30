@@ -7,13 +7,15 @@ import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
 import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { useLesson } from "../workspace-context";
+import { clozeHints } from "./cloze-panel";
 import { useListeningReveal } from "./listening-reveal-context";
 import { usePracticeStats } from "./practice-stats-context";
+import { useLineCloze } from "./use-line-cloze";
 
 export type ListeningAttemptError = "network" | "line_changed" | "rate_limited";
 /** A submitted result as later attempts compare with it; `version` + `textHash` say which cut of the line it scored. */
 export interface PreviousResult { score: number; ownCorrect?: number; wrongPieces?: number[]; errorCount?: number; version: number; textHash: string }
-type SubmitPayload = { chunkOrder: number[] } | { input: string };
+type SubmitPayload = { chunkOrder: number[] } | { input: string } | { answers: string[] };
 /** What a new attempt inherits from the one it replaces: a Try again, or a restart after `line_changed`. */
 type Carry = { lineKey: string; retry: boolean; error: ListeningAttemptError | null };
 interface AttemptState {
@@ -28,15 +30,18 @@ interface AttemptState {
   error: ListeningAttemptError | null;
   retry: boolean;
   carry: Carry | null;
+  /** Điền từ: one per blank, hinted prefix included; `easyUsed` latches on the first chip (spec §3.4, §3.6). */
+  answers: string[];
+  easyUsed: boolean;
 }
 type ChunksState = { lineId: string; load: number; data: LineChunks | null; status: "loading" | "ready" | "error" };
 
 const fresh = (key: string, carry: Carry | null): AttemptState => ({
   key, hinted: [], submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
-  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null,
+  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null, answers: [], easyUsed: false,
 });
 
-function summarize(data: ListeningSubmitData, { version, textHash }: LineChunks): PreviousResult {
+function summarize(data: ListeningSubmitData, { version, textHash }: { version: number; textHash: string }): PreviousResult {
   return {
     score: data.score,
     ownCorrect: data.metrics.slots?.correct,
@@ -60,6 +65,8 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const { attempt, newAttempt, markChecked, markRevealed } = useListeningReveal();
   const { refresh } = usePracticeStats();
   const [load, setLoad] = useState(0);
+  const isCloze = requested === "cloze";
+  const { cloze, status: clozeStatus, reload: reloadCloze } = useLineCloze(isCloze ? lineId : null);
   const [chunksState, setChunksState] = useState<ChunksState | null>(null);
   const currentChunks = chunksState !== null && chunksState.lineId === lineId && chunksState.load === load ? chunksState : null;
   const chunks = currentChunks?.data ?? null;
@@ -82,7 +89,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const previousResults = useRef(new Map<string, PreviousResult>());
 
   useEffect(() => {
-    if (!lineId) return;
+    if (!lineId || isCloze) return;
     const request = new AbortController();
     setChunksState({ lineId, load, data: null, status: "loading" });
     void (async () => {
@@ -96,12 +103,16 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       }
     })();
     return () => request.abort();
-  }, [lineId, load]);
+  }, [lineId, load, isCloze]);
 
-  // Word pieces hint a piece; Typing in Chép chính tả reveals one star = one grapheme (spec §3.3).
+  // Word pieces hint a piece; Typing in Chép chính tả reveals one star = one grapheme (spec §3.3); Điền từ one kana
+  // of a blank's reading (§3.4).
   const unit = format === "word_bank" ? "chunk" : "grapheme1";
   const lineText = lines.find((line) => line.id === lineId)?.textJp ?? "";
-  const unitCount = !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme1Units(normalizeJa(lineText)).length;
+  /** The cut the attempt is scored against: its `version` and `textHash` go back with every request. */
+  const cut = isCloze ? cloze : chunks;
+  const unitCount = isCloze ? cloze ? clozeHints(cloze.readings, []).total : 0
+    : !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme1Units(normalizeJa(lineText)).length;
   const answered = state.result !== null || state.revealed;
   const previous = previousResults.current.get(lineKey) ?? null;
 
@@ -126,6 +137,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       // 409 line_changed / chunker_version: the line's chunks moved; restart on fresh ones.
       setState((prev) => ({ ...prev, submitting: false, carry: { lineKey, retry: false, error: "line_changed" } }));
       setLoad((n) => n + 1);
+      reloadCloze();
       newAttempt();
     } else if (typeof outcome === "string") {
       const error = outcome;
@@ -134,31 +146,32 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   }
 
   function submit(payload: SubmitPayload): Promise<void> {
-    if (!lineId || !chunks || answered) return Promise.resolve();
+    if (!lineId || !cut || answered) return Promise.resolve();
     const requestAttempt = attempt;
     const requestKey = key;
     const body = {
-      kind: "submit", videoId: video.id, lineId, version: chunks.version, textHash: chunks.textHash, hintedUnits: state.hinted,
-      ...("chunkOrder" in payload ? { format: "word_bank", chunkOrder: payload.chunkOrder } : { format: "typing", input: payload.input, hintUnit: unit }),
+      kind: "submit", videoId: video.id, lineId, version: cut.version, textHash: cut.textHash, hintedUnits: state.hinted,
+      ...("answers" in payload ? { format: "cloze", blanks: cloze?.blanks, answers: payload.answers, easy: state.easyUsed }
+        : "chunkOrder" in payload ? { format: "word_bank", chunkOrder: payload.chunkOrder } : { format: "typing", input: payload.input, hintUnit: unit }),
     };
     return post(body, (data) => {
       const result = data as ListeningSubmitData;
       const last = previousResults.current.get(lineKey);
       // "fixed" / "fewer" only against the same cut of the line: never v1 against v2, never an edited line.
-      const comparedTo = last?.version === chunks.version && last.textHash === chunks.textHash ? last : null;
-      previousResults.current.set(lineKey, summarize(result, chunks));
+      const comparedTo = last?.version === cut.version && last.textHash === cut.textHash ? last : null;
+      previousResults.current.set(lineKey, summarize(result, cut));
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, result, answer: result.answer, comparedTo } : prev);
       markChecked(requestAttempt);
     });
   }
 
   function reveal(): Promise<void> {
-    if (!lineId || !chunks || answered) return Promise.resolve();
+    if (!lineId || !cut || answered) return Promise.resolve();
     const requestAttempt = attempt;
     const requestKey = key;
     const body = {
-      kind: "reveal", videoId: video.id, lineId, format, version: chunks.version, textHash: chunks.textHash, hintedUnits: state.hinted,
-      ...(format === "typing" ? { hintUnit: unit } : {}),
+      kind: "reveal", videoId: video.id, lineId, format, version: cut.version, textHash: cut.textHash, hintedUnits: state.hinted,
+      ...(format === "typing" ? { hintUnit: unit } : isCloze ? { blanks: cloze?.blanks, easy: state.easyUsed } : {}),
     };
     return post(body, (data) => {
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, answer: (data as ListeningRevealData).answer, revealed: true } : prev);
@@ -181,13 +194,40 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     setState((prev) => prev.key !== key || prev.hinted.includes(unit) ? prev : { ...prev, hinted: [...prev.hinted, unit] });
   }
 
+  /**
+   * Điền từ 💡 (spec §3.4): the next kana of the lowest unfinished blank's reading; nothing is sent until Check or
+   * Show answer. The blank keeps what was typed only where it continues the new prefix: a hinted blank is kana.
+   */
+  function hintCloze() {
+    if (!cloze || answered || state.submitting) return;
+    setState((prev) => {
+      const { next } = clozeHints(cloze.readings, prev.hinted);
+      if (prev.key !== key || next === null) return prev;
+      const hinted = [...prev.hinted, next];
+      const { prefixes } = clozeHints(cloze.readings, hinted);
+      return { ...prev, hinted, answers: prefixes.map((p, b) => (prev.answers[b] ?? "").startsWith(p) ? prev.answers[b] ?? "" : p) };
+    });
+  }
+
+  function setAnswers(answers: string[]) {
+    if (answered || state.submitting) return;
+    setState((prev) => prev.key === key ? { ...prev, answers } : prev);
+  }
+
+  /** A Chế độ dễ chip was used: this attempt is helped (spec §3.6), whatever happens to the chip afterwards. */
+  function markChipUsed() {
+    setState((prev) => prev.key === key ? { ...prev, easyUsed: true } : prev);
+  }
+
   function tryAgain() {
     setState((prev) => ({ ...prev, carry: { lineKey, retry: true, error: null } }));
     newAttempt();
   }
 
   const feedback: FeedbackMessage[] = state.result
-    ? listeningFeedback(state.result.slots
+    // ponytail: no cloze message yet; Task 13 adds cz_perfect / cz_partial / cz_hinted / cz_helped.
+    ? state.result.blanks ? []
+    : listeningFeedback(state.result.slots
       ? { kind: "checked_word_bank", slots: state.result.slots, display: chunks?.display ?? [], previous: state.comparedTo?.wrongPieces ? { wrongPieces: state.comparedTo.wrongPieces } : null }
       : { kind: "checked_typing", diff: state.result.diff ?? [], metrics: state.result.metrics, previous: state.comparedTo?.errorCount !== undefined ? { errorCount: state.comparedTo.errorCount } : null })
     : state.revealed ? listeningFeedback({ kind: "revealed" })
@@ -200,6 +240,13 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     format,
     chunks,
     chunksStatus,
+    cloze,
+    clozeStatus,
+    reloadCloze,
+    answers: cloze ? cloze.blanks.map((_, b) => state.answers[b] ?? "") : [],
+    hintCloze,
+    setAnswers,
+    markChipUsed,
     submitting: state.submitting,
     hinted: state.hinted,
     allHinted: unitCount > 0 && state.hinted.length >= unitCount,

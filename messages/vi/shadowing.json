@@ -247,7 +247,7 @@
           "progress": "{done}/{total} câu đã làm"
         },
         "changeExercise": "Đổi bài tập",
-        "clozePending": "Bài Điền từ đang được hoàn thiện. Hãy thử Chép chính tả trong lúc chờ.",
+        "cloze": { "eyebrow": "Điền từ còn thiếu", "blank": "Chỗ trống {n}", "noBlank": "Câu này không có từ để điền", "check": "Kiểm tra", "showAnswer": "Xem đáp án", "hint": "Gợi ý (Alt+H)" },
         "toolbar": { "label": "Công cụ bài tập", "hideVideo": "Ẩn video", "shortcuts": "Phím tắt", "easy": "Chế độ dễ" },
         "shortcuts": { "check": "Kiểm tra câu đã gõ", "movePiece": "Dời mảnh đã xếp sang trái / phải", "showAll": "Gợi ý 💡" },
         "region": "Luyện nghe",

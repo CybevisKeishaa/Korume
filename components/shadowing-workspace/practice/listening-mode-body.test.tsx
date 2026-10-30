@@ -494,11 +494,12 @@ describe("ListeningModeBody — Typing and Chế độ dễ", () => {
     expect(calls("/api/dictation/attempt")).toHaveLength(1);
   });
 
-  it("Alt+H posts nothing in Điền từ or on the picker (dictation only)", async () => {
-    searchParams = new URLSearchParams("line=line-4&format=cloze");
+  it("Alt+H posts nothing in Điền từ (it hints a character there) or on the picker", async () => {
+    searchParams = new URLSearchParams("line=line-1&format=cloze");
     const view = render(shell());
-    await screen.findByTestId("listening-cloze-pending");
+    await screen.findByRole("textbox", { name: "Blank 1" });
     altH();
+    expect(await screen.findByText("あ")).toBeInTheDocument();
     searchParams = new URLSearchParams("line=line-4");
     view.rerender(shell());
     await screen.findByRole("heading", { name: "How would you like to practise listening?" });
@@ -706,12 +707,13 @@ describe("ListeningModeBody — picker and URL (spec §3.0)", () => {
     expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
   });
 
-  it("format=cloze opens Fill in the blanks with its placeholder until its panel lands", async () => {
+  it("format=cloze opens Fill in the blanks with its panel, reading the cloze route, never the chunks", async () => {
     await entry("line=line-1&format=cloze");
     expect(screen.getByRole("heading", { name: "Fill in the blanks" })).toBeInTheDocument();
-    expect(screen.getByTestId("listening-cloze-pending")).toBeInTheDocument();
+    expect(await screen.findByRole("textbox", { name: "Blank 1" })).toBeInTheDocument();
     expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "cloze");
-    expect(screen.queryByRole("textbox")).toBeNull();
+    expect(calls("/api/lines/line-1/cloze")).toHaveLength(1);
+    expect(calls("/chunks")).toHaveLength(0);
   });
 
   it.each([
@@ -878,6 +880,133 @@ describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
     await screen.findByTestId("listening-unreliable"); // line-3
     expect(document.querySelector("[data-listen-dock]")).toBeNull();
     expect(hideVideo()).toHaveAttribute("aria-pressed", "false");
+  });
+});
+
+describe("ListeningModeBody — Điền từ (spec §3.4)", () => {
+  const blank = (n: number) => screen.getByRole("textbox", { name: `Blank ${n}` });
+  const fill = (n: number, value: string) => fireEvent.change(blank(n), { target: { value } });
+  const bulb = () => screen.getByRole("button", { name: "Hint (Alt+H)" });
+  const verdicts = () => [...document.querySelectorAll("[data-blank-answer]")].map((el) => el.getAttribute("data-blank-answer"));
+  const HEAD = { videoId: "video-1", format: "cloze", version: 1, textHash: "c".repeat(64) };
+  async function openCloze(line: LineId) {
+    searchParams = new URLSearchParams(`line=${line}&format=cloze`);
+    const view = render(shell());
+    await screen.findByRole("textbox", { name: "Blank 1" });
+    return view;
+  }
+
+  it("fill and check: no blank's surface or reading before Check; the strict cloze body; then per-blank results", async () => {
+    await openCloze("line-1");
+    const panelHtml = screen.getByTestId("practice-panel").innerHTML;
+    for (const text of ["雨", "明日", "あめ", "あした", "___"]) expect(panelHtml).not.toContain(text);
+    expect(screen.getAllByRole("textbox").map((el) => el.getAttribute("aria-label"))).toEqual(["Blank 1", "Blank 2"]);
+    expect(check()).toBeDisabled();
+    fill(1, "あめ");
+    expect(check()).toBeDisabled();
+    fill(2, "あさ");
+    fireEvent.click(check());
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(attemptBodies()).toEqual([{ kind: "submit", ...HEAD, lineId: "line-1", hintedUnits: [], blanks: [2, 6], answers: ["あめ", "あさ"], easy: false }]);
+    expect(verdicts()).toEqual(["correct", "wrong"]);
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: "Hint (Alt+H)" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  it("💡 / Alt+H gives the next kana of the lowest unfinished blank, read-only; posts nothing; Check carries the flat indices", async () => {
+    await openCloze("line-1");
+    expect(bulb()).toHaveAttribute("aria-keyshortcuts", "Alt+H");
+    fill(1, "あお");
+    altH(blank(1), { isComposing: true });
+    altH(blank(1), { keyCode: 229 });
+    altH(blank(1), { ctrlKey: true });
+    altH(blank(1), { repeat: true });
+    expect(blank(1)).not.toHaveAccessibleDescription();
+    altH(blank(1));
+    expect(blank(1)).toHaveAccessibleDescription("Hint: あ");
+    expect(blank(1)).toHaveValue("お"); // the typed あ became the hint, the rest stays the learner's
+    fireEvent.click(bulb());
+    expect(blank(1)).toHaveAccessibleDescription("Hint: あめ");
+    expect(blank(1)).toHaveValue(""); // お did not continue the reading: a hinted blank is finished in kana
+    altH();
+    expect(blank(2)).toHaveAccessibleDescription("Hint: あ");
+    expect(feedback()).toHaveTextContent("3 characters hinted so far.");
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
+    expect(check()).toBeEnabled(); // a hinted prefix is text
+    fill(2, "した");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(attemptBodies()).toEqual([{ kind: "submit", ...HEAD, lineId: "line-1", hintedUnits: [0, 1, 2], blanks: [2, 6], answers: ["あめ", "あした"], easy: false }]);
+    expect(verdicts()).toEqual(["hinted", "hinted"]);
+  });
+
+  it("Chế độ dễ: a chip fills the first empty blank and latches easy: true, even after the chip is returned and easy is off", async () => {
+    await openCloze("line-1");
+    fireEvent.click(easyMode());
+    const chips = () => within(screen.getByRole("list", { name: "Word bank" }));
+    expect(chips().getAllByRole("button").map((chip) => chip.textContent).sort()).toEqual(["明日", "雨"].sort());
+    fireEvent.click(chips().getByRole("button", { name: "雨" }));
+    fireEvent.click(screen.getByRole("button", { name: "Blank 1, 雨" }));
+    expect(blank(1)).toHaveValue("");
+    fireEvent.click(easyMode());
+    expect(screen.queryByRole("list", { name: "Word bank" })).toBeNull();
+    fill(1, "あめ");
+    fill(2, "あした");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(attemptBodies()).toEqual([expect.objectContaining({ kind: "submit", answers: ["あめ", "あした"], easy: true })]);
+  });
+
+  it("👁 Show answer posts the cloze reveal and fills every blank with its surface", async () => {
+    await openCloze("line-1");
+    altH();
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    await screen.findByTestId("listening-answer");
+    expect(attemptBodies()).toEqual([{ kind: "reveal", ...HEAD, lineId: "line-1", hintedUnits: [0], blanks: [2, 6], easy: false }]);
+    expect([...document.querySelectorAll("[data-blank-answer]")].map((el) => el.textContent)).toEqual(["雨", "明日"]);
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+    expect(feedback()).toHaveTextContent("This sentence is marked for review.");
+    expect(screen.getByRole("button", { name: "Try again" })).toBeInTheDocument();
+  });
+
+  it("a line with no candidate: the notice and Next sentence; no blank, Check, 💡 or 👁; Alt+H posts nothing", async () => {
+    searchParams = new URLSearchParams("line=line-3&format=cloze");
+    render(shell());
+    expect(await screen.findByText("This sentence has no word to fill")).toBeInTheDocument();
+    expect(nextSentence()).toBeEnabled();
+    expect(screen.queryAllByRole("textbox")).toHaveLength(0);
+    expect(screen.queryByRole("button", { name: /^(Check|Hint \(Alt\+H\)|Show answer)$/ })).toBeNull();
+    altH();
+    await new Promise((done) => setTimeout(done, 50));
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
+  });
+
+  it("changing line mid-attempt discards it (D12): back on the line, the blanks and hints are empty", async () => {
+    await openCloze("line-1");
+    fill(1, "あめ");
+    altH();
+    fireEvent.click(nextSentence());
+    await waitFor(() => expect(screen.queryByRole("textbox", { name: "Blank 2" })).toBeNull()); // line-2 has one blank
+    expect(blank(1)).toHaveValue("");
+    fireEvent.click(screen.getByRole("button", { name: /^Sentence 1,/ }));
+    await screen.findByRole("textbox", { name: "Blank 2" });
+    expect(blank(1)).toHaveValue("");
+    expect(blank(1)).not.toHaveAccessibleDescription();
+  });
+
+  it("a failed cloze read says so and Retry reads it again", async () => {
+    const base = required(fetchMock.getMockImplementation());
+    let fail = true;
+    fetchMock.mockImplementation((url: string, init?: RequestInit) => fail && /\/cloze$/.test(String(url)) ? Promise.resolve(new Response(null, { status: 500 })) : base(url, init));
+    searchParams = new URLSearchParams("line=line-1&format=cloze");
+    render(shell());
+    expect(await screen.findByText("This sentence could not be loaded.")).toBeInTheDocument();
+    fail = false;
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    expect(await screen.findByRole("textbox", { name: "Blank 1" })).toBeInTheDocument();
   });
 });
 

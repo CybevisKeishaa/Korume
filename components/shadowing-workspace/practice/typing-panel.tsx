@@ -7,8 +7,8 @@ import type { ListeningDiffOp } from "@/lib/dictation/listening-score";
 import { BOX, CheckButton, HINTED, PuzzleHeader } from "./listening-puzzle";
 import { DictationMask } from "./star-mask";
 
-/** Colour plus a non-colour cue per op (WCAG 1.4.1). */
-const OP_TONE: Record<ListeningDiffOp["type"], string> = {
+/** Colour plus a non-colour cue per op (WCAG 1.4.1); Điền từ's per-blank verdicts reuse it. */
+export const OP_TONE: Record<ListeningDiffOp["type"], string> = {
   match: "text-success-strong",
   wrong: "rounded-sm bg-danger/10 text-danger-strong underline decoration-wavy",
   missing: "rounded-sm border border-dashed border-danger text-danger-strong",

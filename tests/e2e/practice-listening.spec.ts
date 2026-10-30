@@ -42,6 +42,7 @@ const SURFACES = {
   slotResult: "li[data-result]",
   diff: "[data-testid='typing-diff']",
   sentence: "[data-testid='dictation-sentence']",
+  blankAnswer: "[data-blank-answer]",
   korume: "[data-mascot-pose^='listening-']",
   feedback: "[data-testid='listening-feedback']",
 } as const;
@@ -75,7 +76,7 @@ async function installSurfaceObserver(page: Page): Promise<void> {
   }, SURFACES);
 }
 
-const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff", "sentence"];
+const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff", "sentence", "blankAnswer"];
 async function surfaces(page: Page, kinds: Surface["kind"][] = ANSWER_KINDS): Promise<Surface[]> {
   const all = await page.evaluate(() => (window as unknown as { __surfaces: Surface[] }).__surfaces.slice());
   return all.filter((surface) => kinds.includes(surface.kind));
@@ -89,14 +90,30 @@ async function expectNoSurface(page: Page, kinds: Surface["kind"][] = ANSWER_KIN
 
 /** Each line's pieces in reference order (`display`), as the page's own GET /api/lines/{id}/chunks returned them. */
 const cuts = new WeakMap<Page, Map<string, string[]>>();
+type Cloze = { blanks: number[]; readings: string[]; segments: { text: string; blank: number | null }[] };
+/** Each line's blanks, as the page's own GET /api/lines/{id}/cloze returned them (they depend on the learner). */
+const clozes = new WeakMap<Page, Map<string, Cloze>>();
 function trackCuts(page: Page): void {
   const seen = new Map<string, string[]>();
+  const blanks = new Map<string, Cloze>();
   cuts.set(page, seen);
+  clozes.set(page, blanks);
   page.on("response", async (response) => {
-    const id = new URL(response.url()).pathname.match(/^\/api\/lines\/([^/]+)\/chunks$/)?.[1];
+    const [, id, kind] = new URL(response.url()).pathname.match(/^\/api\/lines\/([^/]+)\/(chunks|cloze)$/) ?? [];
     if (!id || !response.ok()) return;
-    try { seen.set(id, ((await response.json()) as { data: { display: string[] } }).data.display); } catch { /* page closed */ }
+    try {
+      const { data } = await response.json() as { data: { display: string[] } & Cloze };
+      if (kind === "chunks") seen.set(id, data.display);
+      else blanks.set(id, data);
+    } catch { /* page closed */ }
   });
+}
+/** Line `index`'s blank words (surfaces) and readings, in blank order. */
+async function clozeOf(page: Page, index: number): Promise<{ words: string[]; readings: string[] }> {
+  const id = data.lineIds[index] ?? "";
+  await expect.poll(() => clozes.get(page)?.has(id)).toBe(true);
+  const c = clozes.get(page)?.get(id);
+  return { words: c?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], readings: c?.readings ?? [] };
 }
 async function cut(page: Page, index: number): Promise<string[]> {
   const id = data.lineIds[index] ?? "";
@@ -149,6 +166,9 @@ const button = (page: Page, name: string) => practice(page).getByRole("button", 
 /** 💡 = Show answer in Chép chính tả (spec §3.3). */
 const showAll = (page: Page) => button(page, "Show the sentence (Alt+H)");
 const mask = (page: Page) => practice(page).getByRole("group", { name: "Hidden sentence" });
+/** Điền từ's inline box for blank `n` (1-based). */
+const blankBox = (page: Page, n: number) => practice(page).getByRole("textbox", { name: `Blank ${n}`, exact: true });
+const verdicts = (page: Page) => practice(page).locator("[data-blank-answer]");
 
 /** Taps each piece in the bank, in order; two pieces with the same text are interchangeable (LCS by text). */
 async function place(page: Page, pieces: readonly string[]): Promise<void> {
@@ -162,6 +182,7 @@ async function expectConcealed(page: Page): Promise<void> {
   await expect(page.locator(SURFACES.slotResult)).toHaveCount(0);
   await expect(page.getByTestId("typing-diff")).toHaveCount(0);
   await expect(page.getByTestId("dictation-sentence")).toHaveCount(0);
+  await expect(page.locator(SURFACES.blankAnswer)).toHaveCount(0);
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
   await expect(korume(page)).toHaveCount(0);
 }
@@ -727,7 +748,7 @@ test("18 · a deep link opens the exercise directly, never the picker", async ({
   const pickerSeen = () => page.evaluate(() => (window as unknown as { __pickerSeen: boolean }).__pickerSeen);
   await openLesson(page, "/listening?format=cloze");
   await expect(practice(page).getByRole("heading", { name: "Fill in the blanks" })).toBeVisible();
-  await expect(practice(page).getByTestId("listening-cloze-pending")).toBeVisible();
+  await expect(blankBox(page, 1)).toBeVisible();
   await expect(strip(page)).toHaveAttribute("data-mode", "cloze");
   expect(await pickerSeen()).toBe(false);
   await openLesson(page);
@@ -754,7 +775,7 @@ test("19 · one player across picker, exercises and Ẩn video: onReady once, th
   await expect(typingInput(page)).toBeVisible();
   await button(page, "Change exercise").click();
   await page.getByRole("button", { name: /^Fill in the blanks/ }).click();
-  await expect(practice(page).getByTestId("listening-cloze-pending")).toBeVisible();
+  await expect(blankBox(page, 1)).toBeVisible();
   await hideVideo(page).click();
   await expect(dock(page)).toBeVisible();
   const docked = await displays();
@@ -940,4 +961,101 @@ test("25 · easy mode shows word pieces under a mask that is a length cue, never
   await easyMode(page).click();
   await expect(typingInput(page)).toBeVisible();
   await expect(mask(page).getByRole("button")).toHaveCount(graphemes);
+});
+
+/** Every POST /api/dictation/attempt body the page sends from now on. */
+function attemptBodies(page: Page): Record<string, unknown>[] {
+  const bodies: Record<string, unknown>[] = [];
+  page.on("request", (request) => { if (request.url().endsWith("/api/dictation/attempt")) bodies.push(request.postDataJSON() as Record<string, unknown>); });
+  return bodies;
+}
+const graphemesOf = (text: string) => Array.from(new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(text), (s) => s.segment);
+
+test("26 · cloze: fill and check: no blank word or reading in the panel before Check; kana or the written form both count", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening?format=cloze");
+  const bodies = attemptBodies(page);
+  const { words, readings } = await clozeOf(page, 0);
+  expect(words.length).toBeGreaterThanOrEqual(2);
+  await expect(practice(page).getByRole("textbox", { name: /^Blank \d$/ })).toHaveCount(words.length);
+  const html = await practice(page).innerHTML();
+  for (const text of [...words, ...readings, "___"]) expect(html).not.toContain(text);
+  await expect(button(page, "Check")).toBeDisabled();
+  await blankBox(page, 1).fill(readings[0] ?? "");
+  await expect(button(page, "Check")).toBeDisabled();
+  for (let n = 2; n <= words.length; n++) await blankBox(page, n).fill(words[n - 1] ?? "");
+  await expectNoSurface(page);
+  await blankBox(page, words.length).press("Enter");
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
+  expect(await verdicts(page).evaluateAll((els) => els.map((el) => el.getAttribute("data-blank-answer")))).toEqual(words.map(() => "correct"));
+  await expect(verdicts(page).first()).toContainText(words[0] ?? "");
+  await expect(practice(page).getByRole("textbox")).toHaveCount(0);
+  expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "cloze", answers: [readings[0], ...words.slice(1)], easy: false, hintedUnits: [] })]);
+});
+
+test("27 · cloze: easy chips fill the first empty blank; a filled blank gives its chip back; the attempt is sent as easy", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening?format=cloze");
+  const bodies = attemptBodies(page);
+  const { words } = await clozeOf(page, 0);
+  await easyMode(page).click();
+  const chipBank = practice(page).getByRole("list", { name: "Word bank" });
+  expect((await chipBank.getByRole("button").allTextContents()).sort()).toEqual([...words].sort());
+  for (const word of words) await chipBank.getByRole("button", { name: word, exact: true }).click();
+  await expect(chipBank).toHaveCount(0);
+  await button(page, `Blank 1, ${words[0]}`).click();
+  await expect(blankBox(page, 1)).toHaveValue("");
+  await expect(chipBank.getByRole("button")).toHaveCount(1);
+  await chipBank.getByRole("button", { name: words[0], exact: true }).click();
+  await expectNoSurface(page);
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
+  expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "cloze", answers: words, easy: true })]);
+});
+
+test("28 · cloze: 💡 (Alt+H) prefills the reading's kana, read-only at the start of the box; sent as hints on Check", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening?format=cloze");
+  const bodies = attemptBodies(page);
+  const { words, readings } = await clozeOf(page, 0);
+  const kana = graphemesOf(readings[0] ?? "");
+  const bulb = button(page, "Hint (Alt+H)");
+  await expect(bulb).toHaveAttribute("aria-keyshortcuts", "Alt+H");
+  await bulb.hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Hint (Alt+H)");
+  await blankBox(page, 1).click();
+  await blankBox(page, 1).press("Alt+KeyH");
+  await blankBox(page, 1).press("Alt+KeyH");
+  const prefix = practice(page).locator(`[id="${await blankBox(page, 1).getAttribute("aria-describedby")}"]`);
+  await expect(prefix).toHaveText(`Hint: ${kana.slice(0, 2).join("")}`);
+  await expect(blankBox(page, 1)).toHaveValue("");
+  await blankBox(page, 1).press("Backspace");
+  await expect(prefix).toHaveText(`Hint: ${kana.slice(0, 2).join("")}`);
+  await page.waitForTimeout(300);
+  expect(bodies).toEqual([]);
+  await expectNoSurface(page);
+  await blankBox(page, 1).fill(kana.slice(2).join(""));
+  for (let n = 2; n <= words.length; n++) await blankBox(page, n).fill(words[n - 1] ?? "");
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toBeVisible();
+  expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "cloze", hintedUnits: [0, 1], answers: [readings[0], ...words.slice(1)] })]);
+  await expect(verdicts(page).first()).toHaveAttribute("data-blank-answer", "hinted");
+});
+
+test("29 · cloze: Show answer fills every blank with its word, unscored; Try again starts concealed", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "/listening?format=cloze");
+  const bodies = attemptBodies(page);
+  const { words } = await clozeOf(page, 0);
+  await blankBox(page, 1).fill("x");
+  await button(page, "Show answer").click();
+  await expect(verdicts(page)).toHaveText(words);
+  await expect(practice(page).getByRole("textbox")).toHaveCount(0);
+  await expect(page.getByTestId("listening-score")).toHaveCount(0);
+  await expect(feedback(page)).toContainText("This sentence is marked for review.");
+  await expect(navigator(page).getByRole("button", { name: "Sentence 1, answer shown" })).toBeVisible();
+  expect(bodies).toEqual([expect.objectContaining({ kind: "reveal", format: "cloze", easy: false })]);
+  await button(page, "Try again").click();
+  await expectConcealed(page);
+  await expect(blankBox(page, 1)).toHaveValue("");
 });

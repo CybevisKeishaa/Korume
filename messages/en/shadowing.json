@@ -241,7 +241,7 @@
           "progress": "{done}/{total} sentences done"
         },
         "changeExercise": "Change exercise",
-        "clozePending": "Fill in the blanks is still being finished. Try Dictation in the meantime.",
+        "cloze": { "eyebrow": "Fill in the missing words", "blank": "Blank {n}", "noBlank": "This sentence has no word to fill", "check": "Check", "showAnswer": "Show answer", "hint": "Hint (Alt+H)" },
         "toolbar": { "label": "Exercise tools", "hideVideo": "Hide video", "shortcuts": "Shortcuts", "easy": "Easy mode" },
         "shortcuts": { "check": "Check the typed sentence", "movePiece": "Move a placed piece left / right", "showAll": "Hint 💡" },
         "region": "Listening practice",

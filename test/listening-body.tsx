@@ -5,7 +5,8 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { chunkUnits, grapheme1Units, grapheme4Units, scoreTyping, scoreWordBank, type Range } from "@/lib/dictation/listening-score";
 import { displayMap } from "@/lib/dictation/display";
 import { normalizeJa } from "@/lib/dictation/normalize";
-import type { LineChunks } from "@/lib/dictation/types";
+import type { LineChunks, LineCloze } from "@/lib/dictation/types";
+import { graphemes, scoreCloze } from "@/lib/dictation/cloze";
 import { ShadowingWorkspaceShell } from "@/components/shadowing-workspace/workspace-shell";
 import { useListeningReveal, type ListeningReveal } from "@/components/shadowing-workspace/practice/listening-reveal-context";
 import { ListeningModeBody } from "@/components/shadowing-workspace/practice/listening-mode-body";
@@ -40,10 +41,36 @@ const chunksOf = (id: LineId): LineChunks => ({
   chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk", romaji: "",
 });
 
-export type AttemptBody = { kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
+/** `GET …/cloze` (spec §3.4): line-1 has two blanks, line-2 one, the others none (the no-candidate notice). */
+const CLOZE: Partial<Record<LineId, { segments: [string, number | null][]; readings: string[]; blanks: number[] }>> = {
+  "line-1": { segments: [["今日は", null], ["雨", 0], ["です。でも", null], ["明日", 1], ["は晴れ…", null]], readings: ["あめ", "あした"], blanks: [2, 6] },
+  "line-2": { segments: [["今日は", null], ["雨", 0], ["です。", null]], readings: ["あめ"], blanks: [2] },
+};
+export const clozeOf = (id: LineId): LineCloze => {
+  const c = CLOZE[id] ?? { segments: [[LINES[id].text, null]], readings: [], blanks: [] };
+  return { version: 1, textHash: "c".repeat(64), blanks: c.blanks, readings: c.readings,
+    segments: c.segments.map(([text, blank]) => ({ text, blank, romaji: blank === null ? "romaji" : "___" })) };
+};
+function serveCloze(body: AttemptBody): Response {
+  const c = clozeOf(body.lineId);
+  const blanks = c.segments.flatMap((s) => s.blank === null ? [] : [{ token: 0, surface: s.text, reading: c.readings[s.blank] ?? "" }]);
+  if (body.kind === "reveal") return Response.json({ data: { kind: "reveal", answer: LINES[body.lineId].text, chunks: blanks.map((b) => b.surface), display: blanks.map((b) => b.surface) } });
+  let start = 0;
+  const hinted = blanks.map((b) => {
+    const len = graphemes(b.reading);
+    const mine = body.hintedUnits.filter((h) => h >= start && h < start + len);
+    start += len;
+    return mine;
+  });
+  const scored = scoreCloze(blanks, body.answers as string[], hinted);
+  return Response.json({ data: { kind: "submit", ...scored, answer: LINES[body.lineId].text, helped: body.easy === true || body.hintedUnits.length > 0 } });
+}
+
+export type AttemptBody ={ kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
 /** The server's answer to a valid body: the real scorers over the line's normalised chunks or base. */
 export function serve(body: AttemptBody): Response {
   const line = LINES[body.lineId];
+  if (body.format === "cloze") return serveCloze(body);
   if (body.kind === "reveal") return Response.json({ data: { kind: "reveal", answer: line.text, chunks: line.chunks, display: line.display } });
   if (body.format === "typing") {
     const base = normalizeJa(line.text);
@@ -68,6 +95,8 @@ export function stubListeningFetch() {
   fetchMock.mockImplementation((url: string, init?: RequestInit) => {
     const chunk = String(url).match(/\/api\/lines\/(line-\d)\/chunks$/);
     if (chunk) return Promise.resolve(Response.json({ data: chunksOf(chunk[1] as LineId) }));
+    const cloze = String(url).match(/\/api\/lines\/(line-\d)\/cloze$/);
+    if (cloze) return Promise.resolve(Response.json({ data: clozeOf(cloze[1] as LineId) }));
     if (String(url) === "/api/dictation/attempt") return server.attempt(JSON.parse(String(init?.body)) as AttemptBody);
     if (String(url).includes("practice-stats")) return Promise.resolve(Response.json({ data: { lineCount: 3, scoredLines: 0, mean: null, lines: {} } }));
     return Promise.resolve(new Response(null, { status: 200 }));
