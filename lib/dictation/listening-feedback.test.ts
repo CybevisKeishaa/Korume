@@ -134,6 +134,72 @@ describe("listeningFeedback (P14)", () => {
   });
 });
 
+describe("helped results and Điền từ (spec §3.7)", () => {
+  const EASY = { stars: 0, hints: 0, easy: true };
+  const STARS = { stars: 2, hints: 0, easy: false };
+  const cz = (correct: boolean[], help: { stars: number; hints: number; easy: boolean } | null, hintedPerBlank: number[] = []) => listeningFeedback({
+    kind: "checked_cloze", words: ["勉強", "明日", "雨"].slice(0, correct.length), help,
+    blanks: correct.map((c, i) => ({ correct: c, hinted: hintedPerBlank[i] ?? 0 })),
+  });
+
+  it("a helped word_bank (easy) result 8/10 says wb_helped_partial with 8 and 10, never wb_perfect, never joy", () => {
+    const slots = Array.from({ length: 10 }, (_, i) => ({ correct: i < 8, hinted: false, chunkIndex: i }));
+    const messages = listeningFeedback({ kind: "checked_word_bank", display: DISPLAY, previous: null, slots, help: EASY });
+    expect(messages[0]).toEqual({ id: "wb_helped_partial", values: { correct: 8, total: 10 } });
+    expect(ids(messages)).not.toContain("wb_perfect");
+    expect(feedbackMood(messages)).toBe("encourage");
+    const all = listeningFeedback({ kind: "checked_word_bank", display: DISPLAY, previous: null, slots: slots.map((s) => ({ ...s, correct: true })), help: EASY });
+    expect(all).toEqual([{ id: "wb_helped_all", values: { total: 10 } }]);
+    expect(feedbackMood(all)).toBe("encourage");
+  });
+
+  it("a typing result with 2 stars and every other character right is ty_helped_all, not ty_perfect, never joy", () => {
+    const messages = listeningFeedback({ kind: "checked_typing", diff: [match("今"), hinted("日"), hinted("は"), match("雨")], metrics: { recall: 50 }, previous: null, help: STARS });
+    expect(messages).toEqual([{ id: "ty_helped_all", values: { stars: 2 } }]);
+    expect(feedbackMood(messages)).toBe("encourage");
+    // Help is the fact, not the diff: a fully matched line after 2 stars is still helped.
+    expect(ids(listeningFeedback({ kind: "checked_typing", diff: [match("今"), match("日")], metrics: { recall: 100 }, previous: null, help: STARS }))).toEqual(["ty_helped_all"]);
+  });
+
+  it("a helped typing result with errors counts what was right and still names the missed characters", () => {
+    const messages = listeningFeedback({ kind: "checked_typing", diff: [match("今"), hinted("日"), wrong("は"), missing("雨")], metrics: { recall: 25 }, previous: null, help: { ...STARS, stars: 1 } });
+    expect(messages).toEqual([
+      { id: "ty_helped_partial", values: { correct: 1, total: 4, stars: 1 } },
+      { id: "ty_errors", values: { wrong: 1, missing: 1, extra: 0, chars: "は雨" } },
+    ]);
+  });
+
+  it("cloze: easy 3/3 is cz_helped_all; unhelped 3/3 is cz_perfect with joy", () => {
+    const helped = cz([true, true, true], EASY);
+    expect(helped).toEqual([{ id: "cz_helped_all", values: { total: 3 } }]);
+    expect(feedbackMood(helped)).toBe("encourage");
+    const own = cz([true, true, true], null);
+    expect(own).toEqual([{ id: "cz_perfect", values: { total: 3 } }]);
+    expect(feedbackMood(own)).toBe("joy");
+  });
+
+  it("cloze 1/3 is cz_partial naming only the two wrong blanks' words, in blank order", () => {
+    const messages = cz([false, true, false], null);
+    expect(messages).toEqual([{ id: "cz_partial", values: { correct: 1, total: 3, words: "勉強、雨" } }]);
+    expect(feedbackMood(messages)).toBe("encourage");
+  });
+
+  it("cloze with 💡 kana: helped, names the help and counts the hinted characters", () => {
+    const messages = cz([true, false], { stars: 0, hints: 3, easy: false }, [2, 1]);
+    expect(messages).toEqual([
+      { id: "cz_helped_partial", values: { correct: 1, total: 2, words: "明日", easy: "no" } },
+      { id: "cz_hinted", values: { hinted: 3 } },
+    ]);
+    expect(ids(cz([true, true], { stars: 0, hints: 2, easy: false }, [2, 0]))).toEqual(["cz_helped_all", "cz_hinted"]);
+  });
+
+  it("no progress claim on a first attempt: no wb_fixed or ty_fewer without a previous result", () => {
+    const slots = [true, true, false].map((correct, i) => ({ correct, hinted: false, chunkIndex: i }));
+    expect(ids(listeningFeedback({ kind: "checked_word_bank", display: DISPLAY, previous: null, slots, help: EASY }))).not.toContain("wb_fixed");
+    expect(ids(listeningFeedback({ kind: "checked_typing", diff: [match("今"), wrong("日")], metrics: { recall: 50 }, previous: null, help: null }))).not.toContain("ty_fewer");
+  });
+});
+
 describe("feedbackMood (P15)", () => {
   const mood = (slots: Slot[], previous: { wrongPieces: number[] } | null = null) => feedbackMood(wb(slots, previous));
   const ty = (diff: ListeningDiffOp[], previous: { errorCount: number } | null = null) =>
@@ -197,5 +263,19 @@ describe("feedback copy", () => {
     expect(feedback(en, "en", "wb_partial", { correct: 2, total: 3, wrong: 1, pieces: "店" })).toBe("You got 2/3 chunks right. Listen again and watch the order of the 1 chunk still wrong. Wrong pieces: 店");
     expect(feedback(en, "en", "revealed")).toBe("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
     expect(feedback(en, "en", "ty_perfect")).toBe("Every character written from memory.");
+  });
+
+  it("uses the owner's helped wording (spec §3.7) and names the help used", () => {
+    expect(feedback(vi, "vi", "wb_helped_partial", { correct: 8, total: 10 }))
+      .toBe("Bạn đã làm đúng 8/10 mảnh. Lần này có sử dụng trợ giúp. Hãy thử nghe lại và tự hoàn thành câu mà không dùng gợi ý nhé!");
+    expect(feedback(vi, "vi", "cz_helped_all", { total: 3 })).toBe("Bạn đã điền đúng cả 3 từ! Lần tới, thử tự gõ những từ này xem sao nhé.");
+    expect(feedback(en, "en", "cz_helped_partial", { correct: 1, total: 2, words: "明日", easy: "yes" })).toContain("easy mode");
+    expect(feedback(en, "en", "cz_helped_partial", { correct: 1, total: 2, words: "明日", easy: "no" })).toContain("hints");
+    expect(feedback(en, "en", "ty_helped_all", { stars: 2 })).toContain("2 characters revealed");
+    expect(feedback(vi, "vi", "cz_partial", { correct: 1, total: 3, words: "勉強、雨" })).toContain("勉強、雨");
+    // No judging words in any helped or cloze message (spec §3.7).
+    for (const id of FEEDBACK_IDS.filter((i) => i.includes("helped") || i.startsWith("cz_"))) {
+      expect(feedback(en, "en", id, { correct: 1, total: 2, words: "雨", easy: "no", stars: 1, hinted: 1 })).not.toMatch(/\b(only|but|cheat)/i);
+    }
   });
 });

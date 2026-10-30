@@ -84,11 +84,11 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()).toBeNull();
   });
 
-  it("shows joy after a perfect Check, encourage after a perfect but hinted one, and review after Show answer", async () => {
+  it("never shows joy for word pieces (Chế độ dễ is help): encourage after a perfect Check and a hinted one, review after Show answer", async () => {
     await open();
     await checkPerfect();
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-joy");
-    expect(figure()?.getAttribute("src")).toContain("happy.png");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-encourage");
+    expect(figure()?.getAttribute("src")).toContain("neutral.png");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
@@ -114,7 +114,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     // The only images left are the easy-mode mask's named stars (a length cue), never the figure.
     expect(screen.queryAllByRole("img").filter((img) => img.closest("[role='group'][aria-label='Hidden sentence']") === null)).toEqual([]);
     expect(feedback()).toHaveAttribute("aria-live", "polite");
-    expect(feedback().textContent).toBe("You arranged the whole sentence yourself!");
+    expect(feedback().textContent).toBe("You placed all 4 pieces right! Next time, try turning easy mode off and typing the sentence yourself.");
     expect(feedback().contains(korume)).toBe(false);
   });
 
@@ -170,5 +170,32 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     await waitFor(() => expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent).sort()).toEqual([...LINES["line-2"].display].sort()));
     await release();
     expect(figure()).toBeNull();
+  });
+
+  it("Điền từ: no figure while answering; joy after an unhelped perfect Check, encourage after a helped one, review after Show answer", async () => {
+    searchParams = new URLSearchParams("line=line-1&format=cloze");
+    render(shell());
+    const blank = async (n: number) => screen.findByRole("textbox", { name: `Blank ${n}` });
+    fireEvent.change(await blank(1), { target: { value: "あめ" } });
+    fireEvent.change(await blank(2), { target: { value: "あした" } });
+    expect(figure()).toBeNull();
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-joy");
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    expect(figure()).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Hint (Alt+H)" }));
+    expect(figure()).toBeNull();
+    fireEvent.change(await blank(1), { target: { value: "め" } }); // after the hinted あ
+    fireEvent.change(await blank(2), { target: { value: "あした" } });
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-encourage"); // all right, but helped: never joy
+
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    await screen.findByTestId("listening-answer");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-review");
   });
 });

@@ -7,6 +7,7 @@ import { displayMap } from "@/lib/dictation/display";
 import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks, LineCloze } from "@/lib/dictation/types";
 import { graphemes, scoreCloze } from "@/lib/dictation/cloze";
+import { isHelped } from "@/lib/helped";
 import { ShadowingWorkspaceShell } from "@/components/shadowing-workspace/workspace-shell";
 import { useListeningReveal, type ListeningReveal } from "@/components/shadowing-workspace/practice/listening-reveal-context";
 import { ListeningModeBody } from "@/components/shadowing-workspace/practice/listening-mode-body";
@@ -65,7 +66,7 @@ function serveCloze(body: AttemptBody): Response {
     return mine;
   });
   const scored = scoreCloze(blanks, body.answers as string[], hinted);
-  return Response.json({ data: { kind: "submit", ...scored, answer: LINES[body.lineId].text, helped: body.easy === true || body.hintedUnits.length > 0 } });
+  return Response.json({ data: { kind: "submit", ...scored, answer: LINES[body.lineId].text, helped: isHelped({ easyMode: body.easy === true, hintedUnits: body.hintedUnits }) } });
 }
 
 export type AttemptBody = { kind: "submit" | "reveal"; lineId: LineId; chunkOrder?: number[]; hintedUnits: number[] } & Record<string, unknown>;
@@ -78,10 +79,10 @@ export function serve(body: AttemptBody): Response {
     const base = normalizeJa(line.text);
     const units = body.hintUnit === "grapheme1" ? grapheme1Units(base) : body.hintUnit === "grapheme4" ? grapheme4Units(base) : chunkUnits([...line.chunks]);
     const scored = scoreTyping(base, String(body.input), body.hintedUnits.flatMap((i) => units[i] ?? []), GRAMMAR[body.lineId] ?? [], displayMap(line.text));
-    return Response.json({ data: { kind: "submit", ...scored, answer: line.text } });
+    return Response.json({ data: { kind: "submit", ...scored, answer: line.text, helped: isHelped({ easyMode: false, hintedUnits: body.hintedUnits }) } });
   }
   const scored = scoreWordBank([...line.chunks], body.chunkOrder ?? [], new Set(body.hintedUnits));
-  return Response.json({ data: { kind: "submit", ...scored, answer: line.text } });
+  return Response.json({ data: { kind: "submit", ...scored, answer: line.text, helped: true } }); // word pieces = Chế độ dễ
 }
 
 /** `server.attempt` answers POST /api/dictation/attempt; a test swaps it to hold or fail a request. */

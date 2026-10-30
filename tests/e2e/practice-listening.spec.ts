@@ -285,7 +285,7 @@ test("2 · entering Listening conceals from the first frame, with the video show
   await expectNoSurface(page);
 });
 
-test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; Next conceals again", async ({ page }) => {
+test("3 · Word Bank, correct: score 100, encourage (Chế độ dễ is help, spec §3.7), the subtitle for this line only; Next conceals again", async ({ page }) => {
   await registerLearner(page);
   await openWordBank(page);
   await expect(korume(page)).toHaveCount(0);
@@ -294,8 +294,8 @@ test("3 · Word Bank, correct: score 100, joy, the subtitle for this line only; 
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   for (const index of pieces.keys()) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
-  await expect(feedback(page)).toContainText("You arranged the whole sentence yourself!");
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
+  await expect(feedback(page)).toContainText(`You placed all ${pieces.length} pieces right! Next time, try turning easy mode off and typing the sentence yourself.`);
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
   await expect(page.getByTestId("workspace-subtitle")).toHaveText(LINES[0].text);
   // Positive control: the observer every "never" below relies on does see each surface once it is attached.
   expect(new Set((await surfaces(page, [...ANSWER_KINDS, "korume"])).map((surface) => surface.kind))).toEqual(new Set(["subtitle", "answer", "slotResult", "korume"]));
@@ -347,7 +347,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   expect(score).toBeLessThan(100);
   await expect(slot(page, 0)).toHaveAttribute("data-result", "wrong");
   for (const index of pieces.keys()) if (index > 0) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
-  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} chunks right. Listen again and watch the order of the 1 chunk still wrong. Wrong pieces: ${b}`);
+  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} pieces right. You used help this time. Try listening again and finishing the sentence without hints!`);
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
 
   await button(page, "Try again").click();
@@ -360,7 +360,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(feedback(page)).toContainText("You fixed 1 chunk since your last try.");
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-joy");
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage"); // all right, but with Chế độ dễ: never joy
 });
 
 test("5 · Hint moves the next piece to the front, keeping the placed one; the hinted piece counts as hinted, never as correct", async ({ page }) => {
@@ -381,7 +381,7 @@ test("5 · Hint moves the next piece to the front, keeping the placed one; the h
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(slot(page, 0)).toHaveAttribute("data-result", "hinted");
   for (const index of pieces.keys()) if (index > 0) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
-  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} chunks right.`);
+  await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} pieces right.`);
   await expect(feedback(page)).toContainText("1 hinted chunk doesn't count as your own.");
   await expect(feedback(page)).not.toContainText("whole sentence yourself");
   await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
@@ -1037,6 +1037,10 @@ test("28 · cloze: 💡 (Alt+H) prefills the reading's kana, read-only at the st
   await page.waitForTimeout(300);
   expect(bodies).toEqual([]);
   await expectNoSurface(page);
+  // The live region counts hints and never spells a blank's word or reading while answering (spec §3.7).
+  const said = (await surfaces(page, ["feedback"])).map((surface) => surface.text);
+  expect(said.length).toBeGreaterThan(0);
+  for (const text of said) for (const answer of [...words, ...readings]) expect(text).not.toContain(answer);
   await blankBox(page, 1).fill(kana.slice(2).join(""));
   for (let n = 2; n <= words.length; n++) await blankBox(page, n).fill(words[n - 1] ?? "");
   await button(page, "Check").click();

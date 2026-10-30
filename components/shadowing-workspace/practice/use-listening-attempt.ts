@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { listeningFeedback, typingErrorCount, type FeedbackMessage } from "@/lib/dictation/listening-feedback";
+import { listeningFeedback, typingErrorCount, type FeedbackHelp, type FeedbackMessage } from "@/lib/dictation/listening-feedback";
 import { grapheme1Units, type ListeningRevealData, type ListeningSubmitData } from "@/lib/dictation/listening-score";
 import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
@@ -227,12 +227,16 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     newAttempt();
   }
 
+  // The server says whether the attempt was helped (spec §3.6); the client names the help it used.
+  const help: FeedbackHelp | null = state.result?.helped
+    ? { stars: format === "typing" ? state.hinted.length : 0, hints: format === "typing" ? 0 : state.hinted.length, easy: format === "word_bank" || state.easyUsed }
+    : null;
   const feedback: FeedbackMessage[] = state.result
-    // ponytail: no cloze message yet; Task 13 adds cz_perfect / cz_partial / cz_hinted / cz_helped.
-    ? state.result.blanks ? []
-    : listeningFeedback(state.result.slots
-      ? { kind: "checked_word_bank", slots: state.result.slots, display: chunks?.display ?? [], previous: state.comparedTo?.wrongPieces ? { wrongPieces: state.comparedTo.wrongPieces } : null }
-      : { kind: "checked_typing", diff: state.result.diff ?? [], metrics: state.result.metrics, previous: state.comparedTo?.errorCount !== undefined ? { errorCount: state.comparedTo.errorCount } : null })
+    ? listeningFeedback(state.result.blanks
+      ? { kind: "checked_cloze", blanks: state.result.blanks, words: cloze?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], help }
+      : state.result.slots
+      ? { kind: "checked_word_bank", slots: state.result.slots, display: chunks?.display ?? [], previous: state.comparedTo?.wrongPieces ? { wrongPieces: state.comparedTo.wrongPieces } : null, help }
+      : { kind: "checked_typing", diff: state.result.diff ?? [], metrics: state.result.metrics, previous: state.comparedTo?.errorCount !== undefined ? { errorCount: state.comparedTo.errorCount } : null, help })
     : state.revealed ? listeningFeedback({ kind: "revealed" })
     : [
       ...(state.retry ? listeningFeedback({ kind: "retry", previousScore: previous?.score ?? null }) : []),

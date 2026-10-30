@@ -193,20 +193,20 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(screen.queryByText("Kanji")).toBeNull();
     expect(screen.queryByText("Grammar")).toBeNull();
     expect(screen.getByText("2/4")).toBeInTheDocument();
-    expect(feedback()).toHaveTextContent("You got 2/4 chunks right. Listen again and watch the order of the 2 chunks still wrong.");
+    expect(feedback()).toHaveTextContent("You got 2/4 pieces right. You used help this time. Try listening again and finishing the sentence without hints!");
     expect(screen.getByTestId("listening-answer")).toHaveTextContent(LINES["line-1"].text);
     expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent(LINES["line-1"].text);
     expect(calls("practice-stats").length).toBeGreaterThan(statsBefore);
   });
 
-  it("praises a perfect unhinted arrangement and labels it", async () => {
+  it("acknowledges a perfect arrangement as right, never praised as self-done: word pieces are Chế độ dễ (spec §3.7)", async () => {
     await open();
     placeAll(LINES["line-1"].display);
     fireEvent.click(check());
     expect(await screen.findByTestId("listening-score")).toHaveTextContent("100");
     expect(screen.queryByText("Excellent")).toBeNull();
-    expect(feedback()).toHaveTextContent("You arranged the whole sentence yourself!");
-    expect(feedback().querySelector("[data-feedback-heading]")).toHaveTextContent("You arranged the whole sentence yourself!");
+    expect(feedback()).not.toHaveTextContent("You arranged the whole sentence yourself!");
+    expect(feedback().querySelector("[data-feedback-heading]")).toHaveTextContent("You placed all 4 pieces right! Next time, try turning easy mode off and typing the sentence yourself.");
   });
 
   it("Try again restarts concealed in the click's own commit, says the last score, and names a fix only after a new submitted result", async () => {
@@ -404,7 +404,7 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
     const heading = feedback().querySelector("[data-feedback-heading]");
-    expect(heading).toHaveTextContent("You got 3/4 chunks right.");
+    expect(heading).toHaveTextContent("You got 3/4 pieces right.");
     const tips = feedback().querySelectorAll("[data-feedback-tip]");
     expect(tips).toHaveLength(1);
     expect(tips[0]).toHaveTextContent("1 hinted chunk doesn't count as your own.");
@@ -619,14 +619,14 @@ describe("ListeningModeBody — Typing and Chế độ dễ", () => {
     expect(feedback()).not.toHaveTextContent("Listen for the kanji words");
   });
 
-  it("never praises a hinted attempt and colours the hinted characters", async () => {
+  it("never praises a hinted attempt, names the stars used and colours the hinted characters", async () => {
     await openTyping("line-4");
     for (const n of [1, 2, 3, 4]) fireEvent.click(star(n));
     typeInto("テストはいいです");
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
     expect(screen.getByTestId("typing-diff").querySelectorAll("[data-op='hinted']")).toHaveLength(4);
-    expect(feedback()).toHaveTextContent("4 hinted characters don't count toward recall.");
+    expect(feedback().textContent).toBe("You wrote the whole sentence, with 4 characters revealed. Next time, try it without revealing any.");
     expect(feedback()).not.toHaveTextContent("Every character written from memory.");
   });
 
@@ -1024,6 +1024,44 @@ describe("ListeningModeBody — Điền từ (spec §3.4)", () => {
     fail = false;
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByRole("textbox", { name: "Blank 1" })).toBeInTheDocument();
+  });
+
+  it("feedback after Check: all right unhelped is cz_perfect; 1/2 is cz_partial naming only the wrong blank's word", async () => {
+    await openCloze("line-1");
+    fill(1, "あめ");
+    fill(2, "明日");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(feedback().textContent).toBe("Correct! You filled in all 2 words yourself.");
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    fill(1, "あめ");
+    fill(2, "あさ");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(feedback().textContent).toBe("You got 1/2 words right. Listen again for: 明日");
+    expect(feedback().textContent).not.toContain("雨");
+  });
+
+  it("feedback after an easy-chip Check: cz_helped_all, never the self-done praise", async () => {
+    await openCloze("line-1");
+    fireEvent.click(easyMode());
+    const chips = within(screen.getByRole("list", { name: "Word bank" }));
+    fireEvent.click(chips.getByRole("button", { name: "雨" }));
+    fireEvent.click(chips.getByRole("button", { name: "明日" }));
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(feedback().textContent).toBe("You filled in all 2 words right! Next time, try typing them yourself.");
+  });
+
+  it("the live region holds no blank's word or reading while answering: hints are counted, never spelled", async () => {
+    await openCloze("line-1");
+    altH();
+    altH();
+    fill(2, "あさ");
+    altH();
+    const said = feedback().textContent ?? "";
+    expect(said).toContain("hinted so far");
+    for (const text of ["雨", "明日", "あめ", "あした", "あ", "め"]) expect(said).not.toContain(text);
   });
 });
 
