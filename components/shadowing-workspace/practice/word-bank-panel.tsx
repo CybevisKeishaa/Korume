@@ -30,7 +30,7 @@ export function dropIndex(rects: DOMRect[], x: number): number {
  * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
  * drag from an older line drops nothing here.
  */
-export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, onCheck }: {
+export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, card, onCheck }: {
   lineId: string;
   display: string[];
   hinted: number[];
@@ -41,6 +41,8 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
   submitting: boolean;
   /** The Show Hint pill, or null once the attempt is answered. */
   hint?: ReactNode;
+  /** The card toggles, under the answer (spec §3.5). */
+  card?: ReactNode;
   onCheck(chunkOrder: number[]): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
@@ -145,6 +147,7 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
         })}
       </ol>
     </div>
+    {card}
     <p role="status" aria-live="polite" className="sr-only">{announcement}</p>
     <div className={BOX}>
       <p id={bankLabel} className={cn(EYEBROW, "mb-xs")}>{t("bank")}</p>

@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import { FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
-import { lineStart, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
+import { lineStart, lineTranslation, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
 import { toFurigana } from "@/lib/japanese/furigana";
 
 /**
@@ -43,6 +43,9 @@ const SURFACES = {
   diff: "[data-testid='typing-diff']",
   sentence: "[data-testid='dictation-sentence']",
   blankAnswer: "[data-blank-answer]",
+  // The card toggles' text (spec §3.5): answer surfaces in Chép chính tả until Check / 💡 (D4).
+  translation: "[data-testid='listening-translation']",
+  romaji: "[data-testid='listening-romaji']",
   korume: "[data-mascot-pose^='listening-']",
   feedback: "[data-testid='listening-feedback']",
 } as const;
@@ -76,7 +79,7 @@ async function installSurfaceObserver(page: Page): Promise<void> {
   }, SURFACES);
 }
 
-const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff", "sentence", "blankAnswer"];
+const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff", "sentence", "blankAnswer", "translation", "romaji"];
 async function surfaces(page: Page, kinds: Surface["kind"][] = ANSWER_KINDS): Promise<Surface[]> {
   const all = await page.evaluate(() => (window as unknown as { __surfaces: Surface[] }).__surfaces.slice());
   return all.filter((surface) => kinds.includes(surface.kind));
@@ -1058,4 +1061,29 @@ test("29 · cloze: Show answer fills every blank with its word, unscored; Try ag
   await button(page, "Try again").click();
   await expectConcealed(page);
   await expect(blankBox(page, 1)).toHaveValue("");
+});
+
+test("30 · card toggles: in Chép chính tả translation and romaji never reach the DOM before Check; after it they show (D4)", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  const translation = button(page, "Translation");
+  const romaji = button(page, "Romaji");
+  for (const toggle of [translation, romaji]) {
+    await expect(toggle).toHaveAttribute("aria-disabled", "true");
+    await toggle.click({ force: true }); // aria-disabled fails Playwright's actionability check; the press must change nothing
+    await expect(toggle).toHaveAttribute("aria-pressed", "false");
+  }
+  await romaji.hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Romaji: available after Check or 💡");
+  expect(await practice(page).innerHTML()).not.toContain(lineTranslation(0));
+  await typingInput(page).fill(LINES[0].text);
+  await expectNoSurface(page);
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toBeVisible();
+  await translation.click();
+  await romaji.click();
+  await expect(practice(page).getByTestId("listening-translation")).toHaveText(lineTranslation(0));
+  await expect(practice(page).getByTestId("listening-romaji")).not.toHaveText("");
+  // Positive control: the observer sees both surfaces once they are attached.
+  expect(new Set((await surfaces(page, ["translation", "romaji"])).map((surface) => surface.kind))).toEqual(new Set(["translation", "romaji"]));
 });

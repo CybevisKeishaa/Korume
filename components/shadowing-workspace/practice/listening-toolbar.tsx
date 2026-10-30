@@ -7,7 +7,7 @@ import { HideTextGlyph, KeyboardGlyph } from "../player-glyphs";
 import { useListeningReveal } from "./listening-reveal-context";
 import { ListeningShortcuts } from "./listening-shortcuts";
 
-const TOOL = "inline-flex h-control-sm items-center gap-xs rounded-full border border-border px-sm text-caption font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/15 aria-pressed:text-primary-strong aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
+export const TOOL ="inline-flex h-control-sm items-center gap-xs rounded-full border border-border px-sm text-caption font-semibold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground aria-pressed:border-primary aria-pressed:bg-primary/15 aria-pressed:text-primary-strong aria-disabled:cursor-not-allowed aria-disabled:opacity-50";
 
 /**
  * The exercise toolbar (spec §3.2): Ẩn video and Chế độ dễ are switches remembered for the page visit (reveal

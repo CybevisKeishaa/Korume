@@ -24,7 +24,7 @@ export const OP_TONE: Record<ListeningDiffOp["type"], string> = {
  * (raw `text_jp`), never the normalised `expected`. Mounted with a key per line + format + attempt (P11), so a new
  * attempt starts empty; a failed Check keeps the text (Review Focus 2).
  */
-export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, onReveal, onCheck }: {
+export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, card, onReveal, onCheck }: {
   /** The line's raw `text_jp`. */
   text: string;
   /** Revealed star units (`grapheme1`). */
@@ -35,6 +35,8 @@ export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, on
   submitting: boolean;
   /** The header's tools (💡), or null once the attempt is answered. */
   hint?: ReactNode;
+  /** The card toggles, under the sentence (spec §3.5). */
+  card?: ReactNode;
   onReveal(unit: number): void;
   onCheck(input: string): void;
 }) {
@@ -60,6 +62,7 @@ export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, on
         {diff.map((op, i) => <span key={i} data-op={op.type} className={OP_TONE[op.type]}>{op.type === "extra" ? op.actual : op.display}</span>)}
       </p> : <DictationMask text={text} hinted={hinted} revealed={revealed} onReveal={onReveal} />}
     </div>
+    {card}
     {!revealed && diff === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={locked || input.trim() === ""} onClick={check} />}
   </div>;
 }

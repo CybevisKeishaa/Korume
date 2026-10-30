@@ -28,17 +28,19 @@ const UNRELIABLE = new Set(["line-3", "line-5"]);
 /** kuromoji 助詞/助動詞 ranges over the base, as the server would send them to the scorer. */
 const GRAMMAR: Partial<Record<string, Range[]>> = { "line-2": [{ start: 2, end: 3 }, { start: 4, end: 6 }] };
 export type LineId = keyof typeof LINES;
+/** `textTranslation`: line-1 has one, the others none (spec §3.5: Bản dịch is hidden then). */
+export const TRANSLATIONS: Partial<Record<LineId, string>> = { "line-1": "Rain today. But tomorrow, sun…" };
 export const lesson: WorkspaceBootstrap = {
   userId: "user-1",
   video: { id: "video-1", youtubeVideoId: "yt-1", title: "Episode 1", channelTitle: null, durationSeconds: 30, jlptLevel: "N3" },
   transcript: { id: "t", lines: (Object.keys(LINES) as LineId[]).map((id, index) => ({
-    id, index, startTime: 12 + index * 3, endTime: 15 + index * 3, textJp: LINES[id].text, textTranslation: null, furigana: null,
+    id, index, startTime: 12 + index * 3, endTime: 15 + index * 3, textJp: LINES[id].text, textTranslation: TRANSLATIONS[id] ?? null, furigana: null,
   })) },
   masteryMap: {}, preferences: DEFAULT_PREFERENCES, resume: null, lessonBookmarked: false, marks: [], notes: { lessonNote: null, sentenceNotes: [] },
 };
 const chunksOf = (id: LineId): LineChunks => ({
   version: 1, textHash: "a".repeat(64), reliable: !UNRELIABLE.has(id), reason: UNRELIABLE.has(id) ? "latin_or_digit" : null,
-  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk", romaji: "",
+  chunks: [...LINES[id].chunks], display: [...LINES[id].display], typingHintUnit: UNRELIABLE.has(id) ? "grapheme4" : "chunk", romaji: `romaji of ${id}`,
 });
 
 /** `GET …/cloze` (spec §3.4): line-1 has two blanks, line-2 one, the others none (the no-candidate notice). */

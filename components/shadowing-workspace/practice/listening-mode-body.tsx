@@ -7,10 +7,12 @@ import { Tooltip } from "@/components/ui/tooltip";
 import { useTranslations } from "@/lib/i18n";
 import { usePathname, useRouter } from "@/lib/i18n/navigation";
 import { feedbackMood } from "@/lib/dictation/listening-feedback";
+import { toRomaji } from "@/lib/japanese/romaji";
 import { dictationFormat, listeningExercise, type ListeningExercise } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
 import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
 import { ClozePanel } from "./cloze-panel";
+import { ListeningCardToggles } from "./listening-card-toggles";
 import { ListeningFeedback } from "./listening-feedback";
 import { ListeningPicker } from "./listening-picker";
 import { useListeningReveal } from "./listening-reveal-context";
@@ -105,6 +107,11 @@ export function ListeningModeBody() {
       <Eye aria-hidden className="size-icon-xs" />{tl("cloze.showAnswer")}
     </button>}
   </div>;
+  // §3.5: a blank's romaji is `___` until its answer is visible, then the reading the 💡 fills from.
+  const romaji = cloze ? attempt.cloze?.segments.map((s) => s.blank !== null && answerVisible ? toRomaji(attempt.cloze?.readings[s.blank] ?? "") : s.romaji).join(" ") ?? ""
+    : chunks?.romaji ?? "";
+  const card = index === null ? null
+    : <ListeningCardToggles index={index} translation={line?.textTranslation ?? null} romaji={romaji} answerSurfacesAllowed={cloze || answerVisible} />;
   // §3.1: no counter here — the workspace header carries "Câu n / total" in every state.
   const header = <div className="flex flex-wrap items-center justify-between gap-sm">
     <div className="flex items-center gap-sm">
@@ -125,20 +132,20 @@ export function ListeningModeBody() {
     </div>}
     {ready && cloze && attempt.cloze && <ClozePanel key={`${lineId}|cloze|${attemptNumber}`} cloze={attempt.cloze} easy={easy} answers={attempt.answers}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.blanks ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} hint={hint} onChange={attempt.setAnswers} onUseChip={attempt.markChipUsed}
+      submitting={attempt.submitting} hint={hint} card={card} onChange={attempt.setAnswers} onUseChip={attempt.markChipUsed}
       onCheck={() => void attempt.submit({ answers: attempt.answers })} />}
     {ready && unreliable && <p data-testid="listening-unreliable" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{tl("unreliable")}</p>}
     {/* Chế độ dễ: the mask is a length cue only, never tappable, so one attempt never mixes two hint units (§3.3). It
         rides in the puzzle header's row, so the longest line still fits above the listen-only dock (Ruling T1). */}
     {ready && format === "word_bank" && chunks && <WordBankPanel key={`${lineId}|${format}|${attemptNumber}`} lineId={lineId} display={chunks.display}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.slots ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })}
+      submitting={attempt.submitting} card={card} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })}
       hint={<div className="flex flex-1 flex-wrap items-center justify-end gap-xs">
         <DictationMask text={line?.textJp ?? ""} hinted={[]} revealed={answerVisible && attempt.revealed} />{hint}
       </div>} />}
     {ready && format === "typing" && <TypingPanel key={`${lineId}|${format}|${attemptNumber}`} text={line?.textJp ?? ""}
       hinted={attempt.hinted} diff={answerVisible ? attempt.result?.diff ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} hint={hint} onReveal={attempt.revealUnit} onCheck={(input) => void attempt.submit({ input })} />}
+      submitting={attempt.submitting} hint={hint} card={card} onReveal={attempt.revealUnit} onCheck={(input) => void attempt.submit({ input })} />}
     {ready && <div className="flex flex-wrap justify-center gap-xs">
       {answered && <button type="button" className={ACTION} onClick={attempt.tryAgain}>{tl("tryAgain")}</button>}
       <button type="button" className={ACTION} disabled={index === null || index >= lines.length - 1} onClick={() => controller.nextSentence()}>

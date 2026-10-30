@@ -15,6 +15,11 @@ export interface ListeningReveal {
   /** Chế độ dễ (spec §3.2): page-visit state; in Chép chính tả it picks the stored format, so it is in the key. */
   easy: boolean;
   setEasy(on: boolean): void;
+  /** Card toggles (spec §3.5): page-visit state, outside the reveal key, so they survive Next. */
+  showTranslation: boolean;
+  setShowTranslation(on: boolean): void;
+  showRomaji: boolean;
+  setShowRomaji(on: boolean): void;
   markChecked(attempt: number): void;
   markRevealed(attempt: number): void;
   newAttempt(): void;
@@ -33,6 +38,8 @@ const concealed = (key: string, attempt: number): RevealState => ({ key, attempt
 export function ListeningRevealProvider({ lineId, exercise, children }: { lineId: string | null; exercise: ListeningExercise | null; children: ReactNode }) {
   const [listenOnly, setListenOnly] = useState(false);
   const [easy, setEasy] = useState(false);
+  const [showTranslation, setShowTranslation] = useState(false);
+  const [showRomaji, setShowRomaji] = useState(false);
   const key = `${lineId}|${exercise === "dictation" ? dictationFormat(easy) : exercise}`;
   const [state, setState] = useState(() => concealed(key, 1));
   if (state.key !== key) setState(concealed(key, state.attempt + 1));
@@ -49,11 +56,15 @@ export function ListeningRevealProvider({ lineId, exercise, children }: { lineId
       setListenOnly,
       easy,
       setEasy,
+      showTranslation,
+      setShowTranslation,
+      showRomaji,
+      setShowRomaji,
       markChecked: (attempt) => ifCurrent(attempt, { phase: "checked" }),
       markRevealed: (attempt) => ifCurrent(attempt, { phase: "revealed" }),
       newAttempt: () => setState((previous) => concealed(previous.key, previous.attempt + 1)),
     };
-  }, [easy, key, listenOnly, state]);
+  }, [easy, key, listenOnly, showRomaji, showTranslation, state]);
 
   return <ListeningRevealContext.Provider value={value}>{children}</ListeningRevealContext.Provider>;
 }

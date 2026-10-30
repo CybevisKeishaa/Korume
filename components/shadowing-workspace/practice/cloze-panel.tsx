@@ -40,7 +40,7 @@ export function clozeHints(readings: readonly string[], hinted: readonly number[
  * focused (else the first) empty blank without hints; tapping the filled blank gives it back. Mounted with a key per
  * line + attempt (P11).
  */
-export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, submitting, hint, onChange, onUseChip, onCheck }: {
+export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, submitting, hint, card, onChange, onUseChip, onCheck }: {
   cloze: LineCloze;
   easy: boolean;
   /** One per blank, the hinted prefix included. */
@@ -53,6 +53,8 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
   submitting: boolean;
   /** The header's tools (💡, Show answer), or null once answered. */
   hint?: ReactNode;
+  /** The card toggles, under the sentence (spec §3.5). */
+  card?: ReactNode;
   onChange(answers: string[]): void;
   onUseChip(): void;
   onCheck(): void;
@@ -123,6 +125,7 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
     <p lang="ja" data-testid="cloze-sentence" className={cn(BOX, "font-jp text-body-lg text-foreground")}>
       {cloze.segments.map((s, i) => s.blank === null ? <span key={i}>{s.text}</span> : <span key={i} className="mx-2xs inline-block py-2xs">{blank(s.blank, s.text)}</span>)}
     </p>
+    {card}
     {words.length === 0 && <p data-testid="cloze-no-blank" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{t("cloze.noBlank")}</p>}
     {easy && !locked && bank.length > 0 && <ul aria-label={t("bank")} className="flex flex-wrap justify-center gap-xs">
       {bank.map((c) => <li key={c}>

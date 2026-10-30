@@ -249,6 +249,7 @@
         "changeExercise": "Đổi bài tập",
         "cloze": { "eyebrow": "Điền từ còn thiếu", "blank": "Chỗ trống {n}", "noBlank": "Câu này không có từ để điền", "check": "Kiểm tra", "showAnswer": "Xem đáp án", "hint": "Gợi ý (Alt+H)" },
         "toolbar": { "label": "Công cụ bài tập", "hideVideo": "Ẩn video", "shortcuts": "Phím tắt", "easy": "Chế độ dễ" },
+        "toggles": { "audio": "Âm thanh", "translation": "Bản dịch", "romaji": "Phiên âm", "afterCheck": "{label}: hiện sau khi Kiểm tra hoặc 💡" },
         "shortcuts": { "check": "Kiểm tra câu đã gõ", "movePiece": "Dời mảnh đã xếp sang trái / phải", "showAll": "Gợi ý 💡" },
         "region": "Luyện nghe",
         "loading": "Đang tải câu…",
