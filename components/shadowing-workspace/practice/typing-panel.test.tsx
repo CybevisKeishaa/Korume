@@ -10,9 +10,10 @@ type Props = Parameters<typeof TypingPanel>[0];
 const TEXT = "ﾃｽﾄはいいです？";
 const panel = (props: Partial<Props> = {}) => {
   const onCheck = vi.fn();
-  const base: Props = { text: TEXT, display: ["ﾃｽﾄは", "いいです？"], hintUnit: "chunk", hinted: [], diff: null, revealed: false, submitting: false, onCheck };
+  const onReveal = vi.fn();
+  const base: Props = { text: TEXT, hinted: [], diff: null, revealed: false, submitting: false, onReveal, onCheck };
   const view = render(<TypingPanel {...base} {...props} />);
-  return { ...view, onCheck, rerenderWith: (next: Partial<Props>) => view.rerender(<TypingPanel {...base} {...props} {...next} />) };
+  return { ...view, onCheck, onReveal, rerenderWith: (next: Partial<Props>) => view.rerender(<TypingPanel {...base} {...props} {...next} />) };
 };
 const input = () => screen.getByRole("textbox", { name: "Type what you hear" });
 /** The diff as the server builds it: the real scorer over the raw line, with its display map (P13). */
@@ -37,22 +38,30 @@ describe("TypingPanel", () => {
     expect(onCheck).not.toHaveBeenCalled();
   });
 
-  it("shows each hinted chunk's raw text on the hint line and never edits the learner's text", () => {
-    const { rerenderWith } = panel();
-    // The live region exists, empty, before the first hint, so that hint is announced.
-    expect(screen.getByTestId("typing-hint")).toHaveAttribute("aria-live", "polite");
-    expect(screen.getByTestId("typing-hint")).toBeEmptyDOMElement();
+  it("shows the star mask under the input; a star asks to reveal its unit and never edits the learner's text", () => {
+    const { onReveal, rerenderWith } = panel();
+    const stars = () => screen.getAllByRole("button", { name: /^Character \d+ of 8/ });
+    expect(stars()).toHaveLength(8);
+    expect(input().compareDocumentPosition(stars()[0]!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(input()).toHaveAttribute("placeholder", "Type what you hear…");
     fireEvent.change(input(), { target: { value: "abc" } });
-    rerenderWith({ hinted: [0] });
-    expect(screen.getByTestId("typing-hint")).toHaveTextContent("ﾃｽﾄは");
-    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("いいです");
+    fireEvent.click(stars()[4]!);
+    expect(onReveal).toHaveBeenCalledWith(4);
+    rerenderWith({ hinted: [4] });
+    expect(stars()[4]).toHaveTextContent("い");
+    expect(stars()[4]).toHaveAccessibleName("Character 5 of 8, い");
     expect(input()).toHaveValue("abc");
+    expect(screen.queryByTestId("typing-hint")).toBeNull();
   });
 
-  it("cuts grapheme4 hints from the raw line, never the normalised one (P13)", () => {
-    // normalizeJa turns ﾃｽﾄ into テスト: the hint must show the half-width characters as written.
-    panel({ text: "ﾃｽﾄ1番です", display: ["ﾃｽﾄ1番です"], hintUnit: "grapheme4", hinted: [0] });
-    expect(screen.getByTestId("typing-hint").textContent).toBe("Hintﾃｽﾄ1");
+  it("shows the sentence as plain text in place of the mask once revealed, and no mask after Check", () => {
+    const { rerenderWith } = panel();
+    rerenderWith({ revealed: true });
+    expect(screen.queryAllByRole("button", { name: /^Character/ })).toHaveLength(0);
+    expect(screen.getByTestId("dictation-sentence")).toHaveTextContent(TEXT);
+    rerenderWith({ revealed: false, diff: diffFor(TEXT, "テストはいいです") });
+    expect(screen.queryAllByRole("button", { name: /^Character/ })).toHaveLength(0);
+    expect(screen.queryByTestId("dictation-sentence")).toBeNull();
   });
 
   it("draws the coloured diff from the raw display characters, never the normalised ones (P13)", () => {

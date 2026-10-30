@@ -43,6 +43,10 @@ const serveChunksWith = (change: Partial<LineChunks>) => {
   });
 };
 const place = (text: string) => fireEvent.click(within(bank()).getByRole("button", { name: text }));
+/** 💡 (spec §3.3): Show answer in Chép chính tả. */
+const showAll = () => screen.getByRole("button", { name: /^Show the sentence/ });
+const star = (n: number) => screen.getByRole("button", { name: new RegExp(`^Character ${n} of \\d+, `) });
+const altH = (target: Element | Document = document.body, init: KeyboardEventInit = {}) => fireEvent.keyDown(target, { key: "h", code: "KeyH", altKey: true, ...init });
 const placeAll = (texts: readonly string[]) => texts.forEach(place);
 
 /** Chép chính tả with Chế độ dễ on: the word pieces (spec §3.0, §3.2). */
@@ -261,7 +265,7 @@ describe("ListeningModeBody — Word Bank", () => {
     expect(await screen.findByTestId("listening-score")).toHaveTextContent("100");
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
-    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    fireEvent.click(showAll());
     expect(await screen.findByTestId("listening-answer")).toHaveTextContent(LINES["line-1"].text);
     expect(attemptBodies().at(-1)).toEqual({ kind: "reveal", videoId: "video-1", lineId: "line-1", format: "word_bank", version: 1, textHash: "a".repeat(64), hintedUnits: [0] });
     expect(feedback().textContent).toBe("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
@@ -323,7 +327,7 @@ describe("ListeningModeBody — Word Bank", () => {
     typeInto("ABC");
     fireEvent.click(check());
     await waitFor(() => expect(attemptBodies()).toHaveLength(1));
-    expect(attemptBodies()[0]).toMatchObject({ lineId: "line-3", format: "typing", hintUnit: "grapheme4" });
+    expect(attemptBodies()[0]).toMatchObject({ lineId: "line-3", format: "typing", hintUnit: "grapheme1" });
     expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
     expect(router.replace).not.toHaveBeenCalled();
     await screen.findByTestId("listening-score");
@@ -388,7 +392,7 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
 
   it("Show answer is stored, so the footnote follows it", async () => {
     await open();
-    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    fireEvent.click(showAll());
     await screen.findByTestId("listening-answer");
     expect(screen.getByText("Saved to your personal listening memory.")).toBeInTheDocument();
   });
@@ -429,35 +433,99 @@ async function openTyping(line: LineId) {
 }
 
 describe("ListeningModeBody — Typing and Chế độ dễ", () => {
-  it("sends the typed text with the line's hint unit; a hint shows the chunk's raw text and never edits the input", async () => {
+  it("a star reveals one raw character in place, posts nothing, and the submit carries grapheme1 + its unit", async () => {
     await openTyping("line-4");
     expect(easyMode()).toHaveAttribute("aria-pressed", "false");
     typeInto("テスト");
-    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
-    expect(screen.getByTestId("typing-hint")).toHaveTextContent("ﾃｽﾄは");
-    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("いいです");
+    fireEvent.click(star(5));
+    expect(star(5)).toHaveTextContent("い");
+    expect(star(5)).toHaveAccessibleName("Character 5 of 8, い");
+    expect(screen.getAllByRole("button", { name: /^Character \d+ of 8, hidden$/ })).toHaveLength(7);
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
     expect(input()).toHaveValue("テスト");
-    expect(feedback()).toHaveTextContent("1 chunk hinted so far. Hinted parts don't count toward recall.");
-    expect(feedback().textContent).not.toContain("ﾃｽﾄ");
+    expect(feedback()).toHaveTextContent("1 character hinted so far. Hinted parts don't count toward recall.");
     fireEvent.click(check());
     await waitFor(() => expect(attemptBodies()).toHaveLength(1));
     expect(attemptBodies()[0]).toEqual({
       kind: "submit", videoId: "video-1", lineId: "line-4", format: "typing", version: 1, textHash: "a".repeat(64),
-      input: "テスト", hintUnit: "chunk", hintedUnits: [0],
+      input: "テスト", hintUnit: "grapheme1", hintedUnits: [4],
     });
   });
 
-  it("hints 4 graphemes of the raw line on a grapheme4 line and says part", async () => {
+  it("a revealed star shows the raw line's character (P13): ㌘ for the グ of 砂糖1グラム", async () => {
     await openTyping("line-5");
-    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
-    // Base 砂糖1グラム: the first unit 砂糖1グ is shown as written, 砂糖1㌘ (P13).
-    expect(screen.getByTestId("typing-hint")).toHaveTextContent("砂糖1㌘");
-    expect(screen.getByTestId("typing-hint")).not.toHaveTextContent("グ");
-    expect(feedback()).toHaveTextContent("1 part hinted so far.");
-    typeInto("砂糖1グラム");
-    fireEvent.click(check());
-    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
-    expect(attemptBodies()[0]).toMatchObject({ format: "typing", hintUnit: "grapheme4", hintedUnits: [0] });
+    fireEvent.click(star(4));
+    expect(star(4)).toHaveTextContent("㌘");
+    expect(screen.getByRole("group", { name: "Hidden sentence" }).textContent).not.toContain("グ");
+  });
+
+  it("no Hint and no Show answer button in Chép chính tả; 💡 has its tooltip, Alt+H and calls reveal", async () => {
+    await openTyping("line-4");
+    expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Show answer" })).toBeNull();
+    expect(showAll()).toHaveAttribute("aria-keyshortcuts", "Alt+H");
+    expect(showAll()).toHaveAccessibleName("Show the sentence (Alt+H)");
+    fireEvent.click(star(1));
+    fireEvent.click(showAll());
+    expect(await screen.findByTestId("dictation-sentence")).toHaveTextContent(LINES["line-4"].text);
+    expect(screen.queryAllByRole("button", { name: /^Character/ })).toHaveLength(0);
+    expect(attemptBodies()).toEqual([{ kind: "reveal", videoId: "video-1", lineId: "line-4", format: "typing", version: 1, textHash: "a".repeat(64), hintUnit: "grapheme1", hintedUnits: [0] }]);
+  });
+
+  it("Alt+H from the typing box reveals the sentence once, keeps the text, and moves no sentence or playback", async () => {
+    await openTyping("line-4");
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    const player = required(yt.players[0]);
+    const seek = vi.spyOn(player, "seekTo");
+    typeInto("テスト");
+    // An IME composition owns the keys: Alt+H then is the IME's, never 💡.
+    altH(input(), { isComposing: true });
+    altH(input(), { keyCode: 229 });
+    altH(input(), { altKey: false });
+    altH(input(), { ctrlKey: true });
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
+    altH(input());
+    expect(await screen.findByTestId("dictation-sentence")).toHaveTextContent(LINES["line-4"].text);
+    expect(attemptBodies()).toEqual([expect.objectContaining({ kind: "reveal", format: "typing", lineId: "line-4" })]);
+    expect(input()).toHaveValue("テスト");
+    expect(seek).not.toHaveBeenCalled();
+    expect(screen.getByRole("button", { name: /^Sentence 4,/ })).toHaveAttribute("aria-current", "true");
+    altH();
+    expect(calls("/api/dictation/attempt")).toHaveLength(1);
+  });
+
+  it("Alt+H posts nothing in Điền từ or on the picker (dictation only)", async () => {
+    searchParams = new URLSearchParams("line=line-4&format=cloze");
+    const view = render(shell());
+    await screen.findByTestId("listening-cloze-pending");
+    altH();
+    searchParams = new URLSearchParams("line=line-4");
+    view.rerender(shell());
+    await screen.findByRole("heading", { name: "How would you like to practise listening?" });
+    altH();
+    await new Promise((done) => setTimeout(done, 50));
+    expect(calls("/api/dictation/attempt")).toHaveLength(0);
+    // Positive control: the same key in Chép chính tả does reveal.
+    searchParams = new URLSearchParams("line=line-4&format=dictation");
+    view.rerender(shell());
+    await screen.findByRole("textbox", { name: "Type what you hear" });
+    altH();
+    await waitFor(() => expect(calls("/api/dictation/attempt")).toHaveLength(1));
+  });
+
+  it("Chế độ dễ: word pieces with the mask above them, its stars not buttons; 💡 still reveals; off brings typing back", async () => {
+    await open("line-2");
+    const mask = screen.getByRole("group", { name: "Hidden sentence" });
+    expect(within(mask).queryAllByRole("button")).toHaveLength(0);
+    expect(within(mask).getAllByRole("img", { name: /^Character \d+ of 6, hidden$/ })).toHaveLength(6);
+    expect(mask.compareDocumentPosition(required(slotList())) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Hint" })).toBeInTheDocument(); // WP's piece Hint is the hint here
+    fireEvent.click(showAll());
+    expect(await screen.findByTestId("dictation-sentence")).toHaveTextContent(LINES["line-2"].text);
+    expect(attemptBodies().at(-1)).toMatchObject({ kind: "reveal", format: "word_bank" });
+    fireEvent.click(easyMode());
+    expect(await screen.findByRole("textbox", { name: "Type what you hear" })).toBeInTheDocument();
+    expect(screen.getAllByRole("button", { name: /^Character \d+ of 6, hidden$/ })).toHaveLength(6);
   });
 
   it("arrows and Space in the input type and move the caret, never the sentence or playback; Enter submits once, never mid-composition (Review Focus 4)", async () => {
@@ -552,7 +620,7 @@ describe("ListeningModeBody — Typing and Chế độ dễ", () => {
 
   it("never praises a hinted attempt and colours the hinted characters", async () => {
     await openTyping("line-4");
-    fireEvent.click(screen.getByRole("button", { name: "Hint" }));
+    for (const n of [1, 2, 3, 4]) fireEvent.click(star(n));
     typeInto("テストはいいです");
     fireEvent.click(check());
     await screen.findByTestId("listening-score");

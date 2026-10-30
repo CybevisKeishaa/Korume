@@ -41,6 +41,7 @@ const SURFACES = {
   answer: "[data-testid='listening-answer']",
   slotResult: "li[data-result]",
   diff: "[data-testid='typing-diff']",
+  sentence: "[data-testid='dictation-sentence']",
   korume: "[data-mascot-pose^='listening-']",
   feedback: "[data-testid='listening-feedback']",
 } as const;
@@ -74,7 +75,7 @@ async function installSurfaceObserver(page: Page): Promise<void> {
   }, SURFACES);
 }
 
-const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff"];
+const ANSWER_KINDS: Surface["kind"][] = ["subtitle", "answer", "slotResult", "diff", "sentence"];
 async function surfaces(page: Page, kinds: Surface["kind"][] = ANSWER_KINDS): Promise<Surface[]> {
   const all = await page.evaluate(() => (window as unknown as { __surfaces: Surface[] }).__surfaces.slice());
   return all.filter((surface) => kinds.includes(surface.kind));
@@ -145,6 +146,9 @@ const dock = (page: Page) => page.locator("[data-listen-dock]");
 const dockRow = (page: Page) => page.locator("[data-listen-dock-controls]");
 const pickerHeading = (page: Page) => page.getByRole("heading", { name: "How would you like to practise listening?" });
 const button = (page: Page, name: string) => practice(page).getByRole("button", { name, exact: true });
+/** 💡 = Show answer in Chép chính tả (spec §3.3). */
+const showAll = (page: Page) => button(page, "Show the sentence (Alt+H)");
+const mask = (page: Page) => practice(page).getByRole("group", { name: "Hidden sentence" });
 
 /** Taps each piece in the bank, in order; two pieces with the same text are interchangeable (LCS by text). */
 async function place(page: Page, pieces: readonly string[]): Promise<void> {
@@ -157,6 +161,7 @@ async function expectConcealed(page: Page): Promise<void> {
   await expect(page.getByTestId("listening-answer")).toHaveCount(0);
   await expect(page.locator(SURFACES.slotResult)).toHaveCount(0);
   await expect(page.getByTestId("typing-diff")).toHaveCount(0);
+  await expect(page.getByTestId("dictation-sentence")).toHaveCount(0);
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
   await expect(korume(page)).toHaveCount(0);
 }
@@ -373,7 +378,7 @@ test("6 · Show answer: revealed, no score; navigator, strip and Summary agree",
   for (const unhinted of (await cut(page, 0)).slice(1)) for (const text of said) expect(text).not.toContain(unhinted);
   await expect(korume(page)).toHaveCount(0);
 
-  await heldSubmit(page, () => button(page, "Show answer").click());
+  await heldSubmit(page, () => showAll(page).click());
   await expect(page.getByTestId("listening-answer")).toHaveText(LINES[0].text);
   await expect(feedback(page)).toContainText("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
@@ -415,8 +420,8 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
   expect(posts).toEqual([]);
   await typingInput(page).evaluate((input) => input.dispatchEvent(new CompositionEvent("compositionend", { bubbles: true })));
 
-  await button(page, "Hint").click();
-  await expect(practice(page).getByTestId("typing-hint")).toContainText((await cut(page, 0)).at(0) ?? "");
+  await mask(page).getByRole("button", { name: /^Character 1 of \d+, hidden$/ }).click();
+  await expect(mask(page).getByRole("button", { name: /^Character 1 of \d+, / })).toHaveText(LINES[0].text.charAt(0));
   await expect(typingInput(page)).toHaveValue("毎日日");
 
   await typingInput(page).fill("毎日日本語お勉強しました。");
@@ -603,7 +608,7 @@ test("13 · the mission counts one line for Word Bank + Typing on it, and nothin
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await button(page, "Next sentence").click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
-  await button(page, "Show answer").click();
+  await showAll(page).click();
   await expect(page.getByTestId("listening-answer")).toHaveText(LINES[1].text);
 
   await page.goto("/en/dashboard");
@@ -834,7 +839,7 @@ test("21 · the dock row stays at one height on hover", async ({ page }) => {
   console.log(`T9-MEASURE dock card/row height ${paused.join("/")}px, dock box ${JSON.stringify(await dock(page).boundingBox())}`);
 });
 
-test("22 · in listen-only at 1280×529 Show answer is above the dock, on the longest line, pieces and typing", async ({ page }) => {
+test("22 · in listen-only at 1280×529 the action row is above the dock, on the longest line, pieces and typing", async ({ page }) => {
   await registerLearner(page);
   // Video shown first; the workspace header carries the one sentence counter in both layouts (spec §3.1).
   await openWordBank(page, `&line=${data.lineIds[LONG.index]}`);
@@ -844,7 +849,7 @@ test("22 · in listen-only at 1280×529 Show answer is above the dock, on the lo
   if (!stripBox) throw new Error("strip has no box");
   expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(529);
   const header = await practice(page).getByRole("heading", { name: "Dictation" }).boundingBox();
-  const shownReveal = await button(page, "Show answer").boundingBox();
+  const shownReveal = await button(page, "Next sentence").boundingBox();
   console.log(`T9-MEASURE video shown: strip top ${stripBox.y} bottom ${stripBox.y + stripBox.height}, exercise header top ${header?.y}, reveal bottom ${(shownReveal?.y ?? 0) + (shownReveal?.height ?? 0)}`);
 
   await hideVideo(page).click();
@@ -855,7 +860,7 @@ test("22 · in listen-only at 1280×529 Show answer is above the dock, on the lo
       await expect(typingInput(page)).toBeVisible();
     }
     const dockBox = await dock(page).boundingBox();
-    const reveal = await button(page, "Show answer").boundingBox();
+    const reveal = await button(page, "Next sentence").boundingBox();
     const panel = await page.getByTestId("practice-panel").boundingBox();
     if (!dockBox || !reveal || !panel) throw new Error("missing box");
     const scroll = await page.getByTestId("practice-panel").evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
@@ -869,4 +874,70 @@ test("22 · in listen-only at 1280×529 Show answer is above the dock, on the lo
       expect(rows).toBe(1);
     }
   }
+});
+
+test("23 · tap a star reveals one character: nothing is sent until Check, which carries it as a grapheme1 hint", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  const bodies: Record<string, unknown>[] = [];
+  page.on("request", (request) => { if (request.url().endsWith("/api/dictation/attempt")) bodies.push(request.postDataJSON() as Record<string, unknown>); });
+  const graphemes = [...LINES[0].text].filter((char) => char !== "。");
+  await expect(mask(page).getByRole("button")).toHaveCount(graphemes.length);
+  await expect(mask(page)).not.toContainText(graphemes.join(""));
+  await mask(page).getByRole("button", { name: `Character 3 of ${graphemes.length}, hidden` }).click();
+  await expect(mask(page).getByRole("button", { name: `Character 3 of ${graphemes.length}, ${graphemes[2]}` })).toHaveText(graphemes[2]!);
+  await expect(mask(page).getByRole("button", { name: /, hidden$/ })).toHaveCount(graphemes.length - 1);
+  await page.waitForTimeout(300);
+  expect(bodies).toEqual([]);
+  await expectConcealed(page);
+  await typingInput(page).fill(LINES[0].text);
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toBeVisible();
+  expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "typing", hintUnit: "grapheme1", hintedUnits: [2] })]);
+  await expect(page.getByTestId("typing-diff").locator("[data-op='hinted']")).toHaveCount(1);
+  await expect(mask(page)).toHaveCount(0);
+});
+
+test("24 · 💡 (Alt+H from the typing box) shows the sentence and labels Đã xem đáp án", async ({ page }) => {
+  await registerLearner(page);
+  await page.goto(`/vi/shadowing/${data.videoId}/listening?format=dictation`);
+  await expect(page.getByTestId("fake-yt")).toHaveCount(1);
+  const vi = page.getByRole("region", { name: "Luyện nghe" });
+  const input = vi.getByRole("textbox", { name: "Gõ những gì bạn nghe được" });
+  await expect(input).toHaveAttribute("placeholder", "Nhập những gì bạn nghe được…");
+  await expect(vi.getByRole("button", { name: "Gợi ý", exact: true })).toHaveCount(0);
+  await expect(vi.getByRole("button", { name: "Xem đáp án", exact: true })).toHaveCount(0);
+  const bulb = vi.getByRole("button", { name: "Hiện cả câu (Alt+H)", exact: true });
+  await expect(bulb).toHaveAttribute("aria-keyshortcuts", "Alt+H");
+  await bulb.hover();
+  await expect(page.getByRole("tooltip")).toHaveText("Hiện cả câu (Alt+H)");
+  await expect(vi.getByTestId("dictation-sentence")).toHaveCount(0);
+  await input.fill("毎日");
+  await input.press("Alt+KeyH");
+  await expect(vi.getByTestId("dictation-sentence")).toHaveText(LINES[0].text);
+  await expect(vi.getByRole("group", { name: "Câu đang ẩn" })).toHaveCount(0);
+  await expect(input).toHaveValue("毎日");
+  await expect(vi.getByTestId("listening-feedback")).toContainText("Câu này được đánh dấu cần ôn lại.");
+  await expect(page.getByRole("navigation", { name: "Điều hướng câu" }).getByRole("button", { name: "Câu 1, đã xem đáp án" })).toBeVisible();
+  await expect(vi.getByRole("button", { name: "Thử lại", exact: true })).toBeVisible();
+});
+
+test("25 · easy mode shows word pieces under a mask that is a length cue, never tappable", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  const graphemes = [...LINES[0].text].filter((char) => char !== "。").length;
+  await expect(mask(page).getByRole("button")).toHaveCount(graphemes);
+  await easyMode(page).click();
+  await expect(bank(page)).toBeVisible();
+  await expect(typingInput(page)).toHaveCount(0);
+  await expect(mask(page).getByRole("button")).toHaveCount(0);
+  await expect(mask(page).getByRole("img", { name: /, hidden$/ })).toHaveCount(graphemes);
+  const maskBox = await mask(page).boundingBox();
+  const bankBox = await bank(page).boundingBox();
+  expect((maskBox?.y ?? 1e9)).toBeLessThan(bankBox?.y ?? 0);
+  await expect(button(page, "Hint")).toBeVisible(); // WP's piece Hint, beside 💡
+  await expect(showAll(page)).toBeVisible();
+  await easyMode(page).click();
+  await expect(typingInput(page)).toBeVisible();
+  await expect(mask(page).getByRole("button")).toHaveCount(graphemes);
 });

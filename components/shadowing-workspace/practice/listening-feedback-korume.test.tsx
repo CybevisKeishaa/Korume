@@ -99,7 +99,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()?.getAttribute("src")).toContain("neutral.png");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
-    fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
+    fireEvent.click(screen.getByRole("button", { name: "Show the sentence (Alt+H)" }));
     await screen.findByTestId("listening-answer");
     expect(figure()).toHaveAttribute("data-mascot-pose", "listening-review");
     expect(figure()?.getAttribute("src")).toContain("thinking.png");
@@ -111,7 +111,8 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     const korume = figure();
     expect(korume).toHaveAttribute("alt", "");
     expect(korume).toHaveAttribute("aria-hidden", "true");
-    expect(screen.queryByRole("img")).toBeNull();
+    // The only images left are the easy-mode mask's named stars (a length cue), never the figure.
+    expect(screen.queryAllByRole("img").filter((img) => img.closest("[role='group'][aria-label='Hidden sentence']") === null)).toEqual([]);
     expect(feedback()).toHaveAttribute("aria-live", "polite");
     expect(feedback().textContent).toBe("You arranged the whole sentence yourself!");
     expect(feedback().contains(korume)).toBe(false);

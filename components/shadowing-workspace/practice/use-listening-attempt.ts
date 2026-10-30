@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { listeningFeedback, typingErrorCount, type FeedbackMessage } from "@/lib/dictation/listening-feedback";
-import { grapheme4Units, type ListeningRevealData, type ListeningSubmitData } from "@/lib/dictation/listening-score";
+import { grapheme1Units, type ListeningRevealData, type ListeningSubmitData } from "@/lib/dictation/listening-score";
 import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
 import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
@@ -98,9 +98,10 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     return () => request.abort();
   }, [lineId, load]);
 
-  const unit = format === "word_bank" ? "chunk" : chunks?.typingHintUnit ?? "chunk";
+  // Word pieces hint a piece; Typing in Chép chính tả reveals one star = one grapheme (spec §3.3).
+  const unit = format === "word_bank" ? "chunk" : "grapheme1";
   const lineText = lines.find((line) => line.id === lineId)?.textJp ?? "";
-  const unitCount = !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme4Units(normalizeJa(lineText)).length;
+  const unitCount = !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme1Units(normalizeJa(lineText)).length;
   const answered = state.result !== null || state.revealed;
   const previous = previousResults.current.get(lineKey) ?? null;
 
@@ -138,7 +139,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     const requestKey = key;
     const body = {
       kind: "submit", videoId: video.id, lineId, version: chunks.version, textHash: chunks.textHash, hintedUnits: state.hinted,
-      ...("chunkOrder" in payload ? { format: "word_bank", chunkOrder: payload.chunkOrder } : { format: "typing", input: payload.input, hintUnit: chunks.typingHintUnit }),
+      ...("chunkOrder" in payload ? { format: "word_bank", chunkOrder: payload.chunkOrder } : { format: "typing", input: payload.input, hintUnit: unit }),
     };
     return post(body, (data) => {
       const result = data as ListeningSubmitData;
@@ -157,7 +158,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     const requestKey = key;
     const body = {
       kind: "reveal", videoId: video.id, lineId, format, version: chunks.version, textHash: chunks.textHash, hintedUnits: state.hinted,
-      ...(format === "typing" ? { hintUnit: chunks.typingHintUnit } : {}),
+      ...(format === "typing" ? { hintUnit: unit } : {}),
     };
     return post(body, (data) => {
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, answer: (data as ListeningRevealData).answer, revealed: true } : prev);
@@ -172,6 +173,12 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       const next = Array.from({ length: unitCount }, (_, i) => i).find((i) => !prev.hinted.includes(i));
       return next === undefined ? prev : { ...prev, hinted: [...prev.hinted, next] };
     });
+  }
+
+  /** A tapped star (Typing only): its grapheme becomes a hint of this attempt; nothing is sent until Check or 💡. */
+  function revealUnit(unit: number) {
+    if (format !== "typing" || !chunks || answered || state.submitting) return;
+    setState((prev) => prev.key !== key || prev.hinted.includes(unit) ? prev : { ...prev, hinted: [...prev.hinted, unit] });
   }
 
   function tryAgain() {
@@ -203,6 +210,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     previous,
     feedback,
     hint,
+    revealUnit,
     submit,
     reveal,
     tryAgain,

@@ -2,7 +2,7 @@ import { useLayoutEffect } from "react";
 import { vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { chunkUnits, grapheme4Units, scoreTyping, scoreWordBank, type Range } from "@/lib/dictation/listening-score";
+import { chunkUnits, grapheme1Units, grapheme4Units, scoreTyping, scoreWordBank, type Range } from "@/lib/dictation/listening-score";
 import { displayMap } from "@/lib/dictation/display";
 import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
@@ -47,7 +47,7 @@ export function serve(body: AttemptBody): Response {
   if (body.kind === "reveal") return Response.json({ data: { kind: "reveal", answer: line.text, chunks: line.chunks, display: line.display } });
   if (body.format === "typing") {
     const base = normalizeJa(line.text);
-    const units = body.hintUnit === "grapheme4" ? grapheme4Units(base) : chunkUnits([...line.chunks]);
+    const units = body.hintUnit === "grapheme1" ? grapheme1Units(base) : body.hintUnit === "grapheme4" ? grapheme4Units(base) : chunkUnits([...line.chunks]);
     const scored = scoreTyping(base, String(body.input), body.hintedUnits.flatMap((i) => units[i] ?? []), GRAMMAR[body.lineId] ?? [], displayMap(line.text));
     return Response.json({ data: { kind: "submit", ...scored, answer: line.text } });
   }

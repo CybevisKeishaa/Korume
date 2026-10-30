@@ -11,7 +11,7 @@ export type FeedbackId = (typeof FEEDBACK_IDS)[number];
 export interface FeedbackMessage { id: FeedbackId; values: Record<string, string | number> }
 
 export type FeedbackEvent =
-  | { kind: "hint"; unit: "chunk" | "grapheme4"; hinted: number; total: number }
+  | { kind: "hint"; unit: "chunk" | "grapheme1"; hinted: number; total: number }
   /** `slots` per answer position (the piece placed there is `chunkIndex`); `display` is the line's raw piece text. */
   | { kind: "checked_word_bank"; slots: { chunkIndex: number; correct: boolean; hinted: boolean }[]; display: string[]; previous: { wrongPieces: number[] } | null }
   | { kind: "checked_typing"; diff: ListeningDiffOp[]; metrics: ListeningMetrics; previous: { errorCount: number } | null }
