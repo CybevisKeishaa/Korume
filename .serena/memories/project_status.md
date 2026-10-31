@@ -1,6 +1,51 @@
 # Korume (was Nihongo Cinema) — Project Status
 
-> ## ▶ WHERE EXECUTION STANDS — 2026-10-14 night (supersedes every block below)
+> ## ▶ 2026-10-27 — RESUME HERE: `practice-listening` (B2), two-exercises plan, Task 8 fix round
+>
+> Worktree `.worktrees/practice-listening`, tip `ad2800f8` (tree clean), NOT merged. Plan
+> `docs/superpowers/plans/2026-10-26-listening-two-exercises.md`: Tasks 2–8 done (8 approved; its fix round needs a review).
+> Owner DB now at migration 049. Read `mem:practice_listening_run_state` (session 8) and the ledger's
+> "SESSION 8 STOP" block first.
+>
+> ## (previous block) 2026-10-26 — `practice-listening` (B2), brainstorm the owner's new Listening references
+>
+> Worktree `.worktrees/practice-listening`, tip `f81483c2`, NOT merged. Plan Task 1 (Chrome trial) was paused before
+> it ran: the owner brought reference images (`C:\Users\tplon\Desktop\Japan\Korume\image\ref\`) for a third
+> exercise "Điền từ" (cloze) and a new panel layout. Brainstorm in progress, first question unanswered; the
+> word-pieces spec/plan may change. Read `mem:practice_listening_run_state` (session 5) first.
+>
+> ## (previous block) 2026-10-23 — `practice-listening` (B2), word-pieces plan Task 1
+>
+> Worktree `.worktrees/practice-listening`, tip `f81483c2`, NOT merged. B2 Tasks 1–9 + 9c done. The owner redesigned
+> Word Bank (word pieces, drag/tap, video visible + remembered "Chỉ nghe", bar-look stat strip, Typing ignores ♪〜→※):
+> spec `docs/superpowers/specs/2026-10-23-listening-word-pieces-design.md`, plan
+> `docs/superpowers/plans/2026-10-23-listening-word-pieces.md`, execution subagent-driven. Next: plan Task 1 (Chrome
+> trial). Read `mem:practice_listening_run_state` first.
+>
+> ## (previous block) 2026-10-22 — `practice-listening` (B2), paused after Task 6
+>
+> Worktree `.worktrees/practice-listening`, HEAD `55850b87`, NOT merged. Tasks 1–6 (incl. 2b, 4b) accepted after
+> independent review; resume at **Task 7** from the SDD ledger. Read `mem:practice_listening_run_state` first.
+>
+> ## ▶ 2026-10-20 — Vietnamese translations for imported lessons + rate-limit backoff (both MERGED, not pushed)
+>
+> `youtube-vi-captions` → master `55f069b5`; `lesson-creation-rate-limit` → master `5c076987`. Read
+> `mem:youtube_vi_captions_run_state` for what shipped and what is open. Headline: YouTube auto-translation
+> (`&tlang=vi`) is closed to keyless clients, so a lesson gets Vietnamese from the creator's own vi track, or from
+> the new admin import of the owner's ja + vi SRT files (`/vi/admin/videos`). Next in that thread: AI ja→vi for
+> learner self-imports (approved, not started). The 2026-10-15 block below is older; `practice-pronunciation` has
+> since been merged (`036ca621`).
+>
+> ## (previous block) WHERE EXECUTION STANDS — 2026-10-15
+>
+> ▶ **RESUME HERE: `practice-pronunciation`** (worktree `.worktrees/practice-pronunciation`, tip `c5de176b`, NOT
+> merged, no product code yet) — read `mem:practice_pronunciation_run_state` first. `app-chrome-refresh` is MERGED →
+> master `aea3e1da`. Owner changed the order: Shadowing **Pronunciation (Part 2) + Listening/dictation (Part 3)**
+> come before Certification. Spec `docs/superpowers/specs/2026-10-15-shadowing-practice-modes-design.md` approved
+> (D1–D25); B1 plan (15 tasks) approved; owner chose subagent-driven; Task 1 started then PAUSED by the
+> owner (migration file untracked, not applied, no commit) — resume from `.superpowers/sdd/2026-10-15-practice-pronunciation/progress.md`. B2 `practice-listening` follows after B1 merges. Then Certification.
+>
+> ## (previous block) 2026-10-14 night
 >
 > ▶ **RESUME HERE: `app-chrome-refresh`** (worktree `.worktrees/app-chrome-refresh`, tip `c47a95db`, NOT merged, no
 > product code yet) — read `mem:app_chrome_refresh_run_state` first. Navbar from Figma page `655:2`; spec + plan
@@ -933,6 +978,11 @@ branch SHAs are in § Branching policy above. Only L8 (PayOS billing) and L9c (p
 unbuilt from the original 8 layers — see § ROADMAP SEQUENCING for why they are last.
 
 ## Key gotchas learned
+- **YouTube captions are keyless and IP-rate-limited** (2026-10-20): auto-translation `&tlang=<lang>` answers
+  HTTP 429 to every keyless client (InnerTube ANDROID and WEB), so `[ja-vi]`-style translations cannot be fetched;
+  only a creator's own vi track can. A burst of ~15 probes got the dev machine's IP 429-blocked on `/api/timedtext`
+  for 3.5h+, failing the owner's real imports (watch page and player stayed up). Budget probes; stop at the first
+  429. The worker's rate-limit wait is bounded by the stale-queued window (`mem:youtube_vi_captions_run_state`).
 - **Table GRANTs**: migration-created tables do NOT inherit Supabase default grants → queries as
   `authenticated` failed with 42501 until `20260712000006_grants.sql`. Every NEW table needs RLS
   enabled (default-privileges auto-grant DML to authenticated → table without RLS = open hole).
