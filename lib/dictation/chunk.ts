@@ -130,7 +130,8 @@ async function tokenize(textJp: string, version: number, isPunct = isPunctuation
 }
 
 // v2 (WP §3.1): symbols such as ♪ 〜 → ※ are punctuation too; kuromoji tags them UNKNOWN 名詞.
-const isSymbol = (t: Tok) => isPunctuation(t) || /^[\p{P}\p{S}]+$/u.test(t.surface_form);
+const isMarkText = (s: string) => [...s].every((c) => PUNCTUATION.test(c)) || /^[\p{P}\p{S}]+$/u.test(s);
+const isSymbol = (t: Tok) => isMarkText(t.surface_form);
 
 type Part = [text: string, kind: "word" | "open" | "mark"];
 
@@ -171,7 +172,7 @@ async function chunkChars(textJp: string): Promise<ChunkResult> {
     if (/^[A-Za-z0-9]+$/.test(g)) {
       if (last && last[1] === "word" && /[A-Za-z0-9]$/.test(last[0])) last[0] += g;
       else parts.push([g, "word"]);
-    } else if ([...g].every((c) => PUNCTUATION.test(c)) || /^[p{P}p{S}]+$/u.test(g)) {
+    } else if (isMarkText(g)) {
       parts.push([g, quote || OPEN_BRACKETS.includes(g) ? "open" : "mark"]);
     } else parts.push([g, "word"]);
   }

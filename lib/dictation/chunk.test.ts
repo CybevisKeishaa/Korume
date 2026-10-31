@@ -112,6 +112,10 @@ describe("v4: the character cut", () => {
     ["きって", ["き", "っ", "て"]],
     ["COVID19です", ["COVID19", "で", "す"]],
     ["「はい」", ["「は", "い」"]],
+    ["楽しいね♪", ["楽", "し", "い", "ね♪"]],
+    ["A→Bです", ["A→", "B", "で", "す"]],
+    ['"はい"と', ['"は', 'い"', "と"]],
+    ["、はい", ["、は", "い"]],
   ])("cuts %s", async (line, chunks) => {
     expect(await run4(line)).toEqual({ version: 4, reliable: true, reason: null, chunks });
   }, T);
