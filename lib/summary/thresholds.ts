@@ -18,6 +18,15 @@ const CUTS = {
   retention: [RETENTION_NEEDS_WORK_BELOW, RETENTION_STRONG_AT],
 } as const;
 
+/**
+ * A single result's band, on the same cuts as the lesson state below — so the chime a learner hears after one sentence
+ * agrees with what Summary later calls that mode (owner 2026-10-31: different sounds for low and good scores).
+ */
+export function scoreBand(mode: keyof typeof CUTS, score: number): Exclude<Quality, "not_started"> {
+  const [needsWorkBelow, strongAt] = CUTS[mode];
+  return score < needsWorkBelow ? "needs_work" : score >= strongAt ? "strong" : "practiced";
+}
+
 /** The one score → state adapter (spec §5.1). Reads the rounded integers of §3.1. */
 export function modeQuality(mode: keyof LessonStatus, state: ModeState): Quality {
   if (mode === "shadowing") {
