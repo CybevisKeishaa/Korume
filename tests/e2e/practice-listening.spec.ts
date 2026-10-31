@@ -594,14 +594,14 @@ test("12 · legacy dictation deep links land on Listening's Chép chính tả (t
     const target = `/${locale}/shadowing/${data.videoId}/listening`;
     const legacy = await request.get(`/${locale}/shadowing/${data.videoId}/dictation`, { maxRedirects: 0 });
     expect(legacy.status()).toBe(308);
-    expect(at(legacy.headers()["location"]).pathname + at(legacy.headers()["location"]).search).toBe(`${target}?format=typing`);
+    expect(at(legacy.headers()["location"]).pathname + at(legacy.headers()["location"]).search).toBe(`${target}?format=dictation`);
     const old = await request.get(`/${locale}/videos/${data.videoId}/dictation`, { maxRedirects: 0 });
     expect(old.status()).toBe(307);
-    expect(at(old.headers()["location"]).pathname + at(old.headers()["location"]).search).toBe(`${target}?format=typing`);
+    expect(at(old.headers()["location"]).pathname + at(old.headers()["location"]).search).toBe(`${target}?format=dictation`);
     const deep = await request.get(`/${locale}/shadowing/${data.videoId}/dictation?line=${line}`, { maxRedirects: 0 });
     const location = at(deep.headers()["location"]);
     expect(location.pathname).toBe(target);
-    expect(location.searchParams.get("format")).toBe("typing");
+    expect(location.searchParams.get("format")).toBe("dictation");
     expect(location.searchParams.get("line")).toBe(line);
   }
 
@@ -609,7 +609,7 @@ test("12 · legacy dictation deep links land on Listening's Chép chính tả (t
   for (const locale of ["vi", "en"]) {
     await page.goto(`/${locale}/shadowing/${data.videoId}/dictation?line=${line}`);
     await expect(page).toHaveURL(new RegExp(`/${locale}/shadowing/${data.videoId}/listening\\?`));
-    // The server's `format=typing` is a legacy value: the client replaces it with the exercise.
+    // The redirect names the exercise itself (`format=dictation`), so the client has nothing to replace.
     await expect(page).toHaveURL(/format=dictation/);
     await expect(page).toHaveURL(new RegExp(`line=${line}`));
     await expect(page.getByTestId("practice-panel").locator("input")).toBeVisible();

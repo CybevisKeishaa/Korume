@@ -80,6 +80,12 @@ describe("scoreCloze", () => {
   it("requires the reading once hinted", () => {
     expect(scoreCloze([b], ["勉強"], [[0]]).score).toBe(0);
   });
+  it("folds katakana: a hinted katakana word finished in katakana, a kanji word's reading typed in katakana", () => {
+    const coffee: ClozeBlank = { token: 0, surface: "コーヒー", reading: "こーひー" };
+    expect(scoreCloze([coffee], ["こーヒー"], [[0]]).blanks[0]).toEqual({ correct: true, hinted: 1 });
+    expect(scoreCloze([coffee], ["コーヒー"], [[]]).score).toBe(100);
+    expect(scoreCloze([b], ["ベンキョウ"], [[]]).score).toBe(100);
+  });
   it("scores 0 when all hinted", () => {
     expect(scoreCloze([b], ["べんきょう"], [[0, 1, 2, 3, 4]]).score).toBe(0);
   });

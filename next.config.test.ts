@@ -68,10 +68,10 @@ describe("next.config.mjs redirects()", () => {
       "/:locale/sensei",
     ]);
     expect((await rules).find((r) => r.source.endsWith("/sensei"))?.destination).toBe("/:locale/korume/chat");
-    // P2: both dictation links land on Listening's Typing format in one hop.
+    // P2: both dictation links land on Listening's Chép chính tả (format=dictation) in one hop.
     const dictation = (await rules).filter((r) => r.source.endsWith("/dictation"));
     expect(dictation).toHaveLength(2);
-    for (const rule of dictation) expect(rule.destination).toBe("/:locale/shadowing/:id/listening?format=typing");
+    for (const rule of dictation) expect(rule.destination).toBe("/:locale/shadowing/:id/listening?format=dictation");
   });
 
   it("constrains :locale on EVERY rule, so no rule can match /api/...", async () => {

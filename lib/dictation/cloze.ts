@@ -1,5 +1,5 @@
 import type { Token } from "@/lib/japanese/types";
-import { toHiraganaReading } from "@/lib/japanese/romaji";
+import { katakanaToHiragana } from "@/lib/japanese/kana";
 import { chunkUnits, type Range } from "./listening-score";
 import { normalizeJa } from "./normalize";
 
@@ -29,7 +29,7 @@ export function clozeCandidates(tokens: Token[]): number[] {
 /** Up to `max` blanks: unknown first, then longer surface, then earlier; never adjacent. Ascending indices. */
 export function selectBlanks(tokens: Token[], known: Set<string>, max = 3): number[] {
   const isKnown = (t: Token) =>
-    known.has(t.base) || (t.reading !== null && known.has(toHiraganaReading(t.reading)));
+    known.has(t.base) || (t.reading !== null && known.has(katakanaToHiragana(t.reading)));
   const ranked = clozeCandidates(tokens)
     .map((i) => ({ i, known: Number(isKnown(tokens[i]!)), len: Array.from(tokens[i]!.surface).length }))
     .sort((a, b) => a.known - b.known || b.len - a.len || a.i - b.i);
@@ -53,7 +53,7 @@ export function tokenRanges(tokens: Token[], base: string): Range[] | null {
 /** The blank of token `i`; a reading-less token (some 固有名詞) reads as written. */
 export function clozeBlank(tokens: Token[], i: number): ClozeBlank {
   const t = tokens[i]!;
-  return { token: i, surface: t.surface, reading: toHiraganaReading(t.reading ?? t.surface) };
+  return { token: i, surface: t.surface, reading: katakanaToHiragana(t.reading ?? t.surface) };
 }
 
 export const graphemes = (s: string) => Array.from(new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(s)).length;
@@ -69,9 +69,11 @@ export function scoreCloze(
 } {
   const results = blanks.map((b, i) => {
     const h = hinted[i]?.length ?? 0;
+    // Kana folds to hiragana on both sides: a learner may finish a hinted コーヒー in katakana, or type ニホン for 日本.
     const a = normalizeJa(answers[i] ?? "");
-    const reading = normalizeJa(b.reading);
-    const correct = h > 0 ? a === reading : a === normalizeJa(b.surface) || a === reading;
+    const kana = katakanaToHiragana(a);
+    const reading = katakanaToHiragana(normalizeJa(b.reading));
+    const correct = h > 0 ? kana === reading : a === normalizeJa(b.surface) || kana === reading;
     return { correct, hinted: h, len: graphemes(b.reading) };
   });
   const mean =

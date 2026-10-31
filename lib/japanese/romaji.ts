@@ -1,14 +1,10 @@
 import { toRomaji as wanakanaToRomaji } from "wanakana";
+import { katakanaToHiragana } from "./kana";
 import type { Token } from "./types";
-
-/** Katakana to hiragana by code shift (stdlib; ー and non-kana pass through). */
-export function toHiraganaReading(katakana: string): string {
-  return katakana.replace(/[ァ-ヶ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0x60));
-}
 
 /** Hepburn via wanakana (ん before a vowel or y becomes n' natively); ー repeats the vowel. */
 export function toRomaji(katakanaOrHiragana: string): string {
-  return wanakanaToRomaji(toHiraganaReading(katakanaOrHiragana)).replace(
+  return wanakanaToRomaji(katakanaToHiragana(katakanaOrHiragana)).replace(
     /([aiueo])-/g,
     "$1$1", // ー repeats the vowel (no macrons)
   );

@@ -108,17 +108,17 @@ const nextConfig = {
         destination: "/:locale/shadowing/:id",
         permanent: false,
       },
-      // Practice modes B2 (P2): the legacy dictation page is retired into Listening's Typing format. The old
+      // Practice modes B2 (P2): the legacy dictation page is retired into Listening's Chép chính tả. The old
       // /videos link goes there in one hop; the query (e.g. `?line=`) is carried over by Next.
       {
         source: "/:locale(vi|en)/videos/:id/dictation",
-        destination: "/:locale/shadowing/:id/listening?format=typing",
+        destination: "/:locale/shadowing/:id/listening?format=dictation",
         permanent: false,
       },
       // PERMANENT (308), the one exception to the rule above: Listening is where dictation now lives for good.
       {
         source: "/:locale(vi|en)/shadowing/:id/dictation",
-        destination: "/:locale/shadowing/:id/listening?format=typing",
+        destination: "/:locale/shadowing/:id/listening?format=dictation",
         permanent: true,
       },
       // Phase 2b / A9: /jlpt -> /certification. A WILDCARD is correct here,

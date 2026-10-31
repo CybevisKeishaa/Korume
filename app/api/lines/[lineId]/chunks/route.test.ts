@@ -38,6 +38,13 @@ describe("GET /api/lines/[lineId]/chunks", () => {
     await expectPrivate(await get(), 404, { error: "Not found" });
   });
 
+  it("maps a spent budget to a private 429 with Retry-After in whole seconds", async () => {
+    vi.mocked(loadLineChunks).mockResolvedValueOnce({ kind: "rate_limited", retryAfter: 1500 });
+    const response = await get();
+    await expectPrivate(response, 429, { error: "Too many requests, slow down" });
+    expect(response.headers.get("Retry-After")).toBe("2");
+  });
+
   it("returns a private generic 500 when the loader throws", async () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     vi.mocked(loadLineChunks).mockRejectedValue(new Error("private database detail"));

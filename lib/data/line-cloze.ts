@@ -1,12 +1,15 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
+import { rateLimit } from "@/lib/rate-limit";
+import { LINE_ANSWER_LIMIT } from "@/lib/data/line-chunks";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { lineTextHash, lineTokens } from "@/lib/dictation/chunk";
 import { CURRENT_CLOZE_SELECTOR, clozeBlank, selectBlanks, tokenRanges } from "@/lib/dictation/cloze";
 import { displayMap, displayRange, normalizeJa, type LineCloze } from "@/lib/dictation";
 import { lineRomaji } from "@/lib/japanese/romaji";
 
-export type LineClozeResult = { kind: "ok"; data: LineCloze } | { kind: "unauthorized" } | { kind: "not_found" };
+export type LineClozeResult = { kind: "ok"; data: LineCloze } | { kind: "unauthorized" } | { kind: "not_found" }
+  | { kind: "rate_limited"; retryAfter: number };
 
 /**
  * Spec §3.4: the learner's blanks for a line (known words are blanked last), with the raw sentence cut around them.
@@ -18,6 +21,8 @@ export async function loadLineCloze(lineId: string): Promise<LineClozeResult> {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { kind: "unauthorized" };
+  const limited = rateLimit(`lines:answer:${user.id}`, LINE_ANSWER_LIMIT);
+  if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
 
   const { data, error } = await supabase.from("transcript_lines").select("text_jp").eq("id", lineId).maybeSingle();
   if (error) throw error;

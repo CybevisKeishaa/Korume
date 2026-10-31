@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { chunkLine, CHUNKERS, CURRENT_CHUNKER, grammarRanges, lineTextHash, typingHintUnit } from "./chunk";
+import { boundedMemo, chunkLine, CHUNKERS, CURRENT_CHUNKER, grammarRanges, lineTextHash, typingHintUnit } from "./chunk";
 import { normalizeJa } from "./normalize";
 import { getTokenizer } from "../japanese/tokenizer";
 
@@ -191,6 +191,25 @@ describe("chunkLine memo", () => {
 
   it("rejects an unknown version", async () => {
     await expect(chunkLine("はい", 99)).rejects.toThrow();
+  });
+});
+
+describe("boundedMemo", () => {
+  it("evicts the least recently used key past the cap and never caches a failure", async () => {
+    const remember = boundedMemo<string>(2);
+    const make = vi.fn((key: string) => Promise.resolve(key));
+    const get = (key: string) => remember(key, () => make(key));
+    await get("a"); await get("b"); await get("a"); // a is now the most recent
+    await get("c"); // evicts b
+    expect(make).toHaveBeenCalledTimes(3);
+    await get("a");
+    expect(make).toHaveBeenCalledTimes(3);
+    await get("b");
+    expect(make).toHaveBeenCalledTimes(4);
+    const fail = vi.fn(() => Promise.reject(new Error("x")));
+    await expect(remember("f", fail)).rejects.toThrow();
+    await expect(remember("f", fail)).rejects.toThrow();
+    expect(fail).toHaveBeenCalledTimes(2);
   });
 });
 

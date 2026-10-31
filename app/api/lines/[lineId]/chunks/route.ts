@@ -14,6 +14,10 @@ export async function GET(_request: Request, { params }: { params: { lineId: str
     switch (result.kind) {
       case "unauthorized": return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: PRIVATE });
       case "not_found": return NextResponse.json({ error: "Not found" }, { status: 404, headers: PRIVATE });
+      case "rate_limited": return NextResponse.json(
+        { error: "Too many requests, slow down" },
+        { status: 429, headers: { ...PRIVATE, "Retry-After": String(Math.max(1, Math.ceil(result.retryAfter / 1000))) } },
+      );
       case "ok": return NextResponse.json({ data: result.data }, { headers: PRIVATE });
     }
   } catch (error) {

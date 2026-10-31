@@ -176,7 +176,26 @@ export function lineTextHash(textJp: string): string {
   return createHash("sha256").update(textJp).digest("hex");
 }
 
-const memo = new Map<string, Promise<ChunkResult>>();
+/** Entries per memo; learners can add lines of their own, so the memo must not grow with them. */
+export const MEMO_CAP = 2000;
+
+/** `make(key)` once per key, the least recently used key evicted past `cap`; a failure is never cached. */
+export function boundedMemo<T>(cap: number = MEMO_CAP): (key: string, make: () => Promise<T>) => Promise<T> {
+  const entries = new Map<string, Promise<T>>();
+  return (key, make) => {
+    let hit = entries.get(key);
+    if (hit) entries.delete(key); // re-insert below: Map order is recency order
+    else {
+      hit = make();
+      hit.catch(() => { if (entries.get(key) === hit) entries.delete(key); });
+    }
+    entries.set(key, hit);
+    if (entries.size > cap) entries.delete(entries.keys().next().value!);
+    return hit;
+  };
+}
+
+const memo = boundedMemo<ChunkResult>();
 
 /**
  * Callers must have read `textJp` under the learner's access first (P12); the memo holds no learner data.
@@ -184,30 +203,15 @@ const memo = new Map<string, Promise<ChunkResult>>();
 export function chunkLine(textJp: string, version: number = CURRENT_CHUNKER): Promise<ChunkResult> {
   const chunker = CHUNKERS[version];
   if (!chunker) return Promise.reject(new Error(`unknown chunker version ${version}`));
-  const key = `${version}:${lineTextHash(textJp)}`;
-  let hit = memo.get(key);
-  if (!hit) {
-    hit = chunker(textJp);
-    memo.set(key, hit);
-    // do not cache a failure
-    hit.catch(() => memo.delete(key));
-  }
-  return hit;
+  return memo(`${version}:${lineTextHash(textJp)}`, () => chunker(textJp));
 }
 
-const tokenMemo = new Map<string, Promise<Token[]>>();
+const tokenMemo = boundedMemo<Token[]>();
 
 /** Tokens of `normalizeJa(textJp)` from chunker v2's kuromoji pipeline (cloze, romaji); memoised like `chunkLine` (P12). */
 // Cloze selector v1: its token indices are these raw tokens; never edit once attempts reference it, add v2 instead.
 export function lineTokens(textJp: string): Promise<Token[]> {
-  const key = lineTextHash(textJp);
-  let hit = tokenMemo.get(key);
-  if (!hit) {
-    hit = tokenizeMorphemes(normalizeJa(textJp));
-    tokenMemo.set(key, hit);
-    hit.catch(() => tokenMemo.delete(key));
-  }
-  return hit;
+  return tokenMemo(lineTextHash(textJp), () => tokenizeMorphemes(normalizeJa(textJp)));
 }
 
 export function typingHintUnit(result: ChunkResult): "chunk" | "grapheme4" {
@@ -227,4 +231,3 @@ export async function grammarRanges(textJp: string): Promise<{ start: number; en
   return ranges;
 }
 
-// ponytail: unbounded per-process memo, an LRU if line counts grow

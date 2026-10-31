@@ -123,7 +123,7 @@ describe("dashboard fact loaders", () => {
     });
     await expect(getWeaknessFacts(context)).resolves.toEqual([
       { family: "pronunciation", metric: "pitch", score: 40, practiceHref: "/shadowing/d5" },
-      { family: "listening", metric: "accuracy", score: 50, practiceHref: "/shadowing/d5/listening?format=typing" },
+      { family: "listening", metric: "accuracy", score: 50, practiceHref: "/shadowing/d5/listening?format=dictation" },
     ]);
   });
 

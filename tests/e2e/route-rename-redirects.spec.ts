@@ -45,13 +45,13 @@ test("lesson route redirects with 307 and drops the trailing segment", async ({ 
   expect(locationPathname(res.headers()["location"])).toBe(`/en/shadowing/${ID}`);
 });
 
-// Practice modes B2 (P2): the dictation page is retired; the old /videos link goes to Listening's Typing format in
+// Practice modes B2 (P2): the dictation page is retired; the old /videos link goes to Listening's Chép chính tả in
 // one hop (both locales and `?line=` are covered in practice-listening.spec.ts case 12).
-test("dictation route redirects with 307 straight to Listening, Typing format", async ({ request }) => {
+test("dictation route redirects with 307 straight to Listening, Chép chính tả", async ({ request }) => {
   const res = await request.get(`/en/videos/${ID}/dictation`, { maxRedirects: 0 });
   expect(res.status()).toBe(307);
   const location = new URL(res.headers()["location"] ?? "", "http://localhost");
-  expect(location.pathname + location.search).toBe(`/en/shadowing/${ID}/listening?format=typing`);
+  expect(location.pathname + location.search).toBe(`/en/shadowing/${ID}/listening?format=dictation`);
 });
 
 test("the rules are not over-broad: /en/videosomething is not swallowed into /shadowing", async ({

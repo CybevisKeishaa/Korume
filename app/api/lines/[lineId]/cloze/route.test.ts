@@ -4,6 +4,7 @@ import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { lineTextHash } from "@/lib/dictation/chunk";
+import { LINE_ANSWER_LIMIT } from "@/lib/data/line-chunks";
 import { GET } from "./route";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -53,6 +54,16 @@ describe("GET /api/lines/[lineId]/cloze", () => {
     asLearner({ id: "u" }, null);
     await expect(expectPrivate(await get(), 404)).resolves.toEqual({ error: "Not found" });
     expect(getKnownVocabLemmas).not.toHaveBeenCalled();
+  });
+
+  it("429 with Retry-After once the learner's budget is spent, before the line read", async () => {
+    asLearner({ id: "spender" }, null);
+    for (let i = 0; i < LINE_ANSWER_LIMIT.limit; i++) expect((await get()).status).toBe(404);
+    lineQueries = [];
+    const response = await get();
+    await expect(expectPrivate(response, 429)).resolves.toEqual({ error: "Too many requests, slow down" });
+    expect(Number(response.headers.get("Retry-After"))).toBeGreaterThanOrEqual(1);
+    expect(lineQueries).toHaveLength(0);
   });
 
   it("500, generic, when the read fails", async () => {
