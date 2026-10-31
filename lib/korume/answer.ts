@@ -21,8 +21,20 @@ const run = z.union([
  * The only shape an answer may take (spec §6.1): typed blocks rendered as escaped text — never HTML or Markdown.
  * Bounded everywhere so one answer cannot flood the sheet or the database.
  */
+const BLOCK_TYPES: ReadonlySet<unknown> = new Set(["paragraph", "example", "context_card", "followups"]);
+
+/**
+ * Gemini sometimes invents a block type the schema does not offer (seen live 2026-10-31: `blocks[4].type` matched
+ * no member), which used to throw away the whole answer. Drop just that block, as {@link dropUngroundedCards} does
+ * for an unknown card; the known blocks are still validated in full, and an answer left empty still fails `min(1)`.
+ */
+const dropUnknownBlocks = (blocks: unknown) =>
+  Array.isArray(blocks)
+    ? blocks.filter((b) => typeof b === "object" && b !== null && BLOCK_TYPES.has((b as { type?: unknown }).type))
+    : blocks;
+
 export const answerV1Schema: z.ZodType<AnswerV1> = z.object({
-  blocks: z.array(z.discriminatedUnion("type", [
+  blocks: z.preprocess(dropUnknownBlocks, z.array(z.discriminatedUnion("type", [
     z.object({ type: z.literal("paragraph"), runs: z.array(run).min(1).max(40) }).strict(),
     z.object({
       type: z.literal("example"),
@@ -32,7 +44,7 @@ export const answerV1Schema: z.ZodType<AnswerV1> = z.object({
     }).strict(),
     z.object({ type: z.literal("context_card"), entityRef: z.string().min(1).max(80), note: z.string().max(300).optional() }).strict(),
     z.object({ type: z.literal("followups"), chips: z.array(z.string().min(1).max(40)).min(1).max(4) }).strict(),
-  ])).min(1).max(12),
+  ])).min(1).max(12)),
 }).strict();
 
 export const GLOSS_MAX = 300;
