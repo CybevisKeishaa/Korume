@@ -5,7 +5,7 @@ import { getTokenizer, tokenize as tokenizeMorphemes } from "../japanese/tokeniz
 import type { Token } from "../japanese/types";
 import { PUNCTUATION } from "./listening-score";
 import { normalizeJa } from "./normalize";
-import { MAX_WORD_PIECES, type ChunkReason } from "./types";
+import { MAX_WORD_PIECES, type ChunkReason, type CutKind } from "./types";
 
 // Defined in the client-safe `./types` so client code can name it without this server-only module (R5).
 export type { ChunkReason };
@@ -18,7 +18,8 @@ export interface ChunkResult {
   chunks: string[];
 }
 
-export const CURRENT_CHUNKER = 2;
+export const CURRENT_CHUNKER = 3;
+export const CHAR_CHUNKER = 4;
 const MAX_CHUNKS = 8;
 const OPEN_BRACKETS = "「『（(【";
 
@@ -99,21 +100,27 @@ function mergeDownTo(chunks: Tok[][], max: number): Tok[][] {
 
 const unreliable = (reason: ChunkReason, version = 1): ChunkResult => ({ version, reliable: false, reason, chunks: [] });
 
-/** Shared by every version: normalise, reject lines the tokenizer cannot be trusted on, split punctuation runs. */
-async function tokenize(textJp: string, version: number, isPunct = isPunctuation): Promise<ChunkResult | Tok[]> {
+const isLatinWord = (t: Tok) => /^[A-Za-z]+$/.test(t.surface_form);
+
+/**
+ * Shared by every version: normalise, reject lines the tokenizer cannot be trusted on, split punctuation runs.
+ * `latin` (v3): a run of ASCII letters is a word, not an unknown token; digits still reject the line.
+ */
+async function tokenize(textJp: string, version: number, isPunct = isPunctuation, latin = false): Promise<ChunkResult | Tok[]> {
   const base = normalizeJa(textJp);
   const tokens = (await getTokenizer()).tokenize(base);
   if (tokens.map((t) => t.surface_form).join("") !== base) return unreliable("mismatch", version);
   // latin/digit first: kuromoji marks every latin or digit run UNKNOWN, so the reverse order hides this reason
-  if (/[A-Za-z0-9]/.test(base)) return unreliable("latin_or_digit", version);
-  if (tokens.some((t) => t.word_type === "UNKNOWN" && !isPunct(t))) return unreliable("unknown_token", version);
+  if ((latin ? /[0-9]/ : /[A-Za-z0-9]/).test(base)) return unreliable("latin_or_digit", version);
+  const unknown = (t: Tok) => t.word_type === "UNKNOWN" && !(latin && isLatinWord(t));
+  if (tokens.some((t) => unknown(t) && !isPunct(t))) return unreliable("unknown_token", version);
   // R20: kuromoji glues punctuation into one UNKNOWN 名詞 (`...「`, `!?(`). Split it per code point into 記号 tokens so
   // the usual rules apply: openers start the next chunk, other marks attach left, a line-initial run binds forward.
   let quotes = 0;
   return (
     tokens
       .flatMap((t): Tok[] =>
-        t.word_type === "UNKNOWN"
+        unknown(t)
           ? [...t.surface_form].map((c) => ({ ...t, surface_form: c, pos: "記号", pos_detail_1: "一般" }))
           : [t],
       )
@@ -125,23 +132,50 @@ async function tokenize(textJp: string, version: number, isPunct = isPunctuation
 // v2 (WP §3.1): symbols such as ♪ 〜 → ※ are punctuation too; kuromoji tags them UNKNOWN 名詞.
 const isSymbol = (t: Tok) => isPunctuation(t) || /^[\p{P}\p{S}]+$/u.test(t.surface_form);
 
-async function chunkV2(textJp: string): Promise<ChunkResult> {
-  const toks = await tokenize(textJp, 2, isSymbol);
-  if (!Array.isArray(toks)) return toks;
+type Part = [text: string, kind: "word" | "open" | "mark"];
+
+/** Openers and a line-initial run bind to the next word, other marks to the previous; locks as every word cut. */
+function attach(parts: Part[], version: number): ChunkResult {
   const pieces: string[] = [];
   let pending = ""; // openers and a line-initial run wait here for the next word
-  for (const t of toks) {
-    const s = t.surface_form;
-    if (t.pos !== "記号" && !isPunctuation(t)) {
+  for (const [s, kind] of parts) {
+    if (kind === "word") {
       pieces.push(pending + s);
       pending = "";
-    } else if (isOpenBracket(t) || pieces.length === 0 || pending) pending += s;
+    } else if (kind === "open" || pieces.length === 0 || pending) pending += s;
     else pieces[pieces.length - 1] += s;
   }
   if (pending && pieces.length) pieces[pieces.length - 1] += pending;
-  if (pieces.length < 2) return unreliable("single_chunk", 2);
-  if (pieces.length > MAX_WORD_PIECES) return unreliable("too_many_pieces", 2);
-  return { version: 2, reliable: true, reason: null, chunks: pieces };
+  if (pieces.length < 2) return unreliable("single_chunk", version);
+  if (pieces.length > MAX_WORD_PIECES) return unreliable("too_many_pieces", version);
+  return { version, reliable: true, reason: null, chunks: pieces };
+}
+
+async function wordCut(textJp: string, version: number, latin: boolean): Promise<ChunkResult> {
+  const toks = await tokenize(textJp, version, isSymbol, latin);
+  if (!Array.isArray(toks)) return toks;
+  return attach(toks.map((t): Part => [t.surface_form, t.pos !== "記号" && !isPunctuation(t) ? "word" : isOpenBracket(t) ? "open" : "mark"]), version);
+}
+
+const chunkV2 = (textJp: string) => wordCut(textJp, 2, false);
+// v3: v2 with a Latin run kept as one piece
+const chunkV3 = (textJp: string) => wordCut(textJp, 3, true);
+
+// v4: one piece per grapheme of the normalised line, an ASCII letter/digit run one piece; for lines the word cut cannot read.
+async function chunkChars(textJp: string): Promise<ChunkResult> {
+  let quotes = 0;
+  const parts: Part[] = [];
+  for (const { segment: g } of new Intl.Segmenter("ja", { granularity: "grapheme" }).segment(normalizeJa(textJp))) {
+    const last = parts[parts.length - 1];
+    const quote = g === '"' && ++quotes % 2 === 1;
+    if (/^[A-Za-z0-9]+$/.test(g)) {
+      if (last && last[1] === "word" && /[A-Za-z0-9]$/.test(last[0])) last[0] += g;
+      else parts.push([g, "word"]);
+    } else if ([...g].every((c) => PUNCTUATION.test(c)) || /^[p{P}p{S}]+$/u.test(g)) {
+      parts.push([g, quote || OPEN_BRACKETS.includes(g) ? "open" : "mark"]);
+    } else parts.push([g, "word"]);
+  }
+  return attach(parts, CHAR_CHUNKER);
 }
 
 async function chunkV1(textJp: string): Promise<ChunkResult> {
@@ -170,6 +204,8 @@ async function chunkV1(textJp: string): Promise<ChunkResult> {
 export const CHUNKERS: Readonly<Record<number, (textJp: string) => Promise<ChunkResult>>> = Object.freeze({
   1: chunkV1,
   2: chunkV2,
+  3: chunkV3,
+  4: chunkChars,
 });
 
 export function lineTextHash(textJp: string): string {
@@ -205,6 +241,14 @@ export function chunkLine(textJp: string, version: number = CURRENT_CHUNKER): Pr
   if (!chunker) return Promise.reject(new Error(`unknown chunker version ${version}`));
   return memo(`${version}:${lineTextHash(textJp)}`, () => chunker(textJp));
 }
+
+/** The cut a learner gets: the word cut when it is reliable, else the character cut (reliable or locked). */
+export async function currentCut(textJp: string): Promise<ChunkResult> {
+  const word = await chunkLine(textJp, CURRENT_CHUNKER);
+  return word.reliable ? word : chunkLine(textJp, CHAR_CHUNKER);
+}
+
+export const cutKind = (version: number): CutKind => (version === CHAR_CHUNKER ? "char" : "word");
 
 const tokenMemo = boundedMemo<Token[]>();
 

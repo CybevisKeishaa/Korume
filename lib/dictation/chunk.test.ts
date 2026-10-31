@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { boundedMemo, chunkLine, CHUNKERS, CURRENT_CHUNKER, grammarRanges, lineTextHash, typingHintUnit } from "./chunk";
+import { boundedMemo, chunkLine, CHUNKERS, CURRENT_CHUNKER, currentCut, cutKind, grammarRanges, lineTextHash, typingHintUnit } from "./chunk";
+import { chunkDisplays, displayMap } from "./display";
 import { normalizeJa } from "./normalize";
 import { getTokenizer } from "../japanese/tokenizer";
 
@@ -10,6 +11,8 @@ vi.mock("../japanese/tokenizer", async (orig) => {
 
 // kuromoji dictionary load is slow under suite contention (see lib/japanese/tokenizer.test.ts).
 const T = 60000;
+/** The array the pipeline gives for the owner line. */
+const PIN_OWNER_V3 = ["ああ", "いう", "の", "を", "その", "場", "で", "すぐ", "Google", "マップ", "で", "調べ", "て"];
 const chunkV1 = CHUNKERS[1];
 const chunkV2 = CHUNKERS[2];
 if (!chunkV1 || !chunkV2) throw new Error("chunker missing");
@@ -17,7 +20,7 @@ const run = (s: string) => chunkV1(s);
 const run2 = (s: string) => chunkV2(s);
 
 describe("v2", () => {
-  it("is the current chunker", () => expect(CURRENT_CHUNKER).toBe(2));
+  it("is no longer the current chunker", () => expect(CURRENT_CHUNKER).toBe(3));
 
   it("one piece per word; punctuation binds back", async () => {
     expect(await run2("お店を検索すると思うんですけど。")).toEqual({
@@ -68,6 +71,76 @@ describe("v2", () => {
     ["ぱぽぴぷぺ", "unknown_token"],
   ])("unreliable %s -> %s", async (line, reason) => {
     expect(await run2(line)).toEqual({ version: 2, reliable: false, reason, chunks: [] });
+  }, T);
+});
+
+const OWNER = "ああいうのをその場ですぐGoogleマップで調べて";
+
+describe("v3: the word cut keeps Latin runs", () => {
+  const run3 = (s: string) => CHUNKERS[3]!(s);
+
+  it("keeps a Latin run as one piece", async () => {
+    const r = await run3(OWNER);
+    expect(r).toMatchObject({ version: 3, reliable: true, reason: null });
+    expect(r.chunks).toContain("Google");
+    expect(r.chunks.join("")).toBe(normalizeJa(OWNER));
+    expect(r.chunks).toEqual(PIN_OWNER_V3);
+  }, T);
+
+  it("full-width Latin is one piece and displays as written", async () => {
+    const raw = "すぐＧｏｏｇｌｅで";
+    const { chunks } = await run3(raw);
+    expect(chunks).toContain("Google");
+    expect(chunkDisplays(displayMap(raw), normalizeJa(raw), chunks)).toContain("Ｇｏｏｇｌｅ");
+  }, T);
+
+  it("keeps the digit rule", async () => {
+    expect(await run3("今日は2026年です。")).toEqual({ version: 3, reliable: false, reason: "latin_or_digit", chunks: [] });
+  }, T);
+
+  it("still rejects a non-Latin unknown", async () => {
+    expect(await run3("ぱぽぴぷぺ")).toEqual({ version: 3, reliable: false, reason: "unknown_token", chunks: [] });
+  }, T);
+});
+
+describe("v4: the character cut", () => {
+  const run4 = (s: string) => CHUNKERS[4]!(s);
+
+  it.each([
+    ["今日は2026年です。", ["今", "日", "は", "2026", "年", "で", "す。"]],
+    ["検索する", ["検", "索", "す", "る"]],
+    ["きって", ["き", "っ", "て"]],
+    ["COVID19です", ["COVID19", "で", "す"]],
+    ["「はい」", ["「は", "い」"]],
+  ])("cuts %s", async (line, chunks) => {
+    expect(await run4(line)).toEqual({ version: 4, reliable: true, reason: null, chunks });
+  }, T);
+
+  it("never splits a grapheme cluster", async () => {
+    const { chunks } = await run4("あ👍🏽い");
+    expect(chunks.some((c) => c === "🏽")).toBe(false);
+    expect(chunks.join("")).toBe("あ👍🏽い");
+  }, T);
+
+  it("full-width digits are one piece that displays as written", async () => {
+    const raw = "２０２６年";
+    const { chunks } = await run4(raw);
+    expect(chunks[0]).toBe("2026");
+    expect(chunkDisplays(displayMap(raw), normalizeJa(raw), chunks)[0]).toBe("２０２６");
+  }, T);
+
+  it("keeps the locks", async () => {
+    expect(await run4("あ。")).toEqual({ version: 4, reliable: false, reason: "single_chunk", chunks: [] });
+    expect(await run4("あ".repeat(65))).toEqual({ version: 4, reliable: false, reason: "too_many_pieces", chunks: [] });
+  }, T);
+});
+
+describe("currentCut", () => {
+  it("the word cut when it is reliable, else the character cut, else locked", async () => {
+    expect(await currentCut(OWNER)).toMatchObject({ version: 3, reliable: true });
+    expect(await currentCut("今日は2026年です。")).toMatchObject({ version: 4, reliable: true });
+    expect(await currentCut("あ。")).toMatchObject({ version: 4, reliable: false });
+    expect([cutKind(3), cutKind(4)]).toEqual(["word", "char"]);
   }, T);
 });
 

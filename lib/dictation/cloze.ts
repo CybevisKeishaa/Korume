@@ -4,6 +4,8 @@ import { chunkUnits, type Range } from "./listening-score";
 import { normalizeJa } from "./normalize";
 
 export const CURRENT_CLOZE_SELECTOR = 1;
+/** Cloze rows record the tokenizer pipeline of `lineTokens`, which is chunker v2's. */
+export const CLOZE_TOKENS_CHUNKER = 2;
 
 const JA = /[\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Han}]/u;
 const KANA_ONLY = /^[\p{Script=Hiragana}\p{Script=Katakana}ー]+$/u;

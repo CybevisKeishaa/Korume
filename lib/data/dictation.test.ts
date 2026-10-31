@@ -124,6 +124,11 @@ describe("submitListeningAttempt: refusals before any write", () => {
     expectNothingWritten();
   });
 
+  it("409 chunker_version for version 5", async () => {
+    await expect(submitListeningAttempt({ ...wordBank(), version: 5 })).resolves.toEqual({ ok: false, status: 409, error: "chunker_version" });
+    expectNothingWritten();
+  });
+
   it("400 for Word Bank on an unreliable line (submit and reveal)", async () => {
     lineText = DIGITS;
     await expect(submitListeningAttempt({ ...wordBank(), ...head(DIGITS), chunkOrder: [0, 1] })).resolves.toEqual({ ok: false, status: 400 });
@@ -399,6 +404,30 @@ describe("submitListeningAttempt: cloze (spec §3.4)", () => {
     }]);
     expect(recordActivity).not.toHaveBeenCalled();
     expect(claimActiveMission).not.toHaveBeenCalled();
+  }, T);
+});
+
+describe("submitListeningAttempt: the character cut and older versions", () => {
+  const MIXED = "1時と2時と3時";
+
+  it("v4: identical pieces placed in swapped order still score 100", async () => {
+    lineText = MIXED;
+    const body = { ...wordBank({ chunkOrder: [0, 4, 2, 3, 1, 5, 6, 7] }), ...head(MIXED), version: 4 };
+    await expect(submitListeningAttempt(body)).resolves.toMatchObject({ ok: true, data: { score: 100 } });
+    expect(inserts).toMatchObject([{ chunker_version: 4, chunk_snapshot: ["1", "時", "と", "2", "時", "と", "3", "時"] }]);
+  }, T);
+
+  it("v2 on an existing line still scores by v2", async () => {
+    const body = { ...wordBank({ chunkOrder: [0, 1, 2, 3, 4, 5, 6] }), version: 2 };
+    await expect(submitListeningAttempt(body)).resolves.toMatchObject({ ok: true, data: { score: 100 } });
+    expect(inserts).toMatchObject([{ chunker_version: 2, chunk_snapshot: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"] }]);
+  }, T);
+
+  it("v4 reveal shows the raw characters", async () => {
+    const raw = "２０２６年です";
+    lineText = raw;
+    const result = await submitListeningAttempt({ kind: "reveal", format: "word_bank", ...head(raw), version: 4, hintedUnits: [] });
+    expect(result).toMatchObject({ ok: true, data: { chunks: ["2026", "年", "で", "す"], display: ["２０２６", "年", "で", "す"] } });
   }, T);
 });
 

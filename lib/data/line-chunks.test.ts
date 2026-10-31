@@ -46,7 +46,7 @@ describe("loadLineChunks", () => {
     const text = "毎日日本語を勉強しました。";
     asLearner({ id: "a" }, text);
     await expect(loadLineChunks(LINE)).resolves.toEqual({ kind: "ok", data: {
-      version: 2, textHash: lineTextHash(text), reliable: true, reason: null,
+      version: 3, cut: "word", textHash: lineTextHash(text), reliable: true, reason: null,
       chunks: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], display: ["毎日", "日本語", "を", "勉強", "し", "まし", "た。"], typingHintUnit: "chunk",
       romaji: "mainichi nihongo o benkyou shi mashi ta .",
     } });
@@ -63,10 +63,22 @@ describe("loadLineChunks", () => {
     } });
   }, T);
 
-  it("an unreliable line carries its reason and the grapheme4 unit", async () => {
-    asLearner({ id: "a" }, "今日は21番目の文を読みます。");
+  it("a line the word cut cannot read gets the character cut", async () => {
+    asLearner({ id: "a" }, "今日は2026年です。");
     await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: {
-      reliable: false, reason: "latin_or_digit", chunks: [], display: [], typingHintUnit: "grapheme4",
+      version: 4, cut: "char", reliable: true, chunks: ["今", "日", "は", "2026", "年", "で", "す。"], typingHintUnit: "chunk",
+    } });
+  }, T);
+
+  it("the owner line keeps Google whole in the word cut", async () => {
+    asLearner({ id: "a" }, "ああいうのをその場ですぐGoogleマップで調べて");
+    await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: { version: 3, cut: "word", reliable: true } });
+  }, T);
+
+  it("a locked line carries its reason and the grapheme4 unit", async () => {
+    asLearner({ id: "a" }, "あ。");
+    await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "ok", data: {
+      version: 4, cut: "char", reliable: false, reason: "single_chunk", chunks: [], display: [], typingHintUnit: "grapheme4",
     } });
   }, T);
 

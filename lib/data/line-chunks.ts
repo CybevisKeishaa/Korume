@@ -1,7 +1,7 @@
 import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { rateLimit } from "@/lib/rate-limit";
-import { chunkLine, lineTextHash, lineTokens, typingHintUnit } from "@/lib/dictation/chunk";
+import { currentCut, cutKind, lineTextHash, lineTokens, typingHintUnit } from "@/lib/dictation/chunk";
 import { lineRomaji } from "@/lib/japanese/romaji";
 import { chunkDisplays, displayMap, normalizeJa, type LineChunks } from "@/lib/dictation";
 
@@ -30,9 +30,10 @@ export async function loadLineChunks(lineId: string): Promise<LineChunksResult> 
   const text = (data as { text_jp: string | null } | null)?.text_jp;
   if (!text) return { kind: "not_found" };
 
-  const cut = await chunkLine(text);
+  const cut = await currentCut(text);
   return { kind: "ok", data: {
     version: cut.version,
+    cut: cutKind(cut.version),
     textHash: lineTextHash(text),
     reliable: cut.reliable,
     reason: cut.reason,

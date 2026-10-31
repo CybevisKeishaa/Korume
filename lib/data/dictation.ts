@@ -15,8 +15,8 @@ import {
   type ListeningSubmitData,
   type Range,
 } from "@/lib/dictation";
-import { CHUNKERS, CURRENT_CHUNKER, chunkLine, grammarRanges, lineTextHash, lineTokens, typingHintUnit } from "@/lib/dictation/chunk";
-import { CURRENT_CLOZE_SELECTOR, clozeBlank, clozeCandidates, graphemes, scoreCloze, tokenRanges } from "@/lib/dictation/cloze";
+import { CHUNKERS, chunkLine, grammarRanges, lineTextHash, lineTokens, typingHintUnit } from "@/lib/dictation/chunk";
+import { CLOZE_TOKENS_CHUNKER, CURRENT_CLOZE_SELECTOR, clozeBlank, clozeCandidates, graphemes, scoreCloze, tokenRanges } from "@/lib/dictation/cloze";
 import { grapheme1Units } from "@/lib/dictation/listening-score";
 import { isHelped } from "@/lib/helped";
 import { rateLimit } from "@/lib/rate-limit";
@@ -131,7 +131,7 @@ export async function submitListeningAttempt(input: DictationAttemptInput): Prom
     const values = {
       hint_unit: input.hintedUnits.length > 0 ? "grapheme1" : null,
       easy_mode: input.easy,
-      chunker_version: CURRENT_CHUNKER,
+      chunker_version: CLOZE_TOKENS_CHUNKER,
       chunk_snapshot: blanks.map((b) => b.surface),
       cloze_selector_version: input.version,
       cloze_blanks: input.blanks,
