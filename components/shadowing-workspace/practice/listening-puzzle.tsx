@@ -7,7 +7,7 @@ export const EYEBROW = "text-caption font-bold uppercase tracking-wide text-mute
 export const BOX = "rounded-lg border border-border bg-muted p-sm";
 /** A hinted character: colour plus a dotted underline (WCAG 1.4.1), in the Typing diff and the star mask alike. */
 export const HINTED = "rounded-sm bg-accent/10 text-accent-strong underline decoration-dotted";
-const CHECK = "inline-flex h-control-md items-center justify-center gap-xs self-center rounded-full bg-primary px-lg text-body font-bold text-primary-foreground disabled:opacity-50";
+export const CHECK ="inline-flex h-control-md items-center justify-center gap-xs self-center rounded-full bg-primary px-lg text-body font-bold text-primary-foreground disabled:opacity-50";
 
 /** Eyebrow + status on the left, the Hint pill (when still allowed) on the right. */
 export function PuzzleHeader({ eyebrow, status, hint }: { eyebrow: string; status?: string; hint: ReactNode }) {

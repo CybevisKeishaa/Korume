@@ -16,6 +16,7 @@ import { ListeningCardSurfaces, ListeningCardToggleButtons } from "./listening-c
 import { useDraftLineIds } from "./listening-drafts";
 import { ListeningFeedback } from "./listening-feedback";
 import { ListeningPicker } from "./listening-picker";
+import { CHECK } from "./listening-puzzle";
 import { useListeningReveal } from "./listening-reveal-context";
 import { ListeningToolbar } from "./listening-toolbar";
 import { PracticeEmptyTranscript, PracticePanel, useFirstPracticeSentence } from "./practice-panel";
@@ -136,7 +137,8 @@ export function ListeningModeBody() {
       {/* The panel's Check renders here (CheckButton's slot): Check | Try again | Next, one row (A3 §3.6). */}
       <span ref={setCheckSlot} className="contents" />
       {answered && <button type="button" className={ACTION} onClick={attempt.tryAgain}>{tl("tryAgain")}</button>}
-      <button type="button" className={ACTION} disabled={index === null || index >= lines.length - 1} onClick={() => controller.nextSentence()}>
+      {/* Once answered, Next is the row's primary action (owner 2026-10-31): Check has gone, Try again is the side door. */}
+      <button type="button" className={answered ? CHECK : ACTION} disabled={index === null || index >= lines.length - 1} onClick={() => controller.nextSentence()}>
         {t("workspace.player.next")}<NextGlyph className="size-icon-xs" />
       </button>
     </>}>

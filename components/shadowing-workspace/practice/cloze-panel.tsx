@@ -118,7 +118,8 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
           event.preventDefault();
           check();
         }}
-        className="min-w-[5ch] bg-transparent font-jp text-body-lg text-foreground outline-none [field-sizing:content]" />
+        // The pill around it shows focus (focus-within); the app-wide :focus-visible ring drew a square box inside it.
+        className="min-w-[5ch] bg-transparent font-jp text-body-lg text-foreground outline-none [field-sizing:content] focus-visible:ring-0 focus-visible:ring-offset-0" />
     </span>;
   };
 

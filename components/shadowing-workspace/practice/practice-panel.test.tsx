@@ -23,6 +23,14 @@ describe("PracticePanel", () => {
     expect(scrollers[0]).toBe(panel);
   });
 
+  it("makes the action row a full-bleed footer flush with the panel's bottom edge (owner 2026-10-31)", () => {
+    render(<PracticePanel label="Practice" navigator="Navigator" feedback="Feedback" actions={<button type="button">Check</button>}>Practice</PracticePanel>);
+    const footer = screen.getByTestId("practice-actions");
+    // bottom-0 left the panel's padding strip under it (content showed through); -mx-md: no inset box; mt-auto: never mid-panel.
+    expect(footer).toHaveClass("sticky", "bottom-[calc(-1*var(--space-md))]", "-mx-md", "-mb-md", "mt-auto", "border-t");
+    expect(footer).not.toHaveClass("bottom-0");
+  });
+
   it("retains overflow-hidden on both existing workspace root layouts", () => {
     const shell = readFileSync("components/shadowing-workspace/workspace-shell.tsx", "utf8");
     const roots = shell.match(/relative isolate grid h-dvh[^\"]*/g) ?? [];

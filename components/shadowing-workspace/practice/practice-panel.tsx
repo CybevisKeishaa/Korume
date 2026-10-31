@@ -12,19 +12,23 @@ export function PracticePanel({ label, header, navigator, feedback, actions, chi
   header?: ReactNode;
   navigator: ReactNode;
   feedback: ReactNode;
-  /** Listening's action row (A3 §3.6): pinned to the scroller's bottom edge, so it never scrolls out of view. */
+  /**
+   * Listening's action row (A3 §3.6): the panel's footer. Full-bleed and flush with the panel's bottom edge — owner
+   * 2026-10-31: pinned at `bottom-0` it stopped inside the panel's padding, so scrolled content showed through a strip
+   * beneath it, and with short content it floated mid-panel. `mt-auto` keeps it at the bottom when content is short.
+   */
   actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    // The scroll padding keeps a focused control from scrolling in under the pinned row: the row's height (Check + py-xs)
-    // plus the panel's own bottom padding, which the sticky row stays above.
-    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+2*var(--space-xs)+var(--space-md))]" : ""}`} data-testid="practice-panel">
+    // The scroll padding keeps a focused control from scrolling in under the footer: its whole visible height
+    // (Check + pt-sm + pb-md+xs + the border).
+    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+var(--space-sm)+var(--space-md)+var(--space-xs)+1px)]" : ""}`} data-testid="practice-panel">
       {header}
       <div>{navigator}</div>
       <div className="flex flex-col gap-md">{children}</div>
       <div>{feedback}</div>
-      {actions && <div className="sticky bottom-0 -mb-md flex flex-wrap items-center justify-center gap-sm bg-background py-xs">{actions}</div>}
+      {actions && <div data-testid="practice-actions" className="sticky bottom-[calc(-1*var(--space-md))] -mx-md -mb-md mt-auto flex flex-wrap items-center justify-center gap-sm border-t border-border bg-card/90 px-md pb-[calc(var(--space-md)+var(--space-xs))] pt-sm backdrop-blur">{actions}</div>}
     </section>
   );
 }
