@@ -32,7 +32,7 @@ export function dropIndex(rects: DOMRect[], x: number): number {
  * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
  * drag from an older line drops nothing here.
  */
-export function WordBankPanel({ lineId, text, chunks, display, hinted, results, revealed, submitting, hint, card, onCheck }: {
+export function WordBankPanel({ lineId, text, chunks, display, hinted, results, revealed, submitting, hint, card, checkSlot, onCheck }: {
   lineId: string;
   /** The raw line, for the star row the placed pieces fill. */
   text: string;
@@ -45,10 +45,12 @@ export function WordBankPanel({ lineId, text, chunks, display, hinted, results, 
   /** Show answer: the answer shows the reference order. */
   revealed: boolean;
   submitting: boolean;
-  /** The Show Hint pill, or null once the attempt is answered. */
+  /** The card toggles, then the Show Hint pill and 💡 while unanswered (A3 §3.6). */
   hint?: ReactNode;
-  /** The card toggles, under the answer (spec §3.5). */
+  /** The card's translation / romaji, under the answer (spec §3.5). */
   card?: ReactNode;
+  /** The pinned action row's Check slot (A3 §3.6). */
+  checkSlot?: Element | null;
   onCheck(chunkOrder: number[]): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
@@ -168,6 +170,6 @@ export function WordBankPanel({ lineId, text, chunks, display, hinted, results, 
         </li>)}
       </ul>}
     </div>
-    {!revealed && results === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={placed.length < n || submitting} onClick={() => onCheck(placed)} />}
+    {!revealed && results === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={placed.length < n || submitting} onClick={() => onCheck(placed)} slot={checkSlot} />}
   </div>;
 }

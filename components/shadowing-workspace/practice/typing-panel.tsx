@@ -24,7 +24,7 @@ export const OP_TONE: Record<ListeningDiffOp["type"], string> = {
  * (raw `text_jp`), never the normalised `expected`. Mounted with a key per line + format + attempt (P11), so a new
  * attempt starts empty; a failed Check keeps the text (Review Focus 2).
  */
-export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, card, onReveal, onCheck }: {
+export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, card, checkSlot, onReveal, onCheck }: {
   /** The line's raw `text_jp`. */
   text: string;
   /** Revealed star units (`grapheme1`). */
@@ -33,10 +33,12 @@ export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, ca
   diff: ListeningDiffOp[] | null;
   revealed: boolean;
   submitting: boolean;
-  /** The header's tools (💡), or null once the attempt is answered. */
+  /** The header's tools: the card toggles, then 💡 while unanswered (A3 §3.6). */
   hint?: ReactNode;
-  /** The card toggles, under the sentence (spec §3.5). */
+  /** The card's translation / romaji, under the sentence (spec §3.5). */
   card?: ReactNode;
+  /** The pinned action row's Check slot (A3 §3.6). */
+  checkSlot?: Element | null;
   onReveal(unit: number): void;
   onCheck(input: string): void;
 }) {
@@ -63,6 +65,6 @@ export function TypingPanel({ text, hinted, diff, revealed, submitting, hint, ca
       </p> : <DictationMask text={text} hinted={hinted} revealed={revealed} onReveal={onReveal} />}
     </div>
     {card}
-    {!revealed && diff === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={locked || input.trim() === ""} onClick={check} />}
+    {!revealed && diff === null && <CheckButton label={t(submitting ? "checking" : "check")} disabled={locked || input.trim() === ""} onClick={check} slot={checkSlot} />}
   </div>;
 }

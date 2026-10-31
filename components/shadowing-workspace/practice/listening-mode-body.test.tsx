@@ -419,6 +419,40 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
     await screen.findByTestId("listening-score");
     expect(screen.queryByRole("button", { name: "Hint" })).toBeNull();
   });
+
+  it("A3 §3.6: the card toggles ride in the 💡 row, left of Hint and 💡; their surfaces sit under the answer box", async () => {
+    await open();
+    const toggles = ["Sentence audio", "Translation", "Romaji"].map((name) => screen.getByRole("button", { name }));
+    const after = (a: Element, b: Element) => Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
+    for (const toggle of toggles) {
+      expect(toggle.closest("[data-puzzle-header]")).not.toBeNull();
+      expect(after(toggle, screen.getByRole("button", { name: "Hint" }))).toBe(true);
+    }
+    expect(after(screen.getByRole("button", { name: "Hint" }), showAll())).toBe(true);
+    placeAll(LINES["line-1"].display);
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    // Answered: Hint and 💡 are gone, the toggles stay in the row.
+    fireEvent.click(screen.getByRole("button", { name: "Romaji" }));
+    expect(screen.getByRole("button", { name: "Romaji" }).closest("[data-puzzle-header]")).not.toBeNull();
+    const romaji = screen.getByTestId("listening-romaji");
+    expect(romaji.closest("[data-puzzle-header]")).toBeNull();
+    expect(after(required(slotList()), romaji)).toBe(true);
+    expect(after(romaji, screen.getByText("Word bank", { selector: "p" }))).toBe(true);
+  });
+
+  it("A3 §3.6: Check, Try again and Next sentence share one row, the panel's last child, in that order", async () => {
+    await open();
+    const row = () => required(screen.getByTestId("practice-panel").lastElementChild as HTMLElement | null);
+    const names = () => within(row()).getAllByRole("button").map((b) => b.textContent);
+    expect(names()).toEqual(["Check", "Next sentence"]);
+    expect(check()).toBeDisabled();
+    placeAll(LINES["line-1"].display);
+    expect(check()).toBeEnabled();
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    expect(names()).toEqual(["Try again", "Next sentence"]);
+  });
 });
 
 const input = () => screen.getByRole("textbox", { name: "Type what you hear" });

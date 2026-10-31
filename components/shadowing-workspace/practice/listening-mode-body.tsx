@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Eye, Lightbulb } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
@@ -12,7 +12,7 @@ import { dictationFormat, listeningExercise, type ListeningExercise } from "@/li
 import { NextGlyph } from "../player-glyphs";
 import { useCurrentSentence, useLesson, usePlaybackController } from "../workspace-context";
 import { ClozePanel } from "./cloze-panel";
-import { ListeningCardToggles } from "./listening-card-toggles";
+import { ListeningCardSurfaces, ListeningCardToggleButtons } from "./listening-card-toggles";
 import { ListeningFeedback } from "./listening-feedback";
 import { ListeningPicker } from "./listening-picker";
 import { useListeningReveal } from "./listening-reveal-context";
@@ -63,6 +63,8 @@ export function ListeningModeBody() {
   // shortcuts ignore every Alt combo, so nothing else moves. The listener reads the latest handler from a ref, so it
   // subscribes once per live period, not on every render.
   const bulb = useRef<() => void>(() => undefined);
+  /** Where the panel's Check renders: the pinned action row (A3 §3.6). */
+  const [checkSlot, setCheckSlot] = useState<HTMLElement | null>(null);
   bulb.current = cloze ? attempt.hintCloze : () => void attempt.reveal();
   const bulbLive = ready && !answered && !attempt.submitting && !noBlank;
   useEffect(() => {
@@ -95,22 +97,27 @@ export function ListeningModeBody() {
   // 💡 is Show answer in Chép chính tả (spec §3.3); word pieces keep WP's piece Hint beside it, Typing has the stars.
   // In Điền từ 💡 gives one kana and 👁 is Show answer (§3.4).
   const bulbLabel = tl(cloze ? "cloze.hint" : "dictation.showAll");
-  const hint = answered || noBlank ? null : <div className="flex items-center gap-xs">
-    {format === "word_bank" && !cloze && <button type="button" disabled={attempt.submitting || attempt.allHinted} onClick={attempt.hint} className={PILL}>{tl("hint")}</button>}
-    <Tooltip content={bulbLabel}>
-      <button type="button" aria-label={bulbLabel} aria-keyshortcuts="Alt+H" disabled={attempt.submitting || (cloze && attempt.allHinted)} onClick={() => bulb.current()} className={PILL}>
-        <Lightbulb aria-hidden className="size-icon-sm" />
-      </button>
-    </Tooltip>
-    {cloze && <button type="button" disabled={attempt.submitting} onClick={() => void attempt.reveal()} className={ACTION}>
-      <Eye aria-hidden className="size-icon-xs" />{tl("cloze.showAnswer")}
-    </button>}
-  </div>;
   // §3.5: a blank's romaji is `___` until its answer is visible, then the reading the 💡 fills from.
   const romaji = cloze ? attempt.cloze?.segments.map((s) => s.blank !== null && answerVisible ? toRomaji(attempt.cloze?.readings[s.blank] ?? "") : s.romaji).join(" ") ?? ""
     : chunks?.romaji ?? "";
-  const card = index === null ? null
-    : <ListeningCardToggles index={index} translation={line?.textTranslation ?? null} romaji={romaji} answerSurfacesAllowed={cloze || answerVisible} />;
+  const cardProps = index === null ? null : { index, translation: line?.textTranslation ?? null, romaji, answerSurfacesAllowed: cloze || answerVisible };
+  // A3 §3.6: the card toggles ride in the 💡 row, left of it, and stay there once answered; the surfaces stay under
+  // the answer box (`card`).
+  const hint = <div className="flex items-center gap-xs">
+    {cardProps && <ListeningCardToggleButtons {...cardProps} />}
+    {!answered && !noBlank && <>
+      {format === "word_bank" && !cloze && <button type="button" disabled={attempt.submitting || attempt.allHinted} onClick={attempt.hint} className={PILL}>{tl("hint")}</button>}
+      <Tooltip content={bulbLabel}>
+        <button type="button" aria-label={bulbLabel} aria-keyshortcuts="Alt+H" disabled={attempt.submitting || (cloze && attempt.allHinted)} onClick={() => bulb.current()} className={PILL}>
+          <Lightbulb aria-hidden className="size-icon-sm" />
+        </button>
+      </Tooltip>
+      {cloze && <button type="button" disabled={attempt.submitting} onClick={() => void attempt.reveal()} className={ACTION}>
+        <Eye aria-hidden className="size-icon-xs" />{tl("cloze.showAnswer")}
+      </button>}
+    </>}
+  </div>;
+  const card = cardProps && <ListeningCardSurfaces {...cardProps} />;
   // §3.1: no counter here — the workspace header carries "Câu n / total" in every state.
   const header = <div className="flex flex-wrap items-center justify-between gap-sm">
     <div className="flex items-center gap-sm">
@@ -121,7 +128,15 @@ export function ListeningModeBody() {
   </div>;
   return <PracticePanel label={tl("region")} header={header} navigator={<SentenceNavigator />}
     feedback={<ListeningFeedback messages={attempt.feedback} mood={answerVisible ? feedbackMood(attempt.feedback) : null} error={attempt.error} submitting={attempt.submitting}
-      result={answerVisible ? attempt.result : null} answer={answerVisible ? attempt.answer : null} />}>
+      result={answerVisible ? attempt.result : null} answer={answerVisible ? attempt.answer : null} />}
+    actions={ready && <>
+      {/* The panel's Check renders here (CheckButton's slot): Check | Try again | Next, one row (A3 §3.6). */}
+      <span ref={setCheckSlot} className="contents" />
+      {answered && <button type="button" className={ACTION} onClick={attempt.tryAgain}>{tl("tryAgain")}</button>}
+      <button type="button" className={ACTION} disabled={index === null || index >= lines.length - 1} onClick={() => controller.nextSentence()}>
+        {t("workspace.player.next")}<NextGlyph className="size-icon-xs" />
+      </button>
+    </>}>
     {/* In listen-only the dock holds these controls (Ruling T1). */}
     {!listenOnly && <ReplayRow />}
     {lineId !== null && status === "loading" && <p className="text-caption text-muted-foreground">{tl("loading")}</p>}
@@ -131,7 +146,7 @@ export function ListeningModeBody() {
     </div>}
     {ready && cloze && attempt.cloze && <ClozePanel key={`${lineId}|cloze|${attemptNumber}`} cloze={attempt.cloze} easy={easy} answers={attempt.answers}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.blanks ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} hint={hint} card={card} onChange={attempt.setAnswers} onUseChip={attempt.markChipUsed}
+      submitting={attempt.submitting} hint={hint} card={card} checkSlot={checkSlot} onChange={attempt.setAnswers} onUseChip={attempt.markChipUsed}
       onCheck={() => void attempt.submit({ answers: attempt.answers })} />}
     {ready && unreliable && <p data-testid="listening-unreliable" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{tl("unreliable")}</p>}
     {ready && format === "word_bank" && chunks?.cut === "char" && <p data-testid="listening-char-cut" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{tl("charCut")}</p>}
@@ -139,15 +154,9 @@ export function ListeningModeBody() {
         from the placed pieces. It rides in the puzzle header's row, so the longest line still fits above the dock (T1). */}
     {ready && format === "word_bank" && chunks && <WordBankPanel key={`${lineId}|${format}|${attemptNumber}`} lineId={lineId} text={line?.textJp ?? ""} chunks={chunks.chunks} display={chunks.display}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.slots ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} card={card} hint={hint} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })} />}
+      submitting={attempt.submitting} card={card} hint={hint} checkSlot={checkSlot} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })} />}
     {ready && format === "typing" && <TypingPanel key={`${lineId}|${format}|${attemptNumber}`} text={line?.textJp ?? ""}
       hinted={attempt.hinted} diff={answerVisible ? attempt.result?.diff ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} hint={hint} card={card} onReveal={attempt.revealUnit} onCheck={(input) => void attempt.submit({ input })} />}
-    {ready && <div className="flex flex-wrap justify-center gap-xs">
-      {answered && <button type="button" className={ACTION} onClick={attempt.tryAgain}>{tl("tryAgain")}</button>}
-      <button type="button" className={ACTION} disabled={index === null || index >= lines.length - 1} onClick={() => controller.nextSentence()}>
-        {t("workspace.player.next")}<NextGlyph className="size-icon-xs" />
-      </button>
-    </div>}
+      submitting={attempt.submitting} hint={hint} card={card} checkSlot={checkSlot} onReveal={attempt.revealUnit} onCheck={(input) => void attempt.submit({ input })} />}
   </PracticePanel>;
 }

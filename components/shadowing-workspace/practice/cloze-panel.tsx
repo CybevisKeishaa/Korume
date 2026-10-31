@@ -40,7 +40,7 @@ export function clozeHints(readings: readonly string[], hinted: readonly number[
  * focused (else the first) empty blank without hints; tapping the filled blank gives it back. Mounted with a key per
  * line + attempt (P11).
  */
-export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, submitting, hint, card, onChange, onUseChip, onCheck }: {
+export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, submitting, hint, card, checkSlot, onChange, onUseChip, onCheck }: {
   cloze: LineCloze;
   easy: boolean;
   /** One per blank, the hinted prefix included. */
@@ -51,10 +51,12 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
   results: { correct: boolean; hinted: number }[] | null;
   revealed: boolean;
   submitting: boolean;
-  /** The header's tools (💡, Show answer), or null once answered. */
+  /** The header's tools: the card toggles, then 💡 and Show answer while unanswered (A3 §3.6). */
   hint?: ReactNode;
-  /** The card toggles, under the sentence (spec §3.5). */
+  /** The card's translation / romaji, under the sentence (spec §3.5). */
   card?: ReactNode;
+  /** The pinned action row's Check slot (A3 §3.6). */
+  checkSlot?: Element | null;
   onChange(answers: string[]): void;
   onUseChip(): void;
   onCheck(): void;
@@ -132,6 +134,6 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
         <button type="button" lang="ja" onClick={() => takeChip(c)} className={cn(CHIP, "border-border bg-card text-foreground hover:bg-muted")}>{words[c]}</button>
       </li>)}
     </ul>}
-    {words.length > 0 && !revealed && results === null && <CheckButton label={t(submitting ? "checking" : "cloze.check")} disabled={locked || !complete} onClick={check} />}
+    {words.length > 0 && !revealed && results === null && <CheckButton label={t(submitting ? "checking" : "cloze.check")} disabled={locked || !complete} onClick={check} slot={checkSlot} />}
   </div>;
 }

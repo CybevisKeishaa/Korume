@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { createPortal } from "react-dom";
 import { PracticeGlyph } from "./practice-glyph";
 
 export const EYEBROW = "text-caption font-bold uppercase tracking-wide text-muted-foreground";
@@ -19,7 +20,11 @@ export function PuzzleHeader({ eyebrow, status, hint }: { eyebrow: string; statu
   </div>;
 }
 
-/** The one Check CTA, shared by Word Bank and Typing. */
-export function CheckButton({ label, disabled, onClick }: { label: string; disabled: boolean; onClick(): void }) {
-  return <button type="button" disabled={disabled} onClick={onClick} className={CHECK}>{label}<PracticeGlyph name="listening-check-answer" /></button>;
+/**
+ * The one Check CTA, shared by Word Bank, Typing and Điền từ. With a `slot` it renders into the body's pinned action
+ * row (A3 §3.6), so the panel keeps its own state and rules while Check sits beside Try again and Next.
+ */
+export function CheckButton({ label, disabled, onClick, slot }: { label: string; disabled: boolean; onClick(): void; slot?: Element | null }) {
+  const button = <button type="button" disabled={disabled} onClick={onClick} className={CHECK}>{label}<PracticeGlyph name="listening-check-answer" /></button>;
+  return slot ? createPortal(button, slot) : button;
 }

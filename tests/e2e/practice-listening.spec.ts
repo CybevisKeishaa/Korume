@@ -1,7 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
 import { FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
-import { lineStart, lineTranslation, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
+import { lineStart, lineText, lineTranslation, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
 import { toFurigana } from "@/lib/japanese/furigana";
 
 /**
@@ -20,14 +20,23 @@ const LINES = [
   { text: "今日はいい天気ですね？" },
   { text: "注文をお願いします。" },
 ] as const;
-const UNRELIABLE = 4;
 /** The owner's longest line of lesson b78ce634 (line 272, 14 pieces): the listen-only fit is measured on it (Ruling T1). */
 const LONG = { index: 5, text: "「この前行ったここ本当に美味しかった」とかあるじゃないですか" } as const;
+/** One grapheme: nothing to order, so still locked (Typing only, today's notice). Line 4 keeps its seed text, a
+ *  character cut since Task A1 (`今 / 日 / は / 5 / …`). */
+const LOCKED = { index: 6, text: "あ。" } as const;
+const UNRELIABLE = LOCKED.index;
+/** The owner's Latin line: word cut v3, `Google` one piece (13 pieces). */
+const LATIN = { index: 7, text: "ああいうのをその場ですぐGoogleマップで調べて" } as const;
+/** The owner's longest word line (A1 COVERAGE_DUMP): 20 pieces. */
+const TWENTY = { index: 8, text: "ね何さん角さんもういろんな人がいますね色んな人いろんな名前がありますね" } as const;
+/** A digit run sends it to the character cut; `2026` is one piece (33, pinned from the chunks response). */
+const CHARS = { index: 9, text: "2026年のねこの新しいポッドジャストビギナー今鉄平を毎日きいてください", pieces: 33 } as const;
 
 let data: WorkspaceData;
 test.beforeAll(async () => {
   data = await seedWorkspaceData();
-  for (const [index, line] of [...LINES.entries(), [LONG.index, LONG] as const]) {
+  for (const [index, line] of [...LINES.entries(), ...[LONG, LOCKED, LATIN, TWENTY, CHARS].map((l) => [l.index, l] as const)]) {
     const { error } = await data.admin.from("transcript_lines")
       .update({ text_jp: line.text, furigana_json: await toFurigana(line.text) }).eq("id", data.lineIds[index]!);
     if (error) throw error;
@@ -172,6 +181,8 @@ const mask = (page: Page) => practice(page).getByRole("group", { name: "Hidden s
 /** Điền từ's inline box for blank `n` (1-based). */
 const blankBox = (page: Page, n: number) => practice(page).getByRole("textbox", { name: `Blank ${n}`, exact: true });
 const verdicts = (page: Page) => practice(page).locator("[data-blank-answer]");
+/** The pinned action row (A3 §3.6): Check, Try again, Next sentence; the practice panel's last child. */
+const actionRow = (page: Page) => page.getByTestId("practice-panel").locator(":scope > div:last-child");
 
 /** Taps each piece in the bank, in order; two pieces with the same text are interchangeable (LCS by text). */
 async function place(page: Page, pieces: readonly string[]): Promise<void> {
@@ -863,40 +874,49 @@ test("21 · the dock row stays at one height on hover", async ({ page }) => {
   console.log(`T9-MEASURE dock card/row height ${paused.join("/")}px, dock box ${JSON.stringify(await dock(page).boundingBox())}`);
 });
 
-test("22 · in listen-only at 1280×529 the action row is above the dock, on the longest line, pieces and typing", async ({ page }) => {
-  await registerLearner(page);
-  // Video shown first; the workspace header carries the one sentence counter in both layouts (spec §3.1).
-  await openWordBank(page, `&line=${data.lineIds[LONG.index]}`);
-  const pieces = await cut(page, LONG.index);
-  await expect(bank(page).getByRole("button")).toHaveCount(pieces.length);
-  const stripBox = await strip(page).boundingBox();
-  if (!stripBox) throw new Error("strip has no box");
-  expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(529);
-  const header = await practice(page).getByRole("heading", { name: "Dictation" }).boundingBox();
-  const shownReveal = await button(page, "Next sentence").boundingBox();
-  console.log(`T9-MEASURE video shown: strip top ${stripBox.y} bottom ${stripBox.y + stripBox.height}, exercise header top ${header?.y}, reveal bottom ${(shownReveal?.y ?? 0) + (shownReveal?.height ?? 0)}`);
+/** Bottoms of every action-row button, the panel's bottom and scroll, and the dock's top and bottom (null with the video shown). */
+async function fit(page: Page) {
+  const buttons = await actionRow(page).getByRole("button").evaluateAll((all) => all.map((b) => ({ name: b.textContent, bottom: b.getBoundingClientRect().bottom })));
+  const panel = await page.getByTestId("practice-panel").evaluate((element) => ({ bottom: element.getBoundingClientRect().bottom, scroll: `${element.scrollHeight}/${element.clientHeight}` }));
+  const dockBox = await dock(page).count() ? await dock(page).boundingBox() : null;
+  return { buttons, panel, dockTop: dockBox?.y ?? null, dockBottom: dockBox ? dockBox.y + dockBox.height : null };
+}
 
-  await hideVideo(page).click();
-  await expect(dock(page)).toBeVisible();
-  for (const mode of ["pieces", "typing"] as const) {
-    if (mode === "typing") {
-      await easyMode(page).click();
-      await expect(typingInput(page)).toBeVisible();
+test("22 · at 1280×529 the action row is always fully visible: 7, 20 and 33 pieces, video shown and listen-only", async ({ page }) => {
+  await registerLearner(page);
+  for (const index of [0, TWENTY.index, CHARS.index]) {
+    // Video shown first; the workspace header carries the one sentence counter in both layouts (spec §3.1).
+    await openWordBank(page, `&line=${data.lineIds[index]}`);
+    const pieces = await cut(page, index);
+    await expect(bank(page).getByRole("button")).toHaveCount(pieces.length);
+    await expect(actionRow(page).getByRole("button")).toHaveText(["Check", "Next sentence"]);
+    const stripBox = await strip(page).boundingBox();
+    if (!stripBox) throw new Error("strip has no box");
+    expect(stripBox.y + stripBox.height).toBeLessThanOrEqual(529);
+    const shown = await fit(page);
+    console.log(`T9-MEASURE video shown (${pieces.length} pieces): strip bottom ${stripBox.y + stripBox.height}, buttons ${JSON.stringify(shown.buttons)}, panel ${JSON.stringify(shown.panel)}`);
+    for (const { bottom } of shown.buttons) expect(bottom).toBeLessThanOrEqual(529);
+    if (index === TWENTY.index) {
+      // The bank runs under the pinned row here: a focused piece is scrolled clear of it (scroll-padding).
+      const last = bank(page).getByRole("button").last();
+      await last.focus();
+      const pieceBottom = await last.evaluate((element) => element.getBoundingClientRect().bottom);
+      const rowTop = await actionRow(page).evaluate((element) => element.getBoundingClientRect().top);
+      console.log(`T9-MEASURE focus: last bank piece bottom ${pieceBottom}, action row top ${rowTop}`);
+      expect(pieceBottom).toBeLessThanOrEqual(rowTop);
     }
-    const dockBox = await dock(page).boundingBox();
-    const reveal = await button(page, "Next sentence").boundingBox();
-    const panel = await page.getByTestId("practice-panel").boundingBox();
-    if (!dockBox || !reveal || !panel) throw new Error("missing box");
-    const scroll = await page.getByTestId("practice-panel").evaluate((element) => ({ scrollHeight: element.scrollHeight, clientHeight: element.clientHeight }));
-    console.log(`T9-MEASURE listen-only ${mode} (${pieces.length} pieces): reveal bottom ${reveal.y + reveal.height}, panel bottom ${panel.y + panel.height}, dock top ${dockBox.y}, dock height ${dockBox.height}, panel scroll ${scroll.scrollHeight}/${scroll.clientHeight}`);
-    expect(reveal.y + reveal.height).toBeLessThanOrEqual(dockBox.y);
+
+    await hideVideo(page).click();
+    await expect(dock(page)).toBeVisible();
+    const docked = await fit(page);
+    console.log(`T9-MEASURE listen-only (${pieces.length} pieces): buttons ${JSON.stringify(docked.buttons)}, panel ${JSON.stringify(docked.panel)}, dock top ${docked.dockTop} bottom ${docked.dockBottom}`);
+    if (docked.dockTop === null || docked.dockBottom === null) throw new Error("dock has no box");
+    for (const { bottom } of docked.buttons) expect(bottom).toBeLessThanOrEqual(docked.dockTop);
     // In flow: the practice panel ends where the dock begins; nothing of it runs under the dock.
-    expect(panel.y + panel.height).toBeLessThanOrEqual(dockBox.y);
-    expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(529);
-    if (mode === "pieces") {
-      const rows = await bank(page).evaluate((element) => new Set([...element.querySelectorAll("button")].map((chip) => Math.round(chip.getBoundingClientRect().top))).size);
-      expect(rows).toBe(1);
-    }
+    expect(docked.panel.bottom).toBeLessThanOrEqual(docked.dockTop);
+    expect(docked.dockBottom).toBeLessThanOrEqual(529);
+    // Chrome trial (P-A3): with the toggles in the 💡 row a word line fits above the dock with no scroll at all.
+    if (index !== CHARS.index) expect(docked.panel.scroll).toMatch(/^(\d+)\/\1$/);
   }
 });
 
@@ -1090,4 +1110,69 @@ test("30 · card toggles: in Chép chính tả translation and romaji never reac
   await expect(practice(page).getByTestId("listening-romaji")).not.toHaveText("");
   // Positive control: the observer sees both surfaces once they are attached.
   expect(new Set((await surfaces(page, ["translation", "romaji"])).map((surface) => surface.kind))).toEqual(new Set(["translation", "romaji"]));
+});
+
+test("31 · Latin line in easy mode: Google is one piece, tapped first it starts the star row; in order it scores 100", async ({ page }) => {
+  await registerLearner(page);
+  await openWordBank(page, `&line=${data.lineIds[LATIN.index]}`);
+  const pieces = await cut(page, LATIN.index);
+  expect(pieces).toContain("Google");
+  await place(page, ["Google"]);
+  await expect(mask(page)).toHaveText(/^Google＊/);
+  await slots(page).getByRole("button").first().click(); // back to the bank
+  await expectEmptyBank(page, LATIN.index);
+  await place(page, pieces);
+  await expect(mask(page)).not.toContainText("＊");
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
+});
+
+test("32 · digit line uses character pieces with its notice; with Chế độ dễ off it types normally (Review Focus 5)", async ({ page }) => {
+  await registerLearner(page);
+  await openWordBank(page, `&line=${data.lineIds[4]}`);
+  const pieces = await cut(page, 4);
+  expect(pieces).toContain("5");
+  expect(pieces.join("")).toBe(lineText(4));
+  await expect(bank(page).getByRole("button", { name: "5", exact: true })).toBeVisible();
+  await expect(practice(page).getByTestId("listening-char-cut")).toHaveText("This sentence is split into characters so you can keep practising.");
+  await expect(practice(page).getByTestId("listening-unreliable")).toHaveCount(0);
+  await expect(easyMode(page)).not.toHaveAttribute("aria-disabled");
+  const bodies = attemptBodies(page);
+  await easyMode(page).click();
+  await expect(typingInput(page)).toBeVisible();
+  await expect(bank(page)).toHaveCount(0);
+  await expect(button(page, "Hint")).toHaveCount(0);
+  await expect(practice(page).getByTestId("listening-char-cut")).toHaveCount(0);
+  const graphemes = graphemesOf(lineText(4)).filter((char) => char !== "。");
+  await expect(mask(page).getByRole("button")).toHaveCount(graphemes.length);
+  await mask(page).getByRole("button", { name: `Character 1 of ${graphemes.length}, hidden` }).click();
+  await expect(mask(page).getByRole("button", { name: `Character 1 of ${graphemes.length}, ${graphemes[0]}` })).toBeVisible();
+  await typingInput(page).fill(lineText(4));
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toBeVisible();
+  expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "typing", hintUnit: "grapheme1", hintedUnits: [0] })]);
+});
+
+test("33 · long character-cut line: listen-only, every piece placeable, the action row stays above the dock", async ({ page }) => {
+  await registerLearner(page);
+  await openWordBank(page, `&line=${data.lineIds[CHARS.index]}`);
+  const pieces = await cut(page, CHARS.index);
+  expect(pieces).toHaveLength(CHARS.pieces);
+  expect(pieces).toContain("2026");
+  await expect(practice(page).getByTestId("listening-char-cut")).toBeVisible();
+  await hideVideo(page).click();
+  await expect(dock(page)).toBeVisible();
+  await place(page, pieces);
+  await expect(slots(page)).toHaveCount(CHARS.pieces);
+  await expect(bank(page)).toHaveCount(0);
+  // Placing scrolled the panel down; the row must show from its top too (the learner rereads the star row).
+  await page.getByTestId("practice-panel").evaluate((element) => { element.scrollTop = 0; });
+  const placed = await fit(page);
+  console.log(`T9-MEASURE listen-only all placed (${pieces.length} pieces): buttons ${JSON.stringify(placed.buttons)}, panel ${JSON.stringify(placed.panel)}, dock top ${placed.dockTop}`);
+  if (placed.dockTop === null) throw new Error("dock has no box");
+  expect(placed.buttons.map((b) => b.name)).toEqual(["Check", "Next sentence"]);
+  for (const { bottom } of placed.buttons) expect(bottom).toBeLessThanOrEqual(placed.dockTop);
+  expect(placed.panel.bottom).toBeLessThanOrEqual(placed.dockTop);
+  await button(page, "Check").click();
+  await expect(page.getByTestId("listening-score")).toHaveText("100%");
 });

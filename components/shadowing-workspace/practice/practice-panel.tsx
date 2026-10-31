@@ -6,20 +6,24 @@ import { Link, useRouter } from "@/lib/i18n/navigation";
 import { locateSentence } from "@/lib/shadowing-workspace/sentence-lookup";
 import { useCurrentSentence, useLesson, usePlaybackController, useStartPosition } from "../workspace-context";
 
-export function PracticePanel({ label, header, navigator, feedback, children }: {
+export function PracticePanel({ label, header, navigator, feedback, actions, children }: {
   label: string;
   /** Listening's exercise header and toolbar (spec §3.1, §3.2), above the navigator. */
   header?: ReactNode;
   navigator: ReactNode;
   feedback: ReactNode;
+  /** Listening's action row (A3 §3.6): pinned to the scroller's bottom edge, so it never scrolls out of view. */
+  actions?: ReactNode;
   children: ReactNode;
 }) {
   return (
-    <section aria-label={label} className="practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md" data-testid="practice-panel">
+    // The scroll padding keeps a focused control from scrolling in under the pinned row (its height: Check + py-xs).
+    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+2*var(--space-xs))]" : ""}`} data-testid="practice-panel">
       {header}
       <div>{navigator}</div>
       <div className="flex flex-col gap-md">{children}</div>
       <div>{feedback}</div>
+      {actions && <div className="sticky bottom-0 -mb-md flex flex-wrap items-center justify-center gap-sm bg-background py-xs">{actions}</div>}
     </section>
   );
 }
