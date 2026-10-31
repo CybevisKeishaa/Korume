@@ -36,7 +36,8 @@ export function startLessonCreationWorker(): void {
     running = true;
     try {
       const result = await runLessonCreationPass(new Date());
-      console.info("[lesson-creation-worker] pass", result);
+      // An idle pass (all zeros) every few seconds drowns the dev console; log only real work.
+      if (Object.values(result).some((n) => n !== 0)) console.info("[lesson-creation-worker] pass", result);
     } finally {
       running = false;
     }
