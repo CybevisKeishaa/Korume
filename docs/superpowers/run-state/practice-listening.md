@@ -83,15 +83,31 @@ retired. B1 `practice-pronunciation` is merged (`036ca621`, 2026-10-19).
 
 ## Next actions
 
-1. Owner 2026-10-22: stop after Task 6. **Resume at Task 7** (Typing + format switch), BASE `ab609716`, brief
-   `.superpowers/sdd/2026-10-21-practice-listening/task-7-brief.md` (already trimmed of 7b); then 7b, 8, 9, 10.
-   Ledger (rulings R1–R30, deferred minors): `.superpowers/sdd/2026-10-21-practice-listening/progress.md`.
-   Carry into Task 7: Typing diff op `display` is "" on the 2nd+ char of a multi-char NFKC expansion (㌘);
-   the hook already exposes `setInProgress` / `reloadChunks` / `feedback` for Task 7; R3 notice lives in the body.
-   For the owner at the Chrome look: VI format names (R26) and most new VI feedback copy; Hint takes the lowest
-   unhinted chunk even if already placed correctly (D10); YouTube native captions may show the line once the
-   cover is lifted.
-2. Owner decisions 2026-10-21 that close the open questions: Latin/digits keep the Typing fallback; `"` joins the
-   punctuation set; learners see the original `text_jp` characters; the revealed label stays "Answer shown" /
-   "Đã xem đáp án". The floating Korume mascot stays hidden in Listening; only P15's small figure beside the
-   feedback appears, after a successful Check or Show answer.
+Snapshot 2026-10-31 (cloud session, Claude). The two-exercises plan
+`docs/superpowers/plans/2026-10-26-listening-two-exercises.md` is built through Task 15, plus A1–A4 of
+`docs/superpowers/plans/2026-10-31-listening-latin-and-character-pieces.md`:
+
+| Task | Commit |
+|---|---|
+| A4 one play per sentence, autoplay on sentence change and entry; no Lặp in practice | `2c01c6f` |
+| 14 drafts across navigation and the picker; chip rail; helped tone | `3a69d18` |
+| 15 strip (position marker + four stats); Summary rows Chép chính tả + Điền từ with self-done | `2bd3195` |
+
+Verified in that session (Linux container, local disposable Supabase, never the owner's DB): full vitest 6538/6538,
+`tsc`, lint (warnings only); Playwright ×1 `practice-listening`, `practice-pronunciation`, `summary`, `dashboard`,
+`shadowing-workspace`, `route-rename-redirects` all green; top-level pgTAP files on the local DB, no failure.
+Not run there: `verify:protocol` (needs PowerShell) and `run-gates.sh` (lives in the git-ignored ledger).
+
+Calls made without the owner, to review at the Chrome look:
+- A4: the player bar's Sentence-loop pill is hidden in practice too (D1 "no loop in practice"), not only Lặp.
+- A4 fix: the practice panel's scroll padding now adds the panel's own bottom padding (case 22 found a focused
+  piece left under the pinned row once Lặp shrank the replay row).
+- 14: a draft is dropped when its Check / Show answer is sent (a failed send re-saves it); a 409 restart starts
+  empty. Helped chip tone = dashed success outline (spec §3.8 asks the owner to pick between two tones).
+- 15: EN Summary uses "Fill in the blanks" (the exercise's EN name) instead of the plan's "Fill the gaps"; the strip's
+  Listening "Completed" no longer repeats the exercise name. Reflection fingerprints change with the renamed rows,
+  so each lesson's reflection regenerates once.
+
+Remaining: Task 16 Step 2 (owner's Chrome look at 1280×529, dark + light, incl. the two success tones and Figma
+`123:2835`), Step 3 (whole-plan review over `69037d58..HEAD`), Step 4 (B2 plan Task 10, owner look). The owner
+applies 049 to their DB only when they choose. No merge before the owner approves in Chrome.
