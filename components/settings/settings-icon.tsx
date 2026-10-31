@@ -25,6 +25,7 @@ export type SettingsIconKey =
   | "difficulty"
   | "scale"
   | "motion"
+  | "sound"
   | "microphone"
   | "camera"
   | "companion"
@@ -89,6 +90,13 @@ const GLYPHS: Record<SettingsIconKey, React.ReactNode> = {
       <path d="M3.6 12h16.8" />
       <path d="M7 8.4v7.2M11 6.6v10.8" />
       <path d="M15 9.6v4.8M19 10.8v2.4" />
+    </>
+  ),
+  // A small speaker with one soft wave: a chime, not a loudspeaker.
+  sound: (
+    <>
+      <path d="M4.6 9.6h3.2l4.4-3.6v12l-4.4-3.6H4.6z" />
+      <path d="M15.6 9.4a3.8 3.8 0 0 1 0 5.2" />
     </>
   ),
   microphone: (

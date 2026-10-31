@@ -51,7 +51,8 @@ export function PronunciationAnalysis({ result, lineText, onPlayTake, canPlayTak
         <p className="text-caption text-muted-foreground">{t("analysis.subtitle")}</p>
       </div>
       <div className="text-end">
-        <p className={cn("text-display font-bold tabular-nums", GRADE_TEXT[overall])}>{Math.round(result.pronunciationScore)}</p>
+        {/* Pops in with the result chime (owner 2026-10-31); no glow — a bare number has no pill to ring. */}
+        <p className="text-display font-bold tabular-nums"><span className={cn("result-pop", GRADE_TEXT[overall])}>{Math.round(result.pronunciationScore)}</span></p>
         <p className="mt-xs text-caption text-muted-foreground">{t(`label.${LABEL[overall]}`)}</p>
       </div>
     </section>}

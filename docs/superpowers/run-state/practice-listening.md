@@ -111,3 +111,25 @@ Calls made without the owner, to review at the Chrome look:
 Remaining: Task 16 Step 2 (owner's Chrome look at 1280×529, dark + light, incl. the two success tones and Figma
 `123:2835`), Step 3 (whole-plan review over `69037d58..HEAD`), Step 4 (B2 plan Task 10, owner look). The owner
 applies 049 to their DB only when they choose. No merge before the owner approves in Chrome.
+
+## 2026-10-31 — Task 16 Step 2, owner Chrome look: fixes and result chimes (local session)
+
+| Item | Commit |
+|---|---|
+| Action row = full-bleed footer flush with the panel (was 14px short; floated mid-panel on short content); Next primary once answered; Điền từ blank: one focus ring (the rounded pill's), not the global square ring inside it | `3ae23376` |
+| Migration 050 `user_preferences.feedback_sounds` (default true) + `playResultChime` + `scoreBand` | `e2ce3b2c` |
+| Settings → Giao diện → "Âm thanh hiệu ứng"; chimes wired to Listening Check (not Show answer) and Pronunciation score (same sentence only); score pop + strong-band ember ring | this commit |
+
+- **Owner DB is now at 050** (owner approved in chat 2026-10-31). Backup first:
+  `.superpowers/sdd/2026-10-21-practice-listening/owner-049-before-050.dump` (pg_dump -Fc). Applied with
+  `npx supabase migration up` (only 050 pending). `user_preferences` 217 rows, values byte-identical before/after
+  (md5 of rows minus the new column), all 217 `feedback_sounds = true`.
+- 050 proven first on disposable `listening_t1_fs49` (049 + rows, then 050) and `listening_t1_fs50` (full chain):
+  run-gates 11/11 + settings-page.sql + shadowing-workspace.sql exit 0; RLS own-row only. Both dropped.
+- Bands use Summary's cuts: pronunciation 60/80, listening 80/95 (both formats).
+- Verified in Chrome with the attempt API stubbed in the tab (nothing saved): footer at the panel edge, one blank
+  ring, Next primary, a 96% Check plays 3 oscillators and shows `data-band="strong"` with pop + glow.
+- Full vitest 6555/6555, tsc, eslint on touched files. **E2E not run**: the owner's dev server serves this
+  worktree, and a Playwright build would rewrite its `.next`. Run it in Step 3.
+
+Remaining unchanged: Step 3 whole-plan review over `69037d58..HEAD`, Step 4 owner look; no merge before approval.

@@ -5,6 +5,7 @@ import type { SessionListItem } from "@/lib/data/shadowing";
 import type { Attempt, ScoreFailureKind } from "@/lib/pronunciation/attempts";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { usePracticeStats } from "./practice-stats-context";
+import { useResultChime } from "./use-result-chime";
 
 type Failure = { kind: ScoreFailureKind; retryAt: number | null };
 type History = { lineId: string; items: SessionListItem[]; status: "loading" | "ready" | "error" };
@@ -13,6 +14,7 @@ type History = { lineId: string; items: SessionListItem[]; status: "loading" | "
 export function usePronunciationSessions(lineId: string | null) {
   const { attempts, dispatch } = usePronunciationAttempts();
   const { refresh } = usePracticeStats();
+  const chime = useResultChime();
   const [history, setHistory] = useState<History | null>(null);
   const [failures, setFailures] = useState<Record<string, Failure>>({});
   const [clock, setClock] = useState(Date.now());
@@ -87,6 +89,8 @@ export function usePronunciationSessions(lineId: string | null) {
       const response = await fetch("/api/pronunciation/score", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId }) });
       if (response.ok) {
         const { data } = await response.json() as { data: NonNullable<Attempt["result"]> };
+        // Chime only while the learner is still on that sentence: a score landing after they moved on stays silent.
+        if (mounted.current && currentLine.current === owner && typeof data.pronunciationScore === "number") chime("pronunciation", data.pronunciationScore);
         dispatch({ type: "scored", sessionId, result: data });
         refresh();
         if (mounted.current) setHistory((previous) => previous?.lineId === owner ? { ...previous, items: previous.items.map((item) => item.id === sessionId ? { ...item, ...data, state: "scored" } : item) } : previous);
@@ -111,7 +115,7 @@ export function usePronunciationSessions(lineId: string | null) {
       }
     } finally { inFlight.current.delete(sessionId); }
     await reload(owner);
-  }, [dispatch, failures, refresh, reload]);
+  }, [chime, dispatch, failures, refresh, reload]);
   const selected = attempt ? items.find((item) => item.id === attempt.sessionId) : items[0];
   const sessionId = attempt?.sessionId ?? selected?.id ?? null;
   const failure = sessionId ? failures[sessionId] : undefined;

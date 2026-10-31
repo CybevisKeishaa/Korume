@@ -79,7 +79,8 @@ const SCANNED_DIRS = [
   // Listening two exercises Task 10: + practice/star-mask.
   // Listening two exercises Task 11: + practice/cloze-panel, practice/use-line-cloze.
   // Listening two exercises Task 14: + practice/listening-drafts.
-  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 78 },
+  // Result chimes (owner 2026-10-31, Task 16 look): + practice/use-result-chime.
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 79 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },

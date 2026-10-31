@@ -3,6 +3,7 @@
 import { useTranslations } from "@/lib/i18n";
 import type { FeedbackMessage, FeedbackMood } from "@/lib/dictation/listening-feedback";
 import type { ListeningSubmitData } from "@/lib/dictation/listening-score";
+import { scoreBand } from "@/lib/summary/thresholds";
 import { EYEBROW } from "./listening-puzzle";
 import { ListeningFeedbackKorume } from "./listening-feedback-korume";
 import { PracticeGlyph } from "./practice-glyph";
@@ -54,7 +55,8 @@ export function ListeningFeedback({ messages, mood, error, submitting, result, a
       </div>
       <div className="flex shrink-0 items-center gap-sm">
         <ListeningFeedbackKorume mood={mood} />
-        {score !== undefined && <span data-testid="listening-score" className="rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}%</span>}
+        {/* Pops in with the result chime; a strong score (Summary's cut, both Listening formats) also glows. */}
+        {score !== undefined && <span data-testid="listening-score" data-band={scoreBand("listeningDictation", score)} className="result-pop rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}%</span>}
       </div>
     </div>
     {metrics.length > 0 && <dl className="grid grid-cols-4 gap-xs">

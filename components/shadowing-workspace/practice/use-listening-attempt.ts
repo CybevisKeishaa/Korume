@@ -12,6 +12,7 @@ import { draftKey, useListeningDrafts, type ListeningDraft } from "./listening-d
 import { useListeningReveal } from "./listening-reveal-context";
 import { usePracticeStats } from "./practice-stats-context";
 import { useLineCloze } from "./use-line-cloze";
+import { useResultChime } from "./use-result-chime";
 
 export type ListeningAttemptError = "network" | "line_changed" | "rate_limited";
 /** A submitted result as later attempts compare with it; `version` + `textHash` say which cut of the line it scored. */
@@ -72,6 +73,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const { video, lines } = useLesson();
   const { attempt, newAttempt, markChecked, markRevealed } = useListeningReveal();
   const { refresh } = usePracticeStats();
+  const chime = useResultChime();
   const [load, setLoad] = useState(0);
   const isCloze = requested === "cloze";
   const { cloze, status: clozeStatus, reload: reloadCloze } = useLineCloze(isCloze ? lineId : null);
@@ -179,7 +181,11 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     } else if (typeof outcome === "string") {
       const error = outcome;
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, error } : prev);
-    } else done(outcome.data);
+    } else {
+      // Only a scored Check chimes; Show answer is not a result (owner 2026-10-31).
+      if (outcome.data.kind === "submit") chime(isCloze ? "listeningCloze" : "listeningDictation", outcome.data.score);
+      done(outcome.data);
+    }
   }
 
   function submit(payload: SubmitPayload): Promise<void> {

@@ -1240,6 +1240,26 @@
   transform-origin: center top;
 }
 
+/* Result arrival (owner 2026-10-31, with the result chimes): the score pops in; a strong score also sends one ember
+   ring outward. Reduce-motion collapses both through the global rule below, leaving the score simply shown. */
+@keyframes result-pop {
+  0% { transform: scale(0.6); opacity: 0; }
+  60% { transform: scale(1.12); opacity: 1; }
+  100% { transform: scale(1); opacity: 1; }
+}
+@keyframes result-glow {
+  0% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0.55); }
+  100% { box-shadow: 0 0 0 var(--space-sm) hsl(var(--primary) / 0); }
+}
+.result-pop {
+  display: inline-block;
+  animation: result-pop var(--duration-base) var(--ease-out-expo) both;
+}
+.result-pop[data-band="strong"] {
+  animation: result-pop var(--duration-base) var(--ease-out-expo) both,
+    result-glow var(--duration-slow) var(--ease-standard) var(--duration-fast) 2 both;
+}
+
 /**
  * Global reduce-motion enforcement (CLAUDE.md §2.4, §5).
  * Honours both the OS setting AND the app toggle ([data-reduce-motion="true"]).
