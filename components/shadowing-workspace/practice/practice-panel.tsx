@@ -17,8 +17,9 @@ export function PracticePanel({ label, header, navigator, feedback, actions, chi
   children: ReactNode;
 }) {
   return (
-    // The scroll padding keeps a focused control from scrolling in under the pinned row (its height: Check + py-xs).
-    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+2*var(--space-xs))]" : ""}`} data-testid="practice-panel">
+    // The scroll padding keeps a focused control from scrolling in under the pinned row: the row's height (Check + py-xs)
+    // plus the panel's own bottom padding, which the sticky row stays above.
+    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+2*var(--space-xs)+var(--space-md))]" : ""}`} data-testid="practice-panel">
       {header}
       <div>{navigator}</div>
       <div className="flex flex-col gap-md">{children}</div>
@@ -28,14 +29,17 @@ export function PracticePanel({ label, header, navigator, feedback, actions, chi
   );
 }
 
-/** A practice mode opened before any line is current lands on the line at the start position. */
+/**
+ * A practice mode opened before any line is current lands on the line at the start position. It only moves: the one
+ * entry play is `usePracticePlayback`'s, once the player is ready (spec 2026-10-31 D5).
+ */
 export function useFirstPracticeSentence(): void {
   const { lines, video } = useLesson();
   const { index } = useCurrentSentence();
   const start = useStartPosition();
   const controller = usePlaybackController();
   useEffect(() => {
-    if (index === null && lines.length) controller.seekToSentence(locateSentence(lines, start, video.durationSeconds).index ?? 0);
+    if (index === null && lines.length) controller.seekToSentence(locateSentence(lines, start, video.durationSeconds).index ?? 0, { play: false });
   }, [controller, index, lines, start, video.durationSeconds]);
 }
 

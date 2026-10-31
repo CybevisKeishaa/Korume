@@ -265,7 +265,7 @@
         "slot": "Ô {n}/{total}, {text}",
         "slotState": {"correct": "đúng", "wrong": "sai", "hinted": "gợi ý"},
         "moved": "{text}, vị trí {n}/{total}",
-        "replay": {"audio": "Nghe lại câu", "loop": "Lặp", "rate": "Tốc độ {rate}×"},
+        "replay": {"audio": "Nghe lại câu", "rate": "Tốc độ {rate}×"},
         "puzzle": {"wordBank": "Ghép câu", "typing": "Gõ lại câu", "remaining": "{count, plural, other {Còn {count} mảnh}}"},
         "liveFeedback": "Phản hồi",
         "saved": "Đã lưu vào lịch sử luyện nghe của bạn.",

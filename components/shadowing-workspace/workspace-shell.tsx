@@ -165,7 +165,9 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     controller.setLock({ navigation: hasUnsaved(attempts), play: Object.values(attempts).some((attempt) => attempt.phase === "recording") });
   }, [attempts, controller]);
   useEffect(() => () => controller.setLock({ navigation: false, play: false }), [controller]);
-  const { toggleLoop } = usePlayerWiring();
+  const { toggleLoop: toggleSessionLoop } = usePlayerWiring();
+  // Practice never loops (spec 2026-10-31 D3): `L` does nothing there; Shadowing's pill keeps it.
+  const toggleLoop = useMemo(() => mode === "shadowing" ? toggleSessionLoop : () => undefined, [mode, toggleSessionLoop]);
   const drawer = useDrawer();
   const rootRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);

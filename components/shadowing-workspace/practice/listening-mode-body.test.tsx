@@ -350,13 +350,10 @@ describe("ListeningModeBody — Figma composition (Task 9c)", () => {
     expect(play).toHaveBeenCalled();
   });
 
-  it("Loop and the 0.75x / 1x buttons drive the shared player state and show it", async () => {
+  it("the 0.75x / 1x buttons drive the shared player state and show it; there is no Loop (spec 2026-10-31 D3)", async () => {
     await open();
     await waitFor(() => expect(yt.players).toHaveLength(1));
-    const loop = screen.getByRole("button", { name: "Loop" });
-    const pressed = loop.getAttribute("aria-pressed");
-    fireEvent.click(loop);
-    expect(loop).toHaveAttribute("aria-pressed", pressed === "true" ? "false" : "true");
+    expect(screen.queryByRole("button", { name: "Loop" })).toBeNull();
     const slow = screen.getByRole("button", { name: "0.75× speed" });
     const normal = screen.getByRole("button", { name: "1× speed" });
     expect(normal).toHaveAttribute("aria-pressed", "true");
@@ -847,16 +844,17 @@ describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
     await waitFor(() => expect(yt.players).toHaveLength(1));
     // Video visible: the ReplayRow sits in the panel, there is no dock.
     expect(within(practicePanel()).getByRole("button", { name: "Replay audio" })).toBeInTheDocument();
-    expect(within(practicePanel()).getByRole("button", { name: "Loop" })).toBeInTheDocument();
+    expect(within(practicePanel()).getByRole("button", { name: "1× speed" })).toBeInTheDocument();
     expect(document.querySelector("[data-listen-dock]")).toBeNull();
     fireEvent.click(hideVideo());
     expect(within(practicePanel()).queryByRole("button", { name: "Replay audio" })).toBeNull();
-    expect(within(practicePanel()).queryByRole("button", { name: "Loop" })).toBeNull();
     expect(within(practicePanel()).queryByRole("button", { name: "1× speed" })).toBeNull();
     const replay = within(dock()).getByRole("button", { name: "Replay audio" });
-    for (const name of ["Loop", "0.75× speed", "1× speed", "Previous sentence", "Play", "Next sentence", "Mute", "Show video"]) {
+    // The entry play (spec 2026-10-31 D5) may already be running: the transport reads Play or Pause.
+    for (const name of ["0.75× speed", "1× speed", "Previous sentence", /^(Play|Pause)$/, "Next sentence", "Mute", "Show video"]) {
       expect(within(dock()).getByRole("button", { name })).toBeInTheDocument();
     }
+    expect(within(dock()).queryByRole("button", { name: "Loop" })).toBeNull();
     expect(within(dock()).getByRole("slider", { name: "Seek" })).toBeInTheDocument();
     // The same handlers as the panel's row: Replay audio seeks the current sentence and plays.
     const player = required(yt.players[0]);
@@ -878,7 +876,9 @@ describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
     await waitFor(() => expect(yt.players).toHaveLength(1));
     // Positive control: the normal bar has each of them.
     const player = screen.getByRole("region", { name: "Player" });
-    for (const name of ["Player fullscreen", "Hide subtitles", "Back 5 seconds", "Sentence loop"]) expect(within(player).getByRole("button", { name })).toBeInTheDocument();
+    for (const name of ["Player fullscreen", "Hide subtitles", "Back 5 seconds"]) expect(within(player).getByRole("button", { name })).toBeInTheDocument();
+    // Practice never loops (spec 2026-10-31 D3): no Sentence pill in either bar.
+    expect(within(player).queryByRole("button", { name: "Sentence loop" })).toBeNull();
     expect(within(player).getByRole("button", { name: /^Playback speed/ })).toBeInTheDocument();
     fireEvent.click(hideVideo());
     for (const name of ["Player fullscreen", "Hide subtitles", "Show subtitles", "Back 5 seconds", "Sentence loop"]) expect(within(player).queryByRole("button", { name })).toBeNull();
@@ -904,7 +904,7 @@ describe("ListeningModeBody — the listen-only dock (Ruling T1)", () => {
     expect(hideVideo()).toHaveAttribute("aria-pressed", "false");
     expect(required(probe.reveal).listenOnly).toBe(false);
     // The pressed button unmounts with the dock; focus stays in the player instead of falling to the page.
-    await waitFor(() => expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: "Play" })));
+    await waitFor(() => expect(document.activeElement).toBe(within(required(document.querySelector<HTMLElement>("[data-workspace-player-controls]"))).getByRole("button", { name: /^(Play|Pause)$/ })));
     expect(yt.players).toHaveLength(1);
   });
 

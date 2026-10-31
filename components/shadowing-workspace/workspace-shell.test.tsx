@@ -270,11 +270,13 @@ describe("ShadowingWorkspaceShell", () => {
     expect(yt.players).toHaveLength(1);
     expect(yt.players[0]).toBe(player);
     expect(observedController).toBe(controller);
+    // Entering Listening, then Pronunciation, each played the current sentence once (spec 2026-10-31 D5).
+    expect(play).toHaveBeenCalledTimes(2);
     const seek = vi.spyOn(player, "seekTo");
     act(() => controller.nextSentence());
     expect(seek).not.toHaveBeenCalled();
     act(() => controller.play());
-    expect(play).toHaveBeenCalledOnce();
+    expect(play).toHaveBeenCalledTimes(3);
     act(() => dispatchAttempt({ type: "saved", lineId: "L1", sessionId: "S1", signedUrl: "u" }));
     act(() => controller.nextSentence());
     expect(seek).toHaveBeenLastCalledWith(3, true);
@@ -325,6 +327,21 @@ describe("ShadowingWorkspaceShell", () => {
     expect(player?.getPlayerState()).toBe(1);
     fireEvent.keyDown(screen.getByTestId("shadowing-workspace"), { key: " " });
     expect(player?.getPlayerState()).toBe(2);
+  });
+
+  it.each(["/en/shadowing/video-1/listening", "/en/shadowing/video-1/pronunciation"])("practice has no loop: no Sentence pill, no Loop button, and L does nothing at %s (spec 2026-10-31 D3)", async (path) => {
+    pathname = path;
+    searchParams = new URLSearchParams("line=line-1&format=dictation");
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    // Positive control: the player bar really rendered its other controls.
+    expect(screen.getByRole("button", { name: "Hide subtitles" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sentence loop" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Loop" })).toBeNull();
+    const before = observedController?.loopConfig();
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(observedController?.loopConfig()).toEqual(before);
+    expect(observedController?.loopConfig().enabled).toBe(false);
   });
 
   it("lets the overflow popover consume Escape in focus view instead of also exiting the view", async () => {

@@ -1,6 +1,6 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { registerViaUi, uniqueEmail } from "./fixtures/auth";
-import { FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
+import { advance, FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
 import { lineStart, lineText, lineTranslation, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
 import { toFurigana } from "@/lib/japanese/furigana";
 
@@ -268,6 +268,10 @@ test("2 · entering Listening conceals from the first frame, with the video show
     await page.mouse.move(box.x + 8, box.y + 8);
     await player(page).getByRole("button", { name, exact: true }).last().click();
   };
+  // Entering a practice mode plays its current sentence once (spec 2026-10-31 D5): the bar starts on Pause.
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await control("Pause");
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
   await control("Play");
   await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await control("Pause");
@@ -286,13 +290,8 @@ test("2 · entering Listening conceals from the first frame, with the video show
   await player(page).getByRole("button", { name: /^Playback speed / }).click();
   await page.getByRole("radiogroup", { name: "Playback speed" }).getByRole("radio", { name: "0.75×" }).click();
   await expect.poll(async () => (await fakeYt(page)).rate).toBe(0.75);
-  const loop = player(page).getByRole("button", { name: "Sentence loop" });
-  for (const [count, pressed] of [["3×", "true"], ["1×", "false"]] as const) {
-    await page.mouse.move(box.x + 8, box.y + 8);
-    await loop.click();
-    await page.getByRole("radiogroup", { name: "Plays per sentence" }).getByRole("radio", { name: count }).click();
-    await expect(loop).toHaveAttribute("aria-pressed", pressed);
-  }
+  // Practice never loops (spec 2026-10-31 D3): no Sentence pill, and L does nothing.
+  await expect(player(page).getByRole("button", { name: "Sentence loop" })).toHaveCount(0);
   await expectNoSurface(page);
 });
 
@@ -438,6 +437,10 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
   const posts: string[] = [];
   page.on("request", (request) => { if (request.url().endsWith("/api/dictation/attempt")) posts.push(request.method()); });
   await expect(typingInput(page)).toBeVisible();
+  // The entry play (spec 2026-10-31 D5) ends first; the keys below must not start another.
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await advance(page, 3);
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
   const seeks = (await fakeYt(page)).seeks.length;
   await typingInput(page).click();
   for (const key of ["ArrowRight", "ArrowLeft", "Space"]) await typingInput(page).press(key);
@@ -845,6 +848,10 @@ test("20 · Ẩn video survives Next and Try again; turning it off stays off", a
 test("21 · the dock row stays at one height on hover", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page);
+  // The entry play (spec 2026-10-31 D5) ends first, so the dock starts paused.
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
+  await advance(page, 3);
+  await expect.poll(async () => (await fakeYt(page)).state).toBe(FAKE_YT_STATE.PAUSED);
   await hideVideo(page).click();
   await expect(dockRow(page)).toBeVisible();
   // The docked card's height and its control row's: a clipping parent shrinks the first, a changing row the second.
@@ -1175,4 +1182,66 @@ test("33 · long character-cut line: listen-only, every piece placeable, the act
   expect(placed.panel.bottom).toBeLessThanOrEqual(placed.dockTop);
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
+});
+
+// Spec 2026-10-31 (plan A4): one play per sentence, autoplay on sentence change and on entry.
+const ytState = async (page: Page) => (await fakeYt(page)).state;
+
+test("34 · Next sentence plays the new sentence once and stops inside it; the typed input stays (D4, D6)", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await expect(typingInput(page)).toBeVisible();
+  // The entry play (D5) runs first; let it end.
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PLAYING);
+  await advance(page, 3);
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PAUSED);
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
+  const before = (await fakeYt(page)).seeks.length;
+  await button(page, "Next sentence").click();
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PLAYING);
+  expect((await fakeYt(page)).seeks.slice(before)).toEqual([lineStart(1)]);
+  await typingInput(page).fill("今日は");
+  await advance(page, 3);
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PAUSED);
+  // D6: the stopped player sits just inside sentence 2, never in sentence 3.
+  const stopped = await fakeYt(page);
+  expect(stopped.time).toBeGreaterThan(lineStart(1));
+  expect(stopped.time).toBeLessThan(lineStart(2));
+  await page.waitForTimeout(3_000);
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
+  await expect(typingInput(page)).toHaveValue("今日は");
+  expect(await ytState(page)).toBe(FAKE_YT_STATE.PAUSED);
+});
+
+test("35 · a deep link to a sentence plays that sentence once on entry (D5)", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, `/listening?format=dictation&line=${data.lineIds[2]}`);
+  await expect(stat(page, "sentence")).toHaveText(/^3\//);
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PLAYING);
+  expect((await fakeYt(page)).seeks.at(-1)).toBe(lineStart(2));
+  await advance(page, 3);
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PAUSED);
+  const plays = (await fakeYt(page)).seeks.length;
+  await page.waitForTimeout(1_000);
+  expect(await ytState(page)).toBe(FAKE_YT_STATE.PAUSED);
+  expect((await fakeYt(page)).seeks).toHaveLength(plays);
+  await expect(stat(page, "sentence")).toHaveText(/^3\//);
+});
+
+test("36 · switching from Shadowing at sentence N to Listening plays sentence N (D5); Shadowing's own moves never autoplay", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, "");
+  await expect(page.getByRole("button", { name: "Sentence loop" })).toHaveCount(1);
+  for (let step = 0; step < 4; step += 1) await page.keyboard.press("ArrowRight");
+  await expect.poll(async () => (await fakeYt(page)).seeks.at(-1)).toBe(lineStart(4));
+  expect(await ytState(page)).not.toBe(FAKE_YT_STATE.PLAYING);
+  const before = (await fakeYt(page)).seeks.length;
+  await modeBar(page).getByRole("link", { name: "Listening" }).click();
+  await expect(pickerHeading(page)).toBeVisible();
+  await expect.poll(() => ytState(page)).toBe(FAKE_YT_STATE.PLAYING);
+  expect((await fakeYt(page)).seeks.slice(before)).toEqual([lineStart(4)]);
+  // L is a no-op in practice: no pill appears and nothing replays.
+  await page.keyboard.press("l");
+  await expect(page.getByRole("button", { name: "Sentence loop" })).toHaveCount(0);
 });

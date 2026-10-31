@@ -15,7 +15,7 @@ import { POPOVER_ID as LOOP_POPOVER, SentenceLoopControl } from "./sentence-loop
 import { POPOVER_ID as SPEED_POPOVER, SpeedControl } from "./speed-control";
 import { useCurrentSentence, useLesson, usePlaybackController, useSession, useStartPosition } from "./workspace-context";
 import { useListeningReveal } from "./practice/listening-reveal-context";
-import { ReplayAudio, ReplayLoopRates } from "./practice/replay-row";
+import { ReplayAudio, ReplayRates } from "./practice/replay-row";
 
 const IDLE_HIDE_MS = 2500;
 
@@ -59,7 +59,9 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
   const [muted, setMuted] = useState(false);
   const [playerError, setPlayerError] = useState<number | null>(null);
   const subtitle = index === null ? null : lines[index]?.textJp ?? null;
-  const listening = practiceModeFromPath(usePathname()) === "listening";
+  const mode = practiceModeFromPath(usePathname());
+  const listening = mode === "listening";
+  const practice = mode !== "shadowing";
   const reveal = useListeningReveal();
   const dock = useListenDock();
   const playPauseRef = useRef<HTMLButtonElement>(null);
@@ -178,7 +180,8 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
                 </button>
               </div>
               <div className="flex items-center gap-2xs">
-                <div className="contents group-data-[pip]/pip:hidden"><SentenceLoopControl /></div>
+                {/* Practice plays one sentence once and never loops (spec 2026-10-31 D1, D3). */}
+                {!practice && <div className="contents group-data-[pip]/pip:hidden"><SentenceLoopControl /></div>}
                 <SpeedControl />
                 {mute(PIP_HIDDEN_BUTTON)}
                 <button
@@ -215,7 +218,7 @@ export const WorkspacePlayer = forwardRef<HTMLElement, { onFullscreen(trigger: H
           <div className="flex shrink-0 items-center gap-2xs">{transport}</div>
           <div className="min-w-0 flex-1"><ProgressBar duration={video.durationSeconds} neutral /></div>
           <PlaybackClock duration={video.durationSeconds} />
-          <ReplayLoopRates />
+          <ReplayRates />
           {mute(ICON_BUTTON)}
           <button type="button" onClick={showVideo}
             className="inline-flex h-control-sm shrink-0 items-center gap-xs rounded-full border border-border px-sm text-caption font-semibold text-foreground transition-colors hover:bg-muted">

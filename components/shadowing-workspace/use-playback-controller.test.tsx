@@ -76,8 +76,80 @@ describe("usePlaybackControllerState", () => {
     expect(pause).toHaveBeenCalledOnce();
     expect(pause.mock.invocationCallOrder[0]).toBeLessThan(seek.mock.invocationCallOrder[0] ?? 0);
     expect(seek).toHaveBeenLastCalledWith(action === "previousSentence" ? 0 : 6, true);
-    expect(player.getPlayerState()).toBe(YT_PLAYER_STATE.PAUSED);
+    // D4: a sentence move plays the new sentence once; a position move (seekTo) does not.
+    expect(player.getPlayerState()).toBe(action === "seekTo" ? YT_PLAYER_STATE.PAUSED : YT_PLAYER_STATE.PLAYING);
     expect(result.current.controller.loopConfig().enabled).toBe(false);
+  });
+
+  describe("practice: one play per sentence (spec 2026-10-31 D4, D6)", () => {
+    it.each(["nextSentence", "previousSentence", "seekToSentence"] as const)("%s seeks to the target and plays it once", (action) => {
+      const { result } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+      act(() => result.current.onTick(3.5));
+      const seek = vi.spyOn(player, "seekTo");
+      const play = vi.spyOn(player, "playVideo");
+      act(() => { if (action === "seekToSentence") result.current.controller.seekToSentence(2); else result.current.controller[action](); });
+      const target = action === "previousSentence" ? 0 : 6;
+      expect(seek).toHaveBeenLastCalledWith(target, true);
+      expect(play).toHaveBeenCalledOnce();
+      expect(seek.mock.invocationCallOrder.at(-1)!).toBeLessThan(play.mock.invocationCallOrder[0]!);
+    });
+
+    it.each(["seekTo", "rewind"] as const)("%s is a position move and does not play", (action) => {
+      const { result } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+      act(() => result.current.onTick(4));
+      const play = vi.spyOn(player, "playVideo");
+      act(() => { if (action === "seekTo") result.current.controller.seekTo(7); else result.current.controller.rewind(2); });
+      expect(play).not.toHaveBeenCalled();
+    });
+
+    it("seekToSentence with play: false only moves (the first-sentence landing)", () => {
+      const { result } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+      const play = vi.spyOn(player, "playVideo");
+      act(() => result.current.controller.seekToSentence(1, { play: false }));
+      expect(play).not.toHaveBeenCalled();
+    });
+
+    it("a recording (lock.play) blocks the autoplay of a sentence move", () => {
+      const { result } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+      act(() => result.current.onTick(3.5));
+      const seek = vi.spyOn(player, "seekTo");
+      const play = vi.spyOn(player, "playVideo");
+      act(() => { result.current.controller.setLock({ navigation: false, play: true }); result.current.controller.nextSentence(); });
+      expect(seek).toHaveBeenLastCalledWith(6, true);
+      expect(play).not.toHaveBeenCalled();
+    });
+
+    it("a boundary pause puts the player back just inside the sentence and keeps that sentence current", () => {
+      const { result, onSentence } = setup(undefined, lines, adapterFor(player), vi.fn(), true);
+      const seek = vi.spyOn(player, "seekTo");
+      const pause = vi.spyOn(player, "pauseVideo");
+      act(() => { result.current.onTick(3.01); result.current.onTick(5.9); result.current.onTick(6.1); });
+      expect(pause).toHaveBeenCalledOnce();
+      expect(seek).toHaveBeenLastCalledWith(6 - 0.001, true);
+      expect(pause.mock.invocationCallOrder[0]!).toBeLessThan(seek.mock.invocationCallOrder.at(-1)!);
+      act(() => result.current.onTick(6.2));
+      expect(onSentence.mock.calls.at(-1)?.[0]).toEqual({ index: 1, isSpoken: true });
+    });
+
+    it("an ENDED boundary pause also seeks back inside the last sentence", () => {
+      const nullEnd = lines.map((line) => line.index === 2 ? { ...line, endTime: null } : line);
+      const { result } = setup(undefined, nullEnd, adapterFor(player), vi.fn(), true);
+      const seek = vi.spyOn(player, "seekTo");
+      act(() => { result.current.onTick(6.1); result.current.onStateChange(YT_PLAYER_STATE.ENDED); });
+      // A null-ended last line ends at the player's reported duration (the stub's 120 s).
+      expect(seek).toHaveBeenLastCalledWith(120 - 0.001, true);
+    });
+
+    it("Shadowing navigation never autoplays and its auto pause does not seek back", () => {
+      const { result } = setup({ enabled: false, count: 1, autoPause: true });
+      const play = vi.spyOn(player, "playVideo");
+      const seek = vi.spyOn(player, "seekTo");
+      act(() => result.current.controller.nextSentence());
+      expect(play).not.toHaveBeenCalled();
+      seek.mockClear();
+      act(() => { result.current.onTick(6.01); result.current.onTick(8.9); result.current.onTick(9); });
+      expect(seek).not.toHaveBeenCalled();
+    });
   });
 
   it("practice explicit sentence replay pauses, seeks exactly, and plays that sentence", () => {
@@ -306,7 +378,7 @@ describe("usePlaybackControllerState", () => {
     expect(onSentence).not.toHaveBeenCalled();
     expect(positionStore.get()).toBe(3.8);
     expect(result.current.controller.loopConfig()).toEqual({ enabled: true, count: 3, autoPause: true });
-    act(() => result.current.controller.seekToSentence(1));
+    act(() => result.current.controller.seekToSentence(1, { play: false }));
     expect(seek).toHaveBeenLastCalledWith(3, true);
     act(() => { result.current.controller.play(); result.current.controller.togglePlay(); result.current.controller.togglePlay(); });
     expect(play).toHaveBeenCalledTimes(2);
@@ -404,7 +476,8 @@ describe("usePlaybackControllerState", () => {
         else { result.current.onTick(6.01); result.current.onStateChange(YT_PLAYER_STATE.ENDED); }
       }
     });
-    expect(seek).toHaveBeenCalledTimes(2);
+    // Two replays, then the stop seeks back just inside the sentence (D6).
+    expect(seek).toHaveBeenCalledTimes(3);
     expect(play).toHaveBeenCalledTimes(2);
     expect(pause).toHaveBeenCalledOnce();
     expect(result.current.controller.loopConfig().enabled).toBe(true);

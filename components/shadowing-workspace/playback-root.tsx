@@ -15,6 +15,8 @@ interface PlayerWiring {
   adapterRef: React.RefObject<PlayerAdapter>;
   onReady(): void;
   onStateChange(state: YtPlayerStateValue): void;
+  /** True once the player reported ready; practice's entry play waits for it (spec 2026-10-31 D5). */
+  ready: boolean;
   /** Re-renders the controls when the player starts or stops (the controller's own state lives in refs). */
   playing: boolean;
   loop: LoopConfig;
@@ -48,6 +50,7 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
   const { preferences } = usePreferences();
   const adapterRef = useRef<PlayerAdapter>(null);
   const [playing, setPlaying] = useState(false);
+  const [ready, setReady] = useState(false);
   // The preference is the starting loop of this session; the Sentence pill changes it for the session only.
   const initialLoop = useRef<LoopConfig>({
     enabled: preferences.playbackLoopCount !== 1,
@@ -90,6 +93,7 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
 
   const onReady = useCallback(() => {
     onControllerReady();
+    setReady(true);
     if (video.durationSeconds !== null || durationPatched.current) return;
     const durationSeconds = Math.round(adapterRef.current?.getDuration() ?? 0);
     if (durationSeconds <= 0) return;
@@ -121,7 +125,7 @@ export function PlaybackRoot({ userId, initialSyncedServerAt, children }: {
     setRateState(next);
   }, [controller]);
 
-  const wiring = useMemo(() => ({ adapterRef, onReady, onStateChange: handleStateChange, playing, loop, setLoop, toggleLoop, rate, setRate }), [handleStateChange, loop, onReady, playing, rate, setLoop, setRate, toggleLoop]);
+  const wiring = useMemo(() => ({ adapterRef, onReady, onStateChange: handleStateChange, ready, playing, loop, setLoop, toggleLoop, rate, setRate }), [handleStateChange, loop, onReady, playing, rate, ready, setLoop, setRate, toggleLoop]);
   return (
     <ControllerProvider controller={controller}>
       <PlayerWiringContext.Provider value={wiring}>{children}</PlayerWiringContext.Provider>

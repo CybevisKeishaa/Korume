@@ -259,7 +259,7 @@
         "slot": "Slot {n} of {total}, {text}",
         "slotState": {"correct": "correct", "wrong": "wrong", "hinted": "hint"},
         "moved": "{text}, position {n} of {total}",
-        "replay": {"audio": "Replay audio", "loop": "Loop", "rate": "{rate}× speed"},
+        "replay": {"audio": "Replay audio", "rate": "{rate}× speed"},
         "puzzle": {"wordBank": "Dictation puzzle", "typing": "Type what you hear", "remaining": "{count, plural, one {{count} word remaining} other {{count} words remaining}}"},
         "liveFeedback": "Live Feedback",
         "saved": "Saved to your personal listening memory.",

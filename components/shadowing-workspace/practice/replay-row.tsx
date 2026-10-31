@@ -18,26 +18,23 @@ export function ReplayAudio() {
   </button>;
 }
 
-/** Loop and the two rates: the player bar's own state, so every placement stays in sync. */
-export function ReplayLoopRates() {
+/** The two rates: the player bar's own state, so every placement stays in sync. No Lặp: practice plays a sentence
+ * once and never loops (spec 2026-10-31 D1, D3). */
+export function ReplayRates() {
   const tl = useTranslations("shadowing.workspace.practice.listening");
-  const { loop, toggleLoop, rate, setRate } = usePlayerWiring();
+  const { rate, setRate } = usePlayerWiring();
   return <div className="flex shrink-0 items-center gap-xs">
-    <button type="button" aria-pressed={loop.enabled} onClick={toggleLoop}
-      className="flex flex-col items-center rounded-full px-sm py-2xs text-caption font-semibold text-muted-foreground aria-pressed:bg-primary/15 aria-pressed:text-primary-strong">
-      <PracticeGlyph name="listening-loop" />{tl("replay.loop")}
-    </button>
     {[0.75, 1].map((value) => <button key={value} type="button" aria-label={tl("replay.rate", { rate: String(value) })} aria-pressed={rate === value} onClick={() => setRate(value)} className={RATE}>{value}×</button>)}
   </div>;
 }
 
 /**
- * Replay audio, Loop and the two rates (Figma 123:2835). With the video shown it is a row of the practice panel; in
+ * Replay audio and the two rates (Figma 123:2835; Lặp removed 2026-10-31 D3). With the video shown it is a row of the practice panel; in
  * listen-only its two parts live in the player's dock instead (Ruling T1): one component, two placements.
  */
 export function ReplayRow() {
   return <div className="flex items-center justify-between gap-sm rounded-full bg-muted px-md py-sm">
     <ReplayAudio />
-    <ReplayLoopRates />
+    <ReplayRates />
   </div>;
 }
