@@ -24,13 +24,19 @@ vi.mock("@/lib/data/companion", () => ({ captureFirstVideoCompleted: vi.fn(() =>
 import { submitReview } from "./srs";
 import { reviewMiningCard } from "./mining";
 import { createSession } from "./shadowing";
-import { submitAttempt } from "./dictation";
+import { submitListeningAttempt } from "./dictation";
 import { updateProgress } from "./videos";
+import { lineTextHash } from "@/lib/dictation/chunk";
 
 const USER = { id: "11111111-1111-4111-8111-111111111111" };
 const VIDEO = "22222222-2222-4222-8222-222222222222";
 const LINE = "33333333-3333-4333-8333-333333333333";
 const WRITES = new Set(["insert", "update", "upsert", "delete"]);
+/** A Word Bank-reliable line: 毎日 | 日本語を | 勉強しました。 */
+const TEXT = "毎日日本語を勉強しました。";
+const head = { videoId: VIDEO, lineId: LINE, version: 1, textHash: lineTextHash(TEXT), hintedUnits: [] };
+const submitBody = { kind: "submit" as const, format: "word_bank" as const, ...head, chunkOrder: [0, 1, 2] };
+const revealBody = { kind: "reveal" as const, format: "word_bank" as const, ...head };
 
 /** A table resolver that logs `write:<table>` when the chain writes, and answers with `data`. */
 function table(name: string, data: unknown = null) {
@@ -108,12 +114,21 @@ describe("pre-write mission ensure (spec M1)", () => {
 
   it("dictation: ensure after the line lookup, before the insert", async () => {
     install(USER, {
-      transcript_lines: table("transcript_lines", { text_jp: "こんにちは" }),
+      transcript_lines: table("transcript_lines", { text_jp: TEXT }),
       dictation_attempts: table("dictation_attempts"),
     });
-    await expect(submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "こんにちは" })).resolves.toMatchObject({ ok: true });
+    await expect(submitListeningAttempt(submitBody)).resolves.toMatchObject({ ok: true });
     expect(order).toEqual(["ensure", "write:dictation_attempts", "record", "claim"]);
-  });
+  }, 60000);
+
+  it("dictation reveal: the insert alone, never a mission ensure, record or claim (D11)", async () => {
+    install(USER, {
+      transcript_lines: table("transcript_lines", { text_jp: TEXT }),
+      dictation_attempts: table("dictation_attempts"),
+    });
+    await expect(submitListeningAttempt(revealBody)).resolves.toMatchObject({ ok: true });
+    expect(order).toEqual(["write:dictation_attempts"]);
+  }, 60000);
 
   it("lesson completion: ensure before the upsert, claim after it; a position ping touches neither", async () => {
     const row = { user_id: USER.id, video_id: VIDEO, last_watched_position: 10, completed_at: null, last_watched_at: null };
@@ -131,14 +146,14 @@ describe("pre-write mission ensure (spec M1)", () => {
     await submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 });
     await reviewMiningCard({ cardId: VIDEO, quality: 4 });
     await createSession({ videoId: VIDEO, lineId: LINE, audio: audio() });
-    await submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "x" });
+    await submitListeningAttempt(submitBody);
     await updateProgress(VIDEO, { position: 1, completed: true });
 
     install(USER, { sentence_mining_cards: table("sentence_mining_cards", null), transcript_lines: table("transcript_lines", null) });
     await expect(reviewMiningCard({ cardId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: Object.assign(new Blob(["x"]), { arrayBuffer: async () => new ArrayBuffer(1) }) }))
       .resolves.toMatchObject({ ok: false, status: 422 });
-    await expect(submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "x" })).resolves.toMatchObject({ ok: false, status: 400 });
+    await expect(submitListeningAttempt(submitBody)).resolves.toMatchObject({ ok: false, status: 400 });
     expect(order).toEqual([]);
   });
 
@@ -155,7 +170,7 @@ describe("pre-write mission ensure (spec M1)", () => {
 
     await expect(submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: audio() })).resolves.toMatchObject({ ok: false, status: 400 });
-    await expect(submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "x" })).resolves.toMatchObject({ ok: false, status: 400 });
+    await expect(submitListeningAttempt(submitBody)).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(updateProgress(VIDEO, { position: 1, completed: true })).resolves.toMatchObject({ ok: false, status: 400 });
 
     expect(order).toEqual([]);
@@ -171,7 +186,7 @@ describe("pre-write mission ensure (spec M1)", () => {
     });
 
     await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: audio() })).resolves.toMatchObject({ ok: false, status: 400 });
-    await expect(submitAttempt({ videoId: VIDEO, lineId: LINE, userInput: "x" })).resolves.toMatchObject({ ok: false, status: 400 });
+    await expect(submitListeningAttempt(submitBody)).resolves.toMatchObject({ ok: false, status: 400 });
 
     expect(lineQueries).toHaveLength(2);
     for (const calls of lineQueries) {

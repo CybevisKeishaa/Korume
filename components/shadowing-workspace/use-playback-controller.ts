@@ -15,6 +15,7 @@ export interface PlaybackController {
   togglePlay(): void;
   isPlaying(): boolean;
   seekTo(seconds: number): void;
+  /** In a sentence-bound mode the move plays the sentence once unless `play: false` (spec 2026-10-31 D4). */
   seekToSentence(index: number, options?: { play?: boolean }): void;
   previousSentence(): void;
   nextSentence(): void;
@@ -127,6 +128,19 @@ export function usePlaybackControllerState(args: {
     current.adapterRef.current?.play();
   }, [positionAt, seekInternal]);
 
+  // Spec 2026-10-31 D6: a sentence-bound stop leaves the player just inside the sentence it played, because the real
+  // player halts 0-0.2 s past the end, inside the next sentence, where anything that reads it later would land.
+  const pauseInside = useCallback((end: number) => {
+    const current = argsRef.current;
+    current.adapterRef.current?.pause();
+    if (current.sentenceBound || lockRef.current.navigation) current.adapterRef.current?.seekTo(Math.max(0, end - 0.001), true);
+  }, []);
+
+  // Spec 2026-10-31 D4: in practice every move to a sentence plays it once (a recording still blocks play).
+  const autoplay = useCallback(() => {
+    if (argsRef.current.sentenceBound && !lockRef.current.play) argsRef.current.adapterRef.current?.play();
+  }, []);
+
   const onTick = useCallback((time: number) => {
     const current = argsRef.current;
     if (pausedAtBoundaryRef.current) return;
@@ -155,14 +169,14 @@ export function usePlaybackControllerState(args: {
         pausedAtBoundaryRef.current = true;
         stopClock();
         current.positionStore.set(Math.min(time, end - 0.001));
-        current.adapterRef.current?.pause();
+        pauseInside(end);
         return;
       }
     }
 
     current.positionStore.set(time);
     publish(positionAt(time), true);
-  }, [positionAt, publish, seekInternal, stopClock]);
+  }, [pauseInside, positionAt, publish, seekInternal, stopClock]);
 
   const startClock = useCallback(() => {
     stopClock();
@@ -210,9 +224,9 @@ export function usePlaybackControllerState(args: {
     } else if (result.decision.kind === "pause") {
       pausedAtBoundaryRef.current = true;
       current.positionStore.set(Math.min(current.positionStore.get(), end - 0.001));
-      current.adapterRef.current?.pause();
+      pauseInside(end);
     }
-  }, [positionAt, seekInternal, startClock, stopClock]);
+  }, [pauseInside, positionAt, seekInternal, startClock, stopClock]);
 
   const controller = useMemo<PlaybackController>(() => ({
     play,
@@ -231,20 +245,21 @@ export function usePlaybackControllerState(args: {
       if (!line || (options?.play && lockRef.current.play)) return;
       if (!navigateTo(line.startTime, index)) return;
       if (options?.play) argsRef.current.adapterRef.current?.play();
+      else if (options?.play !== false) autoplay();
     },
     previousSentence: () => {
       const current = argsRef.current;
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = previousTarget(current.lines, activeIndex, current.positionStore.get());
       const line = target === null ? undefined : current.lines[target];
-      if (line) navigateTo(line.startTime, target ?? undefined);
+      if (line && navigateTo(line.startTime, target ?? undefined)) autoplay();
     },
     nextSentence: () => {
       const current = argsRef.current;
       const activeIndex = activeRef.current.index ?? locateSentence(current.lines, current.positionStore.get(), current.duration).index;
       const target = nextTarget(current.lines, activeIndex);
       const line = target === null ? undefined : current.lines[target];
-      if (line) navigateTo(line.startTime, target ?? undefined);
+      if (line && navigateTo(line.startTime, target ?? undefined)) autoplay();
     },
     rewind: (seconds) => navigateTo(argsRef.current.positionStore.get() - seconds),
     setRate: (rate) => {
@@ -258,7 +273,7 @@ export function usePlaybackControllerState(args: {
     setLoop,
     loopConfig: () => loopConfigRef.current,
     setLock: (lock) => { lockRef.current = lock; },
-  }), [navigateTo, play, setLoop]);
+  }), [autoplay, navigateTo, play, setLoop]);
 
   const onReady = useCallback(() => controller.setRate(argsRef.current.initialRate), [controller]);
   return { controller, onTick, onStateChange, onReady };

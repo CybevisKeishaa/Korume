@@ -6,9 +6,11 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resolveStartPosition } from "@/lib/shadowing-workspace/resume";
 import { parseSessionResumeRecord, sessionResumeKey } from "@/lib/shadowing-workspace/session-resume-record";
 import { usePathname } from "@/lib/i18n/navigation";
-import { practiceModeFromPath } from "@/lib/shadowing-workspace/learning-modes";
+import { listeningExercise, practiceModeFromPath, practiceStatsMode } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
+import { ListeningDraftsProvider } from "./practice/listening-drafts";
+import { ListeningRevealProvider } from "./practice/listening-reveal-context";
 import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
 import { UnsavedTakeGuard } from "./practice/unsaved-take-guard";
@@ -16,8 +18,8 @@ import { usePracticePlayback } from "./use-practice-playback";
 import { LiveSentence } from "./live-sentence";
 import { PlaybackRoot, usePlayerWiring } from "./playback-root";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
-import { WorkspacePlayer } from "./workspace-player";
-import { tabPreference, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
+import { useListenDock, WorkspacePlayer } from "./workspace-player";
+import { tabPreference, useCurrentSentence, useLesson, usePlaybackController, usePreferences, useSession, WorkspaceProviders } from "./workspace-context";
 import { WorkspaceHeader } from "./workspace-header";
 import { WorkspaceDivider } from "./workspace-divider";
 import { useFullscreen } from "./use-fullscreen";
@@ -94,7 +96,9 @@ export function ShadowingWorkspaceShell({
           <NotesProvider bootstrap={bootstrap}>
             <PronunciationAttemptsProvider>
               <UnsavedTakeGuard>
-                <WorkspaceLayout>{children}</WorkspaceLayout>
+                <CurrentLineReveal>
+                  <WorkspaceLayout>{children}</WorkspaceLayout>
+                </CurrentLineReveal>
               </UnsavedTakeGuard>
             </PronunciationAttemptsProvider>
           </NotesProvider>
@@ -126,8 +130,34 @@ export function workspaceGridRows(level: DrawerLevel | null): CSSProperties {
   return { gridTemplateRows: `auto minmax(0, 1fr) ${height}`, ["--workspace-drawer-height" as string]: height };
 }
 
+/** The listen-only rows: header, the practice column, the docked player (Ruling T1). */
+const DOCK_ROWS: CSSProperties = { gridTemplateRows: "auto minmax(0, 1fr) auto", ["--workspace-drawer-height" as string]: "0px" };
+
+/**
+ * Keys the reveal state by the current line and the URL's exercise (P10, P11); its own component above the layout,
+ * so the layout can read Ẩn video (the layout re-renders with each line change, since it reads this context). Outside Listening the key is `null|null`,
+ * which no Listening frame produces (no current line keys as ""), so every entry into Listening is a key change and
+ * starts concealed, even on the same line and exercise (R28).
+ */
+function CurrentLineReveal({ children }: { children: React.ReactNode }) {
+  const listening = practiceModeFromPath(usePathname()) === "listening";
+  const { exercise } = listeningExercise(useSearchParams().get("format"));
+  const { lines } = useLesson();
+  const { index } = useCurrentSentence();
+  const lineId = index === null ? "" : lines[index]?.id ?? "";
+  // Drafts sit above the reveal key and the picker, so an unfinished answer survives line, exercise and picker changes.
+  return <ListeningDraftsProvider>
+    <ListeningRevealProvider lineId={listening ? lineId : null} exercise={listening ? exercise : null}>{children}</ListeningRevealProvider>
+  </ListeningDraftsProvider>;
+}
+
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const mode = practiceModeFromPath(usePathname());
+  // P10: the URL is the one source of the Listening exercise; the strip reads that exercise's stats, the picker none.
+  const statsMode = practiceStatsMode(mode, listeningExercise(useSearchParams().get("format")).exercise);
+  const listening = mode === "listening";
+  // Ẩn video docks the player under a full-width practice column; the split ratio is kept for when it goes off.
+  const dock = useListenDock();
   const { video } = useLesson();
   usePracticePlayback(mode);
   const t = useTranslations("shadowing");
@@ -139,7 +169,9 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     controller.setLock({ navigation: hasUnsaved(attempts), play: Object.values(attempts).some((attempt) => attempt.phase === "recording") });
   }, [attempts, controller]);
   useEffect(() => () => controller.setLock({ navigation: false, play: false }), [controller]);
-  const { toggleLoop } = usePlayerWiring();
+  const { toggleLoop: toggleSessionLoop } = usePlayerWiring();
+  // Practice never loops (spec 2026-10-31 D3): `L` does nothing there; Shadowing's pill keeps it.
+  const toggleLoop = useMemo(() => mode === "shadowing" ? toggleSessionLoop : () => undefined, [mode, toggleSessionLoop]);
   const drawer = useDrawer();
   const rootRef = useRef<HTMLDivElement>(null);
   const headerRef = useRef<HTMLDivElement>(null);
@@ -149,11 +181,12 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   const { requestFullscreen, supported: fullscreenSupported } = useFullscreen(rootRef, playerRef, setFullscreen);
   const focusFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("workspace", trigger), [requestFullscreen]);
   const playerFullscreen = useCallback((trigger: HTMLElement) => requestFullscreen("player", trigger), [requestFullscreen]);
-  // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all.
+  // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all. Listening hides it
+  // like the drawer, because both can quote the sentence (spec §3.2).
   const korumeEnabled = preferences.companionEnabled;
   const korume = useKorumeOverlay(rootRef);
   const mascotRef = useRef<HTMLDivElement>(null);
-  const korumeVisible = korumeEnabled && session.view !== "focus" && session.fullscreen === "none";
+  const korumeVisible = korumeEnabled && !listening && session.view !== "focus" && session.fullscreen === "none";
   const openKorume = korume.openSheet;
   const closeKorume = korume.close;
   const returnFocusToMascot = useCallback(() => mascotRef.current?.querySelector<HTMLElement>("button")?.focus(), []);
@@ -163,7 +196,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
     ...(korumeVisible ? { askKorume: openKorume } : {}),
   }), [controller, dispatch, korumeVisible, openKorume, toggleLoop]);
   useWorkspaceShortcuts(shortcuts);
-  const drawerShown = session.view !== "focus";
+  const drawerShown = session.view !== "focus" && !listening;
   const drawerOpen = drawerShown && drawer.state.level !== "collapsed";
   const drawerDispatch = drawer.dispatch;
 
@@ -183,14 +216,16 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
 
   const normal = session.view === "normal";
   const fullTranscript = session.view === "full-transcript";
+  const split = normal && !dock;
+  const pip = fullTranscript && !dock;
   return (
-    <PracticeStatsProvider videoId={video.id} mode={mode}>
+    <PracticeStatsProvider videoId={video.id} mode={statsMode}>
     <div
       ref={rootRef}
-      className={normal ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
+      className={split ? "relative isolate grid h-dvh overflow-hidden" : "relative isolate grid h-dvh overflow-hidden grid-cols-1"}
       style={{
-        ...(normal ? { gridTemplateColumns: workspaceGridTemplateColumns(session.splitRatio) } : {}),
-        ...workspaceGridRows(drawerShown ? drawer.state.level : null),
+        ...(split ? { gridTemplateColumns: workspaceGridTemplateColumns(session.splitRatio) } : {}),
+        ...(dock ? DOCK_ROWS : workspaceGridRows(drawerShown ? drawer.state.level : null)),
       }}
       data-testid="shadowing-workspace"
       // Reading Settings and Study Environment (spec §6): globals.css maps these to the --reading-* and
@@ -204,7 +239,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       data-atmosphere={preferences.studyAtmosphere}
     >
       <AtmosphereLayer atmosphere={preferences.studyAtmosphere} reduceMotion={preferences.reduceMotion} />
-      <div ref={headerRef} className={normal ? "col-span-3" : "col-span-1"} data-testid="workspace-header-slot">
+      <div ref={headerRef} className={split ? "col-span-3" : "col-span-1"} data-testid="workspace-header-slot">
         <WorkspaceHeader
           beforeFocus={<StudyEnvironmentPopover />}
           afterFocus={(
@@ -216,14 +251,16 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
           )}
         />
       </div>
-      <div ref={paneRef} id="workspace-player-pane" data-pip={fullTranscript ? "" : undefined} className={fullTranscript ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
-        {fullTranscript && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
+      {/* In listen-only the pane is the grid's last row, in flow under the practice column (never over it). */}
+      <div ref={paneRef} id="workspace-player-pane" data-pip={pip ? "" : undefined} className={dock ? "row-start-3 min-w-0 px-md pb-md" : pip ? "group/pip fixed bottom-md right-md z-10 touch-none w-[min(calc(100%-var(--space-2xl)),var(--workspace-pip-width))]" : session.view === "focus" ? "mx-auto flex w-full max-w-[--workspace-focus-max] min-w-0 flex-col gap-md p-md" : "flex min-h-0 min-w-0 flex-col gap-md overflow-hidden p-md"} data-testid="workspace-player-slot">
+        {pip && <PipDragHandle paneRef={paneRef} label={t("workspace.pipMove")} />}
         <WorkspacePlayer ref={playerRef} onFullscreen={playerFullscreen} fullscreenAvailable={fullscreenSupported} />
-        {!fullTranscript && (mode === "shadowing" ? <LiveSentence /> : <LessonStatStrip mode={mode} />)}
+        {/* Listening never shows the live sentence (it is the answer); the picker and the dock have no strip either. */}
+        {!fullTranscript && !dock && (statsMode !== null ? <LessonStatStrip mode={statsMode} /> : !listening && <LiveSentence />)}
       </div>
-      {normal && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
+      {split && <WorkspaceDivider ratio={session.splitRatio} onChange={(ratio) => dispatch({ type: "set-split", ratio })} workspaceRef={rootRef} ariaLabel={t("workspace.divider")} controls="workspace-player-pane" />}
       {session.view !== "focus" && (
-        <div className={fullTranscript ? "relative col-span-1 row-start-2 min-h-0 min-w-0 p-md" : "relative min-h-0 min-w-0"}>
+        <div className={fullTranscript ? "relative col-span-1 row-start-2 min-h-0 min-w-0 p-md" : dock ? "relative row-start-2 min-h-0 min-w-0" : "relative min-h-0 min-w-0"}>
           {children}
           {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} onOpen={openKorume} onPress={korume.rememberSelection} />}
         </div>

@@ -69,7 +69,17 @@ const SCANNED_DIRS = [
   // Summary Task 12: + lesson-header-frame (the header frame shared with the Summary page).
   // Practice-pronunciation Task 11: + practice/unsaved-take-guard.
   // Practice-pronunciation owner round 2026-10-19: + practice/take-player, practice/pronunciation-analysis.
-  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 60 },
+  // Practice-listening Task 5: + practice/listen-cover, practice/listening-reveal-context.
+  // Practice-listening Task 6: + practice/listening-mode-body, practice/use-listening-attempt, practice/word-bank-panel, practice/listening-feedback.
+  // Practice-listening Task 7: + practice/typing-panel, practice/listening-format-switch.
+  // Practice-listening Task 7b: + practice/listening-feedback-korume.
+  // Practice-listening Task 9c: + practice/practice-glyph, practice/listening-puzzle.
+  // Listening two exercises Task 9: - practice/listen-cover, practice/listening-format-switch; + practice/listening-picker,
+  // practice/listening-toolbar, practice/listening-shortcuts, practice/replay-row.
+  // Listening two exercises Task 10: + practice/star-mask.
+  // Listening two exercises Task 11: + practice/cloze-panel, practice/use-line-cloze.
+  // Listening two exercises Task 14: + practice/listening-drafts.
+  { dir: "components/shadowing-workspace", rules: FORBIDDEN, sources: 78 },
   // app-footer Task 4: + app-footer-icon, back-to-top, footer-newsletter, app-footer.
   // app-chrome-refresh: + use-nav-summary (Task 4), nav-icons (Task 6), account-menu (Task 7), nav-tooltip (Task 8).
   { dir: "components/layout", rules: FORBIDDEN, sources: 17 },
@@ -84,8 +94,8 @@ const SCANNED_DIRS = [
   { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/summary", rules: FORBIDDEN, sources: 1 },
   { dir: "app/[locale]/(protected)/(app)/shadowing", rules: FORBIDDEN, sources: 2 },
   { dir: "app/[locale]/(protected)/(app)/pronunciation", rules: FORBIDDEN, sources: 4 },
-  // Task 4b: the workspace route group only; dictation stays outside this scope.
-  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 3 },
+  // Task 4b: the workspace route group only; B2 Task 9 adds listening/page.tsx (the dictation page is gone).
+  { dir: "app/[locale]/(protected)/(focus)/shadowing/[id]/(workspace)", rules: FORBIDDEN, sources: 4 },
   // The Shadowing Hub renders into this tree and the first pass missed it:
   // hub-import-section imports VideoImportForm, and both it and
   // hub-library-section import LessonCreationProgress. A calibration screen

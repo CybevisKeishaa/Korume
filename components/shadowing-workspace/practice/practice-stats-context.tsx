@@ -2,17 +2,21 @@
 
 import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import type { PracticeStats } from "@/lib/data/practice-stats";
-import type { PracticeModeId } from "@/lib/shadowing-workspace/learning-modes";
+import type { PracticeStatsMode } from "@/lib/shadowing-workspace/learning-modes";
 
 interface PracticeStatsValue { stats: PracticeStats | null; refresh(): void }
 const PracticeStatsContext = createContext<PracticeStatsValue | null>(null);
 
-export function PracticeStatsProvider({ videoId, mode, children }: { videoId: string; mode: PracticeModeId; children: ReactNode }) {
-  const [result, setResult] = useState<{ videoId: string; mode: PracticeModeId; stats: PracticeStats | null } | null>(null);
+export function PracticeStatsProvider({ videoId, mode, children }: { videoId: string; mode: PracticeStatsMode | null; children: ReactNode }) {
+  const [result, setResult] = useState<{ videoId: string; mode: PracticeStatsMode; stats: PracticeStats | null } | null>(null);
   const pending = useRef<AbortController | null>(null);
+  const live = useRef("");
   const refresh = useCallback(() => {
+    // A refresh captured before the strip switched exercise (a late attempt response) must not abort or overwrite
+    // the strip's current read.
+    if (live.current !== `${videoId}|${mode}`) return;
     pending.current?.abort();
-    if (mode !== "pronunciation") return;
+    if (mode === null) return;
     const request = new AbortController();
     pending.current = request;
     void (async () => {
@@ -28,12 +32,13 @@ export function PracticeStatsProvider({ videoId, mode, children }: { videoId: st
   }, [mode, videoId]);
 
   useEffect(() => {
+    live.current = `${videoId}|${mode}`;
     setResult(null);
     refresh();
     return () => pending.current?.abort();
-  }, [refresh]);
+  }, [mode, refresh, videoId]);
 
-  const stats = mode === "pronunciation" && result?.videoId === videoId && result.mode === mode ? result.stats : null;
+  const stats = result?.videoId === videoId && result.mode === mode ? result.stats : null;
   return <PracticeStatsContext.Provider value={{ stats, refresh }}>{children}</PracticeStatsContext.Provider>;
 }
 

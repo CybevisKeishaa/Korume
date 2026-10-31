@@ -6,6 +6,9 @@ import { cn } from "@/lib/utils";
 export interface SegmentedOption<T extends string> {
   value: T;
   label: string;
+  /** Unavailable on its own; `title` says why (it is the button's accessible description). */
+  disabled?: boolean;
+  title?: string;
 }
 
 /**
@@ -33,9 +36,10 @@ export function SegmentedControl<T extends string>({
   const refs = useRef<(HTMLButtonElement | null)[]>([]);
 
   const move = (from: number, step: number) => {
-    const to = (from + step + options.length) % options.length;
+    let to = (from + step + options.length) % options.length;
+    while (options[to]?.disabled && to !== from) to = (to + step + options.length) % options.length;
     const option = options[to];
-    if (!option) return;
+    if (!option || to === from) return;
     // Focus as well as select: the parent owns `value`, so a controlled
     // re-render is not guaranteed to move focus for us, and without this the
     // next arrow key would start from the old option.
@@ -77,7 +81,8 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={selected}
             tabIndex={selected ? 0 : -1}
-            disabled={disabled}
+            disabled={disabled || option.disabled}
+            title={option.title}
             onClick={() => onValueChange(option.value)}
             onKeyDown={(event) => onKeyDown(event, index)}
             className={cn(

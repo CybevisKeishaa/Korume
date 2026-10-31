@@ -46,8 +46,9 @@ begin
   if (e->>'hasTranscript')::boolean is not true then raise exception 'FAIL 1: hasTranscript is %', e->'hasTranscript'; end if;
   if (e->>'lineCount')::int <> 2 then raise exception 'FAIL 1: lineCount % (whitespace line must not count)', e->'lineCount'; end if;
   if (e->>'reachedLine')::int is distinct from 0 then raise exception 'FAIL 1: reachedLine %', e->'reachedLine'; end if;
-  if jsonb_typeof(e->'pronunciationMean') <> 'null' or jsonb_typeof(e->'dictationMean') <> 'null' then
-    raise exception 'FAIL 1: means must be null, got % / %', e->'pronunciationMean', e->'dictationMean';
+  if jsonb_typeof(e->'pronunciationMean') <> 'null' or e->'dictation' is distinct from '{"mean":null,"done":0,"selfDone":0}'::jsonb
+     or e->'cloze' is distinct from '{"mean":null,"done":0,"selfDone":0}'::jsonb then
+    raise exception 'FAIL 1: means must be null, got % / % / %', e->'pronunciationMean', e->'dictation', e->'cloze';
   end if;
   if (e->'cards'->>'total')::int <> 0 or e->'lines' <> '[]'::jsonb or e->'saved' <> '[]'::jsonb then
     raise exception 'FAIL 1: expected no cards, lines or saved, got %', e;
@@ -61,8 +62,8 @@ insert into shadowing_sessions (user_id, transcript_line_id, pronunciation_score
   (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d1', 55.5, 40, now() - interval '2 hours'),
   (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d1', 60.0, 45, now() - interval '1 hour'),
   (:'uid_b', '5ca1ab1e-0000-4000-8000-0000000000d1', 99.0, 99, now());
-insert into dictation_attempts (user_id, transcript_line_id, accuracy_score, user_input) values
-  (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d2', 70, 'ちゅうもんをおねがいします');
+insert into dictation_attempts (user_id, transcript_line_id, accuracy_score, user_input, format, status) values
+  (:'uid_a', '5ca1ab1e-0000-4000-8000-0000000000d2', 70, 'ちゅうもんをおねがいします', 'typing', 'submitted');
 begin;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'uid_a', 'role', 'authenticated')::text, true) \g /dev/null
@@ -78,9 +79,13 @@ begin
   if (l->>'pronunciation')::numeric <> 60.0 or (l->>'pitch')::numeric <> 45 then
     raise exception 'FAIL 3: line 1 must carry the LATEST session (60 / 45), got %', l;
   end if;
+  if l->'listening' is distinct from '[]'::jsonb then
+    raise exception 'FAIL 3: pronunciation-only line 1 must carry listening [], got %', l->'listening';
+  end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '5ca1ab1e-0000-4000-8000-0000000000d2';
-  if (l->>'dictation')::numeric <> 70 or l->>'dictationInput' <> 'ちゅうもんをおねがいします' then
-    raise exception 'FAIL 3: line 2 dictation evidence wrong: %', l;
+  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもんをおねがいします","helped":false}]'::jsonb
+     or e->'dictation' is distinct from '{"mean":70,"done":1,"selfDone":1}'::jsonb or (e->'cloze'->>'done')::int <> 0 then
+    raise exception 'FAIL 3: line 2 listening evidence wrong: % (dictation %, cloze %)', l, e->'dictation', e->'cloze';
   end if;
   raise notice 'PASS 3 latest-scored mean and latest-per-line scores';
 end $$;

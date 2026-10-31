@@ -17,7 +17,11 @@ export type MascotPoseName =
   // The Companion's own art, by CompanionPose (companion-sprite.tsx).
   | "companion-sitting"
   | "companion-standing"
-  | "companion-reading";
+  | "companion-reading"
+  // Listening's Korume beside the feedback, by P15 mood (listening-feedback-korume.tsx).
+  | "listening-joy"
+  | "listening-encourage"
+  | "listening-review";
 
 export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number; height: number }> = {
   login: { file: "bye.png", width: 572, height: 436 },
@@ -40,4 +44,8 @@ export const MASCOT_POSES: Record<MascotPoseName, { file: string; width: number;
   "companion-sitting": { file: "happy.png", width: 408, height: 376 },
   "companion-standing": { file: "neutral.png", width: 436, height: 381 },
   "companion-reading": { file: "reading-on-the-orb.png", width: 412, height: 454 },
+  // P15: no existing pose reads as "encouraging", so the owner's neutral fallback stands until the Chrome look.
+  "listening-joy": { file: "happy.png", width: 408, height: 376 },
+  "listening-encourage": { file: "neutral.png", width: 436, height: 381 },
+  "listening-review": { file: "thinking.png", width: 427, height: 406 },
 };

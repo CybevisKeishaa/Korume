@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod/v4";
 import { answerToPlainText, answerV1Schema, dropUngroundedCards, groundingSchema, type AnswerV1, type Block } from "./answer";
 import type { GroundedEntity } from "./types";
 
@@ -24,6 +25,25 @@ describe("answerV1Schema", () => {
       { blocks: [{ ...para, extra: 1 }] },
       { blocks: [{ type: "paragraph", runs: [{ text: "x", html: "<i>" }] }] },
     ]) expect(answerV1Schema.safeParse(bad).success, JSON.stringify(bad).slice(0, 60)).toBe(false);
+  });
+
+  it("drops a block of an invented type instead of failing the whole answer (Gemini, live 2026-10-31)", () => {
+    const parsed = answerV1Schema.safeParse({ blocks: [para, { type: "heading", text: "Cấu trúc" }, { type: "list", items: ["a"] }, para] });
+    expect(parsed.success && parsed.data.blocks).toEqual([para, para]);
+  });
+
+  it("drops an over-bound block (a 41-char chip, Gemini live 2026-10-31) and keeps the rest", () => {
+    const parsed = answerV1Schema.safeParse({ blocks: [para, { type: "followups", chips: ["ok", "x".repeat(41)] }] });
+    expect(parsed.success && parsed.data.blocks).toEqual([para]);
+  });
+
+  it("fails when no block survives", () => {
+    expect(answerV1Schema.safeParse({ blocks: [{ type: "heading" }, { ...para, extra: 1 }] }).success).toBe(false);
+  });
+
+  it("still sends Gemini the full block schema", () => {
+    const json = JSON.stringify(z.toJSONSchema(answerV1Schema));
+    for (const type of ["paragraph", "example", "context_card", "followups"]) expect(json).toContain(`"${type}"`);
   });
 });
 

@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { completedModes, LEARNING_MODES, shouldRenderModeNav, practiceModeFromPath } from "./learning-modes";
+import { completedModes, dictationFormat, LEARNING_MODES, listeningExercise, practiceModeFromPath, practiceStatsMode, shouldRenderModeNav } from "./learning-modes";
 
 describe("learning modes", () => {
-  it("Shadowing, Pronunciation and Summary are complete; the bar renders (practice modes D24)", () => {
-    expect(completedModes().map(({ id }) => id)).toEqual(["shadowing", "pronunciation", "summary"]);
+  it("all four modes are complete; the bar renders (practice modes D24)", () => {
+    expect(completedModes().map(({ id }) => id)).toEqual(["shadowing", "pronunciation", "listening", "summary"]);
     expect(shouldRenderModeNav()).toBe(true);
   });
 
@@ -26,5 +26,33 @@ describe("practiceModeFromPath", () => {
     ["/other", "shadowing"],
   ])("%s resolves to %s", (path, expected) => {
     expect(practiceModeFromPath(path)).toBe(expected);
+  });
+});
+
+describe("listeningExercise / dictationFormat / practiceStatsMode (spec §3.0)", () => {
+  it.each([
+    ["dictation", { exercise: "dictation", easyFromLegacy: false, legacy: false }],
+    ["cloze", { exercise: "cloze", easyFromLegacy: false, legacy: false }],
+    ["typing", { exercise: "dictation", easyFromLegacy: false, legacy: true }],
+    ["word_bank", { exercise: "dictation", easyFromLegacy: true, legacy: true }],
+    ["foo", { exercise: null, easyFromLegacy: false, legacy: false }],
+    ["", { exercise: null, easyFromLegacy: false, legacy: false }],
+    [null, { exercise: null, easyFromLegacy: false, legacy: false }],
+  ] as const)("format param %j reads as %j", (param, expected) => {
+    expect(listeningExercise(param)).toEqual(expected);
+  });
+
+  it("Chép chính tả writes typing, or word_bank in Chế độ dễ", () => {
+    expect(dictationFormat(false)).toBe("typing");
+    expect(dictationFormat(true)).toBe("word_bank");
+  });
+
+  it("maps a practice mode and the exercise to the stats mode; Shadowing and a Listening without exercise have none", () => {
+    expect(practiceStatsMode("listening", "dictation")).toBe("dictation");
+    expect(practiceStatsMode("listening", "cloze")).toBe("cloze");
+    expect(practiceStatsMode("listening", null)).toBeNull();
+    expect(practiceStatsMode("pronunciation", "cloze")).toBe("pronunciation");
+    expect(practiceStatsMode("pronunciation", null)).toBe("pronunciation");
+    expect(practiceStatsMode("shadowing", "dictation")).toBeNull();
   });
 });

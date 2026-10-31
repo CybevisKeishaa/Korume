@@ -20,6 +20,9 @@ describe("MASCOT_POSES", () => {
       "edit-footer",
       "forgot-password",
       "korumeship",
+      "listening-encourage",
+      "listening-joy",
+      "listening-review",
       "login",
       "not-found",
       "register",
@@ -45,6 +48,9 @@ describe("MASCOT_POSES", () => {
       "companion-sitting": "happy.png",
       "companion-standing": "neutral.png",
       "companion-reading": "reading-on-the-orb.png",
+      "listening-joy": "happy.png",
+      "listening-encourage": "neutral.png",
+      "listening-review": "thinking.png",
     });
   });
 

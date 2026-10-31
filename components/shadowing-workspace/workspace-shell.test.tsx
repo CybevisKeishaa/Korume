@@ -6,12 +6,17 @@ import { installYouTubeStub, YT_PLAYER_STATE, type YouTubeStubHandle } from "@/t
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
-import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences } from "./workspace-context";
+import { resetTabWritesForTests, usePlaybackController, usePositionStore, usePreferences, useSession } from "./workspace-context";
 import { ShadowingWorkspaceShell, workspaceGridTemplateColumns } from "./workspace-shell";
 import { TranscriptPanel } from "./transcript-panel";
 import { usePracticeStats } from "./practice/practice-stats-context";
 import { usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
+import { useListeningReveal } from "./practice/listening-reveal-context";
 const presence = vi.hoisted(() => vi.fn());
+function required<T>(value: T | null | undefined): T {
+  if (value === null || value === undefined) throw new Error("expected a value");
+  return value;
+}
 vi.mock("@/components/study-time/use-study-presence", () => ({ useStudyPresence: presence }));
 
 const router = { refresh: vi.fn() };
@@ -93,7 +98,9 @@ describe("ShadowingWorkspaceShell", () => {
     const player = yt.players[0];
     expect(screen.getByRole("region", { name: "Live sentence" })).toBeInTheDocument();
     for (const mode of ["pronunciation", "listening"]) {
+      // Listening has its strip once an exercise is chosen (the picker has none).
       pathname = `/en/shadowing/video-1/${mode}`;
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
       view.rerender(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
       expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
       expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
@@ -263,11 +270,13 @@ describe("ShadowingWorkspaceShell", () => {
     expect(yt.players).toHaveLength(1);
     expect(yt.players[0]).toBe(player);
     expect(observedController).toBe(controller);
+    // Entering Listening, then Pronunciation, each played the current sentence once (spec 2026-10-31 D5).
+    expect(play).toHaveBeenCalledTimes(2);
     const seek = vi.spyOn(player, "seekTo");
     act(() => controller.nextSentence());
     expect(seek).not.toHaveBeenCalled();
     act(() => controller.play());
-    expect(play).toHaveBeenCalledOnce();
+    expect(play).toHaveBeenCalledTimes(3);
     act(() => dispatchAttempt({ type: "saved", lineId: "L1", sessionId: "S1", signedUrl: "u" }));
     act(() => controller.nextSentence());
     expect(seek).toHaveBeenLastCalledWith(3, true);
@@ -318,6 +327,21 @@ describe("ShadowingWorkspaceShell", () => {
     expect(player?.getPlayerState()).toBe(1);
     fireEvent.keyDown(screen.getByTestId("shadowing-workspace"), { key: " " });
     expect(player?.getPlayerState()).toBe(2);
+  });
+
+  it.each(["/en/shadowing/video-1/listening", "/en/shadowing/video-1/pronunciation"])("practice has no loop: no Sentence pill, no Loop button, and L does nothing at %s (spec 2026-10-31 D3)", async (path) => {
+    pathname = path;
+    searchParams = new URLSearchParams("line=line-1&format=dictation");
+    render(<ShadowingWorkspaceShell bootstrap={bootstrap}><StoreProbe /></ShadowingWorkspaceShell>);
+    await waitFor(() => expect(yt.players).toHaveLength(1));
+    // Positive control: the player bar really rendered its other controls.
+    expect(screen.getByRole("button", { name: "Hide subtitles" })).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Sentence loop" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Loop" })).toBeNull();
+    const before = observedController?.loopConfig();
+    fireEvent.keyDown(document.body, { key: "l" });
+    expect(observedController?.loopConfig()).toEqual(before);
+    expect(observedController?.loopConfig().enabled).toBe(false);
   });
 
   it("lets the overflow popover consume Escape in focus view instead of also exiting the view", async () => {
@@ -461,5 +485,156 @@ describe("ShadowingWorkspaceShell", () => {
       if (originalEnabled) Object.defineProperty(document, "fullscreenEnabled", originalEnabled);
       else delete (document as { fullscreenEnabled?: boolean }).fullscreenEnabled;
     }
+  });
+
+  describe("Listening (spec §3.2, §5.8, §5.9)", () => {
+    const lesson: WorkspaceBootstrap = { ...bootstrap, transcript: { id: "t", lines: [
+      { id: "line-1", index: 0, startTime: 12, endTime: 15, textJp: "一つ目", textTranslation: null, furigana: null },
+      { id: "line-2", index: 1, startTime: 15, endTime: 18, textJp: "二つ目", textTranslation: null, furigana: null },
+    ] } };
+    let reveal: ReturnType<typeof useListeningReveal> | undefined;
+    function RevealProbe() { reveal = useListeningReveal(); return <StoreProbe />; }
+    const shell = (value = lesson) => <ShadowingWorkspaceShell bootstrap={value}><RevealProbe /></ShadowingWorkspaceShell>;
+    /** The server render runs no effect, so it is the first frame exactly as React commits it (B1's first-frame test). */
+    function firstFrame(path: string): HTMLElement {
+      pathname = path;
+      const host = document.createElement("div");
+      host.innerHTML = renderToString(<TestIntlProvider>{shell()}</TestIntlProvider>);
+      // Positive control: the workspace and its player really rendered, so an absence below means something.
+      expect(host.querySelector("[data-testid='workspace-player-surface']")).not.toBeNull();
+      return host;
+    }
+    const hideSubtitles = (host: HTMLElement) => [...host.querySelectorAll("button")].find((button) => button.getAttribute("aria-label") === "Hide subtitles");
+
+    it("renders no subtitle, drawer or Korume in the first render, with CC still on and the video shown (spec §3.2)", () => {
+      const host = firstFrame("/en/shadowing/video-1/listening");
+      expect(host.querySelector("[data-testid='workspace-subtitle']")).toBeNull();
+      expect(host.querySelector("[data-testid='workspace-drawer-slot']")).toBeNull();
+      expect(host.querySelector("[data-testid='korume-mascot']")).toBeNull();
+      expect(host.querySelector("[data-listen-dock]")).toBeNull();
+      expect(hideSubtitles(host)).toHaveAttribute("aria-pressed", "true");
+    });
+
+    it.each(["/en/shadowing/video-1", "/en/shadowing/video-1/pronunciation"])("still shows the subtitle, drawer and Korume at %s", (path) => {
+      const host = firstFrame(path);
+      expect(host.querySelector("[data-testid='workspace-subtitle']")).toHaveTextContent("一つ目");
+      expect(host.querySelector("[data-testid='workspace-drawer-slot']")).not.toBeNull();
+      expect(host.querySelector("[data-testid='korume-mascot']")).not.toBeNull();
+    });
+
+    it("shows the subtitle only for the current line's checked attempt, and drops it on a line change", async () => {
+      pathname = "/en/shadowing/video-1/listening";
+      render(shell());
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      expect(screen.getByRole("button", { name: "Hide subtitles" })).toHaveAttribute("aria-pressed", "true");
+      expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+      expect(screen.queryByTestId("korume-mascot")).toBeNull();
+      expect(screen.queryByTestId("workspace-drawer-slot")).toBeNull();
+      act(() => reveal?.markChecked(reveal.attempt));
+      expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent("一つ目");
+      act(() => observedStore?.set(16));
+      expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+    });
+
+    it("conceals the answer again on re-entering Listening on the same line and exercise (R28)", async () => {
+      const frames: boolean[] = [];
+      /** Records every render, so the first frame of re-entry is checked, not only the settled one. */
+      function FrameProbe() {
+        reveal = useListeningReveal();
+        frames.push(reveal.answerVisible);
+        return <StoreProbe />;
+      }
+      const tree = () => <ShadowingWorkspaceShell bootstrap={lesson}><FrameProbe /></ShadowingWorkspaceShell>;
+      pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
+      const view = render(tree());
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      const current = required(reveal);
+      act(() => current.markChecked(current.attempt));
+      // Positive control: the answer really was shown before leaving.
+      expect(screen.getByTestId("workspace-subtitle")).toHaveTextContent("一つ目");
+      pathname = "/en/shadowing/video-1/pronunciation";
+      view.rerender(tree());
+      pathname = "/en/shadowing/video-1/listening";
+      const from = frames.length;
+      view.rerender(tree());
+      const reentry = frames.slice(from);
+      expect(reentry.length).toBeGreaterThan(0);
+      expect(reentry).toEqual(reentry.map(() => false));
+      expect(screen.queryByTestId("workspace-subtitle")).toBeNull();
+    });
+
+    it("docks the player only in Listening: Ẩn video is kept across modes, and other modes keep the split", async () => {
+      pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
+      const view = render(shell());
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      act(() => required(reveal).setListenOnly(true));
+      expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+      expect(screen.queryByRole("separator", { name: "Resize workspace panes" })).toBeNull();
+      pathname = "/en/shadowing/video-1";
+      view.rerender(shell());
+      expect(document.querySelector("[data-listen-dock]")).toBeNull();
+      expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toBeInTheDocument();
+      pathname = "/en/shadowing/video-1/listening";
+      view.rerender(shell());
+      expect(document.querySelector("[data-listen-dock]")).not.toBeNull();
+      expect(yt.players).toHaveLength(1);
+    });
+
+    it("turning Ẩn video off restores the split ratio; the dock is the workspace's last row, in flow", async () => {
+      let dispatch: ReturnType<typeof useSession>[1] | undefined;
+      function SplitProbe() { [, dispatch] = useSession(); return <RevealProbe />; }
+      pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=dictation");
+      render(<ShadowingWorkspaceShell bootstrap={lesson}><SplitProbe /></ShadowingWorkspaceShell>);
+      await waitFor(() => expect(yt.players).toHaveLength(1));
+      act(() => required(dispatch)({ type: "set-split", ratio: 0.3 }));
+      const workspace = screen.getByTestId("shadowing-workspace");
+      expect(workspace.style.gridTemplateColumns).toBe(workspaceGridTemplateColumns(0.3));
+      act(() => required(reveal).setListenOnly(true));
+      // The practice column takes the full width; the pane is the last grid row, never fixed over the panel.
+      expect(workspace.style.gridTemplateColumns).toBe("");
+      expect(workspace).toHaveClass("grid-cols-1");
+      expect(workspace.style.gridTemplateRows).toBe("auto minmax(0, 1fr) auto");
+      const pane = screen.getByTestId("workspace-player-slot");
+      expect(pane).toHaveClass("row-start-3");
+      expect(pane.className).not.toMatch(/(^|\s)(fixed|absolute|sticky)(\s|$)/);
+      expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
+      act(() => required(reveal).setListenOnly(false));
+      expect(workspace.style.gridTemplateColumns).toBe(workspaceGridTemplateColumns(0.3));
+      expect(screen.getByRole("separator", { name: "Resize workspace panes" })).toHaveAttribute("aria-valuenow", "30");
+      expect(screen.getByTestId("lesson-stat-strip")).toBeInTheDocument();
+    });
+
+    it("the strip reads the stats of the URL's exercise; the picker has no strip and reads none (T7-a)", async () => {
+      const fetchMock = vi.fn().mockImplementation((url: string) => Promise.resolve(url.includes("practice-stats")
+        ? Response.json({ data: { lineCount: 2, scoredLines: 1, mean: url.endsWith("dictation") ? 72 : 91, lines: {} } })
+        : new Response(null, { status: 200 })));
+      vi.stubGlobal("fetch", fetchMock);
+      const statsCalls = () => fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("practice-stats"));
+      const scored = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='completed']"));
+      const average = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='accuracy']"));
+      pathname = "/en/shadowing/video-1/listening";
+      searchParams = new URLSearchParams("line=line-1&format=typing");
+      const view = render(shell());
+      // A legacy `typing` link reads Chép chính tả's stats.
+      expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
+      await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("72%"));
+      expect(within(scored()).getByRole("definition")).toHaveTextContent("1/2");
+      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation"]);
+      searchParams = new URLSearchParams("line=line-1&format=cloze");
+      view.rerender(shell());
+      expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "cloze");
+      await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("91%"));
+      expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation", "/api/shadowing/video-1/practice-stats?mode=cloze"]);
+      for (const query of ["line=line-1", "line=line-1&format=nope"]) {
+        searchParams = new URLSearchParams(query);
+        view.rerender(shell());
+        expect(screen.queryByTestId("lesson-stat-strip")).toBeNull();
+        expect(screen.queryByRole("region", { name: "Live sentence" })).not.toBeInTheDocument();
+      }
+      expect(statsCalls()).toHaveLength(2);
+    });
   });
 });

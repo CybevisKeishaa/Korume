@@ -19,6 +19,8 @@ function buildAssessmentHeader(params: AssessPronunciationParams): string {
     ReferenceText: params.referenceText,
     GradingSystem: "HundredMark",
     Granularity: params.granularity ?? "Word",
+    // Default is "Basic" = AccuracyScore only; Fluency/Completeness/PronScore need this.
+    Dimension: "Comprehensive",
     EnableMiscue: params.enableMiscue ?? true,
   };
   return Buffer.from(JSON.stringify(config), "utf-8").toString("base64");
@@ -35,8 +37,10 @@ export async function assessPronunciation(
   const json = await postRecognition(params.audio, buildAssessmentHeader(params));
 
   const best = json.NBest?.[0];
-  const assessment = best?.PronunciationAssessment;
-  if (json.RecognitionStatus !== "Success" || !best || !assessment) {
+  // REST returns the scores flat on NBest[0]; the SDK shape nests them.
+  const s = best?.PronunciationAssessment ?? best;
+  const scores = s && [s.PronScore, s.FluencyScore, s.AccuracyScore, s.CompletenessScore];
+  if (json.RecognitionStatus !== "Success" || !best || !scores?.every((n) => typeof n === "number")) {
     throw new SpeechRecognitionError(
       `Pronunciation assessment produced no usable result (status: ${json.RecognitionStatus}).`,
       json.RecognitionStatus,
@@ -45,16 +49,18 @@ export async function assessPronunciation(
 
   const words: WordPronunciationScore[] = (best.Words ?? []).map((w) => ({
     word: w.Word,
-    accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? 0,
-    errorType: w.PronunciationAssessment?.ErrorType ?? "None",
+    accuracyScore: w.PronunciationAssessment?.AccuracyScore ?? w.AccuracyScore ?? 0,
+    errorType: w.PronunciationAssessment?.ErrorType ?? w.ErrorType ?? "None",
   }));
 
+  // Every entry was checked to be a number above.
+  const [pronunciationScore, fluencyScore, accuracyScore, completenessScore] = scores as [number, number, number, number];
   return {
     recognizedText: json.DisplayText ?? best.Display ?? "",
-    pronunciationScore: assessment.PronScore,
-    fluencyScore: assessment.FluencyScore,
-    accuracyScore: assessment.AccuracyScore,
-    completenessScore: assessment.CompletenessScore,
+    pronunciationScore,
+    fluencyScore,
+    accuracyScore,
+    completenessScore,
     words,
   };
 }

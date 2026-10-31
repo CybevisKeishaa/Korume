@@ -28,7 +28,7 @@ const loadedSummary = (reviewTargets: LoadedSummary["snapshot"]["reviewTargets"]
     status: {
       shadowing: { kind: "not_started" },
       pronunciation: { kind: "not_started" },
-      listening: { kind: "not_started" },
+      listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" },
       retention: { kind: "not_enough_data" },
     },
     savedKnowledge: { vocabulary: 0, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },

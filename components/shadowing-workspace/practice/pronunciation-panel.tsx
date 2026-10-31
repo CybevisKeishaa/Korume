@@ -12,6 +12,7 @@ import { NextGlyph, PreviousGlyph, ReplayGlyph } from "../player-glyphs";
 import { useLesson, useMarks, usePlaybackController } from "../workspace-context";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { ScoredSentence } from "./scored-sentence";
+import { PracticeGlyph } from "./practice-glyph";
 import { PronunciationAnalysis } from "./pronunciation-analysis";
 import { TakePlayer } from "./take-player";
 import type { usePronunciationCapture } from "./use-pronunciation-capture";
@@ -19,11 +20,6 @@ import type { usePronunciationSessions } from "./use-pronunciation-sessions";
 
 const ACTION = "inline-flex min-h-control-sm items-center justify-center gap-xs rounded-full border border-border px-sm py-xs text-caption text-muted-foreground hover:bg-muted disabled:opacity-50 aria-disabled:opacity-50";
 const ICON_ACTION = "flex h-control-sm aspect-square items-center justify-center rounded-md text-muted-foreground hover:bg-muted aria-pressed:text-primary-strong disabled:opacity-50";
-/** Exact Figma vectors as alpha masks: colours follow the shared contrast tokens in either theme. */
-function PracticeGlyph({ name, large = false }: { name: "replay-native" | "play-take" | "intonation" | "bookmark" | "microphone"; large?: boolean }) {
-  return <span aria-hidden="true" className={`${large ? "size-icon-lg" : "size-icon-sm"} inline-block shrink-0 bg-current`}
-    style={{ maskImage: `url(/images/practice/${name}.svg)`, maskSize: "contain", maskRepeat: "no-repeat", maskPosition: "center" }} />;
-}
 export type PronunciationSessions = ReturnType<typeof usePronunciationSessions>;
 export type PronunciationCapture = ReturnType<typeof usePronunciationCapture>;
 

@@ -37,7 +37,8 @@ const emptyEvidence: LessonEvidence = {
   lineCount: 1,
   reachedLine: 0,
   pronunciationMean: null,
-  dictationMean: null,
+  dictation: { mean: null, done: 0, selfDone: 0 },
+  cloze: { mean: null, done: 0, selfDone: 0 },
   completed: false,
   cards: {
     total: 0, mastered: 0, reviewedAny: false, vocabularyRefs: 0, expressionRefs: 0,
@@ -90,7 +91,7 @@ describe("loadLessonSummary", () => {
   it("loads evidence with the mastery threshold and matches saved grammar ids", async () => {
     const { supabase, grammarCalls } = mockClient({
       ...emptyEvidence,
-      lines: [{ lineId: "line-1", pronunciation: 52, pitch: null, dictation: null, dictationInput: null, difficult: false }],
+      lines: [{ lineId: "line-1", pronunciation: 52, pitch: null, listening: [], difficult: false }],
     });
     mocks.getTranscript.mockResolvedValue({ ok: true, data: {
       id: "transcript", video_id: VIDEO, source: "youtube_caption", language: "ja", created_at: "2026-01-01T00:00:00.000Z",
@@ -129,7 +130,7 @@ describe("loadLessonSummary", () => {
         snapshot: expect.objectContaining({
           status: {
             shadowing: { kind: "not_started" }, pronunciation: { kind: "not_started" },
-            listening: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+            listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
           },
         }),
       }),

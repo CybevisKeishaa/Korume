@@ -588,7 +588,26 @@
       scrollbar-width: thin;
       scrollbar-color: hsl(var(--border)) transparent;
     }
+    /* The sentence chip rail (listening spec §3.8) shows its bar only on hover or keyboard focus. */
+    .sentence-rail:not(:hover):not(:focus-within) {
+      scrollbar-color: transparent transparent;
+    }
   }
+}
+
+/* Sentence chip rail (listening spec §3.8): a thin scrollbar that shows only on hover or keyboard focus inside the
+   rail. Its track is always there (transparent at rest), so showing it never shifts the chips; the rail's negative
+   bottom margin lays the track over the gap below rather than growing the navigator. */
+.sentence-rail::-webkit-scrollbar {
+  height: var(--space-2xs);
+}
+.sentence-rail::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-width: 0;
+}
+.sentence-rail:hover::-webkit-scrollbar-thumb,
+.sentence-rail:focus-within::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
 }
 
 /* Kanji stroke-order drawing (paths use pathLength=1). */
@@ -2020,3 +2039,12 @@
   .profile-edit { grid-template-columns: 20rem minmax(0, 1fr); }
   .profile-edit-fields { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
+
+/* Listening's Korume beside the feedback (plan P15). The practice panel is a size container, so the figure scales
+   with the panel's height between two density-scaled bounds and hides when the panel is too short to spare it:
+   the P14 text and the practice controls always keep the room. Both numbers are calibrated at the Chrome look
+   (1280x529, Task 10). Tailwind 3.4 emits no cascade layers: this rule wins over MascotPose's `h-24` because it
+   comes after the utilities at equal specificity. */
+.practice-panel { container: practice-panel / size; }
+.listening-korume { block-size: clamp(var(--space-2xl), 16cqb, calc(96 * var(--density-unit))); flex: none; }
+@container practice-panel (height < 20rem) { .listening-korume { display: none; } }

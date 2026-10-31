@@ -17,7 +17,7 @@ describe("sentence marks SQL contract", () => {
   const sql = normalized(filename);
 
   it("keeps sentence_marks in exactly one migration", () => {
-    // Ownership = DDL (table, policy, index, grant). A later migration may READ the table (043's
+    // Ownership = DDL (table, policy, index, grant). A later migration may READ the table (048's
     // lesson_summary_evidence selects from it) without redefining it.
     const ddl = /(create|alter|drop) table (if (not )?exists )?(public\.)?sentence_marks\b|on (public\.)?sentence_marks\b|(grant|revoke) [^;]* on (table )?(public\.)?sentence_marks\b/;
     const files = readdirSync(directory).filter((file) => file.endsWith(".sql") && ddl.test(normalized(file)));

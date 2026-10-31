@@ -7,10 +7,10 @@ describe("WeeklyCard", () => {
     render(<WeeklyCard fact={{ bars: [{ index: 0, seconds: 3600 }, ...Array.from({ length: 9 }, (_, index) => ({ index: index + 1, unavailable: true as const }))], hoursW0: 1, trackedSinceDate: null, vocabularyMastered: 2, listeningDelta: 8, pronunciationDelta: -3 }} />);
     expect(screen.getAllByLabelText("Not yet tracked")).toHaveLength(9);
     expect(screen.getAllByLabelText("Not yet tracked")[0]).toHaveAttribute("data-state", "unavailable");
-    expect(screen.getByText("+8 pts").closest("div")).toHaveTextContent(/^Listening\s*\+8 pts$/);
+    expect(screen.getByText("+8 pts").closest("div")).toHaveTextContent(/^Listening \(Typing\)\s*\+8 pts$/);
     expect(screen.getByText("−3 pts").closest("div")).toHaveTextContent(/^Pronunciation\s*−3 pts$/);
     expect(screen.getByText("+8 pts").tagName).toBe("DD");
-    expect(screen.getByText("Listening", { selector: "dt" })).toBeInTheDocument();
+    expect(screen.getByText("Listening (Typing)", { selector: "dt" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open weekly report" })).toHaveAttribute("href", "/en/weekly-report");
   });
 

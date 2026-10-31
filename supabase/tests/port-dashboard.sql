@@ -698,10 +698,10 @@ begin
   insert into learning_outcomes (user_id, source_type, item_key, created_at) values
     (a, 'srs_review', 's6-local-before', '2026-01-02T04:59:59Z'),
     (a, 'srs_review', 's6-local-after', '2026-01-02T05:00:00Z');
-  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at) values
-    (a, 's6-week-boundary', 67, '2027-05-08T10:00:00Z');
-  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at)
-    select a, 's6-weakness-' || d, case when d = 1 then 1 else 100 end, (date '2030-01-01' + (d - 1))::timestamptz
+  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at, format, status) values
+    (a, 's6-week-boundary', 67, '2027-05-08T10:00:00Z', 'typing', 'submitted');
+  insert into dictation_attempts (user_id, user_input, accuracy_score, created_at, format, status)
+    select a, 's6-weakness-' || d, case when d = 1 then 1 else 100 end, (date '2030-01-01' + (d - 1))::timestamptz, 'typing', 'submitted'
     from generate_series(1, 31) d;
   insert into shadowing_sessions (user_id, pronunciation_score, created_at)
     select a, 100, (date '2031-01-01' + (d - 1))::timestamptz from generate_series(2, 31) d;

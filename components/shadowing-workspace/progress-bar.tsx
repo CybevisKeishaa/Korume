@@ -10,11 +10,19 @@ function clock(seconds: number): string {
   return `${Math.floor(whole / 60)}:${String(whole % 60).padStart(2, "0")}`;
 }
 
+/** The listen-only dock's time label, `m:ss / m:ss` (Ruling T1). */
+export function PlaybackClock({ duration }: { duration: number | null }) {
+  const time = usePlaybackTime(usePositionStore());
+  const max = duration ?? Math.max(time, 0);
+  return <span data-testid="playback-clock" className="shrink-0 text-caption tabular-nums text-muted-foreground">{clock(Math.min(time, max))} / {clock(max)}</span>;
+}
+
 /**
  * The only seek control (spec §7.3): a native range input, so the arrow keys, Home/End and drag are the
- * browser's own. Beat markers sit underneath as one non-interactive SVG.
+ * browser's own. Beat markers sit underneath as one non-interactive SVG. `neutral` steps the fill down to the
+ * muted foreground (5.4:1 on the card), so the dock's "Nghe lại câu" is its only accent (Ruling T1).
  */
-export function ProgressBar({ duration }: { duration: number | null }) {
+export function ProgressBar({ duration, neutral = false }: { duration: number | null; neutral?: boolean }) {
   const t = useTranslations("shadowing");
   const controller = usePlaybackController();
   const time = usePlaybackTime(usePositionStore());
@@ -31,7 +39,7 @@ export function ProgressBar({ duration }: { duration: number | null }) {
         onChange={(event) => controller.seekTo(Number(event.currentTarget.value))}
         aria-label={t("workspace.player.seek")}
         aria-valuetext={t("workspace.player.seekValue", { current: clock(time), total: clock(max) })}
-        className="relative w-full cursor-pointer accent-primary"
+        className={`relative w-full cursor-pointer ${neutral ? "accent-muted-foreground" : "accent-primary"}`}
       />
     </div>
   );

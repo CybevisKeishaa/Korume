@@ -1,4 +1,4 @@
-import type { ModeState } from "./snapshot";
+import type { LessonStatus, ModeState } from "./snapshot";
 
 // ponytail: fixed cut-offs, tuned after the owner's live look; a per-learner calibration if they prove wrong.
 export const REVIEW_PRONUNCIATION_BELOW = 60;
@@ -12,15 +12,14 @@ export type Quality = "not_started" | "practiced" | "strong" | "needs_work";
 
 const CUTS = {
   pronunciation: [REVIEW_PRONUNCIATION_BELOW, STRONG_PRONUNCIATION_AT],
-  listening: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
+  // Both Listening formats share the one Listening cut (R2).
+  listeningDictation: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
+  listeningCloze: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
   retention: [RETENTION_NEEDS_WORK_BELOW, RETENTION_STRONG_AT],
 } as const;
 
 /** The one score → state adapter (spec §5.1). Reads the rounded integers of §3.1. */
-export function modeQuality(
-  mode: "shadowing" | "pronunciation" | "listening" | "retention",
-  state: ModeState,
-): Quality {
+export function modeQuality(mode: keyof LessonStatus, state: ModeState): Quality {
   if (mode === "shadowing") {
     return state.kind === "complete" ? "strong" : state.kind === "in_progress" || state.kind === "reached" ? "practiced" : "not_started";
   }

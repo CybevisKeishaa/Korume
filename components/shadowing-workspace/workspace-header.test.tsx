@@ -106,10 +106,10 @@ describe("WorkspaceHeader", () => {
     await act(() => Promise.resolve());
   });
 
-  it("renders the mode bar Shadowing · Pronunciation · Summary, Shadowing current (Pronunciation complete per D24)", () => {
+  it("renders the mode bar Shadowing · Pronunciation · Listening · Summary, Shadowing current (Pronunciation and Listening complete per D24)", () => {
     renderHeader();
     const nav = screen.getByRole("navigation", { name: "Learning modes" });
-    expect(within(nav).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/shadowing/v", "/shadowing/v/pronunciation", "/shadowing/v/summary"]);
+    expect(within(nav).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual(["/shadowing/v", "/shadowing/v/pronunciation", "/shadowing/v/listening", "/shadowing/v/summary"]);
     expect(within(nav).getByRole("link", { current: "page" })).toHaveAttribute("href", "/shadowing/v");
   });
 });

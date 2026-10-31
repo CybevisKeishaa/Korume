@@ -13,11 +13,11 @@ vi.mock("@/lib/i18n/navigation", () => ({
 const twoModes: LearningMode[] = LEARNING_MODES.map((mode) => ({ ...mode, complete: mode.id === "shadowing" || mode.id === "pronunciation" }));
 
 describe("ModeNav", () => {
-  it("renders Shadowing · Pronunciation · Summary with the real registry (Pronunciation complete per D24)", () => {
+  it("renders Shadowing · Pronunciation · Listening · Summary with the real registry (D24)", () => {
     pathname.current = "/shadowing/v/summary";
     render(<ModeNav videoId="v" />);
     const links = screen.getAllByRole("link");
-    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/shadowing/v", "/shadowing/v/pronunciation", "/shadowing/v/summary"]);
+    expect(links.map((link) => link.getAttribute("href"))).toEqual(["/shadowing/v", "/shadowing/v/pronunciation", "/shadowing/v/listening", "/shadowing/v/summary"]);
     expect(screen.getByRole("link", { current: "page" })).toHaveAttribute("href", "/shadowing/v/summary");
   });
 

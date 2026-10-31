@@ -27,7 +27,7 @@ const PROPS: SummaryPageProps & { locale: "en" } = {
   status: {
     shadowing: { kind: "in_progress", percent: 30 },
     pronunciation: { kind: "scored", score: 0 },
-    listening: { kind: "not_started" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" },
     retention: { kind: "not_enough_data" },
   },
   saved: { vocabulary: 12, expressions: 5, grammar: 3, retention: { kind: "count", value: 1 } },
@@ -77,12 +77,27 @@ describe("SummaryPage", () => {
     const status = () => screen.getByRole("region", { name: "Lesson status" });
     expect(within(status()).getByText("30%")).toBeInTheDocument();
     expect(within(status()).getByText("0")).toBeInTheDocument();
-    expect(within(status()).getByText("Not started")).toBeInTheDocument();
+    expect(within(status()).getAllByText("Not started")).toHaveLength(2);
     expect(within(status()).getByText("Not enough data")).toBeInTheDocument();
     rerender(<SummaryPage {...PROPS} status={{ ...PROPS.status, shadowing: { kind: "complete" } }} />);
     expect(within(status()).getByText("Complete")).toBeInTheDocument();
     rerender(<SummaryPage {...PROPS} status={{ ...PROPS.status, shadowing: { kind: "reached", line: 51, total: 194 } }} />);
     expect(within(status()).getByText("Watched to sentence 51/194")).toBeInTheDocument();
+  });
+
+  it("lesson status: five rows, one per Listening exercise with its own value and self-done line, never averaged (listening spec §3.10)", () => {
+    render(<SummaryPage {...PROPS} status={{ ...PROPS.status,
+      listeningDictation: { kind: "scored", score: 90, selfDone: { count: 1, of: 2 } }, listeningCloze: { kind: "scored", score: 60, selfDone: { count: 1, of: 1 } } }} />);
+    const status = screen.getByRole("region", { name: "Lesson status" });
+    const rows = [...status.querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
+    expect(rows).toEqual([
+      ["Shadowing", "30%"],
+      ["Pronunciation", "0"],
+      ["Listening · Dictation", "90On your own 1/2"],
+      ["Listening · Fill in the blanks", "60On your own 1/1"],
+      ["Retention", "Not enough data"],
+    ]);
+    expect(status.querySelectorAll("[data-self-done]")).toHaveLength(2);
   });
 
   it("saved knowledge: real counts and a retention tile in words", () => {
@@ -123,6 +138,12 @@ describe("ReviewList", () => {
     expect(within(rows[0] as HTMLElement).getByText("文1です")).toHaveAttribute("lang", "ja");
     expect(within(rows[1] as HTMLElement).getByRole("link", { name: "Review Again" })).toHaveAttribute("href", "/shadowing/v-1?line=line-2");
     expect(screen.getByText("+2 more lines")).toBeInTheDocument();
+  });
+
+  it("labels a revealed line Answer shown, next to its dictation reason (spec §6.2)", () => {
+    render(<ReviewList videoId="v-1" targets={[{ lineId: "line-1", lineText: "文1です", reasons: ["dictation", "revealed"], focusSpan: null }]} total={1} />);
+    const row = screen.getByRole("listitem");
+    expect([...row.querySelectorAll("p:first-child > *")].map((badge) => badge.textContent)).toEqual(["Listening", "Answer shown"]);
   });
 
   it("says so when there is nothing to review", () => {

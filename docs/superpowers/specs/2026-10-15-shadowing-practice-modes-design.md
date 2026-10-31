@@ -59,7 +59,7 @@ No earlier plan scheduled Parts 2/3; nothing was half-built. The one unmerged 1a
 | D16 | Azure failure (503, 429, timeout, error) never loses the recording and never shows a fake score. 429 shows a wait time only when the backend supplies one. |
 | D17 | Player is sentence-bound in Pronunciation and Listening (plays the current sentence, then stops). Starting a recording pauses the player first. Shadowing playback is unchanged. |
 | D18 | "Practice this sentence" on a Shadowing transcript row opens Pronunciation on exactly that sentence. |
-| D19 | Listening defaults to listen-only: the video picture is covered (burned-in subtitles cannot be detected). "Show video" is the learner's choice; a new sentence or a new attempt covers it again; other modes never inherit the cover. No preference or column stores it. |
+| D19 | Listening defaults to listen-only: the video picture is covered (burned-in subtitles cannot be detected). "Show video" is the learner's choice; a new sentence or a new attempt covers it again; other modes never inherit the cover. No preference or column stores it. **Amended 2026-10-28:** superseded by `2026-10-26-listening-cloze-dictation-design.md` §3.2 (WP §3.5) and Ruling T1 — the video is shown by default; the toolbar's "Ẩn video" is a switch remembered for the page visit that docks the player (collapsed video, in-flow control row under a full-width practice column); there is no cover. |
 | D20 | Dashboard keeps its approved layout. Its Listening skill reads **Typing submitted** attempts only, and its empty state says the measure is based on Typing. Summary shows Word Bank and Typing separately. |
 | D21 | Legacy rows are kept: existing dictation attempts become `typing`; scored ones `submitted`; unscored ones a legacy-only `unscored` that new code never writes. |
 | D22 | `/shadowing/[id]/dictation` redirects to Listening with Typing open, keeping the lesson id. `DictationView` is deleted only after Listening works, E2E passes and grep finds no caller. |
@@ -445,6 +445,13 @@ Plus the score, its label, the coloured diff, "Try again" (same shuffle, new att
 - Concealment is a UI learning aid; the line text is present in the workspace bootstrap.
 
 ### 5.9 Listen-only cover (D19)
+
+> **Amended 2026-10-28:** this section is superseded by `2026-10-26-listening-cloze-dictation-design.md` §3.2 (and
+> the word-pieces spec §3.5) as built under Ruling T1 (owner Chrome trial, V3): no cover. "Ẩn video" in the exercise
+> toolbar (remembered for the page visit, outside the reveal key) gives the practice column the full width and turns
+> the player into a dock — the video box collapses and is hidden (the iframe is never `display:none`, one player),
+> and one always-shown, in-flow control row (Nghe lại câu, transport, progress, time, Lặp, 0.75×/1×, volume, "Hiện
+> video") sits under the practice column. The text below is kept as history.
 
 A cover sits above the iframe and below the workspace control bar and centre play button, so play/pause, seek,
 speed and loop stay usable (the workspace already drives the player with its own controls). "Show video" lifts it

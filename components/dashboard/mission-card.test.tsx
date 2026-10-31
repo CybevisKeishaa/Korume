@@ -20,6 +20,14 @@ describe("MissionCard", () => {
     expect(screen.getByRole("link", { name: /Finish/ })).toHaveAttribute("href", "/en/shadowing/v1");
   });
 
+  it("names the sentence mission as listening and opens Listening Practice (P9)", () => {
+    render(<MissionCard state={{ kind: "ok", data: { rewarded: false, items: [
+      { type: "dictation_lines", current: 1, target: 5, title: "Café", href: "/shadowing/v1/listening", playbackPercent: null },
+    ] } }} />);
+    expect(screen.getByRole("listitem")).toHaveTextContent(/^Practise listening to 5 sentences 1\/5$/);
+    expect(screen.getByRole("link", { name: "Practise listening to 5 sentences" })).toHaveAttribute("href", "/en/shadowing/v1/listening");
+  });
+
   it("renders onboarding and error states locally", () => {
     const { rerender } = render(<MissionCard state={{ kind: "unavailable" }} />);
     expect(screen.getByText("Your first missions appear once you start learning.")).toBeInTheDocument();
