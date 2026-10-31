@@ -3,7 +3,7 @@ import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
 import { getTokenizer } from "@/lib/japanese/tokenizer";
 import { lineTextHash } from "@/lib/dictation/chunk";
-import { loadLineChunks } from "./line-chunks";
+import { LINE_ANSWER_LIMIT, loadLineChunks } from "./line-chunks";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/japanese/tokenizer", async (orig) => {
@@ -34,6 +34,14 @@ beforeEach(() => {
 });
 
 describe("loadLineChunks", () => {
+  it("refuses once the learner's budget is spent, before the line read", async () => {
+    asLearner({ id: "chunks-spender" }, null);
+    for (let i = 0; i < LINE_ANSWER_LIMIT.limit; i++) await expect(loadLineChunks(LINE)).resolves.toEqual({ kind: "not_found" });
+    lineQueries = [];
+    await expect(loadLineChunks(LINE)).resolves.toMatchObject({ kind: "rate_limited" });
+    expect(lineQueries).toEqual([]);
+  });
+
   it("returns the reference-order chunks, the text hash and the Typing hint unit", async () => {
     const text = "毎日日本語を勉強しました。";
     asLearner({ id: "a" }, text);

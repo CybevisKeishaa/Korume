@@ -211,6 +211,19 @@ describe("boundedMemo", () => {
     await expect(remember("f", fail)).rejects.toThrow();
     expect(fail).toHaveBeenCalledTimes(2);
   });
+
+  it("a stale failure never drops the newer entry made after its key was evicted", async () => {
+    const remember = boundedMemo<string>(1);
+    let rejectOld!: (error: Error) => void;
+    const old = remember("a", () => new Promise<string>((_, reject) => { rejectOld = reject; }));
+    await remember("b", () => Promise.resolve("b")); // evicts a
+    const fresh = vi.fn(() => Promise.resolve("a2"));
+    await remember("a", fresh);
+    rejectOld(new Error("late"));
+    await expect(old).rejects.toThrow("late");
+    await remember("a", fresh);
+    expect(fresh).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe("helpers", () => {
