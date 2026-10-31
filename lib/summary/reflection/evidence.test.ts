@@ -7,8 +7,8 @@ function snapshot(overrides: Partial<LessonSnapshot> = {}): LessonSnapshot {
     status: {
       shadowing: { kind: "in_progress", percent: 43 },
       pronunciation: { kind: "scored", score: 57 },
-      listeningWordBank: { kind: "scored", score: 97 },
-      listeningTyping: { kind: "scored", score: 72 },
+      listeningDictation: { kind: "scored", score: 97 },
+      listeningCloze: { kind: "scored", score: 72 },
       retention: { kind: "scored", score: 91 },
     },
     savedKnowledge: { vocabulary: 4, expressions: 2, grammar: 1, retention: { kind: "count", value: 3 } },
@@ -26,7 +26,7 @@ function snapshot(overrides: Partial<LessonSnapshot> = {}): LessonSnapshot {
 const NOTHING: Partial<LessonSnapshot> & Pick<LessonSnapshot, "status"> = {
   status: {
     shadowing: { kind: "not_started" }, pronunciation: { kind: "not_started" },
-    listeningWordBank: { kind: "not_started" }, listeningTyping: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
   },
   savedKnowledge: { vocabulary: 0, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },
   reviewTargets: [],
@@ -37,7 +37,7 @@ describe("projectEvidence", () => {
   it("maps every mode through the one score → state adapter and keeps three targets by their first reason", () => {
     expect(projectEvidence(snapshot())).toEqual({
       // Both Listening formats carry their own quality (P6): Word Bank 97 is strong while Typing 72 needs work.
-      modes: { shadowing: "practiced", pronunciation: "needs_work", listeningWordBank: "strong", listeningTyping: "needs_work", retention: "strong" },
+      modes: { shadowing: "practiced", pronunciation: "needs_work", listeningDictation: "strong", listeningCloze: "needs_work", retention: "strong" },
       savedAnything: true,
       targets: [
         { lineId: "line-a", lineText: "雨です", reason: "pronunciation" },
@@ -64,7 +64,7 @@ describe("isEmptyEvidence", () => {
       ...NOTHING, status: { ...NOTHING.status, shadowing: { kind: "in_progress", percent: 5 } },
     })))).toBe(false);
     expect(isEmptyEvidence(projectEvidence(snapshot({
-      ...NOTHING, status: { ...NOTHING.status, listeningWordBank: { kind: "scored", score: 90 } },
+      ...NOTHING, status: { ...NOTHING.status, listeningDictation: { kind: "scored", score: 90 } },
     })))).toBe(false);
   });
 });
@@ -74,11 +74,11 @@ describe("evidenceFingerprint", () => {
     const base = evidenceFingerprint(projectEvidence(snapshot()));
     expect(evidenceFingerprint(projectEvidence(snapshot()))).toBe(base);
     const status = snapshot().status;
-    const sameBand = snapshot({ status: { ...status, listeningTyping: { kind: "scored", score: 75 } } });
+    const sameBand = snapshot({ status: { ...status, listeningCloze: { kind: "scored", score: 75 } } });
     expect(evidenceFingerprint(projectEvidence(sameBand))).toBe(base);
-    const otherBand = snapshot({ status: { ...status, listeningTyping: { kind: "scored", score: 96 } } });
+    const otherBand = snapshot({ status: { ...status, listeningCloze: { kind: "scored", score: 96 } } });
     expect(evidenceFingerprint(projectEvidence(otherBand))).not.toBe(base);
-    const wordBankBand = snapshot({ status: { ...status, listeningWordBank: { kind: "scored", score: 85 } } });
+    const wordBankBand = snapshot({ status: { ...status, listeningDictation: { kind: "scored", score: 85 } } });
     expect(evidenceFingerprint(projectEvidence(wordBankBand))).not.toBe(base);
   });
 });

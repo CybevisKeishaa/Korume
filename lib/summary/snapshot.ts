@@ -13,15 +13,16 @@ export type ModeState =
   | { kind: "complete" }
   /** Shadowing: how far the learner watched. Reaching the last sentence is not completing it (D7). */
   | { kind: "reached"; line: number; total: number }
-  | { kind: "scored"; score: number }
+  /** `selfDone`: Listening only, the lines done without help out of the lines done (listening spec §3.10). */
+  | { kind: "scored"; score: number; selfDone?: { count: number; of: number } }
   | { kind: "not_enough_data" };
 
-/** Listening is two rows, one per format, never averaged together (spec §6.2, P6). */
+/** Listening is two rows, one per exercise (Chép chính tả, Điền từ), never averaged together (listening spec §3.10). */
 export interface LessonStatus {
   shadowing: ModeState;
   pronunciation: ModeState;
-  listeningWordBank: ModeState;
-  listeningTyping: ModeState;
+  listeningDictation: ModeState;
+  listeningCloze: ModeState;
   retention: ModeState;
 }
 
@@ -34,7 +35,7 @@ export interface SavedKnowledge {
   retention: RetentionTile;
 }
 
-export type ReviewReason = "pronunciation" | "pitch" | "dictation" | "revealed" | "difficult" | "grammar";
+export type ReviewReason = "pronunciation" | "pitch" | "dictation" | "cloze" | "revealed" | "difficult" | "grammar";
 
 export interface ReviewTarget {
   lineId: string;
@@ -84,14 +85,16 @@ export interface SavedCard {
 }
 
 const numeric = z.coerce.number();
+/** One Listening exercise over each line's latest submitted attempt in it (049): `selfDone` = done without help. */
+const exerciseEvidence = z.object({ mean: numeric.nullable(), done: numeric, selfDone: numeric });
 
 export const lessonEvidenceSchema = z.object({
   hasTranscript: z.boolean(),
   lineCount: numeric,
   reachedLine: numeric,
   pronunciationMean: numeric.nullable(),
-  wordBankMean: numeric.nullable(),
-  typingMean: numeric.nullable(),
+  dictation: exerciseEvidence,
+  cloze: exerciseEvidence,
   completed: z.boolean(),
   cards: z.object({
     total: numeric,
@@ -108,10 +111,11 @@ export const lessonEvidenceSchema = z.object({
     pitch: numeric.nullable(),
     /** Per format, the latest attempt of any status (R2); `[]` when the line has none (R10). `unscored` = legacy. */
     listening: z.array(z.object({
-      format: z.enum(["word_bank", "typing"]),
+      format: z.enum(["word_bank", "typing", "cloze"]),
       status: z.enum(["submitted", "revealed", "unscored"]),
       score: numeric.nullable(),
       input: z.string().nullable(),
+      helped: z.boolean(),
     })),
     difficult: z.boolean(),
   })),
@@ -151,6 +155,10 @@ const meanState = (mean: number | null): ModeState => (
   mean === null ? { kind: "not_started" } : { kind: "scored", score: round(mean) }
 );
 
+const exerciseState = ({ mean, done, selfDone }: z.infer<typeof exerciseEvidence>): ModeState => (
+  mean === null ? { kind: "not_started" } : { kind: "scored", score: round(mean), selfDone: { count: selfDone, of: done } }
+);
+
 function retentionState(cards: LessonEvidence["cards"]): ModeState {
   if (cards.total === 0 || !cards.reviewedAny) return { kind: "not_enough_data" };
   return { kind: "scored", score: round((100 * cards.mastered) / cards.total) };
@@ -174,7 +182,8 @@ export function buildLessonSnapshot(
     if (row.pitch !== null && row.pitch < REVIEW_PRONUNCIATION_BELOW) reasons.push("pitch");
     // Only a submitted attempt has a score (DB check), so a weak score is a weak submission.
     const weak = row.listening.filter((attempt) => attempt.score !== null && attempt.score < REVIEW_DICTATION_BELOW);
-    if (weak.length > 0) reasons.push("dictation");
+    if (weak.some((attempt) => attempt.format !== "cloze")) reasons.push("dictation");
+    if (weak.some((attempt) => attempt.format === "cloze")) reasons.push("cloze");
     // R2: the line's state is its latest attempt of any status, so a later Show answer puts it in Review (spec §8).
     if (row.listening.some((attempt) => attempt.status === "revealed")) reasons.push("revealed");
     if (row.difficult) reasons.push("difficult");
@@ -184,7 +193,7 @@ export function buildLessonSnapshot(
     if (reasons.length === 0) continue;
     const grammar = grammarSpans.get(line.id)?.[0] ?? null;
     if (grammar) reasons.push("grammar");
-    // Only Typing has typed text to diff; a weak Word Bank line falls back to its grammar.
+    // Only Typing has typed text to diff; a weak Word Bank or Điền từ line falls back to its grammar.
     const typed = weak.find((attempt) => attempt.format === "typing")?.input;
     const dictationSpan = typed ? mistakeSpan(line.textJp, typed) : null;
     const scores = [row.pronunciation, row.pitch, ...row.listening.map((attempt) => attempt.score)]
@@ -204,8 +213,8 @@ export function buildLessonSnapshot(
     status: {
       shadowing: shadowingState(evidence),
       pronunciation: meanState(evidence.pronunciationMean),
-      listeningWordBank: meanState(evidence.wordBankMean),
-      listeningTyping: meanState(evidence.typingMean),
+      listeningDictation: exerciseState(evidence.dictation),
+      listeningCloze: exerciseState(evidence.cloze),
       retention: retentionState(evidence.cards),
     },
     savedKnowledge: {

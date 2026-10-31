@@ -37,8 +37,8 @@ const emptyEvidence: LessonEvidence = {
   lineCount: 1,
   reachedLine: 0,
   pronunciationMean: null,
-  wordBankMean: null,
-  typingMean: null,
+  dictation: { mean: null, done: 0, selfDone: 0 },
+  cloze: { mean: null, done: 0, selfDone: 0 },
   completed: false,
   cards: {
     total: 0, mastered: 0, reviewedAny: false, vocabularyRefs: 0, expressionRefs: 0,
@@ -130,7 +130,7 @@ describe("loadLessonSummary", () => {
         snapshot: expect.objectContaining({
           status: {
             shadowing: { kind: "not_started" }, pronunciation: { kind: "not_started" },
-            listeningWordBank: { kind: "not_started" }, listeningTyping: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+            listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
           },
         }),
       }),

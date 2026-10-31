@@ -628,8 +628,10 @@ describe("shadowing.json EN workspace Reading Settings, Study Environment and sh
 
 describe("shadowing.json — Summary Listening per format (practice-listening, spec §6.2)", () => {
   it("pins the two Listening status rows and the Answer shown review reason in EN and VI", () => {
-    expect(en.lessonSummary.status).toMatchObject({ listeningWordBank: "Listening · Word Bank", listeningTyping: "Listening · Typing" });
-    expect(vi.lessonSummary.status).toMatchObject({ listeningWordBank: "Nghe · Xếp cụm từ", listeningTyping: "Nghe · Gõ chính tả" });
+    expect(en.lessonSummary.status).toMatchObject({ listeningDictation: "Listening · Dictation", listeningCloze: "Listening · Fill in the blanks", selfDone: "On your own {count}/{total}" });
+    expect(vi.lessonSummary.status).toMatchObject({ listeningDictation: "Nghe · Chép chính tả", listeningCloze: "Nghe · Điền từ", selfDone: "Tự làm {count}/{total} câu" });
+    expect(en.lessonSummary.review.reason).toMatchObject({ cloze: "Fill in the blanks" });
+    expect(vi.lessonSummary.review.reason).toMatchObject({ cloze: "Điền từ" });
     expect(en.lessonSummary.status).not.toHaveProperty("listening");
     expect(en.lessonSummary.review.reason.revealed).toBe("Answer shown");
     expect(vi.lessonSummary.review.reason.revealed).toBe("Đã xem đáp án");

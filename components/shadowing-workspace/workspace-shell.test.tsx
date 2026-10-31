@@ -613,20 +613,19 @@ describe("ShadowingWorkspaceShell", () => {
         : new Response(null, { status: 200 })));
       vi.stubGlobal("fetch", fetchMock);
       const statsCalls = () => fetchMock.mock.calls.map(([url]) => String(url)).filter((url) => url.includes("practice-stats"));
-      const scored = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='scored']"));
-      const average = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='average']"));
+      const scored = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='completed']"));
+      const average = () => required(screen.getByTestId("lesson-stat-strip").querySelector<HTMLElement>("[data-stat='accuracy']"));
       pathname = "/en/shadowing/video-1/listening";
       searchParams = new URLSearchParams("line=line-1&format=typing");
       const view = render(shell());
       // A legacy `typing` link reads Chép chính tả's stats.
-      expect(within(scored()).getByRole("term")).toHaveTextContent("Dictation · Submitted");
+      expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "dictation");
       await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("72%"));
       expect(within(scored()).getByRole("definition")).toHaveTextContent("1/2");
       expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation"]);
       searchParams = new URLSearchParams("line=line-1&format=cloze");
       view.rerender(shell());
       expect(screen.getByTestId("lesson-stat-strip")).toHaveAttribute("data-mode", "cloze");
-      expect(within(scored()).getByRole("term")).toHaveTextContent("Fill in the blanks · Submitted");
       await waitFor(() => expect(within(average()).getByRole("definition")).toHaveTextContent("91%"));
       expect(statsCalls()).toEqual(["/api/shadowing/video-1/practice-stats?mode=dictation", "/api/shadowing/video-1/practice-stats?mode=cloze"]);
       for (const query of ["line=line-1", "line=line-1&format=nope"]) {

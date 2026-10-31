@@ -162,7 +162,7 @@ const practice = (page: Page) => page.getByRole("region", { name: "Listening pra
 const player = (page: Page) => page.getByRole("region", { name: "Player" });
 const navigator = (page: Page) => page.getByRole("navigation", { name: "Sentence navigator" });
 const strip = (page: Page) => page.getByTestId("lesson-stat-strip");
-const stat = (page: Page, name: "sentence" | "scored" | "average") => strip(page).locator(`[data-stat="${name}"] dd`);
+const stat = (page: Page, name: "sentence" | "completed" | "accuracy" | "videoLeft") => strip(page).locator(`[data-stat="${name}"] dd`);
 const bank = (page: Page) => practice(page).getByRole("list", { name: "Word bank" });
 const slots = (page: Page) => practice(page).getByRole("list", { name: "Your sentence" }).locator("li[data-slot]");
 const slot = (page: Page, index: number) => practice(page).locator(`li[data-slot='${index}']`);
@@ -401,8 +401,8 @@ test("6 · Show answer: revealed, no score; navigator, strip and Summary agree",
   await registerLearner(page);
   await openWordBank(page);
   await expect(bank(page)).toBeVisible();
-  await expect(stat(page, "scored")).toHaveText(/^0\//);
-  const average = await stat(page, "average").textContent();
+  await expect(stat(page, "completed")).toHaveText(/^0\//);
+  const average = await stat(page, "accuracy").textContent();
   await resetSurfaces(page);
   await button(page, "Hint").click();
   await expect(feedback(page)).toContainText("1 chunk hinted so far. Hinted parts don't count toward recall.");
@@ -424,7 +424,7 @@ test("6 · Show answer: revealed, no score; navigator, strip and Summary agree",
   await page.reload();
   await expect(practice(page)).toBeVisible();
   await expect(navigator(page).getByRole("button", { name: "Sentence 1, answer shown" })).toBeVisible();
-  await expect(stat(page, "average")).toHaveText(average ?? "");
+  await expect(stat(page, "accuracy")).toHaveText(average ?? "");
   await page.goto(`/en/shadowing/${data.videoId}/summary`);
   const row = page.locator("[data-summary-area='review'] li").filter({ hasText: LINES[0].text });
   await expect(row).toHaveCount(1);
@@ -524,7 +524,7 @@ test("9 · Chế độ dễ: the URL stays; a checked Word Bank answer never sho
   await expect(page).toHaveURL(/\?format=dictation$/);
   await expect(typingInput(page)).toHaveValue("");
   await expect(strip(page)).toHaveAttribute("data-mode", "dictation");
-  await expect(strip(page).locator("[data-stat='scored'] dt")).toHaveText("Dictation · Submitted");
+  await expect(strip(page).locator("[data-stat='completed'] dt")).toHaveText("Completed");
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
   await easyMode(page).click();

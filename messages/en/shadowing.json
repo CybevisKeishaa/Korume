@@ -229,10 +229,9 @@
         "unheard": "The scorer could not hear speech in this take. Record it again, a little closer to the microphone.",
         "micHint": "Allow microphone access in your browser settings to record."
       },
-      "strip": { "label": "Lesson progress", "sentence": "Sentence", "scored": "Scored", "average": "Average", "noScore": "No score yet" },
+      "strip": { "label": "Lesson progress", "position": "Position: sentence {n} of {total}", "sentence": "Sentence", "completed": "Completed", "accuracy": "Accuracy", "videoLeft": "Video left", "minutes": "{count} min", "underMinute": "<1 min", "noScore": "No score yet" },
       "listening": {
         "format": { "dictation": "Dictation", "cloze": "Fill in the blanks" },
-        "strip": { "submitted": "{format} · Submitted" },
         "cover": { "show": "Show video" },
         "picker": {
           "heading": "How would you like to practise listening?",
@@ -586,6 +585,7 @@
         "pronunciation": "Pronunciation",
         "pitch": "Pitch accent",
         "dictation": "Listening",
+        "cloze": "Fill in the blanks",
         "revealed": "Answer shown",
         "difficult": "Marked difficult",
         "grammar": "Grammar in this line"
@@ -595,8 +595,9 @@
       "title": "Lesson status",
       "shadowing": "Shadowing",
       "pronunciation": "Pronunciation",
-      "listeningWordBank": "Listening · Word Bank",
-      "listeningTyping": "Listening · Typing",
+      "listeningDictation": "Listening · Dictation",
+      "listeningCloze": "Listening · Fill in the blanks",
+      "selfDone": "On your own {count}/{total}",
       "retention": "Retention",
       "notStarted": "Not started",
       "notEnoughData": "Not enough data",

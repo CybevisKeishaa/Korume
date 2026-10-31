@@ -27,7 +27,7 @@ const PROPS: SummaryPageProps & { locale: "en" } = {
   status: {
     shadowing: { kind: "in_progress", percent: 30 },
     pronunciation: { kind: "scored", score: 0 },
-    listeningWordBank: { kind: "not_started" }, listeningTyping: { kind: "not_started" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" },
     retention: { kind: "not_enough_data" },
   },
   saved: { vocabulary: 12, expressions: 5, grammar: 3, retention: { kind: "count", value: 1 } },
@@ -85,17 +85,19 @@ describe("SummaryPage", () => {
     expect(within(status()).getByText("Watched to sentence 51/194")).toBeInTheDocument();
   });
 
-  it("lesson status: five rows, each Listening format labelled with its own value, never averaged (spec §6.2, P6)", () => {
-    render(<SummaryPage {...PROPS} status={{ ...PROPS.status, listeningWordBank: { kind: "scored", score: 88 }, listeningTyping: { kind: "scored", score: 72 } }} />);
+  it("lesson status: five rows, one per Listening exercise with its own value and self-done line, never averaged (listening spec §3.10)", () => {
+    render(<SummaryPage {...PROPS} status={{ ...PROPS.status,
+      listeningDictation: { kind: "scored", score: 90, selfDone: { count: 1, of: 2 } }, listeningCloze: { kind: "scored", score: 60, selfDone: { count: 1, of: 1 } } }} />);
     const status = screen.getByRole("region", { name: "Lesson status" });
     const rows = [...status.querySelectorAll("dt")].map((dt) => [dt.textContent, dt.nextElementSibling?.textContent]);
     expect(rows).toEqual([
       ["Shadowing", "30%"],
       ["Pronunciation", "0"],
-      ["Listening · Word Bank", "88"],
-      ["Listening · Typing", "72"],
+      ["Listening · Dictation", "90On your own 1/2"],
+      ["Listening · Fill in the blanks", "60On your own 1/1"],
       ["Retention", "Not enough data"],
     ]);
+    expect(status.querySelectorAll("[data-self-done]")).toHaveLength(2);
   });
 
   it("saved knowledge: real counts and a retention tile in words", () => {

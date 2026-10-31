@@ -14,7 +14,7 @@ const DATA: LoadedSummary = {
   snapshot: {
     status: {
       shadowing: { kind: "complete" }, pronunciation: { kind: "scored", score: 82 },
-      listeningWordBank: { kind: "not_started" }, listeningTyping: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+      listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
     },
     savedKnowledge: { vocabulary: 2, expressions: 1, grammar: 0, retention: { kind: "not_enough_data" } },
     reviewTargets: Array.from({ length: 7 }, (_, i) => target(i)),

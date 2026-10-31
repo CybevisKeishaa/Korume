@@ -20,8 +20,8 @@ export function projectEvidence(snapshot: LessonSnapshot): ReflectionEvidence {
     modes: {
       shadowing: modeQuality("shadowing", status.shadowing),
       pronunciation: modeQuality("pronunciation", status.pronunciation),
-      listeningWordBank: modeQuality("listeningWordBank", status.listeningWordBank),
-      listeningTyping: modeQuality("listeningTyping", status.listeningTyping),
+      listeningDictation: modeQuality("listeningDictation", status.listeningDictation),
+      listeningCloze: modeQuality("listeningCloze", status.listeningCloze),
       retention: modeQuality("retention", status.retention),
     },
     savedAnything: savedKnowledge.vocabulary + savedKnowledge.expressions + savedKnowledge.grammar > 0,

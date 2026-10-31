@@ -30,7 +30,8 @@ test("1 · deterministic status, review reasons and AI-off fallback", async ({ p
   await learner(page);
   await summary(page);
   const status = area(page, "status");
-  await expect(status.locator("dd")).toHaveText(["Watched to sentence 2/30", "70", "Not started", "70", "Not enough data"]);
+  // Listening is one row per exercise (listening spec §3.10): the seeded typed attempt is Chép chính tả's, unhelped.
+  await expect(status.locator("dd")).toHaveText(["Watched to sentence 2/30", "70", "70On your own 1/1", "Not started", "Not enough data"]);
   await expect(area(page, "saved").locator("dd")).toHaveText(["0", "0", "0", "Not enough data"]);
   const rows = area(page, "review").locator("li");
   await expect(rows).toHaveCount(3);

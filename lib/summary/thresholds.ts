@@ -13,8 +13,8 @@ export type Quality = "not_started" | "practiced" | "strong" | "needs_work";
 const CUTS = {
   pronunciation: [REVIEW_PRONUNCIATION_BELOW, STRONG_PRONUNCIATION_AT],
   // Both Listening formats share the one Listening cut (R2).
-  listeningWordBank: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
-  listeningTyping: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
+  listeningDictation: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
+  listeningCloze: [REVIEW_DICTATION_BELOW, STRONG_DICTATION_AT],
   retention: [RETENTION_NEEDS_WORK_BELOW, RETENTION_STRONG_AT],
 } as const;
 

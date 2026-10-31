@@ -5,7 +5,7 @@ import { buildReflectionFallback } from "./fallback";
 const base: LessonSnapshot = {
   status: {
     shadowing: { kind: "not_started" }, pronunciation: { kind: "not_started" },
-    listeningWordBank: { kind: "not_started" }, listeningTyping: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
   },
   savedKnowledge: { vocabulary: 0, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },
   reviewTargets: [],

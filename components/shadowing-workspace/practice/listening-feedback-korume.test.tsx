@@ -111,8 +111,10 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     const korume = figure();
     expect(korume).toHaveAttribute("alt", "");
     expect(korume).toHaveAttribute("aria-hidden", "true");
-    // The only images left are the easy-mode mask's named stars (a length cue), never the figure.
-    expect(screen.queryAllByRole("img").filter((img) => img.closest("[role='group'][aria-label='Hidden sentence']") === null)).toEqual([]);
+    // The only images left are the easy-mode mask's named stars (a length cue) and the strip's named position track,
+    // never the figure.
+    expect(screen.queryAllByRole("img").filter((img) => img.closest("[role='group'][aria-label='Hidden sentence']") === null
+      && img.closest("[data-testid='lesson-stat-strip']") === null)).toEqual([]);
     expect(feedback()).toHaveAttribute("aria-live", "polite");
     expect(feedback().textContent).toBe("You placed all 4 pieces right! Next time, try turning easy mode off and typing the sentence yourself.");
     expect(feedback().contains(korume)).toBe(false);
