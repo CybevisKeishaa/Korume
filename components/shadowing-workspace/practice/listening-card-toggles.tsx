@@ -23,10 +23,13 @@ export function ListeningCardToggles({ index, translation, romaji, answerSurface
   const tl = useTranslations("shadowing.workspace.practice.listening.toggles");
   const controller = usePlaybackController();
   const { showTranslation, setShowTranslation, showRomaji, setShowRomaji } = useListeningReveal();
+  // A press on a disabled toggle is cancelled, so Radix (which closes the tooltip on pointerdown and click) keeps the
+  // reason on screen at the moment the learner asks for it.
   const toggle = (label: string, Icon: LucideIcon, on: boolean, set: (on: boolean) => void) =>
     <Tooltip content={answerSurfacesAllowed ? label : tl("afterCheck", { label })}>
       <button type="button" aria-label={label} aria-pressed={on} aria-disabled={!answerSurfacesAllowed || undefined}
-        onClick={() => { if (answerSurfacesAllowed) set(!on); }} className={TOOL}><Icon aria-hidden className="size-icon-sm" /></button>
+        onPointerDown={(event) => { if (!answerSurfacesAllowed) event.preventDefault(); }}
+        onClick={(event) => { if (answerSurfacesAllowed) set(!on); else event.preventDefault(); }} className={TOOL}><Icon aria-hidden className="size-icon-sm" /></button>
     </Tooltip>;
 
   return <div className="flex flex-col gap-xs">
