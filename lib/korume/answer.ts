@@ -17,34 +17,33 @@ const run = z.union([
   z.object({ jp: z.string().min(1).max(200) }).strict(),
 ]);
 
+const block = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("paragraph"), runs: z.array(run).min(1).max(40) }).strict(),
+  z.object({
+    type: z.literal("example"),
+    jp: z.string().min(1).max(200),
+    ruby: z.array(z.object({ base: z.string().min(1).max(20), reading: z.string().max(40).optional() }).strict()).max(40),
+    translation: z.string().max(400),
+  }).strict(),
+  z.object({ type: z.literal("context_card"), entityRef: z.string().min(1).max(80), note: z.string().max(300).optional() }).strict(),
+  z.object({ type: z.literal("followups"), chips: z.array(z.string().min(1).max(40)).min(1).max(4) }).strict(),
+]);
+
+/**
+ * Gemini does not always honour the schema it is sent (seen live 2026-10-31: an invented block type, then a 41+ char
+ * followup chip), and one bad block used to throw away the whole answer. Drop each block that fails on its own, as
+ * {@link dropUngroundedCards} does for an unknown card. Nothing invalid is ever kept — a bad block is removed, never
+ * repaired — and an answer with nothing left still fails `min(1)`.
+ */
+const dropInvalidBlocks = (blocks: unknown) =>
+  Array.isArray(blocks) ? blocks.filter((b) => block.safeParse(b).success) : blocks;
+
 /**
  * The only shape an answer may take (spec §6.1): typed blocks rendered as escaped text — never HTML or Markdown.
  * Bounded everywhere so one answer cannot flood the sheet or the database.
  */
-const BLOCK_TYPES: ReadonlySet<unknown> = new Set(["paragraph", "example", "context_card", "followups"]);
-
-/**
- * Gemini sometimes invents a block type the schema does not offer (seen live 2026-10-31: `blocks[4].type` matched
- * no member), which used to throw away the whole answer. Drop just that block, as {@link dropUngroundedCards} does
- * for an unknown card; the known blocks are still validated in full, and an answer left empty still fails `min(1)`.
- */
-const dropUnknownBlocks = (blocks: unknown) =>
-  Array.isArray(blocks)
-    ? blocks.filter((b) => typeof b === "object" && b !== null && BLOCK_TYPES.has((b as { type?: unknown }).type))
-    : blocks;
-
 export const answerV1Schema: z.ZodType<AnswerV1> = z.object({
-  blocks: z.preprocess(dropUnknownBlocks, z.array(z.discriminatedUnion("type", [
-    z.object({ type: z.literal("paragraph"), runs: z.array(run).min(1).max(40) }).strict(),
-    z.object({
-      type: z.literal("example"),
-      jp: z.string().min(1).max(200),
-      ruby: z.array(z.object({ base: z.string().min(1).max(20), reading: z.string().max(40).optional() }).strict()).max(40),
-      translation: z.string().max(400),
-    }).strict(),
-    z.object({ type: z.literal("context_card"), entityRef: z.string().min(1).max(80), note: z.string().max(300).optional() }).strict(),
-    z.object({ type: z.literal("followups"), chips: z.array(z.string().min(1).max(40)).min(1).max(4) }).strict(),
-  ])).min(1).max(12)),
+  blocks: z.preprocess(dropInvalidBlocks, z.array(block).min(1).max(12)),
 }).strict();
 
 export const GLOSS_MAX = 300;

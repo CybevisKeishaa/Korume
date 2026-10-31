@@ -32,7 +32,12 @@ describe("answerV1Schema", () => {
     expect(parsed.success && parsed.data.blocks).toEqual([para, para]);
   });
 
-  it("still validates every known block in full after dropping", () => {
+  it("drops an over-bound block (a 41-char chip, Gemini live 2026-10-31) and keeps the rest", () => {
+    const parsed = answerV1Schema.safeParse({ blocks: [para, { type: "followups", chips: ["ok", "x".repeat(41)] }] });
+    expect(parsed.success && parsed.data.blocks).toEqual([para]);
+  });
+
+  it("fails when no block survives", () => {
     expect(answerV1Schema.safeParse({ blocks: [{ type: "heading" }, { ...para, extra: 1 }] }).success).toBe(false);
   });
 
