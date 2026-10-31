@@ -1,3 +1,4 @@
+import { displayMap, displayRange } from "./display";
 import { grapheme1Units } from "./listening-score";
 
 export type MaskCell = { kind: "star"; unit: number } | { kind: "shown"; text: string };
@@ -14,4 +15,12 @@ export function starMask(base: string): MaskCell[] {
   });
   for (; at < chars.length; at++) cells.push({ kind: "shown", text: chars[at]! });
   return cells;
+}
+
+/** The raw text of each scored character of `pieces`, in order: what the stars show for the pieces placed so far. */
+export function starFill(pieces: readonly { chunk: string; display: string }[]): string[] {
+  return pieces.flatMap(({ chunk, display }) => {
+    const map = displayMap(display);
+    return grapheme1Units(chunk).map((unit) => displayRange(map, chunk, unit));
+  });
 }

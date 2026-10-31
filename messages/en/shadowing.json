@@ -249,6 +249,7 @@
         "loading": "Loading this sentence…",
         "chunksError": "This sentence could not be loaded.",
         "retryLoad": "Retry",
+        "charCut": "This sentence is split into characters so you can keep practising.",
         "unreliable": "This sentence can't be split reliably, so it's Typing only",
         "typingLabel": "Type what you hear",
         "dictation": { "placeholder": "Type what you hear…", "showAll": "Show the sentence (Alt+H)" },

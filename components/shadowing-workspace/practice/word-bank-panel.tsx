@@ -3,8 +3,10 @@
 import { useEffect, useId, useMemo, useRef, useState, type DragEvent, type KeyboardEvent, type ReactNode } from "react";
 import { useTranslations } from "@/lib/i18n";
 import { bankOrder } from "@/lib/dictation/shuffle";
+import { starFill } from "@/lib/dictation/star-mask";
 import { insertPiece, movePiece, removePiece, withHints } from "@/lib/dictation/word-bank-answer";
 import { cn } from "@/lib/utils";
+import { DictationMask } from "./star-mask";
 import { BOX, CheckButton, EYEBROW, PuzzleHeader } from "./listening-puzzle";
 
 type SlotResult = { correct: boolean; hinted: boolean };
@@ -30,8 +32,12 @@ export function dropIndex(rects: DOMRect[], x: number): number {
  * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
  * drag from an older line drops nothing here.
  */
-export function WordBankPanel({ lineId, display, hinted, results, revealed, submitting, hint, card, onCheck }: {
+export function WordBankPanel({ lineId, text, chunks, display, hinted, results, revealed, submitting, hint, card, onCheck }: {
   lineId: string;
+  /** The raw line, for the star row the placed pieces fill. */
+  text: string;
+  /** The normalised pieces, parallel to `display`. */
+  chunks: string[];
   display: string[];
   hinted: number[];
   /** Per answer position verdicts after a successful Check. */
@@ -122,7 +128,9 @@ export function WordBankPanel({ lineId, display, hinted, results, revealed, subm
   };
 
   return <div ref={root} className="flex flex-col gap-sm">
-    <PuzzleHeader eyebrow={t("puzzle.wordBank")} status={t("puzzle.remaining", { count: bank.length })} hint={hint} />
+    <PuzzleHeader eyebrow={t("puzzle.wordBank")} status={t("puzzle.remaining", { count: bank.length })} hint={<div className="flex flex-1 flex-wrap items-center justify-end gap-xs">
+      <DictationMask text={text} hinted={[]} revealed={revealed} filled={starFill(placed.map((p) => ({ chunk: chunks[p] ?? "", display: display[p] ?? "" })))} />{hint}
+    </div>} />
     <div className={cn(BOX, dropAt !== null && "ring-2 ring-primary/40")} onDragOver={dragOver} onDrop={drop}
       onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropAt(null); }}>
       <ol aria-label={t("answerSlots")} className="flex min-h-control-md flex-wrap justify-center gap-xs">

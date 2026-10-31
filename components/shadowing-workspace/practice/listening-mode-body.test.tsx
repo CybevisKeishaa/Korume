@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 
 import { render, waitFor } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
 import { attemptBodies, calls, fetchMock, lesson, LINES, probe, serve, server, shell, slotList, stubListeningFetch, type AttemptBody, type LineId } from "@/test/listening-body";
+import viMessages from "@/messages/vi/shadowing.json";
 import type { LineChunks } from "@/lib/dictation/types";
 import { bankOrder } from "@/lib/dictation/shuffle";
 import { resetTabWritesForTests } from "../workspace-context";
@@ -668,6 +669,30 @@ describe("ListeningModeBody — Typing and Chế độ dễ", () => {
     expect(easyMode()).toHaveAttribute("aria-pressed", "false");
     expect(input()).toBeInTheDocument();
     expect(screen.getByTestId("listening-unreliable")).toBeVisible();
+  });
+});
+
+describe("ListeningModeBody — the character-cut notice", () => {
+  const VI = "Câu này được chia theo từng ký tự để bạn tiếp tục luyện tập.";
+  it("shows only for a character cut with Chế độ dễ on", async () => {
+    serveChunksWith({ cut: "char" });
+    await open("line-2");
+    expect(screen.getByTestId("listening-char-cut")).toHaveTextContent("This sentence is split into characters so you can keep practising.");
+    expect(screen.queryByTestId("listening-unreliable")).toBeNull();
+  });
+  it("is not shown for a word cut", async () => {
+    await open("line-2");
+    expect(screen.queryByTestId("listening-char-cut")).toBeNull();
+  });
+  it("an unreliable line keeps today's notice only", async () => {
+    await open("line-1");
+    serveChunksWith({ cut: "char", reliable: false });
+    fireEvent.click(nextSentence());
+    expect(await screen.findByTestId("listening-unreliable")).toBeVisible();
+    expect(screen.queryByTestId("listening-char-cut")).toBeNull();
+  });
+  it("carries the Vietnamese copy", () => {
+    expect(viMessages.workspace.practice.listening.charCut).toBe(VI);
   });
 });
 

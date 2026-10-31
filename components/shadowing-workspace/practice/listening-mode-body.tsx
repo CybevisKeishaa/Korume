@@ -20,7 +20,6 @@ import { ListeningToolbar } from "./listening-toolbar";
 import { PracticeEmptyTranscript, PracticePanel, useFirstPracticeSentence } from "./practice-panel";
 import { ReplayRow } from "./replay-row";
 import { SentenceNavigator } from "./sentence-navigator";
-import { DictationMask } from "./star-mask";
 import { TypingPanel } from "./typing-panel";
 import { useListeningAttempt } from "./use-listening-attempt";
 import { WordBankPanel } from "./word-bank-panel";
@@ -135,14 +134,12 @@ export function ListeningModeBody() {
       submitting={attempt.submitting} hint={hint} card={card} onChange={attempt.setAnswers} onUseChip={attempt.markChipUsed}
       onCheck={() => void attempt.submit({ answers: attempt.answers })} />}
     {ready && unreliable && <p data-testid="listening-unreliable" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{tl("unreliable")}</p>}
-    {/* Chế độ dễ: the mask is a length cue only, never tappable, so one attempt never mixes two hint units (§3.3). It
-        rides in the puzzle header's row, so the longest line still fits above the listen-only dock (Ruling T1). */}
-    {ready && format === "word_bank" && chunks && <WordBankPanel key={`${lineId}|${format}|${attemptNumber}`} lineId={lineId} display={chunks.display}
+    {ready && format === "word_bank" && chunks?.cut === "char" && <p data-testid="listening-char-cut" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{tl("charCut")}</p>}
+    {/* Chế độ dễ: the star row is never tappable (one attempt never mixes two hint units, §3.3) and the panel fills it
+        from the placed pieces. It rides in the puzzle header's row, so the longest line still fits above the dock (T1). */}
+    {ready && format === "word_bank" && chunks && <WordBankPanel key={`${lineId}|${format}|${attemptNumber}`} lineId={lineId} text={line?.textJp ?? ""} chunks={chunks.chunks} display={chunks.display}
       hinted={attempt.hinted} results={answerVisible ? attempt.result?.slots ?? null : null} revealed={answerVisible && attempt.revealed}
-      submitting={attempt.submitting} card={card} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })}
-      hint={<div className="flex flex-1 flex-wrap items-center justify-end gap-xs">
-        <DictationMask text={line?.textJp ?? ""} hinted={[]} revealed={answerVisible && attempt.revealed} />{hint}
-      </div>} />}
+      submitting={attempt.submitting} card={card} hint={hint} onCheck={(chunkOrder) => void attempt.submit({ chunkOrder })} />}
     {ready && format === "typing" && <TypingPanel key={`${lineId}|${format}|${attemptNumber}`} text={line?.textJp ?? ""}
       hinted={attempt.hinted} diff={answerVisible ? attempt.result?.diff ?? null : null} revealed={answerVisible && attempt.revealed}
       submitting={attempt.submitting} hint={hint} card={card} onReveal={attempt.revealUnit} onCheck={(input) => void attempt.submit({ input })} />}

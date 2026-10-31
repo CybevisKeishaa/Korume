@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import { HINTED } from "./listening-puzzle";
 
 const CELL = "inline-flex h-control-sm items-center justify-center px-2xs font-jp text-body-lg";
+const FILLED = "border-b-2 border-border text-foreground";
 const HIDDEN = "border-b-2 border-dashed border-border text-muted-foreground";
 const MOVE: Record<string, (unit: number, last: number) => number> = {
   ArrowLeft: (unit) => unit - 1, ArrowRight: (unit) => unit + 1, Home: () => 0, End: (_, last) => last,
@@ -21,10 +22,12 @@ const MOVE: Record<string, (unit: number, last: number) => number> = {
  * roving-tabindex row of buttons (arrows, Home/End move, Enter or a click reveals); without it (Chế độ dễ) they are a
  * length cue only: named images, never focusable.
  */
-export function StarMask({ cells, revealed, display, onReveal }: {
+export function StarMask({ cells, revealed, display, filled = [], onReveal }: {
   cells: MaskCell[];
   revealed: ReadonlySet<number>;
   display(unit: number): string;
+  /** Word pieces placed so far (Chế độ dễ): the characters of the first stars, in the order chosen. */
+  filled?: readonly string[];
   onReveal?(unit: number): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
@@ -42,10 +45,11 @@ export function StarMask({ cells, revealed, display, onReveal }: {
     {cells.map((cell, i) => {
       if (cell.kind === "shown") return cell.text === "" ? null : <span key={i} aria-hidden="true" className={CELL}>{cell.text}</span>;
       const { unit } = cell;
-      const open = revealed.has(unit);
-      const text = open ? display(unit) : "";
+      const placed = unit < filled.length;
+      const open = placed || revealed.has(unit);
+      const text = placed ? filled[unit]! : open ? display(unit) : "";
       const name = open ? t("star.shown", { n: unit + 1, total, text }) : t("star.hidden", { n: unit + 1, total });
-      const className = cn(CELL, open ? HINTED : HIDDEN);
+      const className = cn(CELL, placed ? FILLED : open ? HINTED : HIDDEN);
       const face = <span aria-hidden="true">{open ? text : "＊"}</span>;
       if (!onReveal) return <span key={i} role="img" aria-label={name} className={className}>{face}</span>;
       return <button key={i} type="button" data-unit={unit} tabIndex={unit === active ? 0 : -1} aria-label={name} className={className}
@@ -58,10 +62,11 @@ export function StarMask({ cells, revealed, display, onReveal }: {
  * The mask for a line's raw `text_jp`: units and punctuation from the normalised base (what Typing scores), every
  * character shown from the raw line (P13). After 💡 the whole sentence replaces it as plain text.
  */
-export function DictationMask({ text, hinted, revealed, onReveal }: {
+export function DictationMask({ text, hinted, revealed, filled, onReveal }: {
   text: string;
   hinted: readonly number[];
   revealed: boolean;
+  filled?: readonly string[];
   onReveal?(unit: number): void;
 }) {
   if (revealed) return <p data-testid="dictation-sentence" lang="ja" className="font-jp text-body-lg text-foreground">{text}</p>;
@@ -77,5 +82,5 @@ export function DictationMask({ text, hinted, revealed, onReveal }: {
     }
     return { kind: "shown", text: displayRange(map, base, { start: at, end: ++at }) };
   });
-  return <StarMask cells={cells} revealed={new Set(hinted)} display={(unit) => displayRange(map, base, units[unit]!)} onReveal={onReveal} />;
+  return <StarMask cells={cells} revealed={new Set(hinted)} display={(unit) => displayRange(map, base, units[unit]!)} filled={filled} onReveal={onReveal} />;
 }

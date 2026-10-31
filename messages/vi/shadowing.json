@@ -255,6 +255,7 @@
         "loading": "Đang tải câu…",
         "chunksError": "Không tải được câu này.",
         "retryLoad": "Thử lại",
+        "charCut": "Câu này được chia theo từng ký tự để bạn tiếp tục luyện tập.",
         "unreliable": "Câu này không tách cụm chính xác được, nên chỉ luyện gõ chính tả",
         "typingLabel": "Gõ những gì bạn nghe được",
         "dictation": { "placeholder": "Nhập những gì bạn nghe được…", "showAll": "Hiện cả câu (Alt+H)" },

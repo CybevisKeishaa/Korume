@@ -11,7 +11,7 @@ const DISPLAY = ["はい、", "そうです。", "はい、"];
 type Props = Parameters<typeof WordBankPanel>[0];
 const panel = (props: Partial<Props> = {}) => {
   const onCheck = vi.fn();
-  const element = (next: Partial<Props>) => <WordBankPanel lineId="line-9" display={DISPLAY} hinted={[]} results={null} revealed={false}
+  const element = (next: Partial<Props>) => <WordBankPanel lineId="line-9" text={DISPLAY.join("")} chunks={DISPLAY} display={DISPLAY} hinted={[]} results={null} revealed={false}
     submitting={false} onCheck={onCheck} {...props} {...next} />;
   const view = render(element({}));
   return { ...view, rerender: (next: Partial<Props>) => view.rerender(element(next)), onCheck };
@@ -144,7 +144,7 @@ describe("WordBankPanel", () => {
   });
 
   it("drop inserts at the indicated index", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" text="ABCD" chunks={["A", "B", "C", "D"]} display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(0, 1, 2);
     layOut();
     const dt = dataTransfer();
@@ -163,7 +163,7 @@ describe("WordBankPanel", () => {
   });
 
   it("the drop marker never sits inside the hinted prefix: over a hinted chip it shows at k", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[0, 1]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" text="ABCD" chunks={["A", "B", "C", "D"]} display={["A", "B", "C", "D"]} hinted={[0, 1]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(2);
     layOut();
     const dt = dataTransfer();
@@ -176,7 +176,7 @@ describe("WordBankPanel", () => {
   });
 
   it("drop reads the pointer's index from the drop event, even after a dragleave cleared the marker", () => {
-    render(<WordBankPanel lineId="line-9" display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
+    render(<WordBankPanel lineId="line-9" text="ABCD" chunks={["A", "B", "C", "D"]} display={["A", "B", "C", "D"]} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     tap(0, 1, 2);
     layOut();
     const dt = dataTransfer();
@@ -224,10 +224,10 @@ describe("WordBankPanel", () => {
   });
 
   it("a drag that started on another line's panel drops nothing (Review Focus 3)", () => {
-    const view = render(<WordBankPanel key="a" lineId="line-9" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
+    const view = render(<WordBankPanel key="a" lineId="line-9" text={DISPLAY.join("")} chunks={DISPLAY} display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     const dt = dataTransfer();
     fireEvent.dragStart(piece(1), { dataTransfer: dt });
-    view.rerender(<WordBankPanel key="b" lineId="line-10" display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
+    view.rerender(<WordBankPanel key="b" lineId="line-10" text={DISPLAY.join("")} chunks={DISPLAY} display={DISPLAY} hinted={[]} results={null} revealed={false} submitting={false} onCheck={vi.fn()} />);
     const box = tray().parentElement as HTMLElement;
     fireEvent.dragOver(box, { clientX: 10, clientY: 10, dataTransfer: dt });
     fireEvent.drop(box, { clientX: 10, clientY: 10, dataTransfer: dt });
@@ -280,3 +280,63 @@ describe("WordBankPanel", () => {
     expect(screen.getByText("2 words remaining")).toBeInTheDocument();
   });
 });
+
+describe("WordBankPanel — the placed pieces fill the stars", () => {
+  const mask = () => screen.getByRole("group", { name: "Hidden sentence" }).textContent;
+  const line = (chunks: string[], display = chunks, text = display.join("")) => ({ text, chunks, display });
+  const KEYS = line(["お", "店", "を"]);
+
+  it("fills in the order chosen: add, return, move, drag", () => {
+    panel(KEYS);
+    expect(mask()).toBe("＊＊＊");
+    tap(2);
+    expect(mask()).toBe("を＊＊");
+    tap(0);
+    expect(mask()).toBe("をお＊");
+    fireEvent.keyDown(piece(0), { key: "ArrowLeft", altKey: true });
+    expect(mask()).toBe("おを＊");
+    tap(2);
+    expect(mask()).toBe("お＊＊");
+    tap(1);
+    expect(mask()).toBe("お店＊");
+    layOut();
+    fireEvent.dragStart(piece(1), { dataTransfer: dataTransfer() });
+    fireEvent.dragOver(tray(), { dataTransfer: dataTransfer(), clientX: 0, clientY: 10 });
+    fireEvent.drop(tray(), { dataTransfer: dataTransfer(), clientX: 0, clientY: 10 });
+    expect(mask()).toBe("店お＊");
+  });
+
+  it("hint reflows the stars", () => {
+    const view = panel(KEYS);
+    tap(2, 1);
+    expect(mask()).toBe("を店＊");
+    view.rerender({ ...KEYS, hinted: [0] });
+    expect(placed()).toEqual([0, 2, 1]);
+    expect(mask()).toBe("おを店");
+  });
+
+  it("punctuation shown once", () => {
+    panel(line(["行く", "けど。"]));
+    tap(0, 1);
+    expect(mask()!.split("。")).toHaveLength(2);
+  });
+
+  it("full-width piece fills as written", () => {
+    panel(line(["Google"], ["Ｇｏｏｇｌｅ"]));
+    tap(0);
+    expect(mask()).toBe("Ｇｏｏｇｌｅ");
+  });
+
+  it("Check sends the placed order, and the row stays filled after it", () => {
+    const view = panel(KEYS);
+    tap(2, 0, 1);
+    fireEvent.click(screen.getByRole("button", { name: "Check" }));
+    expect(view.onCheck).toHaveBeenCalledWith([2, 0, 1]);
+    view.rerender({ ...KEYS, results: [{ correct: true, hinted: false }, { correct: true, hinted: false }, { correct: true, hinted: false }] });
+    expect(mask()).toBe("をお店");
+    expect(screen.queryByTestId("dictation-sentence")).toBeNull();
+    view.rerender({ ...KEYS, revealed: true });
+    expect(screen.getByTestId("dictation-sentence")).toHaveTextContent("お店を");
+  });
+});
+
