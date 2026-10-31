@@ -117,3 +117,27 @@ Step 9). Ledger: `.superpowers/sdd/2026-10-26-listening-two-exercises/progress.m
 - [ ] **Step 8: Mutations:** toggles back to their own row (case 22 RED on the 20-piece line); remove the action-row pin (case 33 RED).
 - [ ] **Step 9: Amend Task 14 in the branch plan** (one line in its Interfaces): the draft key is `${lineId}|${format}|${chunks.version}` for word pieces, so a draft never restores onto another cut; the star row needs no draft (derived).
 - [ ] **Step 10: Commit** `feat(listening): toggles in the star row, action row always visible; E2E for Latin, digits and long character cuts`.
+
+---
+
+### Task A4: One play per sentence, autoplay on sentence change and on entry (Nghe, Phát âm)
+
+**Spec:** `docs/superpowers/specs/2026-10-31-practice-playback-once-and-autoplay-design.md` (D1–D6). Runs after A3, before Task 14.
+
+**Files:**
+- Modify: `components/shadowing-workspace/use-playback-controller.ts` (autoplay in sentence-bound navigation, seek-back on a boundary pause), `components/shadowing-workspace/use-practice-playback.ts` (play the current sentence on entry), `components/shadowing-workspace/practice/practice-panel.tsx` (`useFirstPracticeSentence`: the first sentence plays once the player is ready), `components/shadowing-workspace/practice/replay-row.tsx` (`ReplayLoopRates` loses the Lặp button), `components/shadowing-workspace/workspace-shell.tsx` (`L` is a no-op in practice), `tests/e2e/practice-listening.spec.ts`
+- Test: `use-playback-controller.test.tsx`, `use-practice-playback.test.tsx`, `practice-panel.test.tsx`, `workspace-shell.test.tsx`, the replay-row/dock tests that assert the Lặp button
+
+**Interfaces:**
+- Controller, sentence-bound modes only: `nextSentence`, `previousSentence`, `seekToSentence` (any `options`) seek to the target sentence and play it once unless `lock.play`; `seekTo` and `rewind` stay position moves (no play). Not sentence-bound (Shadowing): unchanged.
+- Boundary pause (`decision.kind === "pause"`, both the tick path and the ENDED path): after `adapter.pause()`, `adapter.seekTo(end - 0.001, true)`; the published sentence stays the played one.
+- `ReplayLoopRates` renders only the two rates; `usePlayerWiring().toggleLoop` is no longer reachable from practice UI or the `L` key in practice.
+
+- [ ] **Step 1: Failing unit tests** (controller, sentence-bound): `nextSentence` → `seekTo(next.start)` then `play()` once; `previousSentence` and `seekToSentence(i)` the same; `seekTo(t)` and `rewind(s)` → no `play()`; with `setLock({ play: true })` → no `play()`; a tick crossing the end → `pause()` then `seekTo(end - 0.001, true)`, current sentence unchanged after a later tick at `end + 0.2` while paused; Shadowing (`sentenceBound: false`): `nextSentence` → no `play()`, loop config honoured as today.
+- [ ] **Step 2: Failing tests for entry:** `usePracticePlayback` switching `shadowing` → `listening` at sentence 20 calls `controller.play()` once (sentence-bound play = from sentence 20's start); `useFirstPracticeSentence` on a fresh mount plays once the player is ready (adapter `onReady`), once only; `ReplayLoopRates` has no Lặp button; `L` in a practice mode does not change `loop`.
+- [ ] **Step 3: Run** → FAIL.
+- [ ] **Step 4: Implement** per Interfaces; no new state beyond a "played on entry" guard; the browser refusing autoplay leaves the player paused (nothing to handle).
+- [ ] **Step 5: Run** → PASS; full vitest, tsc, lint.
+- [ ] **Step 6: E2E** (fake YouTube, ×1): Next sentence plays the new sentence and stops at its end with the typed input kept and the navigator unchanged 3 s later; deep-link entry `?line=` plays that sentence once; switching Shadowing → Nghe at sentence N plays N; any existing case that asserted "paused after Next" or the Lặp button is updated (list each edit in the report).
+- [ ] **Step 7: Mutations** (RED each): drop the play in `navigateTo`'s sentence moves; let `seekTo` autoplay; drop the seek-back; render the Lặp button again.
+- [ ] **Step 8: Commit** `feat(practice): one play per sentence; autoplay on sentence change and on entry`.
