@@ -473,7 +473,7 @@ test("7 · Typing: coloured diff and metrics; hints never edit the input; keys a
   expect(posts).toEqual(["POST"]);
 });
 
-test("8 · changing sentence mid-attempt discards it; returning shows a fresh, concealed attempt", async ({ page }) => {
+test("8 · changing sentence mid-attempt keeps a draft (plan Task 14); a checked line comes back fresh and concealed", async ({ page }) => {
   await registerLearner(page);
   await openWordBank(page);
   const pieces = await cut(page, 0);
@@ -483,34 +483,26 @@ test("8 · changing sentence mid-attempt discards it; returning shows a fresh, c
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
   await expectEmptyBank(page, 1);
   await expectConcealed(page);
+  await expect(navigator(page).getByRole("button", { name: /^Sentence 1, .*, in progress$/ })).toHaveCount(1);
   await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
-  await expectEmptyBank(page, 0);
+  // The draft holds only the learner's own placements: they return, the line stays concealed.
+  await expect.poll(() => placedTexts(page)).toEqual(pieces.slice(0, 2));
   await expectConcealed(page);
   await expectNoSurface(page);
 
-  // A checked line, left and returned to, shows no old answer.
-  await place(page, pieces);
+  // A checked line has no draft: left and returned to, it shows no old answer.
+  await place(page, pieces.slice(2));
   await button(page, "Check").click();
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await navigator(page).getByRole("button", { name: /^Sentence 2,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^2\//);
+  await expect(navigator(page).getByRole("button", { name: /^Sentence 1, .*in progress/ })).toHaveCount(0);
   await resetSurfaces(page);
   await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
   await expect(stat(page, "sentence")).toHaveText(/^1\//);
   await expectEmptyBank(page, 0);
   await expectConcealed(page);
   await expectNoSurface(page, [...ANSWER_KINDS, "korume"]);
-
-  // Typing: the typed text does not follow to another line, nor come back.
-  await easyMode(page).click();
-  await typingInput(page).fill("毎日");
-  await navigator(page).getByRole("button", { name: /^Sentence 2,/ }).click();
-  await expect(stat(page, "sentence")).toHaveText(/^2\//);
-  await expect(typingInput(page)).toHaveValue("");
-  await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
-  await expect(stat(page, "sentence")).toHaveText(/^1\//);
-  await expect(typingInput(page)).toHaveValue("");
-  await expectConcealed(page);
 });
 
 test("9 · Chế độ dễ: the URL stays; a checked Word Bank answer never shows on the Typing side", async ({ page }) => {
@@ -1244,4 +1236,49 @@ test("36 · switching from Shadowing at sentence N to Listening plays sentence N
   // L is a no-op in practice: no pill appears and nothing replays.
   await page.keyboard.press("l");
   await expect(page.getByRole("button", { name: "Sentence loop" })).toHaveCount(0);
+});
+
+// Plan Task 14: drafts survive navigation and the picker; the navigator is a scroll rail.
+test("37 · draft survives sentence change: typed text returns on the line, never on another", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await typingInput(page).fill("毎日");
+  await button(page, "Next sentence").click();
+  await expect(stat(page, "sentence")).toHaveText(/^2\//);
+  await expect(typingInput(page)).toHaveValue("");
+  await navigator(page).getByRole("button", { name: /^Sentence 1,/ }).click();
+  await expect(stat(page, "sentence")).toHaveText(/^1\//);
+  await expect(typingInput(page)).toHaveValue("毎日");
+  await expectConcealed(page);
+});
+
+test("38 · draft survives Change exercise: the picker and back keep the typed text", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page);
+  await typingInput(page).fill("毎日");
+  await button(page, "Change exercise").click();
+  await expect(pickerHeading(page)).toBeVisible();
+  await page.getByRole("button", { name: /^Dictation/ }).click();
+  await expect(typingInput(page)).toHaveValue("毎日");
+});
+
+test("39 · rail scrolls to the current chip: a deep link far into the lesson shows its chip, and Next keeps it in view", async ({ page }) => {
+  await registerLearner(page);
+  await openLesson(page, `/listening?format=dictation&line=${data.lineIds[25]}`);
+  const rail = page.getByTestId("sentence-rail");
+  const inView = async (n: number) => {
+    const chip = navigator(page).getByRole("button", { name: new RegExp(`^Sentence ${n},`) });
+    const [c, r] = [await chip.boundingBox(), await rail.boundingBox()];
+    return c !== null && r !== null && c.x >= r.x && c.x + c.width <= r.x + r.width;
+  };
+  await expect(navigator(page).getByRole("button", { name: /^Sentence 26,/ })).toHaveAttribute("aria-current", "true");
+  await expect.poll(() => inView(26)).toBe(true);
+  expect(await rail.evaluate((el) => el.scrollLeft)).toBeGreaterThan(0);
+  await button(page, "Next sentence").click();
+  await expect.poll(() => inView(27)).toBe(true);
+  // A vertical wheel over the rail scrolls it sideways.
+  const before = await rail.evaluate((el) => el.scrollLeft);
+  await rail.hover();
+  await page.mouse.wheel(0, -300);
+  await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeLessThan(before);
 });

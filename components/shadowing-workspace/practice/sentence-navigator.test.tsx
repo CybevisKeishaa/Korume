@@ -1,12 +1,13 @@
 import { screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
 import type { PracticeStats } from "@/lib/data/practice-stats";
 import type { WorkspaceLine } from "@/lib/shadowing-workspace/types";
 import en from "@/messages/en/shadowing.json";
 import viMessages from "@/messages/vi/shadowing.json";
-import { navigatorWindow, SentenceNavigator } from "./sentence-navigator";
+import { SentenceNavigator } from "./sentence-navigator";
 
 const state = vi.hoisted(() => ({
   index: 49 as number | null, lines: [] as WorkspaceLine[], stats: null as PracticeStats | null,
@@ -19,6 +20,14 @@ vi.mock("../workspace-context", () => ({
 }));
 vi.mock("./practice-stats-context", () => ({ usePracticeStats: () => ({ stats: state.stats }) }));
 
+const scrollIntoView = vi.fn();
+const rail = () => screen.getByTestId("sentence-rail");
+function sizeRail(el: HTMLElement, size: { clientWidth: number; scrollWidth: number; scrollLeft: number }): void {
+  Object.defineProperty(el, "clientWidth", { configurable: true, value: size.clientWidth });
+  Object.defineProperty(el, "scrollWidth", { configurable: true, value: size.scrollWidth });
+  el.scrollLeft = size.scrollLeft;
+}
+
 function chips(): HTMLElement[] {
   return within(screen.getByRole("list")).queryAllByRole("button");
 }
@@ -29,21 +38,6 @@ function expectChips(numbers: number[]): void {
   expect(buttons.map((button) => button.textContent)).toEqual(numbers.map(String));
 }
 
-describe("navigatorWindow (zero-based indices)", () => {
-  it.each([
-    [49, 194, [46, 47, 48, 49, 50, 51, 52, 53]],
-    [0, 194, [0, 1, 2, 3, 4, 5, 6, 7]],
-    [193, 194, [186, 187, 188, 189, 190, 191, 192, 193]],
-    [1, 3, [0, 1, 2]],
-    [0, 1, [0]],
-    [0, 0, []],
-  ])("centres and clamps index %i of %i", (current, total, expected) => {
-    const window = navigatorWindow(current, total);
-    expect(window).toHaveLength(expected.length);
-    expect(window).toEqual(expected);
-  });
-});
-
 describe("SentenceNavigator", () => {
   beforeEach(() => {
     state.index = 49;
@@ -53,28 +47,37 @@ describe("SentenceNavigator", () => {
     }));
     state.stats = null;
     vi.clearAllMocks();
+    Element.prototype.scrollIntoView = scrollIntoView;
   });
+  afterEach(() => { delete (Element.prototype as { scrollIntoView?: unknown }).scrollIntoView; });
 
   it("pins the approved English and Vietnamese navigator copy", () => {
     expect(en.workspace.practice.navigator).toEqual({
       label: "Sentence navigator", earlier: "Earlier sentences", later: "Later sentences",
-      chip: "Sentence {number}, {state}",
+      chip: "Sentence {number}, {state}", draft: "in progress",
       state: { none: "not practised", scored: "scored {score}", needs_review: "needs review", unscored: "not scored yet", revealed: "answer shown", helped: "with help" },
     });
     expect(viMessages.workspace.practice.navigator).toEqual({
       label: "Điều hướng câu", earlier: "Các câu trước", later: "Các câu sau",
-      chip: "Câu {number}, {state}",
+      chip: "Câu {number}, {state}", draft: "đang làm dở",
       state: { none: "chưa luyện", scored: "{score} điểm", needs_review: "cần ôn lại", unscored: "chưa chấm", revealed: "đã xem đáp án", helped: "có trợ giúp" },
     });
   });
 
-  it("shows eight chips around sentence 50 and the shared current sentence", () => {
+  it("renders every sentence as a chip in one scroll rail, the shared current one marked", () => {
     render(<SentenceNavigator />);
-    expectChips([47, 48, 49, 50, 51, 52, 53, 54]);
+    expectChips(Array.from({ length: 194 }, (_, i) => i + 1));
     expect(screen.getByRole("navigation", { name: "Sentence navigator" })).toBeInTheDocument();
     expect(screen.getByText("Sentence navigator")).toBeVisible();
     expect(screen.getByRole("button", { name: "Sentence 50, not practised" })).toHaveAttribute("aria-current", "true");
     expect(chips().filter((chip) => chip.hasAttribute("aria-current"))).toHaveLength(1);
+    expect(rail()).toHaveClass("overflow-x-auto");
+  });
+
+  it("renders 431 chips", () => {
+    state.lines = Array.from({ length: 431 }, (_, index) => ({ id: `line-${index}`, index, startTime: index, endTime: index + 1, textJp: "文", textTranslation: null, furigana: null }));
+    render(<SentenceNavigator />);
+    expect(chips()).toHaveLength(431);
   });
 
   it("seeks a chip without playing or replacing the shared current sentence", async () => {
@@ -86,56 +89,76 @@ describe("SentenceNavigator", () => {
     expect(screen.getByRole("button", { name: "Sentence 50, not practised" })).toHaveAttribute("aria-current", "true");
   });
 
-  it("moves the window by eight without seeking, then recentres on a shared sentence change", async () => {
+  it("current chip in view: scrolled to the centre on mount and after the shared sentence moves", () => {
     const view = render(<SentenceNavigator />);
-    await userEvent.click(screen.getByRole("button", { name: "Later sentences" }));
-    expectChips([55, 56, 57, 58, 59, 60, 61, 62]);
-    expect(chips().filter((chip) => chip.hasAttribute("aria-current"))).toHaveLength(0);
-    await userEvent.click(screen.getByRole("button", { name: "Earlier sentences" }));
-    expectChips([47, 48, 49, 50, 51, 52, 53, 54]);
-    expect(state.seekToSentence).not.toHaveBeenCalled();
+    const call = (n: number) => scrollIntoView.mock.contexts.findLast((el) => (el as HTMLElement).textContent === String(n));
+    expect(call(50)).toBeDefined();
+    expect(scrollIntoView).toHaveBeenLastCalledWith({ inline: "center", block: "nearest" });
     state.index = 100;
     view.rerender(<SentenceNavigator />);
-    expectChips([98, 99, 100, 101, 102, 103, 104, 105]);
-    expect(screen.getByRole("button", { name: "Sentence 101, not practised" })).toHaveAttribute("aria-current", "true");
+    expect(call(101)).toBeDefined();
+    expect(scrollIntoView.mock.contexts.at(-1)).toBe(screen.getByRole("button", { name: "Sentence 101, not practised" }));
   });
 
-  it("guards the earlier boundary without drifting the next window", async () => {
-    state.index = 3;
+  it("‹ › page the rail by its visible width, without seeking", async () => {
     render(<SentenceNavigator />);
-    const earlier = screen.getByRole("button", { name: "Earlier sentences" });
-    expect(earlier).toHaveAttribute("aria-disabled", "true");
-    await userEvent.click(earlier);
-    expectChips([1, 2, 3, 4, 5, 6, 7, 8]);
+    const el = rail();
+    sizeRail(el, { clientWidth: 300, scrollWidth: 3000, scrollLeft: 600 });
+    fireEvent.scroll(el);
+    const scrollBy = vi.fn();
+    el.scrollBy = scrollBy as unknown as typeof el.scrollBy;
     await userEvent.click(screen.getByRole("button", { name: "Later sentences" }));
-    expectChips([9, 10, 11, 12, 13, 14, 15, 16]);
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: 300, behavior: "smooth" });
+    await userEvent.click(screen.getByRole("button", { name: "Earlier sentences" }));
+    expect(scrollBy).toHaveBeenLastCalledWith({ left: -300, behavior: "smooth" });
+    expect(state.seekToSentence).not.toHaveBeenCalled();
   });
 
-  it.each([190, 193])("pages eight chips from a clamped end at index %i without selecting a sentence", async (index) => {
-    state.index = index;
+  it("‹ › are disabled at the rail's ends", () => {
     render(<SentenceNavigator />);
-    const later = screen.getByRole("button", { name: "Later sentences" });
-    expect(later).toHaveAttribute("aria-disabled", "true");
-    await userEvent.click(later);
-    expectChips([187, 188, 189, 190, 191, 192, 193, 194]);
-    await userEvent.click(screen.getByRole("button", { name: "Earlier sentences" }));
-    expectChips([179, 180, 181, 182, 183, 184, 185, 186]);
-    await userEvent.click(later);
-    expectChips([187, 188, 189, 190, 191, 192, 193, 194]);
-    expect(state.seekToSentence).not.toHaveBeenCalled();
+    const el = rail();
+    sizeRail(el, { clientWidth: 300, scrollWidth: 3000, scrollLeft: 0 });
+    fireEvent.scroll(el);
+    expect(screen.getByRole("button", { name: "Earlier sentences" })).toHaveAttribute("aria-disabled", "true");
+    expect(screen.getByRole("button", { name: "Later sentences" })).toHaveAttribute("aria-disabled", "false");
+    sizeRail(el, { clientWidth: 300, scrollWidth: 3000, scrollLeft: 2700 });
+    fireEvent.scroll(el);
+    expect(screen.getByRole("button", { name: "Earlier sentences" })).toHaveAttribute("aria-disabled", "false");
+    expect(screen.getByRole("button", { name: "Later sentences" })).toHaveAttribute("aria-disabled", "true");
+  });
+
+  it("wheel scrolls horizontally when the rail overflows, and leaves the page alone otherwise", () => {
+    render(<SentenceNavigator />);
+    const el = rail();
+    sizeRail(el, { clientWidth: 300, scrollWidth: 3000, scrollLeft: 100 });
+    const event = new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true });
+    el.dispatchEvent(event);
+    expect(el.scrollLeft).toBe(220);
+    expect(event.defaultPrevented).toBe(true);
+    sizeRail(el, { clientWidth: 300, scrollWidth: 300, scrollLeft: 0 });
+    const still = new WheelEvent("wheel", { deltaY: 120, bubbles: true, cancelable: true });
+    el.dispatchEvent(still);
+    expect(el.scrollLeft).toBe(0);
+    expect(still.defaultPrevented).toBe(false);
+  });
+
+  it("marks a sentence with a draft by a dot and its label", () => {
+    render(<SentenceNavigator draftLineIds={new Set(["line-52"])} />);
+    const chip = screen.getByRole("button", { name: "Sentence 53, not practised, in progress" });
+    expect(chip.querySelector("[data-draft-dot]")).not.toBeNull();
+    expect(screen.getByRole("button", { name: "Sentence 52, not practised" }).querySelector("[data-draft-dot]")).toBeNull();
   });
 
   it("keeps disabled controls focusable, names their reason and blocks all actions", async () => {
     render(<SentenceNavigator disabled disabledHint="Finish recording first" />);
     const buttons = screen.getAllByRole("button");
-    expect(buttons).toHaveLength(10);
-    for (const button of buttons) {
+    expect(buttons).toHaveLength(196);
+    for (const button of [...buttons.slice(0, 3), ...buttons.slice(-3)]) {
       expect(button).toHaveAttribute("aria-disabled", "true");
       expect(button).toHaveAttribute("title", "Finish recording first");
       expect(button).not.toBeDisabled();
       await userEvent.click(button);
     }
-    expectChips([47, 48, 49, 50, 51, 52, 53, 54]);
     expect(state.seekToSentence).not.toHaveBeenCalled();
     expect(state.play).not.toHaveBeenCalled();
   });
@@ -146,12 +169,12 @@ describe("SentenceNavigator", () => {
     await user.tab();
     expect(screen.getByRole("button", { name: "Earlier sentences" })).toHaveFocus();
     await user.tab();
-    expect(screen.getByRole("button", { name: "Sentence 47, not practised" })).toHaveFocus();
+    expect(screen.getByRole("button", { name: "Sentence 1, not practised" })).toHaveFocus();
     await user.keyboard("{Enter}");
-    expect(state.seekToSentence).toHaveBeenLastCalledWith(46);
+    expect(state.seekToSentence).toHaveBeenLastCalledWith(0);
     await user.tab();
     await user.keyboard(" ");
-    expect(state.seekToSentence).toHaveBeenLastCalledWith(47);
+    expect(state.seekToSentence).toHaveBeenLastCalledWith(1);
     expect(state.seekToSentence).toHaveBeenCalledTimes(2);
     expect(state.play).not.toHaveBeenCalled();
   });
@@ -161,7 +184,8 @@ describe("SentenceNavigator", () => {
     ["needs_review", 86, "needs review", "text-accent-strong"],
     // P4: Show answer reads as review even when an older attempt scored high.
     ["revealed", 92, "answer shown", "text-accent-strong"],
-    ["helped", 86, "with help", "text-success-strong"],
+    // §3.8: helped has its own tone, a dashed outline beside the scored ring.
+    ["helped", 86, "with help", "outline-dashed"],
     ["unscored", null, "not scored yet", "ring-border"],
     ["none", null, "not practised", "text-muted-foreground"],
   ] as const)("uses the latest %s state and its token tone", (status, score, label, tone) => {

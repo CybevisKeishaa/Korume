@@ -9,6 +9,7 @@ import { usePathname } from "@/lib/i18n/navigation";
 import { listeningExercise, practiceModeFromPath, practiceStatsMode } from "@/lib/shadowing-workspace/learning-modes";
 import { LessonStatStrip } from "./practice/lesson-stat-strip";
 import { PracticeStatsProvider } from "./practice/practice-stats-context";
+import { ListeningDraftsProvider } from "./practice/listening-drafts";
 import { ListeningRevealProvider } from "./practice/listening-reveal-context";
 import { PronunciationAttemptsProvider, usePronunciationAttempts } from "./practice/pronunciation-attempts-context";
 import { hasUnsaved } from "@/lib/pronunciation/attempts";
@@ -144,7 +145,10 @@ function CurrentLineReveal({ children }: { children: React.ReactNode }) {
   const { lines } = useLesson();
   const { index } = useCurrentSentence();
   const lineId = index === null ? "" : lines[index]?.id ?? "";
-  return <ListeningRevealProvider lineId={listening ? lineId : null} exercise={listening ? exercise : null}>{children}</ListeningRevealProvider>;
+  // Drafts sit above the reveal key and the picker, so an unfinished answer survives line, exercise and picker changes.
+  return <ListeningDraftsProvider>
+    <ListeningRevealProvider lineId={listening ? lineId : null} exercise={listening ? exercise : null}>{children}</ListeningRevealProvider>
+  </ListeningDraftsProvider>;
 }
 
 function WorkspaceLayout({ children }: { children: React.ReactNode }) {

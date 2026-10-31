@@ -8,6 +8,7 @@ import type { LineChunks } from "@/lib/dictation/types";
 import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { useLesson } from "../workspace-context";
 import { clozeHints } from "./cloze-panel";
+import { draftKey, useListeningDrafts, type ListeningDraft } from "./listening-drafts";
 import { useListeningReveal } from "./listening-reveal-context";
 import { usePracticeStats } from "./practice-stats-context";
 import { useLineCloze } from "./use-line-cloze";
@@ -33,13 +34,20 @@ interface AttemptState {
   /** Điền từ: one per blank, hinted prefix included; `easyUsed` latches on the first chip (spec §3.4, §3.6). */
   answers: string[];
   easyUsed: boolean;
+  /** Chép chính tả's typed text and the placed pieces, kept here so they can be saved as a draft (plan Task 14). */
+  input: string;
+  order: number[];
+  /** The draft key this attempt already restored from (or chose not to); a draft is applied once, before any edit. */
+  restored: string | null;
 }
 type ChunksState = { lineId: string; load: number; data: LineChunks | null; status: "loading" | "ready" | "error" };
 
 const fresh = (key: string, carry: Carry | null): AttemptState => ({
   key, hinted: [], submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
-  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null, answers: [], easyUsed: false,
+  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null, answers: [], easyUsed: false, input: "", order: [], restored: null,
 });
+
+const sameBlanks = (a: readonly number[] | undefined, b: readonly number[]) => a !== undefined && a.length === b.length && a.every((x, i) => x === b[i]);
 
 function summarize(data: ListeningSubmitData, { version, textHash }: { version: number; textHash: string }): PreviousResult {
   return {
@@ -81,6 +89,20 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     state = fresh(key, stored.carry?.lineKey === lineKey ? stored.carry : null);
     setState(state);
   }
+  // Drafts (plan Task 14): an unfinished attempt is restored when its line + format comes back, once its cut is
+  // known (word pieces key by cut version; a cloze draft must have the current blanks, Review Focus 2). Try again
+  // starts empty; sending a Check or Show answer drops the draft.
+  const drafts = useListeningDrafts();
+  const draftId = !lineId ? null : isCloze ? cloze ? draftKey(lineId, "cloze") : null
+    : format === "word_bank" ? chunks ? draftKey(lineId, "word_bank", chunks.version) : null : draftKey(lineId, "typing");
+  if (draftId !== null && state.restored !== draftId) {
+    const draft = state.retry ? undefined : drafts.get(draftId);
+    const usable = draft && (!isCloze || (cloze !== null && sameBlanks(draft.blanks, cloze.blanks)));
+    state = { ...state, restored: draftId, ...(usable ? {
+      hinted: draft.hinted, input: draft.input ?? "", order: draft.answer ?? [], answers: draft.answers ?? [], easyUsed: draft.easyUsed ?? false,
+    } : {}) };
+    setState(state);
+  }
   const currentKey = useRef(key);
   currentKey.current = key;
   /** The one request in flight per attempt (Review Focus 1): state alone cannot stop two clicks in one tick. */
@@ -114,6 +136,14 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const unitCount = isCloze ? cloze ? clozeHints(cloze.readings, []).total : 0
     : !chunks ? 0 : unit === "chunk" ? chunks.chunks.length : grapheme1Units(normalizeJa(lineText)).length;
   const answered = state.result !== null || state.revealed;
+  const { save: saveDraft, clear: clearDraft } = drafts;
+  const draftReady = draftId !== null && state.restored === draftId && !answered && !state.submitting;
+  const blanks = cloze?.blanks;
+  useEffect(() => {
+    if (!draftReady || draftId === null) return;
+    const draft: ListeningDraft = { hinted: state.hinted, input: state.input, answer: state.order, answers: state.answers, easyUsed: state.easyUsed, ...(isCloze ? { blanks } : {}) };
+    saveDraft(draftId, draft);
+  }, [blanks, draftId, draftReady, isCloze, saveDraft, state.answers, state.easyUsed, state.hinted, state.input, state.order]);
   const previous = previousResults.current.get(lineKey) ?? null;
   /** A blank 💡 may still hint: the learner has not typed into it or filled it with a chip (its box holds only its
    *  hint, if any), so 💡 never overwrites their answer. */
@@ -121,8 +151,12 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
 
   async function post(body: Record<string, unknown>, done: (data: ListeningSubmitData | ListeningRevealData) => void) {
     const requestKey = key;
+    const requestDraft = draftId;
     if (inFlight.current === requestKey) return;
     inFlight.current = requestKey;
+    // A sent answer is no longer a draft: leaving the line while it is checked brings back an empty attempt. If the
+    // request fails, the attempt is still open on screen and saves itself again (the effect above).
+    if (requestDraft !== null) clearDraft(requestDraft);
     setState((prev) => prev.key === requestKey ? { ...prev, submitting: true, error: null } : prev);
     let outcome: { data: ListeningSubmitData | ListeningRevealData } | ListeningAttemptError;
     try {
@@ -137,7 +171,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     if (typeof outcome !== "string") refresh();
     if (currentKey.current !== requestKey) return;
     if (outcome === "line_changed") {
-      // 409 line_changed / chunker_version: the line's chunks moved; restart on fresh ones.
+      // 409 line_changed / chunker_version: the line's chunks moved; restart on fresh ones, without the stale draft.
       setState((prev) => ({ ...prev, submitting: false, carry: { lineKey, retry: false, error: "line_changed" } }));
       setLoad((n) => n + 1);
       reloadCloze();
@@ -217,6 +251,14 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     setState((prev) => prev.key === key ? { ...prev, answers } : prev);
   }
 
+  function setInput(input: string) {
+    setState((prev) => prev.key === key ? { ...prev, input } : prev);
+  }
+
+  function setOrder(order: number[]) {
+    setState((prev) => prev.key === key ? { ...prev, order } : prev);
+  }
+
   /** A Chế độ dễ chip was used: this attempt is helped (spec §3.6), whatever happens to the chip afterwards. */
   function markChipUsed() {
     setState((prev) => prev.key === key ? { ...prev, easyUsed: true } : prev);
@@ -254,6 +296,10 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     hintCloze,
     setAnswers,
     markChipUsed,
+    input: state.input,
+    setInput,
+    order: state.order,
+    setOrder,
     submitting: state.submitting,
     hinted: state.hinted,
     allHinted: isCloze && cloze ? clozeHints(cloze.readings, state.hinted, unfinished(state.answers)).next === null

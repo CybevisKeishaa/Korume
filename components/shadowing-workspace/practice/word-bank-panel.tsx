@@ -32,8 +32,10 @@ export function dropIndex(rects: DOMRect[], x: number): number {
  * marker; Alt+Arrow moves a placed piece one place. Mounted with a key per line + format + attempt (P11), so a
  * drag from an older line drops nothing here.
  */
-export function WordBankPanel({ lineId, text, chunks, display, hinted, results, revealed, submitting, hint, card, checkSlot, onCheck }: {
+export function WordBankPanel({ lineId, text, chunks, display, initialAnswer, hinted, results, revealed, submitting, hint, card, checkSlot, onAnswer, onCheck }: {
   lineId: string;
+  /** A draft's placed pieces, restored when the line comes back (plan Task 14). */
+  initialAnswer?: number[];
   /** The raw line, for the star row the placed pieces fill. */
   text: string;
   /** The normalised pieces, parallel to `display`. */
@@ -51,12 +53,14 @@ export function WordBankPanel({ lineId, text, chunks, display, hinted, results, 
   card?: ReactNode;
   /** The pinned action row's Check slot (A3 §3.6). */
   checkSlot?: Element | null;
+  /** Every change of the placed pieces, so they can be kept as a draft. */
+  onAnswer?(answer: number[]): void;
   onCheck(chunkOrder: number[]): void;
 }) {
   const t = useTranslations("shadowing.workspace.practice.listening");
   const bankLabel = useId();
   const n = display.length;
-  const [answer, setAnswer] = useState<number[]>([]);
+  const [answer, setAnswer] = useState<number[]>(() => (initialAnswer ?? []).filter((p) => p >= 0 && p < display.length));
   const [dropAt, setDropAt] = useState<number | null>(null);
   const [announcement, setAnnouncement] = useState("");
   /** The piece this panel's own drag carries: a drag that began on another panel finds null here. */
@@ -80,6 +84,7 @@ export function WordBankPanel({ lineId, text, chunks, display, hinted, results, 
     if (locked) return;
     refocus.current = focused;
     setAnswer(next);
+    onAnswer?.(next);
   };
   const focusedPiece = (target: EventTarget, p: number) => target === document.activeElement ? p : null;
   /** Alt+ArrowLeft is also the browser's Back: on any chip it must never leave the page and the answer. */

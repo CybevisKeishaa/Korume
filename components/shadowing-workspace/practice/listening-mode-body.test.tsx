@@ -1060,17 +1060,21 @@ describe("ListeningModeBody — Điền từ (spec §3.4)", () => {
     expect(calls("/api/dictation/attempt")).toHaveLength(0);
   });
 
-  it("changing line mid-attempt discards it (D12): back on the line, the blanks and hints are empty", async () => {
+  it("changing line keeps the draft (Task 14, replacing D12's discard): another line starts empty, back on the line the blanks and hints return", async () => {
     await openCloze("line-1");
     fill(1, "あめ");
     altH();
+    const hinted = required(blank(2).getAttribute("aria-describedby"));
+    expect(hinted).toBeTruthy();
     fireEvent.click(nextSentence());
     await waitFor(() => expect(screen.queryByRole("textbox", { name: "Blank 2" })).toBeNull()); // line-2 has one blank
     expect(blank(1)).toHaveValue("");
+    expect(blank(1)).not.toHaveAccessibleDescription();
+    expect(screen.getByRole("button", { name: /^Sentence 1, .*, in progress$/ })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /^Sentence 1,/ }));
     await screen.findByRole("textbox", { name: "Blank 2" });
-    expect(blank(1)).toHaveValue("");
-    expect(blank(1)).not.toHaveAccessibleDescription();
+    expect(blank(1)).toHaveValue("あめ");
+    expect(blank(2)).toHaveAccessibleDescription();
   });
 
   it("a failed cloze read says so and Retry reads it again", async () => {
@@ -1128,3 +1132,119 @@ function required<T>(value: T | null | undefined): T {
   if (value === null || value === undefined) throw new Error("expected a value");
   return value;
 }
+
+describe("ListeningModeBody — drafts across navigation and the picker (plan Task 14, spec §3.9)", () => {
+  const sentence = (n: number) => screen.getByRole("button", { name: new RegExp(`^Sentence ${n},`) });
+  const goTo = async (n: number) => {
+    fireEvent.click(sentence(n));
+    await waitFor(() => expect(sentence(n)).toHaveAttribute("aria-current", "true"));
+  };
+
+  it("typed text on one line survives a move to another line and back; the other line starts empty", async () => {
+    await openTyping("line-4");
+    typeInto("テスト");
+    await goTo(2);
+    await waitFor(() => expect(input()).toHaveValue(""));
+    expect(sentence(4)).toHaveAccessibleName(/, in progress$/);
+    await goTo(4);
+    await waitFor(() => expect(input()).toHaveValue("テスト"));
+  });
+
+  it("easy toggle keeps both drafts (Review Focus 1): typed text and placed pieces each come back", async () => {
+    await openTyping("line-1");
+    typeInto("今日");
+    // A star is a grapheme1 hint: it must never become a hinted piece on the other side (one unit per attempt, §3.3).
+    fireEvent.click(star(2));
+    fireEvent.click(easyMode());
+    await screen.findByRole("list", { name: "Your sentence" });
+    expect(placedTexts()).toEqual([]);
+    expect(feedback()).not.toHaveTextContent("hinted");
+    place("今日は");
+    fireEvent.click(easyMode());
+    await waitFor(() => expect(input()).toHaveValue("今日"));
+    expect(star(2)).not.toHaveAccessibleName(/hidden$/);
+    fireEvent.click(easyMode());
+    await screen.findByRole("list", { name: "Your sentence" });
+    expect(placedTexts()).toEqual(["今日は"]);
+  });
+
+  it("a picker round-trip keeps the draft; a reload (provider remount) drops it", async () => {
+    const view = await openTyping("line-4");
+    typeInto("テスト");
+    fireEvent.click(screen.getByRole("button", { name: "Change exercise" }));
+    searchParams = new URLSearchParams("line=line-4");
+    view.rerender(shell());
+    await screen.findByRole("heading", { name: "How would you like to practise listening?" });
+    searchParams = new URLSearchParams("line=line-4&format=dictation");
+    view.rerender(shell());
+    await waitFor(() => expect(input()).toHaveValue("テスト"));
+    view.unmount();
+    render(shell());
+    await waitFor(() => expect(input()).toHaveValue(""));
+  });
+
+  it("hints come back with the draft and travel with the submit", async () => {
+    await openTyping("line-4");
+    fireEvent.click(star(2));
+    typeInto("テスト");
+    await goTo(2);
+    await goTo(4);
+    await waitFor(() => expect(input()).toHaveValue("テスト"));
+    expect(star(2)).toHaveAccessibleName("Character 2 of 8, ｽ");
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
+    expect(attemptBodies()[0]).toMatchObject({ lineId: "line-4", input: "テスト", hintedUnits: [1] });
+  });
+
+  it("a successful Check clears the draft: back on the line it starts empty, with no dot", async () => {
+    await openTyping("line-4");
+    typeInto("テストはいいです");
+    fireEvent.click(check());
+    await screen.findByTestId("listening-score");
+    await goTo(2);
+    expect(sentence(4)).not.toHaveAccessibleName(/in progress/);
+    await goTo(4);
+    await waitFor(() => expect(input()).toHaveValue(""));
+  });
+
+  it("a Check that fails to send keeps the draft; one still pending leaves none behind", async () => {
+    server.attempt = () => Promise.reject(new Error("offline"));
+    await openTyping("line-4");
+    typeInto("テスト");
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(1));
+    await waitFor(() => expect(check()).not.toBeDisabled());
+    await goTo(2);
+    await goTo(4);
+    await waitFor(() => expect(input()).toHaveValue("テスト"));
+    server.attempt = () => new Promise(() => undefined);
+    fireEvent.click(check());
+    await waitFor(() => expect(attemptBodies()).toHaveLength(2));
+    await goTo(2);
+    expect(sentence(4)).not.toHaveAccessibleName(/in progress/);
+    await goTo(4);
+    await waitFor(() => expect(input()).toHaveValue(""));
+  });
+
+  it("cloze draft with other blanks is discarded (Review Focus 2)", async () => {
+    searchParams = new URLSearchParams("line=line-1&format=cloze");
+    render(shell());
+    const blankBox = (n: number) => screen.getByRole("textbox", { name: `Blank ${n}` });
+    fireEvent.change(await screen.findByRole("textbox", { name: "Blank 1" }), { target: { value: "あめ" } });
+    await goTo(2);
+    // The server now picks other blanks for line 1 (known words grew): one blank where there were two.
+    const base = required(fetchMock.getMockImplementation());
+    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
+      if (!/line-1\/cloze$/.test(String(url))) return base(url, init);
+      const { data } = await (await base(url, init) as Response).json() as { data: ReturnType<typeof Object> };
+      const c = data as { blanks: number[]; segments: { text: string; blank: number | null; romaji: string }[]; readings: string[] };
+      return Response.json({ data: { ...c, blanks: [6], readings: ["あした"], segments: [{ text: "今日は雨です。でも", blank: null, romaji: "r" }, { text: "明日", blank: 0, romaji: "___" }, { text: "は晴れ…", blank: null, romaji: "r" }] } });
+    });
+    await goTo(1);
+    await screen.findByRole("textbox", { name: "Blank 1" });
+    expect(screen.queryByRole("textbox", { name: "Blank 2" })).toBeNull();
+    expect(blankBox(1)).toHaveValue("");
+    await goTo(2);
+    expect(sentence(1)).not.toHaveAccessibleName(/in progress/);
+  });
+});
