@@ -42,7 +42,8 @@ export function ListeningFeedback({ messages, reaction, error, submitting, resul
 
   // The divider and eyebrow belong to content; the live region stays mounted so a first message is announced.
   const content = error !== null || reaction !== null || heading !== undefined || result !== null || answer !== null;
-  return <section className={`flex flex-col gap-sm ${content ? "border-t border-border pt-md" : ""}`}>
+  // `data-empty` lets the panel drop the gap a 0-height feedback would still take (case 22, listen-only fit).
+  return <section data-empty={content ? undefined : ""} className={`flex flex-col gap-sm ${content ? "border-t border-border pt-md" : ""}`}>
     {error && <p role="alert" className="text-caption text-danger-strong">{t(`listening.error.${error}`)}</p>}
     <div className="flex items-start justify-between gap-sm">
       <div className="flex min-w-0 flex-1 flex-col gap-2xs">

@@ -22,13 +22,15 @@ export function PracticePanel({ label, header, navigator, feedback, actions, chi
 }) {
   return (
     // The scroll padding keeps a focused control from scrolling in under the footer: its whole visible height
-    // (Check + pt-sm + pb-md+xs + the border).
-    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+var(--space-sm)+var(--space-md)+var(--space-xs)+1px)]" : ""}`} data-testid="practice-panel">
+    // (Check + pt-sm + pb-md + the border).
+    <section aria-label={label} className={`practice-panel flex h-full min-h-0 flex-col gap-md overflow-y-auto p-md${actions ? " scroll-pb-[calc(var(--control-md)+var(--space-sm)+var(--space-md)+1px)]" : ""}`} data-testid="practice-panel">
       {header}
       <div>{navigator}</div>
       <div className="flex flex-col gap-md">{children}</div>
-      <div>{feedback}</div>
-      {actions && <div data-testid="practice-actions" className="sticky bottom-[calc(-1*var(--space-md))] -mx-md -mb-md mt-auto flex flex-wrap items-center justify-center gap-sm border-t border-border bg-card/90 px-md pb-[calc(var(--space-md)+var(--space-xs))] pt-sm backdrop-blur">{actions}</div>}
+      {/* An empty feedback (`data-empty`, 0 high before any result) gives its gap back: a 20-piece word line fits
+          above the listen-only dock with no scroll (case 22, measured 2026-11-03: the gap was 14px of nothing). */}
+      <div className="has-[>[data-empty]]:-mt-md">{feedback}</div>
+      {actions && <div data-testid="practice-actions" className="sticky bottom-[calc(-1*var(--space-md))] -mx-md -mb-md mt-auto flex flex-wrap items-center justify-center gap-sm border-t border-border bg-card/90 px-md pb-md pt-sm backdrop-blur">{actions}</div>}
     </section>
   );
 }
