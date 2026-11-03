@@ -211,5 +211,54 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       await openLarge(page);
       expect((await box(rail(page))).width).toBeCloseTo(width, 0);
     });
+
+    const mascotBox = (page: Page) => box(page.getByTestId("korume-mascot"));
+    const mascotButton = (page: Page) => page.getByRole("button", { name: "Ask Korume" });
+
+    test("11 · a press that barely moves opens the sheet", async ({ page }) => {
+      await registerLearner(data, page, "e2e_korume_sheet_press");
+      await openLessonAt(data, page, 3);
+      const from = await centreOf(mascotButton(page));
+      await dragBy(page, from, 2, 1);
+      await expect(sheet(page)).toBeVisible();
+    });
+
+    test("12 · a 200px drag moves the mascot without opening, survives a reload, and the sheet opens beside it", async ({ page }) => {
+      await registerLearner(data, page, "e2e_korume_sheet_drag");
+      await openLessonAt(data, page, 3);
+      const before = await mascotBox(page);
+      await dragBy(page, await centreOf(mascotButton(page)), -200, 0);
+      const moved = await mascotBox(page);
+      expect(Math.abs(before.x - moved.x - 200)).toBeLessThanOrEqual(3);
+      await expect(sheet(page)).toHaveCount(0);
+      await page.reload();
+      await expect(page.getByTestId("korume-mascot")).toBeVisible();
+      expect(Math.abs((await mascotBox(page)).x - moved.x)).toBeLessThanOrEqual(3);
+      // Top-left corner: the sheet grows down and to the right of the mascot.
+      const here = await centreOf(mascotButton(page));
+      await dragBy(page, here, 20 - here.x, 20 - here.y);
+      const corner = await mascotBox(page);
+      await openMascot(page);
+      await expect(sheet(page)).toBeVisible();
+      const margin = await tokenPx(page, "--space-md");
+      const b = await box(sheet(page));
+      expect(Math.abs(b.x - corner.x)).toBeLessThanOrEqual(margin + 1);
+      expect(Math.abs(b.y - corner.y)).toBeLessThanOrEqual(margin + 1);
+      expect(b.x + b.width).toBeGreaterThan(corner.x + corner.width);
+    });
+
+    test("13 · a stored position from a bigger window is clamped into the viewport", async ({ page }) => {
+      await registerLearner(data, page, "e2e_korume_sheet_clamp");
+      await openLessonAt(data, page, 3);
+      await page.evaluate(() => localStorage.setItem("korume.launcher", JSON.stringify({ x: 5000, y: 3000 })));
+      await page.reload();
+      await expect(page.getByTestId("korume-mascot")).toBeVisible();
+      const margin = await tokenPx(page, "--space-md");
+      const b = await mascotBox(page);
+      expect(b.x).toBeGreaterThanOrEqual(margin - 3);
+      expect(b.y).toBeGreaterThanOrEqual(margin - 3);
+      expect(b.x + b.width).toBeLessThanOrEqual(viewport.width - margin + 3);
+      expect(b.y + b.height).toBeLessThanOrEqual(viewport.height - margin + 3);
+    });
   });
 }

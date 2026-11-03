@@ -79,7 +79,8 @@
       "shrink": "Shrink Korume",
       "tagline": "A quiet place to understand Japanese",
       "allChats": "All conversations",
-      "splitter": "Resize chat and context"
+      "splitter": "Resize chat and context",
+      "moveMascot": "Drag to move Korume"
     },
     "chat": {
       "brand": "Korume",

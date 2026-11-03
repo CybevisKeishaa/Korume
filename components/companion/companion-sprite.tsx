@@ -26,7 +26,7 @@ const POSE_ART: Record<CompanionPose, MascotPoseName> = {
 const SIZE_CLASS = { sm: "h-12", lg: "h-28" } as const;
 
 /** `label` names what activating it does where the sprite is not the journal door (Ask Korume's mascot). */
-export function CompanionSprite({ pose, onActivate, label, size = "sm" }: { pose: CompanionPose; onActivate: () => void; label?: string; size?: keyof typeof SIZE_CLASS }) {
+export function CompanionSprite({ pose, onActivate, label, size = "sm", describedBy }: { pose: CompanionPose; onActivate: () => void; label?: string; size?: keyof typeof SIZE_CLASS; describedBy?: string }) {
   const t = useTranslations("companion");
   // No provider (outside the app shell) → hold still: the reduce-motion-safe default.
   const reduceMotion = useThemeOrNull()?.reduceMotion ?? true;
@@ -36,6 +36,7 @@ export function CompanionSprite({ pose, onActivate, label, size = "sm" }: { pose
       type="button"
       onClick={onActivate}
       aria-label={label ?? t("a11y.sprite")}
+      aria-describedby={describedBy}
       data-companion-pose={pose}
       className={cn(
         "inline-flex shrink-0 items-end justify-center rounded-lg",

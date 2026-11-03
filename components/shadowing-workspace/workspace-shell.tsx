@@ -262,7 +262,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       {session.view !== "focus" && (
         <div className={fullTranscript ? "relative col-span-1 row-start-2 min-h-0 min-w-0 p-md" : dock ? "relative row-start-2 min-h-0 min-w-0" : "relative min-h-0 min-w-0"}>
           {children}
-          {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} onOpen={openKorume} onPress={korume.rememberSelection} />}
+          {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} onOpen={openKorume} onPress={korume.rememberSelection} onMove={korume.measureLauncher} />}
         </div>
       )}
       {korumeEnabled && korume.draft && (

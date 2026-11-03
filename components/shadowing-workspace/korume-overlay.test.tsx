@@ -169,6 +169,53 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     localStorage.clear();
   });
 
+  describe("the draggable mascot (spec §5.3)", () => {
+    beforeEach(() => localStorage.clear());
+    afterEach(() => localStorage.clear());
+    // jsdom has no PointerEvent, so the fields the mascot reads are set on a plain event.
+    const pointer = (target: Element, make: typeof createEvent.pointerDown, x: number, y: number) => {
+      const event = make(target);
+      Object.defineProperties(event, { button: { value: 0 }, pointerId: { value: 1 }, clientX: { value: x }, clientY: { value: y } });
+      fireEvent(target, event);
+    };
+
+    it("moves by --space-md per arrow key, remembers it, and describes the gesture", () => {
+      mount();
+      const button = mascot() as HTMLElement;
+      expect(button).toHaveAccessibleDescription("Drag to move Korume");
+      fireEvent.keyDown(button, { key: "ArrowRight" });
+      fireEvent.keyDown(button, { key: "ArrowDown" });
+      const wrapper = screen.getByTestId("korume-mascot");
+      expect(wrapper.style.left).toBe("32px");
+      expect(wrapper.style.top).toBe("32px");
+      expect(JSON.parse(localStorage.getItem("korume.launcher") as string)).toEqual({ x: 32, y: 32 });
+      expect(sheet()).toBeNull();
+    });
+
+    it("ignores a stored position that is garbage", () => {
+      localStorage.setItem("korume.launcher", "{nope");
+      mount();
+      expect(mascot()).toBeInTheDocument();
+      expect(screen.getByTestId("korume-mascot").style.left).toBe("16px");
+    });
+
+    it("a drag moves it, is remembered and does not open; the press still anchors the selection", () => {
+      mount();
+      const wrapper = screen.getByTestId("korume-mascot");
+      pointer(wrapper, createEvent.pointerDown, 100, 100);
+      // Moves and the release are read on window; they bubble there from the body.
+      pointer(document.body, createEvent.pointerMove, 300, 160);
+      expect(document.body.style.userSelect).toBe("none");
+      pointer(document.body, createEvent.pointerUp, 300, 160);
+      expect(document.body.style.userSelect).toBe("");
+      fireEvent.click(mascot() as HTMLElement);
+      expect(sheet()).toBeNull();
+      expect(JSON.parse(localStorage.getItem("korume.launcher") as string)).toEqual({ x: 216, y: 76 });
+      fireEvent.click(mascot() as HTMLElement);
+      expect(sheet()).toBeInTheDocument();
+    });
+  });
+
   it("keeps the thread when the layout toggles", () => {
     mount();
     fireEvent.click(mascot() as HTMLElement);
