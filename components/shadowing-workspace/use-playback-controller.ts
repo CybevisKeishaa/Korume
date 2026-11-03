@@ -224,7 +224,9 @@ export function usePlaybackControllerState(args: {
     } else if (result.decision.kind === "pause") {
       pausedAtBoundaryRef.current = true;
       current.positionStore.set(Math.min(current.positionStore.get(), end - 0.001));
-      pauseInside(end);
+      // No seek back here (D6 is about the next sentence; at the video's end there is none): YouTube's seekTo from
+      // ENDED plays again, so the last instant played, ended again and the stop repeated (ultra review, 2026-11-03).
+      current.adapterRef.current?.pause();
     }
   }, [pauseInside, positionAt, seekInternal, startClock, stopClock]);
 

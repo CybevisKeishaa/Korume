@@ -131,13 +131,14 @@ describe("usePlaybackControllerState", () => {
       expect(onSentence.mock.calls.at(-1)?.[0]).toEqual({ index: 1, isSpoken: true });
     });
 
-    it("an ENDED boundary pause also seeks back inside the last sentence", () => {
+    it("an ENDED boundary pause only pauses: a seek from ENDED would play the last instant again and loop", () => {
       const nullEnd = lines.map((line) => line.index === 2 ? { ...line, endTime: null } : line);
       const { result } = setup(undefined, nullEnd, adapterFor(player), vi.fn(), true);
       const seek = vi.spyOn(player, "seekTo");
+      const pause = vi.spyOn(player, "pauseVideo");
       act(() => { result.current.onTick(6.1); result.current.onStateChange(YT_PLAYER_STATE.ENDED); });
-      // A null-ended last line ends at the player's reported duration (the stub's 120 s).
-      expect(seek).toHaveBeenLastCalledWith(120 - 0.001, true);
+      expect(pause).toHaveBeenCalledOnce();
+      expect(seek).not.toHaveBeenCalled();
     });
 
     it("Shadowing navigation never autoplays and its auto pause does not seek back", () => {
@@ -476,8 +477,9 @@ describe("usePlaybackControllerState", () => {
         else { result.current.onTick(6.01); result.current.onStateChange(YT_PLAYER_STATE.ENDED); }
       }
     });
-    // Two replays, then the stop seeks back just inside the sentence (D6).
-    expect(seek).toHaveBeenCalledTimes(3);
+    // Two replays, then the stop: a tick stop seeks back just inside the sentence (D6); an ENDED stop only pauses,
+    // since a seek from ENDED would play again.
+    expect(seek).toHaveBeenCalledTimes(boundary === "tick" ? 3 : 2);
     expect(play).toHaveBeenCalledTimes(2);
     expect(pause).toHaveBeenCalledOnce();
     expect(result.current.controller.loopConfig().enabled).toBe(true);
