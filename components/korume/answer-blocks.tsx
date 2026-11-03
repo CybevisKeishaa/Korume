@@ -63,12 +63,15 @@ function AnswerBlock({ block, entities, onFollowup }: {
         : t(entity.seenCapped ? "ask.seenCapped" : "ask.seen", { count: entity.seenCount });
       return (
         <aside className="rounded-lg border border-border bg-background px-md py-sm">
-          <p className="text-caption font-semibold uppercase tracking-widest text-primary-strong">{t(`ask.kind.${entity.kind}`)}</p>
+          <div className="flex items-center justify-between gap-sm">
+            <p className="text-caption font-semibold uppercase tracking-widest text-primary-strong">{t(`ask.kind.${entity.kind}`)}</p>
+            {entity.jlpt ? <span className="rounded-full bg-primary/10 px-xs text-caption font-bold text-primary-strong">{`JLPT ${entity.jlpt}`}</span> : null}
+          </div>
           <p className="mt-xs text-body-lg font-medium text-foreground">
             <span lang="ja" className="font-jp">{entity.label}</span>
             {entity.reading ? <span lang="ja" className="ms-xs font-jp text-caption text-muted-foreground">{entity.reading}</span> : null}
           </p>
-          <p className="text-caption text-muted-foreground">{[entity.jlpt, seen].filter(Boolean).join(" · ")}</p>
+          {seen ? <p className="text-caption text-muted-foreground">{seen}</p> : null}
           {block.note ? <p className="mt-2xs text-body text-foreground/80">{block.note}</p> : null}
         </aside>
       );

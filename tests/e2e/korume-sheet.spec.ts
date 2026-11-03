@@ -177,6 +177,20 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       await expect(sheet(page)).not.toHaveAttribute("data-gliding", ""); // the glide moves the splitter under the pointer
     }
 
+    /** The scrollbar sits on the scroller's right border edge: the point 4px inside it must belong to the scroller, not to a resize handle. */
+    const barOwner = (page: Page, selector: string) => page.evaluate((sel) => {
+      const r = document.querySelector(sel)!.getBoundingClientRect();
+      const hit = document.elementFromPoint(r.right - 4, r.top + r.height / 2);
+      return { inside: !!hit?.closest(sel), handle: hit?.closest("[data-korume-handle]")?.getAttribute("data-korume-handle") ?? null };
+    }, selector);
+
+    test("8b · the scrollbars stay clear of the east resize handle (large rail, small chat)", async ({ page }) => {
+      await openSheet(page);
+      expect(await barOwner(page, "[data-korume-scroll]")).toEqual({ inside: true, handle: null });
+      await openLarge(page);
+      expect(await barOwner(page, "[data-korume-rail]")).toEqual({ inside: true, handle: null });
+    });
+
     test("9 · the splitter drags the rail wider and never squeezes the chat below its minimum", async ({ page }) => {
       await openSheet(page);
       await openLarge(page);

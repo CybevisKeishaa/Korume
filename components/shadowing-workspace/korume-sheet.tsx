@@ -324,7 +324,8 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
               ) : null}
             </div>
           )}
-          <div data-korume-scroll className="korume-scroll min-h-0 flex-1 space-y-lg overflow-y-auto px-md py-md">
+          {/* A scrollbar sits on the border-box edge, so where this scroller meets the sheet edge (small layout; the rail below) a margin keeps its bar clear of the 10px east resize handle. */}
+          <div data-korume-scroll className={`korume-scroll min-h-0 flex-1 space-y-lg overflow-y-auto px-md py-md ${large ? "" : "mr-[--korume-handle]"}`}>
             <ConversationHeader messages={thread.messages} />
             <MessageList messages={thread.messages} pending={thread.pending} onFollowup={locked ? undefined : (text) => void thread.send(text)} onRetry={() => void thread.retry()} />
           </div>
@@ -351,7 +352,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
           />
         ) : null}
         {large ? (
-          <div id={railId} data-korume-rail className="korume-scroll min-h-0 overflow-y-auto p-md">
+          <div id={railId} data-korume-rail className="korume-scroll mr-[--korume-handle] min-h-0 overflow-y-auto p-md">
             <KorumeRail
               anchor={line ? { videoId: video.id, videoTitle: video.title, lineId: line.id, lineText: line.textJp, translation: line.textTranslation, startTime: line.startTime, span: anchor.span } : null}
               entities={entities}
