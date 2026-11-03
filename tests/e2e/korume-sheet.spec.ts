@@ -1,0 +1,163 @@
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { fakeYt } from "./fixtures/fake-youtube";
+import { answerOf, composer, openLessonAt, openMascot, registerLearner, sheet, stubTurns } from "./fixtures/korume-page";
+import { seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data";
+
+/**
+ * The resizable, movable Ask Korume sheet (spec §5.1, §6): where it opens, how handles and the header move it, how it
+ * toggles, and that none of it touches the thread or the player. Run at the owner viewport (1280×529) and a roomier 1280×672.
+ */
+let data: WorkspaceData;
+test.beforeAll(async () => { data = await seedWorkspaceData(); });
+test.afterAll(async () => { await data?.cleanup(); });
+
+/** A CSS length token in px, resolved in the page (the density unit scales with the viewport width). */
+const tokenPx = (page: Page, token: string) => page.evaluate((name) => {
+  const probe = document.createElement("div");
+  probe.style.cssText = `position:absolute;visibility:hidden;width:var(${name})`;
+  document.body.append(probe);
+  const width = probe.getBoundingClientRect().width;
+  probe.remove();
+  return width;
+}, token);
+
+const box = async (target: Locator) => (await target.boundingBox())!;
+const handle = (page: Page, edge: string) => page.locator(`[data-korume-handle="${edge}"]`);
+const centreOf = async (target: Locator) => { const b = await box(target); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+const header = (page: Page) => sheet(page).locator("[data-korume-drag]");
+const title = (page: Page) => sheet(page).getByRole("heading", { name: "Korume" });
+
+/** Press at `from`, move by (dx, dy) in steps; `release` false leaves the button down for a mid-drag look. */
+async function dragBy(page: Page, from: { x: number; y: number }, dx: number, dy: number, release = true) {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  await page.mouse.move(from.x + dx, from.y + dy, { steps: 10 });
+  if (release) await page.mouse.up();
+}
+
+/** Opens the lesson and the sheet; returns the mascot box as it was before the mascot was unmounted. */
+async function openSheet(page: Page) {
+  await registerLearner(data, page, "e2e_korume_sheet_geo");
+  await openLessonAt(data, page, 3);
+  const mascot = await box(page.getByTestId("korume-mascot"));
+  await openMascot(page);
+  await expect(sheet(page)).toBeVisible();
+  await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+  return mascot;
+}
+
+/** Sends the open sheet to the left so there is room to grow to the right. */
+async function moveLeft(page: Page, by = 450) {
+  await dragBy(page, await centreOf(title(page)), -by, 0);
+}
+
+for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529 }]) {
+  test.describe(`sheet at ${viewport.width}×${viewport.height}`, () => {
+    test.use({ viewport });
+
+    test("1 · opens small beside the mascot, inside the viewport", async ({ page }) => {
+      const mascot = await openSheet(page);
+      const margin = await tokenPx(page, "--space-md");
+      const b = await box(sheet(page));
+      expect(b.x).toBeGreaterThanOrEqual(margin - 1);
+      expect(b.y).toBeGreaterThanOrEqual(margin - 1);
+      expect(b.x + b.width).toBeLessThanOrEqual(viewport.width - margin + 1);
+      expect(b.y + b.height).toBeLessThanOrEqual(viewport.height - margin + 1);
+      expect(Math.abs(b.x + b.width - (mascot.x + mascot.width))).toBeLessThanOrEqual(margin + 1);
+      // Taller than the room above the mascot (the owner viewport): the sheet is clamped to the top margin instead.
+      if (b.y > margin + 1) expect(Math.abs(b.y + b.height - (mascot.y + mascot.height))).toBeLessThanOrEqual(margin + 1);
+      else expect(b.y + b.height).toBeGreaterThanOrEqual(mascot.y + mascot.height - 1);
+      expect(b.width).toBeCloseTo(await tokenPx(page, "--korume-small-w"), 0);
+      expect(b.height).toBeCloseTo(Math.min(await tokenPx(page, "--korume-small-h"), viewport.height - 2 * margin), 0);
+    });
+
+    test("2 · the se handle grows the box and the w handle keeps the right edge", async ({ page }) => {
+      await openSheet(page);
+      await moveLeft(page);
+      const before = await box(sheet(page));
+      await dragBy(page, await centreOf(handle(page, "se")), 120, 0);
+      const grown = await box(sheet(page));
+      expect(grown.width).toBeCloseTo(before.width + 120, 0);
+      expect(grown.x).toBeCloseTo(before.x, 0);
+      await dragBy(page, await centreOf(handle(page, "w")), -40, 0);
+      const west = await box(sheet(page));
+      expect(Math.abs(west.x + west.width - (grown.x + grown.width))).toBeLessThanOrEqual(1);
+      expect(west.width).toBeCloseTo(grown.width + 40, 0);
+    });
+
+    test("3 · dragging e past the breakpoint holds still, then centres on release", async ({ page }) => {
+      await openSheet(page);
+      await moveLeft(page);
+      const before = await box(sheet(page));
+      const breakpoint = await tokenPx(page, "--korume-breakpoint");
+      await dragBy(page, await centreOf(handle(page, "e")), breakpoint - before.width + 40, 0, false);
+      const mid = await box(sheet(page));
+      expect(mid.width).toBeGreaterThanOrEqual(breakpoint);
+      expect(Math.abs(mid.x - before.x)).toBeLessThanOrEqual(1);
+      await page.mouse.up();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width / 2 - viewport.width / 2); }).toBeLessThanOrEqual(2);
+    });
+
+    test("4 · the header moves the sheet, a header button does not", async ({ page }) => {
+      await openSheet(page);
+      const before = await box(sheet(page));
+      await dragBy(page, await centreOf(title(page)), -150, -60);
+      const moved = await box(sheet(page));
+      expect(moved.x).toBeCloseTo(before.x - 150, 0);
+      expect(moved.y).toBeLessThanOrEqual(before.y); // the owner viewport leaves no vertical room
+      await dragBy(page, await centreOf(sheet(page).getByRole("button", { name: "Enlarge Korume" })), -100, 0);
+      const after = await box(sheet(page));
+      expect(after.x).toBeCloseTo(moved.x, 0);
+      expect(after.y).toBeCloseTo(moved.y, 0);
+      await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+    });
+
+    test("5 · a header double-click toggles, and toggling back goes beside the mascot", async ({ page }) => {
+      const mascot = await openSheet(page);
+      const margin = await tokenPx(page, "--space-md");
+      await title(page).dblclick();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width / 2 - viewport.width / 2); }).toBeLessThanOrEqual(2);
+      await title(page).dblclick();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+      await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width - (mascot.x + mascot.width)); }).toBeLessThanOrEqual(margin + 1);
+    });
+
+    test("6 · re-clamps on a window resize", async ({ page }) => {
+      await openSheet(page);
+      await page.setViewportSize({ width: 1100, height: viewport.height });
+      await expect.poll(async () => { const b = await box(page.getByTestId("korume-sheet")); return b.x >= 0 && b.y >= 0 && b.x + b.width <= 1100 && b.y + b.height <= viewport.height; }).toBe(true);
+    });
+
+    test("7 · reduced motion jumps: centred at once, nothing running", async ({ page }) => {
+      await page.emulateMedia({ reducedMotion: "reduce" });
+      await openSheet(page);
+      await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+      expect(await sheet(page).evaluate((el) => el.getAnimations().length)).toBe(0);
+      const b = await box(sheet(page));
+      expect(Math.abs(b.x + b.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
+    });
+
+    test("8 · the thread and the player survive toggling", async ({ page }) => {
+      await registerLearner(data, page, "e2e_korume_sheet_keep");
+      await stubTurns(page, (body) => ({ status: 200, body: answerOf(body.turnId, `Answer to: ${body.text}`) }));
+      await openLessonAt(data, page, 3);
+      const player = await page.getByTestId("fake-yt").elementHandle();
+      await openMascot(page);
+      await composer(sheet(page)).fill("Why は?");
+      await composer(sheet(page)).press("Enter");
+      await expect(sheet(page).getByText("Answer to: Why は?")).toBeVisible();
+      for (let i = 0; i < 2; i++) {
+        await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+        await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+        await expect(sheet(page).getByText("Answer to: Why は?")).toBeVisible();
+        await sheet(page).getByRole("button", { name: "Shrink Korume" }).click();
+        await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+        await expect(sheet(page).getByText("Answer to: Why は?")).toBeVisible();
+      }
+      expect(await player!.evaluate((el) => el.isConnected)).toBe(true);
+      expect((await fakeYt(page)).mounts).toBe(1);
+    });
+  });
+}

@@ -76,7 +76,10 @@
       "askCurrent": "Ask about the current line",
       "anchor": "Asking about this line",
       "enlarge": "Enlarge Korume",
-      "shrink": "Shrink Korume"
+      "shrink": "Shrink Korume",
+      "tagline": "A quiet place to understand Japanese",
+      "allChats": "All conversations",
+      "resizeHandle": "Resize Korume"
     },
     "chat": {
       "brand": "Korume",

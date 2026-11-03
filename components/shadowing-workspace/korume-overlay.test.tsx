@@ -7,6 +7,12 @@ import type { WorkspaceBootstrap } from "@/lib/shadowing-workspace/bootstrap";
 import { resetTabWritesForTests, usePositionStore } from "./workspace-context";
 import { ShadowingWorkspaceShell } from "./workspace-shell";
 
+// jsdom resolves no CSS variable, so the sheet's token widths come from here (design px at density 1).
+vi.mock("./workspace-divider", async (importOriginal) => {
+  const px: Record<string, number> = { "--space-md": 16, "--korume-min-w": 340, "--korume-min-h": 380, "--korume-breakpoint": 720, "--korume-small-w": 400, "--korume-small-h": 560, "--korume-large-w": 1040, "--korume-large-h": 680 };
+  return { ...(await importOriginal<typeof import("./workspace-divider")>()), tokenPixels: (_root: HTMLElement, token: string) => px[token] ?? 0 };
+});
+
 const push = vi.fn();
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
@@ -84,22 +90,44 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     expect(push).toHaveBeenCalledWith(`/korume/chat?thread=${body.threadId}`);
   });
 
-  it("enlarges to the middle with the Learning context, and Escape or the backdrop shrinks it before closing", () => {
+  it("toggles to large and Escape returns to small before closing", () => {
     mount();
     fireEvent.click(mascot() as HTMLElement);
+    expect(sheet()).toHaveAttribute("data-layout", "small");
     expect(screen.queryByRole("complementary", { name: "Learning context" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
-    expect(sheet()).toHaveAttribute("data-expanded", "true");
+    expect(sheet()).toHaveAttribute("data-layout", "large");
     const context = screen.getByRole("complementary", { name: "Learning context" });
     expect(context).toHaveTextContent("今日は1番目の文です");
     expect(context).toHaveTextContent("Episode 1");
+    expect(sheet()).toHaveTextContent("A quiet place to understand Japanese");
+    expect(screen.queryByTestId("korume-backdrop")).toBeNull();
     fireEvent.keyDown(sheet() as HTMLElement, { key: "Escape" });
-    expect(sheet()).toHaveAttribute("data-expanded", "false");
-    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
-    fireEvent.click(screen.getByTestId("korume-backdrop"));
-    expect(sheet()).toHaveAttribute("data-expanded", "false");
+    expect(sheet()).toHaveAttribute("data-layout", "small");
+    expect(sheet()).toHaveTextContent("Japanese Knowledge");
     fireEvent.keyDown(sheet() as HTMLElement, { key: "Escape" });
     expect(sheet()).toBeNull();
+  });
+
+  it("a double-click on the header toggles, a double-click on a header button does not", () => {
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    fireEvent.doubleClick(screen.getByRole("heading", { name: "Korume" }));
+    expect(sheet()).toHaveAttribute("data-layout", "large");
+    fireEvent.doubleClick(screen.getByRole("button", { name: "All conversations" }));
+    expect(sheet()).toHaveAttribute("data-layout", "large");
+    fireEvent.doubleClick(screen.getByRole("heading", { name: "Korume" }));
+    expect(sheet()).toHaveAttribute("data-layout", "small");
+  });
+
+  it("keeps the thread when the layout toggles", () => {
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    const box = screen.getByRole("textbox", { name: "Message Korume" });
+    fireEvent.change(box, { target: { value: "draft text" } });
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    expect(screen.getByRole("textbox", { name: "Message Korume" })).toBe(box);
+    expect(box).toHaveValue("draft text");
   });
 
   it("opens with k outside editable fields, and k typed in the composer is just a k", () => {

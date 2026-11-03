@@ -1,8 +1,8 @@
-import { expect, test, type Page, type Route } from "@playwright/test";
-import { registerViaUi, uniqueEmail } from "./fixtures/auth";
-import { advance, FAKE_YT_STATE, fakeYt, installFakeYouTube } from "./fixtures/fake-youtube";
+import { expect, test, type Page } from "@playwright/test";
+import { FAKE_YT_STATE, fakeYt } from "./fixtures/fake-youtube";
+import { answerOf, composer, openLessonAt as openLessonAtWith, openMascot, registerLearner as registerLearnerWith, setTime, sheet, stubTurns } from "./fixtures/korume-page";
 import { ENT, RETRY_QUESTION, SEEDED_ANSWER, SEEDED_QUESTION, TOK, seedKorumeData, setCompanionEnabled, type KorumeData } from "./fixtures/korume-data";
-import { lineStart, lineText, seedWorkspaceData, VIDEO_DURATION, type WorkspaceData } from "./fixtures/workspace-data";
+import { lineStart, lineText, seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data";
 
 /**
  * Ask Korume browser acceptance (spec §7.6, plan Task 11 step 2). Fake provider: `AI_PROVIDER=none`, so every
@@ -15,54 +15,8 @@ let data: WorkspaceData;
 test.beforeAll(async () => { data = await seedWorkspaceData(); });
 test.afterAll(async () => { await data?.cleanup(); });
 
-interface Learner { userId: string; korumeRequests: string[] }
-
-async function registerLearner(page: Page, prefix: string): Promise<Learner> {
-  const korumeRequests: string[] = [];
-  await page.route(/youtube\.com|youtube-nocookie\.com|googlevideo\.com/, (route) => void route.abort());
-  await installFakeYouTube(page, { duration: VIDEO_DURATION });
-  page.on("request", (request) => { if (request.url().includes("/api/korume/")) korumeRequests.push(`${request.method()} ${new URL(request.url()).pathname}`); });
-  const email = uniqueEmail(prefix);
-  await page.goto("/en/register");
-  await registerViaUi(page, { name: "E2E Korume", email, password: "password123" });
-  await expect(page).toHaveURL(/\/en\/dashboard$/, { timeout: 15_000 });
-  return { userId: await data.userIdByEmail(email), korumeRequests };
-}
-
-async function openLessonAt(page: Page, index: number): Promise<void> {
-  await page.goto(`/en/shadowing/${data.videoId}`);
-  await expect(page.getByTestId("fake-yt")).toHaveCount(1);
-  await expect.poll(async () => (await fakeYt(page)).seeks.length).toBeGreaterThan(0);
-  await setTime(page, lineStart(index) + 0.3);
-}
-
-async function setTime(page: Page, seconds: number): Promise<void> {
-  await page.evaluate((s) => (window as unknown as { __fakeYt: { setTime(s: number): void } }).__fakeYt.setTime(s), seconds);
-  await advance(page, 0.05);
-}
-
-/** The mascot breathes (`companion-breathe`) for as long as it is shown, so it is never "stable" to Playwright. */
-const openMascot = (page: Page) => page.getByRole("button", { name: "Ask Korume" }).click({ force: true });
-const sheet = (page: Page) => page.getByRole("dialog", { name: "Korume" });
-const composer = (scope: Page | ReturnType<Page["locator"]>) => scope.getByRole("textbox", { name: "Message Korume" });
-const answerOf = (turnId: string, text: string) => ({
-  message: {
-    id: `ai-${turnId}`, turnId, role: "assistant", text,
-    answer: { blocks: [{ type: "paragraph", runs: [{ text }] }] }, grounding: [], createdAt: "2026-10-03T08:00:00.000Z",
-  },
-});
-
-/** Stubs `POST /turns` and records every body; `respond` picks the reply per call. */
-async function stubTurns(page: Page, respond: (body: { turnId: string; text: string }, call: number) => { status: number; body: unknown; headers?: Record<string, string> }) {
-  const bodies: { url: string; turnId: string; text: string }[] = [];
-  await page.route("**/api/korume/threads/*/turns", async (route: Route) => {
-    const body = route.request().postDataJSON() as { turnId: string; text: string };
-    bodies.push({ url: route.request().url(), ...body });
-    const reply = respond(body, bodies.length);
-    await route.fulfill({ status: reply.status, contentType: "application/json", headers: reply.headers, body: JSON.stringify(reply.body) });
-  });
-  return bodies;
-}
+const registerLearner = (page: Page, prefix: string) => registerLearnerWith(data, page, prefix);
+const openLessonAt = (page: Page, index: number) => openLessonAtWith(data, page, index);
 
 async function threadPosts(page: Page) {
   const posts: { threadId: string; lineId?: string; span?: { start: number; end: number } }[] = [];
@@ -83,29 +37,15 @@ test("1 · the sheet asks about the line it was opened on, never moves the video
   await openMascot(page);
   await expect(sheet(page)).toBeVisible();
   await expect(composer(sheet(page))).toBeFocused();
-  // Geometry (spec §6.2): min(400, 40vw), never under 340 — in REFERENCE px, like every workspace size: the app's
-  // density unit is 100vw/1440 (globals.css), so at 1280 the sheet is 400 × 1280/1440 ≈ 355.6 px. Measured, not assumed.
-  const unit = await page.evaluate(() => {
-    const probe = document.createElement("div");
-    probe.style.width = "calc(1000 * var(--density-unit))";
-    document.querySelector("[data-testid='shadowing-workspace']")!.appendChild(probe);
-    const width = probe.getBoundingClientRect().width / 1000;
-    probe.remove();
-    return width;
-  });
-  expect(unit).toBeCloseTo(1280 / 1440, 3);
+  // Geometry (spec §5.1): small = 400 × 560 in REFERENCE px (the density unit is 100vw/1440, so 0.889 at 1280), clamped to
+  // the viewport minus the margins, floating beside the mascot's corner — never a full-height sheet. Sizes live in
+  // korume-sheet.spec.ts; here only that it is a floating, in-viewport small sheet.
   const box = await sheet(page).boundingBox();
-  expect(box?.width).toBeCloseTo(Math.min(400 * unit, 0.4 * 1280), 0);
-  expect(box!.width).toBeGreaterThanOrEqual(340 * unit - 0.5);
-  // A floating popup (owner ruling 2026-10-03), not a full-height sheet: at most 420 reference px tall, inset from the
-  // transcript column's bottom-right corner, never over the player.
-  const player = await page.locator("[data-workspace-player-video]").boundingBox();
-  expect(box!.x).toBeGreaterThanOrEqual(player!.x + player!.width - 0.5);
-  expect(box!.height).toBeCloseTo(420 * unit, 0);
-  const drawerBar = await page.locator("section[data-drawer-level]").boundingBox();
-  expect(box!.y).toBeGreaterThan(player!.y); // not hung from the header like a full-height sheet
-  expect(box!.y + box!.height).toBeLessThan(drawerBar!.y); // floats above the drawer bar, inset
-  expect(box!.x + box!.width).toBeLessThan(1280); // inset from the right edge
+  await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+  expect(box!.x).toBeGreaterThan(0);
+  expect(box!.y).toBeGreaterThan(0);
+  expect(box!.x + box!.width).toBeLessThan(1280);
+  expect(box!.y + box!.height).toBeLessThan(529);
   expect((await fakeYt(page)).mounts).toBe(1);
   expect((await fakeYt(page)).state).toBe(FAKE_YT_STATE.PLAYING);
   await expect(page.locator("body")).not.toContainText(/sensei/i);
