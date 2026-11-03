@@ -9,7 +9,7 @@ export function clampSplit(ratio: number, width: number, leftMinimum: number, ri
   return Math.min(1 - rightMinimum / width, Math.max(leftMinimum / width, ratio));
 }
 
-function tokenPixels(root: HTMLElement, token: string): number {
+export function tokenPixels(root: HTMLElement, token: string): number {
   const probe = document.createElement("div");
   probe.className = "pointer-events-none absolute invisible";
   probe.style.width = `var(${token})`;

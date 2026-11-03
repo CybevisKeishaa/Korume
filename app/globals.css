@@ -271,6 +271,18 @@
      min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
   --korume-sheet-width: min(calc(400 * var(--density-unit)), 40vw);
   --korume-sheet-min: calc(340 * var(--density-unit));
+  --korume-small-w: calc(400 * var(--density-unit));
+  --korume-small-h: calc(560 * var(--density-unit));
+  --korume-large-w: calc(1040 * var(--density-unit));
+  --korume-large-h: calc(680 * var(--density-unit));
+  --korume-min-w: calc(340 * var(--density-unit));
+  --korume-min-h: calc(380 * var(--density-unit));
+  --korume-breakpoint: calc(720 * var(--density-unit));
+  --korume-rail-min: calc(260 * var(--density-unit));
+  --korume-rail-max: calc(520 * var(--density-unit));
+  --korume-rail-default: calc(320 * var(--density-unit));
+  --korume-chat-min: calc(380 * var(--density-unit));
+  --korume-handle: calc(10 * var(--density-unit));
   --korume-popup-height: calc(420 * var(--density-unit));
   --korume-expanded-width: min(calc(1040 * var(--density-unit)), 92vw);
   --korume-expanded-height: min(calc(680 * var(--density-unit)), 88vh);
@@ -486,6 +498,18 @@
      min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
   --korume-sheet-width: min(calc(400 * var(--density-unit)), 40vw);
   --korume-sheet-min: calc(340 * var(--density-unit));
+  --korume-small-w: calc(400 * var(--density-unit));
+  --korume-small-h: calc(560 * var(--density-unit));
+  --korume-large-w: calc(1040 * var(--density-unit));
+  --korume-large-h: calc(680 * var(--density-unit));
+  --korume-min-w: calc(340 * var(--density-unit));
+  --korume-min-h: calc(380 * var(--density-unit));
+  --korume-breakpoint: calc(720 * var(--density-unit));
+  --korume-rail-min: calc(260 * var(--density-unit));
+  --korume-rail-max: calc(520 * var(--density-unit));
+  --korume-rail-default: calc(320 * var(--density-unit));
+  --korume-chat-min: calc(380 * var(--density-unit));
+  --korume-handle: calc(10 * var(--density-unit));
   --korume-popup-height: calc(420 * var(--density-unit));
   --korume-expanded-width: min(calc(1040 * var(--density-unit)), 92vw);
   --korume-expanded-height: min(calc(680 * var(--density-unit)), 88vh);
