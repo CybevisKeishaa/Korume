@@ -1,7 +1,5 @@
 import "server-only";
-import { createClient } from "@/lib/supabase/server";
-import { rateLimit } from "@/lib/rate-limit";
-import { LINE_ANSWER_LIMIT } from "@/lib/data/line-chunks";
+import { readLineForAnswer } from "@/lib/data/line-chunks";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { lineTextHash, lineTokens } from "@/lib/dictation/chunk";
 import { CURRENT_CLOZE_SELECTOR, clozeBlank, selectBlanks, tokenRanges } from "@/lib/dictation/cloze";
@@ -13,26 +11,17 @@ export type LineClozeResult = { kind: "ok"; data: LineCloze } | { kind: "unautho
 
 /**
  * Spec §3.4: the learner's blanks for a line (known words are blanked last), with the raw sentence cut around them.
- * Auth and the RLS read come first, as for `/api/lines/[lineId]/chunks` (P12).
+ * Auth and the RLS read come first, through the same `readLineForAnswer` as the chunks (P12).
  */
 export async function loadLineCloze(lineId: string): Promise<LineClozeResult> {
-  const supabase = createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { kind: "unauthorized" };
-  const limited = rateLimit(`lines:answer:${user.id}`, LINE_ANSWER_LIMIT);
-  if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
-
-  const { data, error } = await supabase.from("transcript_lines").select("text_jp").eq("id", lineId).maybeSingle();
-  if (error) throw error;
-  const text = (data as { text_jp: string | null } | null)?.text_jp;
-  if (!text) return { kind: "not_found" };
+  const line = await readLineForAnswer(lineId);
+  if (line.kind !== "ok") return line;
+  const { supabase, userId, text } = line;
 
   const base = normalizeJa(text);
   const tokens = await lineTokens(text);
   const ranges = tokenRanges(tokens, base);
-  const blanks = ranges ? selectBlanks(tokens, await getKnownVocabLemmas(supabase, user.id)) : [];
+  const blanks = ranges ? selectBlanks(tokens, await getKnownVocabLemmas(supabase, userId)) : [];
   const map = displayMap(text);
   const all = { start: 0, end: Array.from(base).length };
 

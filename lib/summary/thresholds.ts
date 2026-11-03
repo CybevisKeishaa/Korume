@@ -33,7 +33,5 @@ export function modeQuality(mode: keyof LessonStatus, state: ModeState): Quality
     return state.kind === "complete" ? "strong" : state.kind === "in_progress" || state.kind === "reached" ? "practiced" : "not_started";
   }
   if (state.kind !== "scored") return "not_started";
-  const [needsWorkBelow, strongAt] = CUTS[mode];
-  if (state.score < needsWorkBelow) return "needs_work";
-  return state.score >= strongAt ? "strong" : "practiced";
+  return scoreBand(mode, state.score);
 }

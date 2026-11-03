@@ -7,7 +7,9 @@ const head = {
   lineId: z.string().uuid(),
   version: z.number().int().min(1),
   textHash: z.string().regex(/^[0-9a-f]{64}$/),
-  hintedUnits: z.array(index).max(200),
+  // One hint per grapheme at most, and the server checks every index against the line it reads (distinctWithin);
+  // the cap only bounds the body, at the Typing input's own 2000 (ultra review: 200 locked out lines over 200 graphemes).
+  hintedUnits: z.array(index).max(2000),
 };
 const hintUnit = z.enum(["chunk", "grapheme4", "grapheme1"]);
 /** Cloze token indices; candidacy, order and adjacency are checked against the re-tokenised line by the server. */

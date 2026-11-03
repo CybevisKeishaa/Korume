@@ -29,6 +29,11 @@ describe("dictationAttemptSchema (spec §5.4)", () => {
     expect(dictationAttemptSchema.safeParse(body).success).toBe(false);
   });
 
+  it("accepts more than 200 hints: a Typing line over 200 graphemes can hint every one (ultra review)", () => {
+    const body = { ...typing, hintedUnits: Array.from({ length: 201 }, (_, i) => i) };
+    expect(dictationAttemptSchema.parse(body)).toEqual(body);
+  });
+
   it("accepts a 20-piece Word Bank order", () => {
     const body = { ...wordBank, chunkOrder: Array.from({ length: 20 }, (_, i) => i) };
     expect(dictationAttemptSchema.parse(body)).toEqual(body);
@@ -48,7 +53,7 @@ describe("dictationAttemptSchema (spec §5.4)", () => {
     ["an upper-case textHash", { ...wordBank, textHash: "A".repeat(64) }],
     ["more than 64 pieces", { ...wordBank, chunkOrder: Array.from({ length: 65 }, (_, i) => i) }],
     ["a fractional chunk index", { ...wordBank, chunkOrder: [0.5, 1] }],
-    ["more than 200 hints", { ...typing, hintedUnits: Array.from({ length: 201 }, (_, i) => i) }],
+    ["more than 2000 hints", { ...typing, hintedUnits: Array.from({ length: 2001 }, (_, i) => i) }],
     ["a fractional hint", { ...typing, hintedUnits: [0.5] }],
     ["input over 2000 characters", { ...typing, input: "あ".repeat(2001) }],
     ["an unknown hint unit", { ...typing, hintUnit: "word" }],
