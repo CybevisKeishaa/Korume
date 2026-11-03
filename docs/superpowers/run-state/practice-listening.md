@@ -152,3 +152,25 @@ Remaining unchanged: Step 3 whole-plan review over `69037d58..HEAD`, Step 4 owne
 
 Remaining: Step 2 Chrome at 1280×529 / 1440×900 / 1920×1080 + nav collapsed; Step 3 whole-branch review (last free
 ultra run, expires 2026-11-05); Step 4 owner look + merge `--no-ff`.
+
+## 2026-11-03 Task 10 Step 2 (Chrome) done
+
+- Served the worktree build on :3001; the owner's window is maximised (1280×672, DPR 1.5), so each size ran in a
+  same-origin iframe of exactly that size (R33 c). 1280×529, 1440×900, 1920×1080, nav open and collapsed, Chép chính
+  tả (typed + easy, 10 pieces) and Điền từ (easy), video shown and listen-only: the document never scrolls; Check /
+  Next / Hint / Show answer stay in view (Check bottom 515/529); the 10-piece bank + slots + Check fit without panel
+  scroll. Korume after Check: 48×63 listen-only, 55×73 with video; Next / Try again in view, the panel scrolls on
+  its own (534/424, 603/486). Light theme: N/A, the app ships dark-only (`app/globals.css`). Figma compare: skipped,
+  owner ("tôi thấy ổn rồi").
+- Two owner calls from the look, both built (owner: "full, not simplest"):
+  - `f16d68fc` the rail re-centres the current chip on a width change (it sat off-screen after nav toggle / resize /
+    Show video). E2E 39 extended; mutation RED in the browser.
+  - `12d574a6` Điền từ easy mode mixes lesson distractors into the chips (one blank = one chip gave the answer
+    away). Spec §3.5 amended. Unit / route / panel / E2E 27; mutations RED.
+  - `2edb5b1b` sonnet review follow-ups (0 Critical; Important: a failed neighbour read no longer fails the cloze).
+- Gates after the last edit: vitest 6604/6604, tsc, eslint (warnings only), verify:protocol, build, E2E listening
+  40/40 (`AI_PROVIDER=none`, `--workers=2`). One attempt written to the owner's Dev Admin account (line 298, Điền
+  từ, owner OK) to measure Korume.
+
+Remaining: Step 3 whole-branch review (last free ultra run, expires 2026-11-05: owner pushes, then
+`/code-review ultra <PR#>` on PR #1); Step 4 owner look + merge `--no-ff`.
