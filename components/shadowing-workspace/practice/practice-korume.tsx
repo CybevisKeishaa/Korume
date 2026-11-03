@@ -6,7 +6,8 @@ import type { MoodResult } from "@/lib/practice/korume-mood";
 
 /**
  * Korume's reaction to a practice result (lib/practice/korume-mood.ts): the pose is decorative (MascotPose sets
- * `alt=""` and `aria-hidden`); the quip is text, so a caller puts it inside its live region. Nothing for `null`.
+ * `alt=""` and `aria-hidden`); the quip is text: Pronunciation puts it in its take status, Listening keeps it outside
+ * the P14 live region (facts are announced, flavour is not). Nothing for `null`.
  * Size and the short-panel hide live in globals.css (`.practice-korume`).
  */
 export function PracticeKorume({ reaction }: { reaction: MoodResult | null }) {

@@ -216,6 +216,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       previousResults.current.set(lineKey, summarize(result, cut));
       // Korume reads the same outcome the learner reads: *_perfect only without help, *_helped_all right with help.
       const messages = checkedFeedback(result, comparedTo);
+      // A landed Check always carries a checked id, so the fallback never fires; it only keeps the type total.
       const outcome = feedbackOutcome(messages) ?? "partial";
       const reaction = react({ line: lineId, outcome, score: result.score }, { close: result.score >= REVIEW_DICTATION_BELOW, extraOnly: messages.some((message) => message.id === "ty_extra") });
       setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, result, answer: result.answer, comparedTo, reaction } : prev);

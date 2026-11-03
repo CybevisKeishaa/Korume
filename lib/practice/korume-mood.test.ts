@@ -49,6 +49,13 @@ describe("korumeMood", () => {
     expect(mood([1, 2, 3, 4].map(() => e("a", "partial", 50)), e("a", "partial", 50))).toBe("cry");
   });
 
+  it("precedence: shock beats cry, a drop beats the across-sentence slide, improved and dizzy beat laugh", () => {
+    expect(mood([1, 2, 3, 4].map(() => e("a", "partial", 50)), e("a", "partial", 0))).toBe("shock");
+    expect(mood([e("b", "partial", 90), e("a", "partial", 70), e("a", "partial", 60)], e("a", "partial", 50))).toBe("tantrum");
+    expect(mood([e("a", "partial", 40)], e("a", "partial", 60), { extraOnly: true })).toBe("improved");
+    expect(mood([e("a", "partial", 50), e("a", "partial", 50)], e("a", "partial", 50), { extraOnly: true })).toBe("dizzy");
+  });
+
   it("weaker and weaker across sentences is sulk", () => {
     expect(mood([e("a", "partial", 90), e("b", "partial", 70)], e("c", "partial", 50))).toBe("sulk");
     expect(mood([e("a", "partial", 70), e("b", "partial", 90)], e("c", "partial", 50))).toBe("focus");
