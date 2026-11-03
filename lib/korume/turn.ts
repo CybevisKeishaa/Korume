@@ -243,19 +243,23 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       .slice(0, 4).flatMap((id) => grounding.find((e) => e.id === id) ?? []).map(({ id, label }) => ({ id, label }));
     if (asked.length) {
       try {
-        const counted = await within((deps.exposureForEntities ?? exposureForEntities)(retrievalCtx, asked), (deps.clock ?? { toolMs: TOOL_DEADLINE_MS, stageMs: RETRIEVAL_DEADLINE_MS }).toolMs);
-        if (counted === TIMED_OUT) throw new Error("timed out");
-        const unchecked = [...new Set([...counted.values()].flatMap((c) => (c.firstSeen && !readable.has(c.firstSeen.videoId) ? [c.firstSeen.videoId] : [])))];
-        if (unchecked.length) for (const id of await korume.readableVideoIds(supabase, unchecked)) readable.add(id);
-        sealed = grounding.map((e) => {
-          const c = counted.get(e.id);
-          if (!c) return e;
-          const merged = {
-            ...e, seenCount: c.seenCount, seenCapped: c.capped,
-            ...(!e.lessonLink && c.firstSeen && readable.has(c.firstSeen.videoId) ? { lessonLink: c.firstSeen } : {}),
-          };
-          return groundedEntitySchema.safeParse(merged).success ? merged : e;
-        });
+        // One deadline for the whole sequence: the scan and the readable-video check both read the database.
+        const merged = await within((async () => {
+          const counted = await (deps.exposureForEntities ?? exposureForEntities)(retrievalCtx, asked);
+          const unchecked = [...new Set([...counted.values()].flatMap((c) => (c.firstSeen && !readable.has(c.firstSeen.videoId) ? [c.firstSeen.videoId] : [])))];
+          const nowReadable = unchecked.length ? await korume.readableVideoIds(supabase, unchecked) : new Set<string>();
+          return grounding.map((e) => {
+            const c = counted.get(e.id);
+            if (!c) return e;
+            const next = {
+              ...e, seenCount: c.seenCount, seenCapped: c.capped,
+              ...(!e.lessonLink && c.firstSeen && (readable.has(c.firstSeen.videoId) || nowReadable.has(c.firstSeen.videoId)) ? { lessonLink: c.firstSeen } : {}),
+            };
+            return groundedEntitySchema.safeParse(next).success ? next : e;
+          });
+        })(), (deps.clock ?? { toolMs: TOOL_DEADLINE_MS, stageMs: RETRIEVAL_DEADLINE_MS }).toolMs);
+        if (merged === TIMED_OUT) throw new Error("timed out");
+        sealed = merged;
       } catch (error) {
         console.warn(`[korume/exposure] failed: ${error instanceof Error ? error.message.slice(0, 1500) : String(error)}`);
       }

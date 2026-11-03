@@ -116,6 +116,34 @@ describe("runTurn — exposure for the answer's cards (R5)", () => {
     expect(assistantRows()[0]?.groundingJson).toMatchObject([{ seenCount: 4, seenCapped: true, lessonLink: firstSeen }]);
   });
 
+  const OTHER = "c0000000-0000-4000-8000-000000000002";
+  const seenIn = (videoId: string) => async () => new Map([["ent:1", { seenCount: 4, capped: false, firstSeen: { videoId, lineId: LINE } }]]);
+
+  it("never links a first-seen line in a video the learner cannot read", async () => {
+    queueHappy();
+    await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    const [row] = (assistantRows()[0]?.groundingJson ?? []) as Record<string, unknown>[];
+    expect(row).toMatchObject({ seenCount: 4 });
+    expect(row).not.toHaveProperty("lessonLink");
+  });
+
+  it("links a video that the extra readable check reports readable", async () => {
+    korume.readable.add(OTHER);
+    queueHappy();
+    await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    expect(assistantRows()[0]?.groundingJson).toMatchObject([{ seenCount: 4, lessonLink: { videoId: OTHER, lineId: LINE } }]);
+  });
+
+  it("a readable check that never answers still completes the turn with grounding unchanged", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const real = korume.readableVideoIds.bind(korume);
+    vi.spyOn(korume, "readableVideoIds").mockImplementation((s, ids) => (ids.includes(OTHER) ? new Promise(() => undefined) : real(s, ids)));
+    queueHappy();
+    const outcome = await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    expect(outcome.status).toBe("answered");
+    expect(assistantRows()[0]?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5" }]);
+  });
+
   it("an exposure failure still completes the turn with grounding unchanged", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
     queueHappy();
