@@ -133,3 +133,22 @@ applies 049 to their DB only when they choose. No merge before the owner approve
   worktree, and a Playwright build would rewrite its `.next`. Run it in Step 3.
 
 Remaining unchanged: Step 3 whole-plan review over `69037d58..HEAD`, Step 4 owner look; no merge before approval.
+
+## 2026-11-03 — Task 16 Step 4 = B2 plan Task 10 Step 1: final gates (local, tip `cfb7e9da`)
+
+- Owner APPROVED the AGENTS.md §6 amendment (additive migrations from 049) in chat 2026-11-03.
+- Full vitest 732 files / 6596 tests green (incl. `lib/typography-scan.test.ts`); `tsc --noEmit` 0; lint 0 errors
+  (269 warnings); `verify:protocol` valid.
+- SQL gates on disposable `listening_t1_final` (build-fresh.sh, all 50 migration files through 051) via run-gates.sh:
+  practice-listening, listening-two-exercises, practice-pronunciation, lesson-summary, port-dashboard,
+  account-erasure, port-profile + 4 race harnesses, plus shadowing-workspace and settings-page: 13/13 exit 0.
+  Dropped. Owner DB untouched.
+- Full Playwright (`AI_PROVIDER=none`, `--workers=2`, incl. typography G4 with the listening route): 228 passed,
+  4 failed. Rerun alone (`--workers=1`): landing-page :751, shadowing-explore :35, summary :102 pass (load flakes).
+  `route-group-provider-identity` :133 stays red: the hub lists the newest lessons and the owner DB holds 39 videos,
+  so the dev seed "E2E Seed Video" (2026-10-12) is off the list. Same diagnosis as summary-analysis run state;
+  this branch does not touch the hub listing. Environmental, not attributed to the branch.
+- Logs: `.superpowers/sdd/2026-10-21-practice-listening/final-*.log`.
+
+Remaining: Step 2 Chrome at 1280×529 / 1440×900 / 1920×1080 + nav collapsed; Step 3 whole-branch review (last free
+ultra run, expires 2026-11-05); Step 4 owner look + merge `--no-ff`.
