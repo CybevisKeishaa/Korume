@@ -96,6 +96,7 @@
       "smallMemory": "A small memory",
       "openMemory": "Open Korume Memory",
       "openLesson": "Open lesson",
+      "openLessonFor": "Open lesson: {label}",
       "disabledTitle": "Korume is turned off",
       "disabledDescription": "Turn Korume back on in Settings to continue this conversation.",
       "notFound": "That conversation could not be found. You can start a new one here.",

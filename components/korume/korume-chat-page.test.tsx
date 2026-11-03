@@ -106,10 +106,10 @@ describe("KorumeChatPage", () => {
     const carded = { ...answer("t1", [wa]), answer: { blocks: [{ type: "context_card", entityRef: "ent:wa" }] } as never };
     render(page({ detail: detailWith({}, [carded]) }));
     const rail = screen.getByRole("complementary", { name: "Learning context" });
-    expect(within(rail).queryByText("が")).toBeNull();
+    expect(within(rail).queryAllByText("が")).toHaveLength(0);
     await userEvent.type(screen.getByRole("textbox"), "What about が?{Enter}");
-    expect(await within(rail).findByText("が")).toBeInTheDocument();
-    expect(within(rail).getByText("は")).toBeInTheDocument();
+    expect(await within(rail).findAllByText("が")).not.toHaveLength(0);
+    expect(within(rail).getAllByText("は")).not.toHaveLength(0);
     // …and the cached server payload is dropped, so returning to this thread shows the new turn.
     expect(refresh).toHaveBeenCalledOnce();
   });

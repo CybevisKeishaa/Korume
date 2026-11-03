@@ -29,9 +29,10 @@ function EntityRow({ entity }: { entity: GroundedEntity }) {
   const meta = [entity.jlpt ? `JLPT ${entity.jlpt}` : null, seen].filter(Boolean).join(" · ");
   const lesson = entity.lessonLink;
   return (
-    <li className="flex items-center gap-md rounded-md border border-border bg-card px-md py-sm">
-      <span lang="ja" title={entity.label} className={`flex h-control-md aspect-square shrink-0 items-center justify-center rounded-md bg-muted font-jp ${glyph.length > 2 ? "text-caption" : "text-body"} text-foreground`}>
-        {glyph.slice(0, 3).join("")}
+    <li className="flex items-center gap-md rounded-full border border-border bg-card px-md py-sm">
+      <span lang="ja" className={`flex h-control-md aspect-square shrink-0 items-center justify-center rounded-full bg-muted font-jp ${glyph.length > 2 ? "text-caption" : "text-body"} text-foreground`}>
+        <span aria-hidden="true">{glyph.slice(0, 3).join("")}</span>
+        <span className="sr-only">{entity.label}</span>
       </span>
       <div className="min-w-0 flex-1">
         {meaning ? <p className="line-clamp-2 text-caption text-muted-foreground">{meaning}</p> : null}
@@ -40,7 +41,7 @@ function EntityRow({ entity }: { entity: GroundedEntity }) {
       {lesson ? (
         <Link
           href={`/shadowing/${lesson.videoId}${lesson.lineId ? `?line=${lesson.lineId}` : ""}`}
-          aria-label={t("ask.chat.openLesson")}
+          aria-label={t("ask.chat.openLessonFor", { label: entity.label })}
           className="shrink-0 rounded-sm text-muted-foreground hover:text-primary-strong"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-icon-sm" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 6 6 6-6 6" /></svg>

@@ -16,7 +16,8 @@ describe("KorumeRail", () => {
     expect(screen.getByText("ピン留")).toBeInTheDocument();
     expect(screen.getByText("pinning")).toBeInTheDocument();
     expect(screen.getByText("JLPT N3 · Seen 3 times")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "Open lesson" })).toHaveAttribute("href", "/en/shadowing/v?line=l");
+    expect(screen.getByRole("link", { name: "Open lesson: ピン留め" })).toHaveAttribute("href", "/en/shadowing/v?line=l");
+    expect(screen.getByText("ピン留め")).toHaveClass("sr-only");
     expect(screen.getByText("Not seen yet")).toBeInTheDocument();
     expect(screen.getByText("JLPT N5")).toBeInTheDocument();
     expect(screen.getAllByRole("link")).toHaveLength(1);
@@ -55,7 +56,7 @@ describe("KorumeRail", () => {
     expect(screen.getByText("A small memory")).toBeInTheDocument();
     expect(screen.queryByText(/strongest when examples/i)).toBeNull();
     expect(screen.getByRole("link", { name: "Particles" })).toHaveAttribute("href", "/en/shadowing/video?line=line");
-    expect(screen.getByRole("link", { name: "Open lesson" })).toHaveAttribute("href", "/en/shadowing/video?line=line");
+    expect(screen.getByRole("link", { name: "Open lesson: は" })).toHaveAttribute("href", "/en/shadowing/video?line=line");
     expect(screen.getByRole("link", { name: "Open Korume Memory" })).toHaveAttribute("href", "/en/companion");
   });
 
