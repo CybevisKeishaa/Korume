@@ -93,7 +93,9 @@ describe("listening two exercises SQL contract (spec 2026-10-26 §3.6, §3.10)",
     expect(files.length).toBeGreaterThan(40);
     const homes = (name: string) =>
       files.filter((file) => new RegExp(`create (or replace )?function (public\\.)?${name}\\(`).test(normalized(file)));
-    for (const { name } of REDEFINED) expect(homes(name), name).toEqual(["20261021000048_practice_listening.sql", filename]);
+    // 051 (ultra review 2026-11-03) redefines lesson_summary_evidence again: latest attempt per exercise.
+    const later: Record<string, string[]> = { lesson_summary_evidence: ["20261103000051_summary_latest_per_exercise.sql"] };
+    for (const { name } of REDEFINED) expect(homes(name), name).toEqual(["20261021000048_practice_listening.sql", filename, ...(later[name] ?? [])]);
     expect(homes("practice_activity")).toEqual(["20261021000048_practice_listening.sql"]);
     expect(homes("dictation_attempt_helped")).toEqual([filename]);
   });

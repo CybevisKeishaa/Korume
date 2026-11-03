@@ -185,6 +185,32 @@ begin
   raise notice 'PASS 8 helped grants';
 end $$;
 
+-- 9. (051) One latest attempt per exercise: learner C, l1 = an older Word Bank Show answer, then a typed 100;
+-- l2 = an older typed 40, then a Word Bank 100. Each line's Chép chính tả entry is the newer attempt only.
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at, raw_app_meta_data, raw_user_meta_data)
+values ('10ad0049-0000-4000-8000-00000000000c', '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', 'listen2gate-c@example.invalid',
+  crypt('password123', gen_salt('bf')), now(), now(), now(), '{"provider":"email","providers":["email"]}'::jsonb, '{}'::jsonb);
+insert into dictation_attempts (id, user_id, video_id, transcript_line_id, user_input, accuracy_score, format, status,
+                                easy_mode, hint_unit, hinted_units, chunk_order, created_at) values
+  ('10ad0049-0000-4000-8000-000000000401', '10ad0049-0000-4000-8000-00000000000c', :'vid', :'l1', '', null, 'word_bank', 'revealed', true, null, '{}', null, now() - interval '2 hours'),
+  ('10ad0049-0000-4000-8000-000000000402', '10ad0049-0000-4000-8000-00000000000c', :'vid', :'l1', '今日は雨です', 100, 'typing', 'submitted', false, null, '{}', null, now() - interval '1 hour'),
+  ('10ad0049-0000-4000-8000-000000000403', '10ad0049-0000-4000-8000-00000000000c', :'vid', :'l2', '注文', 40, 'typing', 'submitted', false, null, '{}', null, now() - interval '2 hours'),
+  ('10ad0049-0000-4000-8000-000000000404', '10ad0049-0000-4000-8000-00000000000c', :'vid', :'l2', '注文をお願いします', 100, 'word_bank', 'submitted', true, null, '{}', '{0,1}', now() - interval '1 hour');
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', '10ad0049-0000-4000-8000-00000000000c', 'role', 'authenticated')::text, true) \g /dev/null
+do $$
+declare e jsonb := lesson_summary_evidence('10ad0049-0000-4000-8000-0000000000f1', 2); l jsonb;
+begin
+  select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '10ad0049-0000-4000-8000-0000000000d1';
+  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":100,"input":"今日は雨です","helped":false}]'::jsonb then
+    raise exception 'FAIL 9a: l1 keeps the older Word Bank Show answer %', l; end if;
+  select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '10ad0049-0000-4000-8000-0000000000d2';
+  if l->'listening' is distinct from '[{"format":"word_bank","status":"submitted","score":100,"input":"注文をお願いします","helped":true}]'::jsonb then
+    raise exception 'FAIL 9b: l2 keeps the older weak typing %', l; end if;
+  raise notice 'PASS 9 one latest attempt per exercise';
+end $$;
+reset role;
+
 rollback;
 delete from videos where youtube_video_id like 'listen2gate-%';
 delete from auth.users where email like 'listen2gate-%@example.invalid';

@@ -140,7 +140,7 @@ begin
 end $$;
 
 -- 6. Summary evidence: the Chép chính tả row over each line's latest submitted (R1, 049), the latest attempt of any
--- status per format per line (R2).
+-- status per EXERCISE per line (R2; 051: typing and word_bank are one exercise, so l2 keeps only its newer 90).
 do $$
 declare e jsonb := lesson_summary_evidence('1157e000-0000-4000-8000-0000000000f1', 2); l jsonb;
 begin
@@ -155,15 +155,14 @@ begin
     raise exception 'FAIL 6: l1 %', l;
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d2';
-  if l->'listening' is distinct from '[{"format":"typing","status":"submitted","score":70,"input":"ちゅうもん","helped":false},
-                                        {"format":"word_bank","status":"submitted","score":90,"input":"注文をお願いします","helped":true}]'::jsonb then
+  if l->'listening' is distinct from '[{"format":"word_bank","status":"submitted","score":90,"input":"注文をお願いします","helped":true}]'::jsonb then
     raise exception 'FAIL 6: l2 %', l;
   end if;
   select value into l from jsonb_array_elements(e->'lines') where value->>'lineId' = '1157e000-0000-4000-8000-0000000000d3';
   if l->'listening' is distinct from '[{"format":"typing","status":"unscored","score":null,"input":"ありがとう!","helped":false}]'::jsonb then
     raise exception 'FAIL 6: l3 %', l;
   end if;
-  raise notice 'PASS 6 summary evidence per format';
+  raise notice 'PASS 6 summary evidence per exercise';
 end $$;
 
 -- 7. Dashboard Listening is Typing, submitted only (D20): the Word Bank 90 is not evidence there.
