@@ -172,5 +172,12 @@ ultra run, expires 2026-11-05); Step 4 owner look + merge `--no-ff`.
   40/40 (`AI_PROVIDER=none`, `--workers=2`). One attempt written to the owner's Dev Admin account (line 298, Điền
   từ, owner OK) to measure Korume.
 
-Remaining: Step 3 whole-branch review (last free ultra run, expires 2026-11-05: owner pushes, then
-`/code-review ultra <PR#>` on PR #1); Step 4 owner look + merge `--no-ff`.
+## Task 10 Step 3: ultra review 3 (2026-11-03)
+
+- Owner ran the last free `/ultrareview` on PR #1: 3 nits, all fixed in `68bb9bdb` (401 reads "signed out", other
+  4xx "reload", only network/5xx "try again"; one `useLineAnswer<T>` hook for chunks + cloze; cloze reads known vocab
+  only for the line's candidate keys, which closes the deferred known-vocab cache). Mutations RED (401, reading key).
+- Gates after the last edit: vitest 6609/6609, tsc, verify:protocol, build; E2E listening + summary 52/52
+  (`--workers=1`; the first run was killed for low RAM at 19 passed, none failed).
+
+Remaining: Step 4 owner look on :3001 + merge `--no-ff`.
