@@ -35,6 +35,7 @@ describe("sheet geometry", () => {
   it("clampRail respects the chat minimum", () => {
     expect(clampRail(600, 900, t)).toBe(520);
     expect(clampRail(300, 600, t)).toBe(260);
+    expect(clampRail(520, 760, t)).toBe(380); // the chat minimum binds below railMax
   });
   it("clampPoint keeps the mascot on screen", () => {
     expect(clampPoint({ x: 5000, y: -9 }, { w: 64, h: 64 }, b)).toEqual({ x: 1200, y: 16 });

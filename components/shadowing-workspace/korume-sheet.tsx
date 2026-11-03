@@ -24,11 +24,11 @@ function clock(seconds: number): string {
 }
 
 /** Token values in px, resolved once per open and per window resize — never on a pointermove. */
-interface Metrics extends Pick<SheetBounds, "margin" | "minW" | "minH"> { breakpoint: number; small: Size; large: Size; railMin: number; railMax: number; railDefault: number; chatMin: number }
+interface Metrics extends Pick<SheetBounds, "margin" | "minW" | "minH"> { breakpoint: number; small: Size; large: Size; railMin: number; railMax: number; railDefault: number; chatMin: number; handle: number }
 function resolveMetrics(): Metrics {
   const px = (token: string) => tokenPixels(document.body, token);
   return {
-    railMin: px("--korume-rail-min"), railMax: px("--korume-rail-max"), railDefault: px("--korume-rail-default"), chatMin: px("--korume-chat-min"),
+    railMin: px("--korume-rail-min"), railMax: px("--korume-rail-max"), railDefault: px("--korume-rail-default"), chatMin: px("--korume-chat-min"), handle: px("--korume-handle"),
     margin: px("--space-md"), minW: px("--korume-min-w"), minH: px("--korume-min-h"), breakpoint: px("--korume-breakpoint"),
     small: { w: px("--korume-small-w"), h: px("--korume-small-h") }, large: { w: px("--korume-large-w"), h: px("--korume-large-h") },
   };
@@ -184,7 +184,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     const dx = event.clientX - d.x;
     const dy = event.clientY - d.y;
     // The splitter sits left of the rail: dragging it left grows the rail.
-    if (d.rail !== undefined) return setRail(clampRail(d.rail - dx, d.start.w, metrics.current as Metrics));
+    if (d.rail !== undefined) return setRail(clampRailIn(d.rail - dx, d.start.w, metrics.current as Metrics));
     // Mid-drag the rect only follows the pointer: crossing the breakpoint never re-centres under it.
     commit(d.edge ? resizeRect(d.start, d.edge, dx, dy, bounds()) : clampRect({ ...d.start, x: d.start.x + dx, y: d.start.y + dy }, bounds()));
   };
@@ -203,7 +203,9 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   };
   const dragProps = { onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag };
   const m = metrics.current;
-  const railW = m && rect ? clampRail(wantedRail ?? m.railDefault, rect.w, m) : 0;
+  // The splitter column takes its own width out of what the chat and the rail share.
+  const clampRailIn = (rail: number, sheetW: number, k: Metrics) => clampRail(rail, sheetW - k.handle, k);
+  const railW = m && rect ? clampRailIn(wantedRail ?? m.railDefault, rect.w, m) : 0;
   const splitterDown = (event: ReactPointerEvent<HTMLElement>) => {
     const start = rectRef.current;
     if (event.button !== 0 || !start) return;
@@ -215,7 +217,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     const dir = event.key === "ArrowLeft" ? 1 : event.key === "ArrowRight" ? -1 : 0;
     if (!dir || !m || !rect) return;
     event.preventDefault();
-    setRail(clampRail(railW + dir * m.margin, rect.w, m));
+    setRail(clampRailIn(railW + dir * m.margin, rect.w, m));
     saveRail();
   };
 
@@ -326,7 +328,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
             aria-controls={railId}
             aria-valuenow={Math.round(railW)}
             aria-valuemin={Math.round(m.railMin)}
-            aria-valuemax={Math.round(clampRail(Infinity, rect?.w ?? 0, m))}
+            aria-valuemax={Math.round(clampRailIn(Infinity, rect?.w ?? 0, m))}
             onPointerDown={splitterDown}
             onKeyDown={splitterKey}
             onDoubleClick={() => { setRail(m.railDefault); saveRail(); }}

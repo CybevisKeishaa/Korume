@@ -183,11 +183,20 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       const before = (await box(rail(page))).width;
       await dragBy(page, await centreOf(splitter(page)), -80, 0);
       await expect.poll(async () => (await box(rail(page))).width).toBeCloseTo(before + 80, 0);
+      // Narrow the sheet until sheetW - chatMin - handle < railMax, so the chat minimum (not railMax) is what binds.
       const chatMin = await tokenPx(page, "--korume-chat-min");
+      const handleW = await tokenPx(page, "--korume-handle");
+      await dragBy(page, await centreOf(handle(page, "e")), -150, 0);
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await expect(sheet(page)).not.toHaveAttribute("data-gliding", "");
+      const sheetBox = await box(sheet(page));
+      expect(sheetBox.width - chatMin - handleW).toBeLessThan(await tokenPx(page, "--korume-rail-max"));
       await dragBy(page, await centreOf(splitter(page)), -900, 0);
+      expect(Number(await splitter(page).getAttribute("aria-valuemax"))).toBeCloseTo(sheetBox.width - chatMin - handleW, 0);
+      const railBox = await box(rail(page));
+      expect(railBox.x + railBox.width).toBeLessThanOrEqual(sheetBox.x + sheetBox.width + 1);
       const chat = sheet(page).locator("[data-korume-scroll]").locator("xpath=..");
       expect((await box(chat)).width).toBeGreaterThanOrEqual(chatMin - 1);
-      expect(Number(await splitter(page).getAttribute("aria-valuenow"))).toBeLessThanOrEqual(Number(await splitter(page).getAttribute("aria-valuemax")));
     });
 
     test("10 · the rail width survives a reload, and the mascot still opens small", async ({ page }) => {
