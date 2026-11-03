@@ -54,4 +54,6 @@ export interface LineCloze {
   segments: { text: string; blank: number | null; romaji: string }[];
   /** Hiragana reading of each blank, same order as `blanks` (the 💡 hint fills from it). */
   readings: string[];
+  /** Chế độ dễ's wrong chips: words of the lesson's nearby lines, never one of this line (`pickDistractors`). */
+  distractors: string[];
 }

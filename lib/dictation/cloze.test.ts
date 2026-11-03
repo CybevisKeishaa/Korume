@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { tokenize } from "@/lib/japanese/tokenizer";
 import type { Token } from "@/lib/japanese/types";
-import { clozeCandidates, scoreCloze, selectBlanks, type ClozeBlank } from "./cloze";
+import { clozeCandidates, pickDistractors, scoreCloze, selectBlanks, type ClozeBlank } from "./cloze";
 
 const surfaces = async (text: string, idx: number[]) => {
   const t = await tokenize(text);
@@ -95,5 +95,40 @@ describe("scoreCloze", () => {
     expect(r.metrics.slots).toEqual({ correct: 1, total: 2 });
     const h = scoreCloze([b], ["べんきょう"], [[0]]);
     expect(h.metrics.slots).toEqual({ correct: 0, total: 1 });
+  });
+});
+
+describe("pickDistractors", () => {
+  const tok = (surface: string, pos = "名詞", reading: string | null = null, base = surface, posDetail1: string | null = "一般"): Token =>
+    ({ surface, reading, base, pos, posDetail1 });
+  const line = [tok("天気", "名詞", "テンキ"), tok("が", "助詞"), tok("いい", "形容詞", "イイ", "いい", "自立")];
+
+  it("takes the blank's part of speech, same script first, then closest length, then the nearer line", () => {
+    const pool = [
+      [tok("走る", "動詞", "ハシル", "走る", "自立"), tok("ラーメン", "名詞", "ラーメン")],
+      [tok("料理", "名詞", "リョウリ"), tok("美味しい", "形容詞", "オイシイ", "美味しい", "自立")],
+      [tok("店", "名詞", "ミセ"), tok("地図", "名詞", "チズ")],
+    ];
+    // 天気 (kanji, 2): 料理 then 地図 (kanji, 2; nearer first); ラーメン is katakana. いい (kana): no kana adjective, so 美味しい.
+    expect(pickDistractors(line, [0, 2], pool)).toEqual(["料理", "地図", "美味しい"]);
+  });
+
+  it("never offers a word, lemma or reading of the line, nor one reading twice", () => {
+    const pool = [[tok("天気", "名詞", "テンキ"), tok("てんき", "名詞", "テンキ"), tok("元気", "名詞", "ゲンキ"), tok("げんき", "名詞", "ゲンキ")]];
+    expect(pickDistractors(line, [0], pool)).toEqual(["元気"]);
+  });
+
+  it("never gives two blanks the same distractor, and gives none without a pool", () => {
+    const two = [tok("駅", "名詞", "エキ"), tok("に", "助詞"), tok("店", "名詞", "ミセ")];
+    const pool = [[tok("家", "名詞", "イエ"), tok("国", "名詞", "クニ"), tok("町", "名詞", "マチ")]];
+    expect(pickDistractors(two, [0, 2], pool)).toEqual(["家", "国", "町"]);
+    expect(pickDistractors(two, [0, 2], [])).toEqual([]);
+  });
+
+  it("works on kuromoji tokens: a dictionary-form verb blank gets dictionary-form verbs", async () => {
+    const t = await tokenize("毎日本を読む");
+    const verb = t.findIndex((x) => x.surface === "読む");
+    const out = pickDistractors(t, [verb], [await tokenize("駅まで歩く"), await tokenize("昨日は走った")]);
+    expect(out).toEqual(["歩く"]);
   });
 });

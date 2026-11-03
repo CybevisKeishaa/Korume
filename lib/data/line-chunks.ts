@@ -11,7 +11,11 @@ export type LineChunksResult = { kind: "ok"; data: LineChunks } | { kind: "unaut
 /** One budget for the chunks and cloze reads: each runs the tokenizer on a line the learner may have written. */
 export const LINE_ANSWER_LIMIT = { limit: 120, windowMs: 60_000 };
 
-export type LineAnswerAccess = { kind: "ok"; supabase: ReturnType<typeof createClient>; userId: string; text: string }
+export type LineAnswerAccess = {
+  kind: "ok"; supabase: ReturnType<typeof createClient>; userId: string; text: string;
+  /** Where the line sits, for reads of its neighbours under the same RLS (Điền từ's distractors). */
+  transcriptId: string | null; start: number | null;
+}
   | { kind: "unauthorized" } | { kind: "not_found" } | { kind: "rate_limited"; retryAfter: number };
 
 /**
@@ -28,11 +32,13 @@ export async function readLineForAnswer(lineId: string): Promise<LineAnswerAcces
   const limited = rateLimit(`lines:answer:${user.id}`, LINE_ANSWER_LIMIT);
   if (!limited.ok) return { kind: "rate_limited", retryAfter: limited.retryAfter };
 
-  const { data, error } = await supabase.from("transcript_lines").select("text_jp").eq("id", lineId).maybeSingle();
+  const { data, error } = await supabase.from("transcript_lines").select("text_jp, transcript_id, start_time").eq("id", lineId).maybeSingle();
   if (error) throw error;
-  const text = (data as { text_jp: string | null } | null)?.text_jp;
+  const row = data as { text_jp: string | null; transcript_id?: string; start_time?: number | string } | null;
+  const text = row?.text_jp;
   if (!text) return { kind: "not_found" };
-  return { kind: "ok", supabase, userId: user.id, text };
+  return { kind: "ok", supabase, userId: user.id, text, transcriptId: row.transcript_id ?? null,
+    start: row.start_time === undefined ? null : Number(row.start_time) };
 }
 
 /** The line's word-piece cut, behind `readLineForAnswer`. */

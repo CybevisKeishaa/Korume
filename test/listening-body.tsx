@@ -51,7 +51,7 @@ const CLOZE: Partial<Record<LineId, { segments: [string, number | null][]; readi
 };
 export const clozeOf = (id: LineId): LineCloze => {
   const c = CLOZE[id] ?? { segments: [[LINES[id].text, null]], readings: [], blanks: [] };
-  return { version: 1, textHash: "c".repeat(64), blanks: c.blanks, readings: c.readings,
+  return { version: 1, textHash: "c".repeat(64), blanks: c.blanks, readings: c.readings, distractors: [],
     segments: c.segments.map(([text, blank]) => ({ text, blank, romaji: blank === null ? "romaji" : "___" })) };
 };
 function serveCloze(body: AttemptBody): Response {

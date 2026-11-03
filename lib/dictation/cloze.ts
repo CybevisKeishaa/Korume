@@ -44,6 +44,53 @@ export function selectBlanks(tokens: Token[], known: Set<string>, max = 3): numb
   return picked.sort((a, b) => a - b);
 }
 
+/** Chế độ dễ's wrong chips per blank (spec §3.5, owner 2026-11-03). */
+export const DISTRACTORS_PER_BLANK = 2;
+
+const script = (s: string) =>
+  /\p{Script=Han}/u.test(s) ? "kanji" : /^[\p{Script=Katakana}ー]+$/u.test(s) ? "katakana" : "kana";
+
+/**
+ * Chế độ dễ's distractors (spec §3.5): for each blank, up to `per` cloze candidates of the lesson's nearby lines
+ * (`pool`, nearest first) with the blank's part of speech — same script, then same noun kind, then closest length,
+ * then nearest line first. Never a word, lemma or reading of this line, never one reading twice. Deterministic for a
+ * line and its pool; UI only, so the selector version and stored attempts do not depend on it.
+ */
+export function pickDistractors(tokens: Token[], blanks: number[], pool: Token[][], per = DISTRACTORS_PER_BLANK): string[] {
+  const reading = (t: Token) => katakanaToHiragana(t.reading ?? t.surface);
+  const taken = new Set(tokens.flatMap((t) => [t.surface, t.base, reading(t)]));
+  const candidates: { token: Token; distance: number }[] = [];
+  pool.forEach((line, distance) => {
+    for (const i of clozeCandidates(line)) {
+      const t = line[i]!;
+      if (taken.has(t.surface) || taken.has(t.base) || taken.has(reading(t))) continue;
+      taken.add(t.surface).add(reading(t));
+      candidates.push({ token: t, distance });
+    }
+  });
+  const used = new Set<Token>();
+  const out: string[] = [];
+  for (const b of blanks) {
+    const blank = tokens[b]!;
+    const len = Array.from(blank.surface).length;
+    const key = ({ token, distance }: { token: Token; distance: number }) => [
+      Number(script(token.surface) !== script(blank.surface)),
+      Number(token.posDetail1 !== blank.posDetail1),
+      Math.abs(Array.from(token.surface).length - len),
+      distance,
+    ];
+    const ranked = candidates
+      .filter((c) => c.token.pos === blank.pos && !used.has(c.token))
+      .map((c) => ({ c, k: key(c) }))
+      .sort((x, y) => x.k.reduce((d, v, i) => d || v - y.k[i]!, 0));
+    for (const { c } of ranked.slice(0, per)) {
+      used.add(c.token);
+      out.push(c.token.surface);
+    }
+  }
+  return out;
+}
+
 export type ClozeBlank = { token: number; surface: string; reading: string };
 
 /** Each token's code-point range over the normalised line `base`, or `null` when the tokens do not cover it (no blanks). */

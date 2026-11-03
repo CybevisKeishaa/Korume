@@ -6,9 +6,9 @@ import { bankOrder } from "@/lib/dictation/shuffle";
 import type { LineCloze } from "@/lib/dictation/types";
 import { ClozePanel, clozeHints } from "./cloze-panel";
 
-/** 毎日日本語を勉強しました。 with blanks 日本語 (にほんご) and 勉強 (べんきょう), as `GET …/cloze` sends it. */
+/** 毎日日本語を勉強しました。 with blanks 日本語 (にほんご) and 勉強 (べんきょう) and two lesson distractors, as `GET …/cloze` sends it. */
 const CLOZE: LineCloze = {
-  version: 1, textHash: "c".repeat(64), blanks: [1, 3], readings: ["にほんご", "べんきょう"],
+  version: 1, textHash: "c".repeat(64), blanks: [1, 3], readings: ["にほんご", "べんきょう"], distractors: ["英語", "料理"],
   segments: [
     { text: "毎日", blank: null, romaji: "mainichi" }, { text: "日本語", blank: 0, romaji: "___" }, { text: "を", blank: null, romaji: "wo" },
     { text: "勉強", blank: 1, romaji: "___" }, { text: "しました。", blank: null, romaji: "shimashita." },
@@ -81,12 +81,12 @@ describe("ClozePanel", () => {
     expect(blank(1)).not.toHaveAccessibleDescription();
   });
 
-  it("easy mode: the blanks' words as shuffled chips; a chip fills the focused or first empty blank and is used once", () => {
+  it("easy mode: the blanks' words and the distractors as shuffled chips; a chip fills the focused or first empty blank and is used once", () => {
     const onUseChip = vi.fn();
     const onChange = vi.fn();
     render(<Harness easy onUseChip={onUseChip} onChange={onChange} />);
-    const words = ["日本語", "勉強"];
-    expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent)).toEqual(bankOrder(2, CLOZE.textHash).map((i) => words[i]));
+    const options = ["日本語", "勉強", "英語", "料理"];
+    expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent)).toEqual(bankOrder(4, CLOZE.textHash).map((i) => options[i]));
     fireEvent.focus(blank(2));
     fireEvent.click(within(bank()).getByRole("button", { name: "日本語" }));
     expect(onChange).toHaveBeenLastCalledWith(["", "日本語"]);
@@ -96,8 +96,22 @@ describe("ClozePanel", () => {
     expect(screen.getByRole("button", { name: "Blank 2, 日本語" })).toBeInTheDocument();
     fireEvent.click(within(bank()).getByRole("button", { name: "勉強" }));
     expect(onChange).toHaveBeenLastCalledWith(["勉強", "日本語"]);
-    expect(screen.queryByRole("list", { name: "Word bank" })).toBeNull();
+    // Every blank full: only the distractors stay, and tapping one changes nothing until a blank is emptied.
+    expect(within(bank()).getAllByRole("button").map((chip) => chip.textContent).sort()).toEqual(["料理", "英語"]);
+    fireEvent.click(within(bank()).getByRole("button", { name: "英語" }));
+    expect(onUseChip).toHaveBeenCalledTimes(2);
     expect(check()).toBeEnabled();
+  });
+
+  it("easy mode: a distractor chip fills a blank like any chip, is sent as the answer, and goes back on a tap", () => {
+    const onChange = vi.fn();
+    render(<Harness easy onChange={onChange} />);
+    fireEvent.click(within(bank()).getByRole("button", { name: "英語" }));
+    expect(onChange).toHaveBeenLastCalledWith(["英語", ""]);
+    expect(within(bank()).queryByRole("button", { name: "英語" })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Blank 1, 英語" }));
+    expect(onChange).toHaveBeenLastCalledWith(["", ""]);
+    expect(within(bank()).getAllByRole("button")).toHaveLength(4);
   });
 
   it("easy mode: tapping a filled blank returns its chip and empties the blank", () => {
@@ -107,7 +121,7 @@ describe("ClozePanel", () => {
     fireEvent.click(screen.getByRole("button", { name: "Blank 1, 勉強" }));
     expect(onChange).toHaveBeenLastCalledWith(["", ""]);
     expect(blank(1)).toHaveValue("");
-    expect(within(bank()).getAllByRole("button")).toHaveLength(2);
+    expect(within(bank()).getAllByRole("button")).toHaveLength(4);
   });
 
   it("after Check each blank shows its answer with a correct / wrong / hinted tone, an icon and a text equivalent", () => {

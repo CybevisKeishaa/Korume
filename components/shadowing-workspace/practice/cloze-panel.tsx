@@ -35,7 +35,8 @@ export function clozeHints(readings: readonly string[], hinted: readonly number[
 
 /**
  * Điền từ (spec §3.4): the sentence as written with an inline box per blank. A blank's word and reading reach the
- * DOM only after Check or Show answer (D4), except as Chế độ dễ's chips, which are those words. 💡 characters sit
+ * DOM only after Check or Show answer (D4), except as Chế độ dễ's chips: those words shuffled with the lesson's
+ * distractors (`cloze.distractors`), which stay in the bank once every blank is full so a chip can still be swapped. 💡 characters sit
  * read-only at the start of their box; `answers` carry them, so Check sends exactly what is shown. A chip fills the
  * focused (else the first) empty blank without hints; tapping the filled blank gives it back. Mounted with a key per
  * line + attempt (P11).
@@ -64,7 +65,9 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
   const t = useTranslations("shadowing.workspace.practice.listening");
   const id = useId();
   const words = cloze.segments.flatMap((s) => s.blank === null ? [] : [s.text]);
-  const order = useMemo(() => bankOrder(words.length, cloze.textHash), [words.length, cloze.textHash]);
+  /** Chip texts: the blanks' words, then the distractors; a chip is its index here. */
+  const options = [...words, ...cloze.distractors];
+  const order = useMemo(() => bankOrder(options.length, cloze.textHash), [options.length, cloze.textHash]);
   const { prefixes } = clozeHints(cloze.readings, hinted);
   /** The chip each blank took; it stays there only while the blank still holds that chip's word. */
   const [held, setHeld] = useState<(number | undefined)[]>([]);
@@ -72,7 +75,7 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
   const locked = submitting || results !== null || revealed;
   const chipIn = (b: number) => {
     const c = held[b];
-    return easy && c !== undefined && answers[b] === words[c] ? c : undefined;
+    return easy && c !== undefined && answers[b] === options[c] ? c : undefined;
   };
   const bank = order.filter((c) => !words.some((_, b) => chipIn(b) === c));
   const complete = words.length > 0 && words.every((_, b) => (answers[b] ?? "").trim() !== "");
@@ -85,7 +88,7 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
     const b = empty(focused.current) ? focused.current : words.findIndex((_, i) => empty(i));
     if (locked || b < 0) return;
     setHeld((prev) => Object.assign([...prev], { [b]: c }));
-    set(b, words[c] ?? "");
+    set(b, options[c] ?? "");
     onUseChip();
   };
 
@@ -103,8 +106,8 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
     }
     const c = chipIn(b);
     if (c !== undefined) {
-      return <button type="button" disabled={locked} aria-label={`${t("cloze.blank", { n: b + 1 })}, ${words[c]}`} onClick={() => set(b, "")}
-        className={cn(CHIP, "border-primary/40 bg-primary/5 text-primary-strong hover:bg-primary/10")}>{words[c]}</button>;
+      return <button type="button" disabled={locked} aria-label={`${t("cloze.blank", { n: b + 1 })}, ${options[c]}`} onClick={() => set(b, "")}
+        className={cn(CHIP, "border-primary/40 bg-primary/5 text-primary-strong hover:bg-primary/10")}>{options[c]}</button>;
     }
     const prefix = prefixes[b] ?? "";
     const answer = answers[b] ?? "";
@@ -132,7 +135,7 @@ export function ClozePanel({ cloze, easy, answers, hinted, results, revealed, su
     {words.length === 0 && <p data-testid="cloze-no-blank" className="rounded-md border border-border bg-muted px-sm py-xs text-caption text-muted-foreground">{t("cloze.noBlank")}</p>}
     {easy && !locked && bank.length > 0 && <ul aria-label={t("bank")} className="flex flex-wrap justify-center gap-xs">
       {bank.map((c) => <li key={c}>
-        <button type="button" lang="ja" onClick={() => takeChip(c)} className={cn(CHIP, "border-border bg-card text-foreground hover:bg-muted")}>{words[c]}</button>
+        <button type="button" lang="ja" onClick={() => takeChip(c)} className={cn(CHIP, "border-border bg-card text-foreground hover:bg-muted")}>{options[c]}</button>
       </li>)}
     </ul>}
     {words.length > 0 && !revealed && results === null && <CheckButton label={t(submitting ? "checking" : "cloze.check")} disabled={locked || !complete} onClick={check} slot={checkSlot} />}

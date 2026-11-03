@@ -51,7 +51,7 @@ describe("loadLineChunks", () => {
       romaji: "mainichi nihongo o benkyou shi mashi ta .",
     } });
     expect(lineQueries).toEqual([[
-      { op: "select", columns: "text_jp" }, { op: "eq", column: "id", value: LINE }, { op: "maybeSingle" },
+      { op: "select", columns: "text_jp, transcript_id, start_time" }, { op: "eq", column: "id", value: LINE }, { op: "maybeSingle" },
     ]]);
   }, T);
 

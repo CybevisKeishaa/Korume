@@ -139,6 +139,14 @@ next piece, unit `chunk`) is the hint there; 💡 still shows the whole answer (
   reading. The answer shown after Check uses the surface (kanji). *(Claude's call: the exercise tests hearing.)*
 - **Chế độ dễ:** the blanks' words appear as chips in a shuffled order under the sentence; tap a chip → it fills the
   first empty (or focused) blank; tap a filled blank → it returns to the chips. Counts as helped (owner, §3.6).
+  - **Distractors (owner, 2026-11-03 Chrome look: one blank = one chip gave the answer away):** the chips also hold
+    up to 2 wrong words per blank, shuffled in with the answers. They are cloze candidates (§3.4 rule) of the lesson's
+    nearby lines — 8 before and 8 after under the learner's RLS, nearest first — with the blank's part of speech,
+    ranked same script (kanji / hiragana / katakana), then same noun kind, then closest length, then nearest line.
+    Never a surface, lemma or reading of the line itself, never one reading twice, never one word for two blanks.
+    Fewer when the lesson has none of that kind. UI only: the selector version and stored attempts do not change; a
+    distractor placed in a blank is sent as that blank's answer and scores wrong. Once every blank is full the
+    remaining distractors stay in the bank (tap a filled blank to swap).
 - **💡 (Alt+H):** fills the next character of the lowest unfinished blank **from its hiragana reading** (勉強 → べ,
   then the learner types んきょう). Unit `grapheme1`, index into the blank's reading; a blank with hinted characters
   must be finished in kana. *(Claude's call.)*
@@ -193,7 +201,8 @@ next piece, unit `chunk`) is the hint there; 💡 still shows the whole answer (
 
 ### 3.8 Sentence chip rail
 - The navigator (`sentence-navigator.tsx`, paged window of 8) becomes a **horizontal scroll rail** of all chips, the
-  current chip scrolled into view; ‹ › page by a visible width.
+  current chip scrolled into view — also when the rail's width changes (window resize, nav toggle, Ẩn video /
+  Hiện video; 2026-11-03), sideways only; ‹ › page by a visible width.
 - On hover (and keyboard focus inside the rail) a **thin styled scrollbar** appears under the chips; dragging it or
   the wheel (vertical wheel → horizontal scroll) moves fast through long lessons (194–431 lines). `scrollbar-width:
   thin` + `::-webkit-scrollbar` on our tokens; hidden when not hovered.

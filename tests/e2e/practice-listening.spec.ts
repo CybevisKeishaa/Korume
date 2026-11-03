@@ -102,7 +102,7 @@ async function expectNoSurface(page: Page, kinds: Surface["kind"][] = ANSWER_KIN
 
 /** Each line's pieces in reference order (`display`), as the page's own GET /api/lines/{id}/chunks returned them. */
 const cuts = new WeakMap<Page, Map<string, string[]>>();
-type Cloze = { blanks: number[]; readings: string[]; segments: { text: string; blank: number | null }[] };
+type Cloze = { blanks: number[]; readings: string[]; segments: { text: string; blank: number | null }[]; distractors: string[] };
 /** Each line's blanks, as the page's own GET /api/lines/{id}/cloze returned them (they depend on the learner). */
 const clozes = new WeakMap<Page, Map<string, Cloze>>();
 function trackCuts(page: Page): void {
@@ -120,12 +120,12 @@ function trackCuts(page: Page): void {
     } catch { /* page closed */ }
   });
 }
-/** Line `index`'s blank words (surfaces) and readings, in blank order. */
-async function clozeOf(page: Page, index: number): Promise<{ words: string[]; readings: string[] }> {
+/** Line `index`'s blank words (surfaces) and readings, in blank order, and its Chế độ dễ distractors. */
+async function clozeOf(page: Page, index: number): Promise<{ words: string[]; readings: string[]; distractors: string[] }> {
   const id = data.lineIds[index] ?? "";
   await expect.poll(() => clozes.get(page)?.has(id)).toBe(true);
   const c = clozes.get(page)?.get(id);
-  return { words: c?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], readings: c?.readings ?? [] };
+  return { words: c?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], readings: c?.readings ?? [], distractors: c?.distractors ?? [] };
 }
 async function cut(page: Page, index: number): Promise<string[]> {
   const id = data.lineIds[index] ?? "";
@@ -1017,19 +1017,23 @@ test("26 · cloze: fill and check: no blank word or reading in the panel before 
   expect(bodies).toEqual([expect.objectContaining({ kind: "submit", format: "cloze", answers: [readings[0], ...words.slice(1)], easy: false, hintedUnits: [] })]);
 });
 
-test("27 · cloze: easy chips fill the first empty blank; a filled blank gives its chip back; the attempt is sent as easy", async ({ page }) => {
+test("27 · cloze: easy chips (the words + lesson distractors) fill the first empty blank; a filled blank gives its chip back; sent as easy", async ({ page }) => {
   await registerLearner(page);
   await openLesson(page, "/listening?format=cloze");
   const bodies = attemptBodies(page);
-  const { words } = await clozeOf(page, 0);
+  const { words, distractors } = await clozeOf(page, 0);
+  // The seed's nearby lines hold nouns (天気, 注文…): a distractor per blank at least, none a word of this line.
+  expect(distractors.length).toBeGreaterThanOrEqual(words.length);
+  for (const d of distractors) expect(LINES[0].text).not.toContain(d);
   await easyMode(page).click();
   const chipBank = practice(page).getByRole("list", { name: "Word bank" });
-  expect((await chipBank.getByRole("button").allTextContents()).sort()).toEqual([...words].sort());
+  expect((await chipBank.getByRole("button").allTextContents()).sort()).toEqual([...words, ...distractors].sort());
   for (const word of words) await chipBank.getByRole("button", { name: word, exact: true }).click();
-  await expect(chipBank).toHaveCount(0);
+  // Every blank full: only the distractors stay, so a chip can still be swapped.
+  expect((await chipBank.getByRole("button").allTextContents()).sort()).toEqual([...distractors].sort());
   await button(page, `Blank 1, ${words[0]}`).click();
   await expect(blankBox(page, 1)).toHaveValue("");
-  await expect(chipBank.getByRole("button")).toHaveCount(1);
+  await expect(chipBank.getByRole("button")).toHaveCount(distractors.length + 1);
   await chipBank.getByRole("button", { name: words[0], exact: true }).click();
   await expectNoSurface(page);
   await button(page, "Check").click();
@@ -1264,7 +1268,7 @@ test("38 · draft survives Change exercise: the picker and back keep the typed t
   await expect(typingInput(page)).toHaveValue("毎日");
 });
 
-test("39 · rail scrolls to the current chip: a deep link far into the lesson shows its chip, and Next keeps it in view", async ({ page }) => {
+test("39 · rail scrolls to the current chip: a deep link far into the lesson shows its chip, and Next and a width change keep it in view",async ({ page }) => {
   await registerLearner(page);
   await openLesson(page, `/listening?format=dictation&line=${data.lineIds[25]}`);
   const rail = page.getByTestId("sentence-rail");
@@ -1283,4 +1287,12 @@ test("39 · rail scrolls to the current chip: a deep link far into the lesson sh
   await rail.hover();
   await page.mouse.wheel(0, -300);
   await expect.poll(() => rail.evaluate((el) => el.scrollLeft)).toBeLessThan(before);
+  // A width change re-centres the current chip: centred on the wide listen-only rail, it would sit past the right
+  // edge of the narrow one once the video shows again (owner Chrome look, 2026-11-03).
+  await hideVideo(page).click();
+  await button(page, "Next sentence").click();
+  await expect.poll(() => inView(28)).toBe(true);
+  await dock(page).getByRole("button", { name: "Show video" }).click();
+  await expect(hideVideo(page)).toBeVisible();
+  await expect.poll(() => inView(28)).toBe(true);
 });

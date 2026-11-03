@@ -5,6 +5,7 @@ import { createClient } from "@/lib/supabase/server";
 import { getKnownVocabLemmas } from "@/lib/data/difficulty";
 import { lineTextHash } from "@/lib/dictation/chunk";
 import { LINE_ANSWER_LIMIT } from "@/lib/data/line-chunks";
+import { DISTRACTOR_NEIGHBOURS } from "@/lib/data/line-cloze";
 import { GET } from "./route";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -15,13 +16,16 @@ const T = 60000;
 const LINE_ID = "a0000000-0000-0000-0000-000000000001";
 let lineQueries: QueryCall[][];
 
-function asLearner(user: { id: string } | null, text: string | null) {
+/** The line sits at 10 s in transcript t1; `around` are the texts of the lines before / after it, nearest first. */
+function asLearner(user: { id: string } | null, text: string | null, around: { before: string[]; after: string[] } = { before: [], after: [] }) {
   vi.mocked(createClient).mockReturnValue(createMockSupabase({
     user,
     tables: {
       transcript_lines: (calls) => {
         lineQueries.push(calls);
-        return { data: text === null ? null : { text_jp: text }, error: null };
+        const side = calls.some((c) => c.op === "lt") ? around.before : calls.some((c) => c.op === "gt") ? around.after : null;
+        if (side) return { data: side.map((text_jp) => ({ text_jp })), error: null };
+        return { data: text === null ? null : { text_jp: text, transcript_id: "t1", start_time: "10.000" }, error: null };
       },
     },
   }) as unknown as ReturnType<typeof createClient>);
@@ -88,6 +92,7 @@ describe("GET /api/lines/[lineId]/cloze", () => {
         { text: "した", blank: null, romaji: "shi ta" },
       ],
       readings: ["べんきょう"],
+      distractors: [],
     });
     expect(data.segments.map((s: { text: string }) => s.text).join("")).toBe(text);
     expect(lineQueries[0]).toContainEqual({ op: "eq", column: "id", value: LINE_ID });
@@ -110,9 +115,24 @@ describe("GET /api/lines/[lineId]/cloze", () => {
     expect(getKnownVocabLemmas).toHaveBeenLastCalledWith(expect.anything(), "u");
   }, T);
 
-  it("a line with no candidate has no blank and one plain segment", async () => {
-    asLearner({ id: "u" }, "それは");
+  it("a line with no candidate has no blank and one plain segment, and reads no neighbour", async () => {
+    asLearner({ id: "u" }, "それは", { before: ["料理を作る"], after: [] });
     const { data } = await expectPrivate(await get(), 200);
-    expect(data).toMatchObject({ blanks: [], readings: [], segments: [{ text: "それは", blank: null }] });
+    expect(data).toMatchObject({ blanks: [], readings: [], distractors: [], segments: [{ text: "それは", blank: null }] });
+    expect(lineQueries).toHaveLength(1);
+  }, T);
+
+  it("distractors: the blank's kind from the nearby lines of the same transcript, nearest first, never a word of the line", async () => {
+    asLearner({ id: "u" }, "泣いて勉強した", { before: ["駅で料理を勉強する", "毎日の練習"], after: ["英語の練習"] });
+    const { data } = await expectPrivate(await get(), 200);
+    expect(data.blanks).toEqual([2]);
+    expect(data.distractors).toEqual(["料理", "練習"]);
+    const [earlier, later] = [lineQueries[1], lineQueries[2]];
+    for (const q of [earlier, later]) {
+      expect(q).toContainEqual({ op: "eq", column: "transcript_id", value: "t1" });
+      expect(q).toContainEqual(expect.objectContaining({ op: "limit", count: DISTRACTOR_NEIGHBOURS }));
+    }
+    expect(earlier).toContainEqual({ op: "lt", column: "start_time", value: 10 });
+    expect(later).toContainEqual({ op: "gt", column: "start_time", value: 10 });
   }, T);
 });
