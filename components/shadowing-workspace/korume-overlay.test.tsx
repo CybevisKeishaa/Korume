@@ -1,4 +1,4 @@
-import { act, fireEvent, screen } from "@testing-library/react";
+import { act, createEvent, fireEvent, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { render } from "@/test/render";
 import { installYouTubeStub, type YouTubeStubHandle } from "@/test/youtube-stub";
@@ -118,6 +118,19 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     expect(sheet()).toHaveAttribute("data-layout", "large");
     fireEvent.doubleClick(screen.getByRole("heading", { name: "Korume" }));
     expect(sheet()).toHaveAttribute("data-layout", "small");
+  });
+
+  it("closing the sheet mid-drag restores text selection", () => {
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    const bar = (sheet() as HTMLElement).querySelector("[data-korume-drag]") as HTMLElement;
+    // jsdom has no PointerEvent, so the fields the sheet reads are set on a plain event.
+    const down = createEvent.pointerDown(bar);
+    Object.defineProperties(down, { button: { value: 0 }, pointerId: { value: 1 }, clientX: { value: 10 }, clientY: { value: 10 } });
+    fireEvent(bar, down);
+    expect(document.body.style.userSelect).toBe("none");
+    fireEvent.click(screen.getByRole("button", { name: "Close Korume" }));
+    expect(document.body.style.userSelect).toBe("");
   });
 
   it("keeps the thread when the layout toggles", () => {

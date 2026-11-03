@@ -124,10 +124,19 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width - (mascot.x + mascot.width)); }).toBeLessThanOrEqual(margin + 1);
     });
 
-    test("6 · re-clamps on a window resize", async ({ page }) => {
+    test("6 · a large sheet re-clamps at the narrowest supported width, keeping its draft", async ({ page }) => {
       await openSheet(page);
-      await page.setViewportSize({ width: 1100, height: viewport.height });
-      await expect.poll(async () => { const b = await box(page.getByTestId("korume-sheet")); return b.x >= 0 && b.y >= 0 && b.x + b.width <= 1100 && b.y + b.height <= viewport.height; }).toBe(true);
+      await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await composer(sheet(page)).fill("a draft that must survive");
+      // Below 1024px wide the workspace hides Korume altogether, so 1024 is the narrowest reachable width.
+      await page.setViewportSize({ width: 1024, height: viewport.height });
+      const sheetBox = page.getByTestId("korume-sheet");
+      await expect.poll(async () => { const b = await box(sheetBox); return b.x >= 0 && b.y >= 0 && b.x + b.width <= 1024 && b.y + b.height <= viewport.height; }).toBe(true);
+      const b = await box(sheetBox);
+      const breakpoint = await tokenPx(page, "--korume-breakpoint");
+      await expect(sheetBox).toHaveAttribute("data-layout", b.width >= breakpoint ? "large" : "small");
+      await expect(composer(sheet(page))).toHaveValue("a draft that must survive");
     });
 
     test("7 · reduced motion jumps: centred at once, nothing running", async ({ page }) => {

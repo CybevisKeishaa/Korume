@@ -134,6 +134,11 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     return () => window.removeEventListener("resize", onResize);
   }, [bounds, commit, open]);
   useEffect(() => () => clearTimeout(glideTimer.current), []);
+  // A sheet that closes or unmounts mid-drag (a disabled notice, a hidden workspace) must not leave the page unselectable.
+  useEffect(() => {
+    if (!open) return;
+    return () => { drag.current = null; document.body.style.userSelect = ""; };
+  }, [open]);
 
   useEffect(() => {
     if (open && !wasOpen.current) sheetRef.current?.querySelector<HTMLTextAreaElement>("[data-korume-composer]")?.focus();
@@ -284,7 +289,6 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
         <div
           key={edge}
           aria-hidden="true"
-          aria-label={t("ask.sheet.resizeHandle")}
           data-korume-handle={edge}
           onPointerDown={(event) => startDrag(event, edge)}
           {...dragProps}
