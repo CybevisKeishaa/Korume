@@ -100,8 +100,9 @@ test("2 · /korume/chat renders a seeded thread from persisted grounding, with n
     await expect(page.getByText(SEEDED_ANSWER)).toBeVisible();
     const rail = page.getByRole("complementary", { name: "Learning context" });
     await expect(rail.getByText(lineText(3))).toBeVisible();
-    await expect(rail.getByText(`Seen ${ENT.seenCount} times`, { exact: true })).toBeVisible();
-    await expect(rail.getByText(`Seen ${TOK.seenCount} times`, { exact: true })).toBeVisible();
+    await expect(rail.getByText(`JLPT N5 · Seen ${ENT.seenCount} times`, { exact: true })).toBeVisible();
+    // R4: TOK is grounded but neither carded nor asked about, so the rail leaves it out.
+    await expect(rail.getByText(TOK.label)).toHaveCount(0);
     await expect(page.getByText(`You've seen ${ENT.label} in ${ENT.seenCount} Shadowing lines.`)).toBeVisible();
     await expect(page.getByRole("link", { name: "Korume Memory" })).toHaveAttribute("href", "/en/companion");
     await expect(page.locator("body")).not.toContainText(/sensei/i);

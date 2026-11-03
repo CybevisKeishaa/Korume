@@ -2,10 +2,10 @@
 
 import { useCallback, type CSSProperties, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
 import { Link, useTranslations } from "@/lib/i18n";
-import { unionGrounding } from "@/lib/korume/grounding";
+import { railEntities } from "@/lib/korume/grounding";
 import { besideLauncher, centred, clampRail, clampRect, resizeRect, type Edge, type Rect, type SheetBounds } from "@/lib/korume/sheet-geometry";
 import { Composer } from "@/components/korume/composer";
-import { KorumeRail } from "@/components/korume/korume-rail";
+import { clock, KorumeRail, type SmallMemory } from "@/components/korume/korume-rail";
 import { MessageList } from "@/components/korume/message-list";
 import { TurnNotice } from "@/components/korume/turn-notice";
 import { LOCKING_NOTICES, useKorumeThread, type DraftAnchor } from "@/components/korume/use-korume-thread";
@@ -17,11 +17,6 @@ export interface Size { w: number; h: number }
 export type SheetSizes = { small: Size; large: Size };
 
 const CHIP_CHARS = 18;
-
-function clock(seconds: number): string {
-  const total = Math.max(0, Math.floor(seconds));
-  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
-}
 
 /** Token values in px, resolved once per open and per window resize — never on a pointermove. */
 interface Metrics extends Pick<SheetBounds, "margin" | "minW" | "minH"> { breakpoint: number; small: Size; large: Size; railMin: number; railMax: number; railDefault: number; chatMin: number; handle: number }
@@ -168,7 +163,25 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   useEffect(() => {
     if (thread.notice?.kind === "disabled") onClose();
   }, [onClose, thread.notice]);
-  const entities = useMemo(() => unionGrounding(thread.messages), [thread.messages]);
+  // R7: the rail's memory comes from the thread detail. Refetched only when large, created, and an answer landed since.
+  const [memory, setMemory] = useState<SmallMemory | null>(null);
+  const answered = thread.messages.filter((message) => message.role === "assistant").length;
+  const memoryFor = useRef<number | null>(null);
+  const showRail = open && rect !== null && rect.w >= (metrics.current?.breakpoint ?? Infinity);
+  useEffect(() => {
+    if (!showRail || !thread.created || memoryFor.current === answered) return;
+    const abort = new AbortController();
+    fetch(`/api/korume/threads/${thread.threadId}`, { cache: "no-store", signal: abort.signal })
+      .then(async (response) => {
+        if (!response.ok) return;
+        const detail = (await response.json()) as { memory?: SmallMemory | null };
+        memoryFor.current = answered;
+        setMemory(detail.memory ?? null);
+      })
+      .catch(() => { /* a failed or aborted fetch keeps the last memory */ });
+    return () => abort.abort();
+  }, [answered, showRail, thread.created, thread.threadId]);
+  const entities = useMemo(() => railEntities(thread.messages), [thread.messages]);
 
   // Pointer capture keeps the drag on the handle or header however fast the pointer leaves it. No selection while it runs.
   const startDrag = (event: ReactPointerEvent<HTMLElement>, edge: Edge | null) => {
@@ -341,7 +354,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
             <KorumeRail
               anchor={line ? { videoId: video.id, videoTitle: video.title, lineId: line.id, lineText: line.textJp, translation: line.textTranslation, startTime: line.startTime, span: anchor.span } : null}
               entities={entities}
-              memory={null}
+              memory={memory}
             />
           </div>
         ) : null}

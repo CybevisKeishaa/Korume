@@ -102,8 +102,10 @@ describe("KorumeChatPage", () => {
 
   it("adds the grounding of a turn answered on this page to the rail", async () => {
     vi.mocked(fetch).mockImplementationOnce(async (_url, init) => new Response(JSON.stringify({ message: answer(JSON.parse(String(init?.body)).turnId, [{ id: "ent:ga", label: "が", kind: "particle", seenCount: 2 }]) }), { status: 200 }));
-    render(page({ detail: detailWith({}, [answer("t1", [wa])]) }));
-    const rail = screen.getByRole("complementary");
+    // R4: the rail shows what an answer's card names or the learner asked about, not every grounded entity.
+    const carded = { ...answer("t1", [wa]), answer: { blocks: [{ type: "context_card", entityRef: "ent:wa" }] } as never };
+    render(page({ detail: detailWith({}, [carded]) }));
+    const rail = screen.getByRole("complementary", { name: "Learning context" });
     expect(within(rail).queryByText("が")).toBeNull();
     await userEvent.type(screen.getByRole("textbox"), "What about が?{Enter}");
     expect(await within(rail).findByText("が")).toBeInTheDocument();

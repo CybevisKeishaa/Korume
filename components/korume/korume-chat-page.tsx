@@ -2,7 +2,7 @@
 
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocale, useRouter, useTranslations } from "@/lib/i18n";
-import { unionGrounding } from "@/lib/korume/grounding";
+import { railEntities } from "@/lib/korume/grounding";
 import { Composer } from "./composer";
 import { KorumeRail, type SmallMemory } from "./korume-rail";
 import { MessageList } from "./message-list";
@@ -95,7 +95,7 @@ function KorumeConversation({
     anchor: null,
     initial: detail ?? undefined,
   });
-  const entities = useMemo(() => unionGrounding(state.messages), [state.messages]);
+  const entities = useMemo(() => railEntities(state.messages), [state.messages]);
   const dividerLabel = useDividerLabel(state.messages[0]?.createdAt);
   // The client router caches this page's payload (staleTimes.dynamic): once a turn is answered here, drop that cache
   // so coming back to this thread from ⋯ or the browser does not seed it without the turn. Same key → state kept.

@@ -65,6 +65,7 @@
     "listen": "Nghe",
     "seen": "{count, plural, other {Đã gặp {count} lần}}",
     "seenCapped": "Đã gặp {count}+ lần",
+    "unseen": "Chưa gặp",
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
     "followups": "Câu hỏi gợi ý",
