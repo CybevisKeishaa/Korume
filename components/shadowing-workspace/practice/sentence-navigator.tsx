@@ -22,7 +22,7 @@ const TONES = {
 
 /**
  * The sentence chip rail (spec §3.8): every sentence as a chip in one horizontal scroller; the current chip is
- * scrolled to the centre whenever the shared sentence moves; ‹ › page by the rail's visible width; a vertical wheel
+ * scrolled to the centre whenever the shared sentence moves or the rail's width changes; ‹ › page by the rail's visible width; a vertical wheel
  * scrolls it sideways while it overflows; its thin scrollbar shows only on hover or keyboard focus (`.sentence-rail`).
  * A sentence with an unsent Listening draft carries a dot and "in progress" in its name (§3.9).
  */
@@ -37,6 +37,8 @@ export function SentenceNavigator({ disabled = false, disabledHint, draftLineIds
   const controller = usePlaybackController();
   const { stats } = usePracticeStats();
   const rail = useRef<HTMLDivElement>(null);
+  const current = useRef(index);
+  current.current = index;
   const [edges, setEdges] = useState({ start: true, end: true });
   const measure = useCallback(() => {
     const el = rail.current;
@@ -60,8 +62,22 @@ export function SentenceNavigator({ disabled = false, disabledHint, draftLineIds
       el.scrollLeft += event.deltaY;
     };
     el.addEventListener("wheel", onWheel, { passive: false });
-    window.addEventListener("resize", measure);
-    return () => { el.removeEventListener("wheel", onWheel); window.removeEventListener("resize", measure); };
+    // A width change (window resized, nav toggled, video hidden or shown) re-centres the current chip; sideways only,
+    // so a panel scrolled down never jumps back to the rail.
+    let width = el.clientWidth;
+    const resized = new ResizeObserver(() => {
+      if (el.clientWidth !== width) {
+        width = el.clientWidth;
+        const chip = el.querySelector<HTMLElement>(`[data-sentence-index='${current.current}']`);
+        if (chip) {
+          const [c, r] = [chip.getBoundingClientRect(), el.getBoundingClientRect()];
+          el.scrollLeft += c.left + c.width / 2 - (r.left + r.width / 2);
+        }
+      }
+      measure();
+    });
+    resized.observe(el);
+    return () => { el.removeEventListener("wheel", onWheel); resized.disconnect(); };
   }, [measure]);
 
   const earlierDisabled = disabled || edges.start;
