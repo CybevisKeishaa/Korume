@@ -31,6 +31,7 @@ const row = {
   playback_loop_count: 5 as const,
   playback_auto_pause: true,
   show_shortcut_hints: false,
+  feedback_sounds: false,
   resume_behavior: "restart" as const,
   study_atmosphere: "rainy_day" as const,
 };
@@ -85,6 +86,7 @@ describe("readPreferences", () => {
       playbackLoopCount: 5,
       playbackAutoPause: true,
       showShortcutHints: false,
+      feedbackSounds: false,
       resumeBehavior: "restart",
       studyAtmosphere: "rainy_day",
       dailyMinutes: 20,
@@ -157,7 +159,7 @@ describe("updateMyPreferences", () => {
         pronunciationSort: "shortest", pronunciationDuration: "10_30", pronunciationHideCompleted: true,
         readingFurigana: "always", readingTranslation: "always", readingJpFont: "mincho", readingTextSize: "xl",
         readingLineHeight: "airy", readingWidth: "wide", readingEmphasis: "strong", readingColorPreset: "high_contrast",
-        playbackDefaultRate: 0.75, playbackLoopCount: 5, playbackAutoPause: true, showShortcutHints: false,
+        playbackDefaultRate: 0.75, playbackLoopCount: 5, playbackAutoPause: true, showShortcutHints: false, feedbackSounds: false,
         resumeBehavior: "restart", studyAtmosphere: "rainy_day",
       } },
     });

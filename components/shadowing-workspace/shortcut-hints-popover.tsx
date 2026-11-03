@@ -7,7 +7,7 @@ import { KeyboardGlyph } from "./player-glyphs";
 import { SHORTCUT_HINTS_POPOVER, useSession } from "./workspace-context";
 
 /** The keys `shortcutFor` (lib/shadowing-workspace/shortcuts.ts) maps, in the order a learner meets them. */
-const HINTS = [
+export const HINTS = [
   ["Space", "togglePlay"], ["←", "previous"], ["→", "next"], ["Shift + ←", "rewind"], ["L", "loop"], ["F", "focus"],
 ] as const;
 

@@ -126,4 +126,18 @@ describe("SegmentedControl", () => {
     expect(onValueChange).not.toHaveBeenCalled();
     screen.getAllByRole("radio").forEach((radio) => expect(radio).toBeDisabled());
   });
+
+  it("disables one option with its reason, and the arrows skip it", async () => {
+    const user = userEvent.setup();
+    const onValueChange = vi.fn();
+    render(<SegmentedControl value="normal" onValueChange={onValueChange} aria-label="Display scale"
+      options={OPTIONS.map((option) => option.value === "large" ? { ...option, disabled: true, title: "Not on this screen" } : option)} />);
+    const large = screen.getByRole("radio", { name: "Large" });
+    expect(large).toBeDisabled();
+    expect(large).toHaveAccessibleDescription("Not on this screen");
+    screen.getByRole("radio", { name: "Normal" }).focus();
+    await user.keyboard("{ArrowRight}");
+    expect(onValueChange).toHaveBeenLastCalledWith("extra_large");
+    expect(onValueChange).not.toHaveBeenCalledWith("large");
+  });
 });

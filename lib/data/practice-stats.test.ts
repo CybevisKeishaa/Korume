@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createClient } from "@/lib/supabase/server";
-import { REVIEW_PRONUNCIATION_BELOW } from "@/lib/summary/thresholds";
+import { REVIEW_DICTATION_BELOW, REVIEW_PRONUNCIATION_BELOW } from "@/lib/summary/thresholds";
 import { loadPracticeStats } from "./practice-stats";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -28,7 +28,7 @@ describe("loadPracticeStats", () => {
     }, error: null });
 
     await expect(loadPracticeStats(VIDEO, "pronunciation")).resolves.toEqual({ ok: true, data: {
-      lineCount: 194, scoredLines: 2, mean: 71,
+      lineCount: 194, scoredLines: 2, mean: 71, helpedLines: null,
       lines: {
         "line-a": { state: "scored", score: 85 },
         "line-b": { state: "needs_review", score: 56 },
@@ -44,10 +44,42 @@ describe("loadPracticeStats", () => {
     expect(getUser.mock.invocationCallOrder[0] ?? Infinity).toBeLessThan(rpc.mock.invocationCallOrder[0] ?? 0);
   });
 
+  it.each([["dictation"], ["cloze"]] as const)(
+    "Listening %s reads its own exercise with the one Listening review cut and parses revealed, helped and helpedLines", async (mode) => {
+      rpc.mockResolvedValue({ data: {
+        lineCount: 3, scoredLines: 2, mean: 90, helpedLines: "1",
+        lines: [
+          { lineId: "line-a", state: "revealed", score: "90" },
+          { lineId: "line-b", state: "scored", score: 90 },
+          { lineId: "line-c", state: "helped", score: "85" },
+        ],
+      }, error: null });
+      await expect(loadPracticeStats(VIDEO, mode)).resolves.toEqual({ ok: true, data: {
+        lineCount: 3, scoredLines: 2, mean: 90, helpedLines: 1,
+        lines: {
+          "line-a": { state: "revealed", score: 90 },
+          "line-b": { state: "scored", score: 90 },
+          "line-c": { state: "helped", score: 85 },
+        },
+      } });
+      expect(REVIEW_DICTATION_BELOW).toBe(80);
+      expect(rpc).toHaveBeenCalledWith("practice_stats", { p_video: VIDEO, p_mode: mode, p_review_below: REVIEW_DICTATION_BELOW });
+    },
+  );
+
+  it("refuses an unknown mode before the RPC (a null p_mode would read pronunciation, R11)", async () => {
+    await expect(loadPracticeStats(VIDEO, "listening" as never)).rejects.toThrow();
+    await expect(loadPracticeStats(VIDEO, null as never)).rejects.toThrow();
+    // 049: the format names are no stats mode any more (the SQL raises 22023 for them).
+    await expect(loadPracticeStats(VIDEO, "typing" as never)).rejects.toThrow();
+    await expect(loadPracticeStats(VIDEO, "word_bank" as never)).rejects.toThrow();
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it("preserves the null mean and zero counts of an unknown or RLS-inaccessible lesson", async () => {
     rpc.mockResolvedValue({ data: { lineCount: 0, scoredLines: 0, mean: null, lines: [] }, error: null });
     await expect(loadPracticeStats(VIDEO, "pronunciation")).resolves.toEqual({
-      ok: true, data: { lineCount: 0, scoredLines: 0, mean: null, lines: {} },
+      ok: true, data: { lineCount: 0, scoredLines: 0, mean: null, helpedLines: null, lines: {} },
     });
   });
 

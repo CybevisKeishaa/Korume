@@ -5,7 +5,7 @@ import { GET } from "./route";
 
 vi.mock("@/lib/data/practice-stats", () => ({ loadPracticeStats: vi.fn() }));
 const ID = "11111111-1111-4111-8111-111111111111";
-const STATS = { lineCount: 194, scoredLines: 12, mean: 84, lines: { line: { state: "scored" as const, score: 84 } } };
+const STATS = { lineCount: 194, scoredLines: 12, mean: 84, helpedLines: null, lines: { line: { state: "scored" as const, score: 84 } } };
 function request(query = "?mode=pronunciation") {
   return new Request(`http://localhost/api/shadowing/${ID}/practice-stats${query}`);
 }
@@ -20,7 +20,7 @@ beforeEach(() => {
 });
 
 describe("GET practice-stats", () => {
-  it.each(["?mode=listening", "?mode=word_bank", "?mode=typing", "?mode=shadowing", ""])(
+  it.each(["?mode=listening", "?mode=typing", "?mode=word_bank", "?mode=shadowing", "?mode=", ""])(
     "rejects unsupported or missing mode %s with a private 400", async (query) => {
       const response = await GET(request(query), { params: { id: ID } });
       privateResponse(response, 400);
@@ -48,6 +48,12 @@ describe("GET practice-stats", () => {
     expect(await response.json()).toEqual({ data: STATS });
     expect(loadPracticeStats).toHaveBeenCalledTimes(1);
     expect(loadPracticeStats).toHaveBeenCalledWith(ID, "pronunciation");
+  });
+
+  it.each(["dictation", "cloze"] as const)("forwards the Listening exercise %s", async (mode) => {
+    const response = await GET(request(`?mode=${mode}`), { params: { id: ID } });
+    privateResponse(response, 200);
+    expect(loadPracticeStats).toHaveBeenCalledWith(ID, mode);
   });
 
   it("returns a private generic 500 when the loader throws", async () => {

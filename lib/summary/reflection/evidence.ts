@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import type { LessonSnapshot, ReviewReason } from "../snapshot";
+import type { LessonSnapshot, LessonStatus, ReviewReason } from "../snapshot";
 import { modeQuality, type Quality } from "../thresholds";
 
 /**
@@ -7,7 +7,7 @@ import { modeQuality, type Quality } from "../thresholds";
  * Nothing from navigation, history or Companion memory has a field here, so it cannot reach the prompt.
  */
 export interface ReflectionEvidence {
-  modes: { shadowing: Quality; pronunciation: Quality; listening: Quality; retention: Quality };
+  modes: Record<keyof LessonStatus, Quality>;
   savedAnything: boolean;
   /** At most three, each with its first reason. */
   targets: { lineId: string; lineText: string; reason: ReviewReason }[];
@@ -20,7 +20,8 @@ export function projectEvidence(snapshot: LessonSnapshot): ReflectionEvidence {
     modes: {
       shadowing: modeQuality("shadowing", status.shadowing),
       pronunciation: modeQuality("pronunciation", status.pronunciation),
-      listening: modeQuality("listening", status.listening),
+      listeningDictation: modeQuality("listeningDictation", status.listeningDictation),
+      listeningCloze: modeQuality("listeningCloze", status.listeningCloze),
       retention: modeQuality("retention", status.retention),
     },
     savedAnything: savedKnowledge.vocabulary + savedKnowledge.expressions + savedKnowledge.grammar > 0,

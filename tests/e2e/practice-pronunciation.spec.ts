@@ -50,7 +50,7 @@ async function openLesson(page: Page, mode: "" | "/pronunciation" = ""): Promise
 const modeBar = (page: Page) => page.getByRole("navigation", { name: "Learning modes" });
 const practice = (page: Page) => page.getByRole("region", { name: "Pronunciation practice" });
 const strip = (page: Page) => page.getByTestId("lesson-stat-strip");
-const stat = (page: Page, name: "sentence" | "scored" | "average") => strip(page).locator(`[data-stat="${name}"] dd`);
+const stat = (page: Page, name: "sentence" | "completed" | "accuracy" | "videoLeft") => strip(page).locator(`[data-stat="${name}"] dd`);
 
 async function recordTake(page: Page): Promise<void> {
   await practice(page).getByRole("button", { name: "Record", exact: true }).click();
@@ -87,8 +87,8 @@ test("2 + 3 · record, save, score; the scored take survives a reload", async ({
   await expect(practice(page).getByTestId("take-status")).toContainText("Excellent");
   await expect(practice(page).locator("mark[data-error-type='Mispronunciation']")).toHaveText("文");
   await expect(page.getByRole("navigation", { name: "Sentence navigator" }).getByRole("button", { name: "Sentence 1, scored 86" })).toBeVisible();
-  await expect(stat(page, "scored")).toHaveText(/^1\//);
-  await expect(stat(page, "average")).toHaveText("86");
+  await expect(stat(page, "completed")).toHaveText(/^1\//);
+  await expect(stat(page, "accuracy")).toHaveText("86");
 
   await page.reload();
   await expect(practice(page)).toBeVisible();

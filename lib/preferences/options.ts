@@ -74,6 +74,8 @@ export interface UserPreferences {
   playbackLoopCount: PlaybackLoopCount;
   playbackAutoPause: boolean;
   showShortcutHints: boolean;
+  /** Result chimes (owner 2026-10-31): a short quiet sound per score band when a practice result arrives. */
+  feedbackSounds: boolean;
   resumeBehavior: ResumeBehavior;
   studyAtmosphere: StudyAtmosphere;
   /** Lives on `users.daily_minutes`; carried here so one read serves the page. */
@@ -105,6 +107,7 @@ export const DEFAULT_PREFERENCES: UserPreferences = {
   playbackLoopCount: 1,
   playbackAutoPause: false,
   showShortcutHints: false,
+  feedbackSounds: true,
   resumeBehavior: "resume",
   studyAtmosphere: "none",
   dailyMinutes: 15,

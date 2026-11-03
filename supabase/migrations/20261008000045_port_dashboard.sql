@@ -281,22 +281,7 @@ end $$;
 revoke execute on function ensure_daily_mission(uuid, text[], jsonb, jsonb) from public, anon, authenticated;
 grant execute on function ensure_daily_mission(uuid, text[], jsonb, jsonb) to service_role;
 
--- Mission hints: modality activity in the practice window, with the video practised last.
-create function practice_activity(p_since timestamptz)
-  returns table (type text, outcomes int, last_at timestamptz, last_video_id uuid)
-  language sql stable security invoker set search_path = public
-as $$
-  -- The fallback lesson must still be openable today (M2): a lapsed PLUS lesson is skipped for an older one.
-  select 'shadow_lines', count(distinct transcript_line_id)::int, max(created_at),
-    (array_agg(video_id order by created_at desc) filter (where video_id is not null and can_open_lesson(video_id, auth.uid())))[1]
-  from shadowing_sessions where user_id = auth.uid() and created_at >= p_since
-  union all
-  select 'dictation_lines', count(*)::int, max(created_at),
-    (array_agg(video_id order by created_at desc) filter (where video_id is not null and can_open_lesson(video_id, auth.uid())))[1]
-  from dictation_attempts where user_id = auth.uid() and created_at >= p_since;
-$$;
-revoke execute on function practice_activity(timestamptz) from public, anon;
-grant execute on function practice_activity(timestamptz) to authenticated;
+-- practice_activity: defined in 20261021000048_practice_listening.sql (it reads B2 columns).
 
 
 -- M3/M4 progress and claim
@@ -368,43 +353,6 @@ $$;
 revoke execute on function activity_days(text, date, date) from public, anon;
 grant execute on function activity_days(text, date, date) to authenticated;
 
--- D4 (plan P4): Listening and Pronunciation accuracy per study-date window, with evidence counts.
-create function weekly_skill_windows(p_tz text, p_w1_from date, p_w0_from date, p_to date)
-  returns table (skill text, win int, attempts int, mean numeric)
-  language sql stable security invoker set search_path = public
-as $$
-  with ev as (
-    select 'listening' as skill, (created_at at time zone p_tz)::date as d, accuracy_score::numeric as s
-    from dictation_attempts where user_id = auth.uid() and accuracy_score is not null
-    union all
-    select 'pronunciation', (created_at at time zone p_tz)::date, pronunciation_score
-    from shadowing_sessions where user_id = auth.uid() and pronunciation_score is not null
-  )
-  select skill, case when d >= p_w0_from then 0 else 1 end, count(*)::int, round(avg(s), 2)
-  from ev where d >= p_w1_from and d <= p_to group by 1, 2;
-$$;
-revoke execute on function weekly_skill_windows(text, date, date, date) from public, anon;
-grant execute on function weekly_skill_windows(text, date, date, date) to authenticated;
+-- weekly_skill_windows: defined in 20261021000048_practice_listening.sql (it reads B2 columns).
 
--- D3: each family/metric over its last p_dates study dates WITH evidence.
-create function weakness_scores(p_tz text, p_dates int) returns table (family text, metric text, attempts int, score numeric)
-  language sql stable security invoker set search_path = public
-as $$
-  with ev as (
-    select 'listening' as fam, 'accuracy' as met, created_at as at, accuracy_score::numeric as s
-      from dictation_attempts where user_id = auth.uid() and accuracy_score is not null
-    union all select 'reading', 'score', completed_at, score from user_reading_attempts where user_id = auth.uid()
-    union all select 'pronunciation', 'accuracy', created_at, pronunciation_score from shadowing_sessions
-      where user_id = auth.uid() and pronunciation_score is not null
-    union all select 'pronunciation', 'pitch', created_at, pitch_score from shadowing_sessions
-      where user_id = auth.uid() and pitch_score is not null
-    union all select 'pronunciation', 'rhythm', created_at, rhythm_score from shadowing_sessions
-      where user_id = auth.uid() and rhythm_score is not null
-  ),
-  ranked as (
-    select fam, met, s, dense_rank() over (partition by fam order by (at at time zone p_tz)::date desc) as r from ev
-  )
-  select fam, met, count(*)::int, round(avg(s), 2) from ranked where r <= p_dates group by fam, met;
-$$;
-revoke execute on function weakness_scores(text, int) from public, anon;
-grant execute on function weakness_scores(text, int) to authenticated;
+-- weakness_scores: defined in 20261021000048_practice_listening.sql (it reads B2 columns).

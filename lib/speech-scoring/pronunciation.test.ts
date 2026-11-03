@@ -55,6 +55,33 @@ describe("assessPronunciation", () => {
     expect(result.words[0]).toEqual({ word: "今日", accuracyScore: 95, errorType: "None" });
   });
 
+  it("reads the REST endpoint's flat NBest[0] scores (body captured live from japanwest, 2026-10-31)", async () => {
+    const live = {
+      RecognitionStatus: "Success", Offset: 1500000, Duration: 21000000, DisplayText: "こんにちは。元気ですか？",
+      NBest: [{
+        Confidence: 0.92, Display: "こんにちは。元気ですか？",
+        AccuracyScore: 98.0, FluencyScore: 99.0, CompletenessScore: 100.0, PronScore: 98.6,
+        Words: [
+          { Word: "元気", Offset: 10800000, Duration: 5700000, Confidence: 0.0, AccuracyScore: 97.0, ErrorType: "None" },
+          { Word: "か", Offset: 19100000, Duration: 3400000, Confidence: 0.0, AccuracyScore: 40.0, ErrorType: "Mispronunciation" },
+        ],
+      }],
+    };
+    azure = installAzureSpeechMock([{ match: RECOGNITION, responses: [{ body: live }] }]);
+
+    const result = await assessPronunciation({ audio: new Uint8Array([1]), referenceText: "こんにちは、元気ですか" });
+
+    expect(result).toMatchObject({ pronunciationScore: 98.6, fluencyScore: 99, accuracyScore: 98, completenessScore: 100 });
+    expect(result.words[1]).toEqual({ word: "か", accuracyScore: 40, errorType: "Mispronunciation" });
+  });
+
+  it("refuses a Basic-dimension body (AccuracyScore only) instead of inventing the missing scores", async () => {
+    const basic = { RecognitionStatus: "Success", DisplayText: "x", NBest: [{ Display: "x", AccuracyScore: 98, Words: [] }] };
+    azure = installAzureSpeechMock([{ match: RECOGNITION, responses: [{ body: basic }] }]);
+    await expect(assessPronunciation({ audio: new Uint8Array([1]), referenceText: "x" }))
+      .rejects.toBeInstanceOf(SpeechRecognitionError);
+  });
+
   it("sends a base64 Pronunciation-Assessment header with the right config", async () => {
     azure = installAzureSpeechMock([
       { match: RECOGNITION, responses: [{ body: azurePronunciationAssessmentResult() }] },
@@ -78,6 +105,7 @@ describe("assessPronunciation", () => {
       ReferenceText: "今日はいい天気です",
       GradingSystem: "HundredMark",
       Granularity: "Phoneme",
+      Dimension: "Comprehensive",
       EnableMiscue: true,
     });
   });

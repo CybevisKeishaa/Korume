@@ -57,8 +57,8 @@ describe("common.json EN — recommendation-rail literals (Task 10)", () => {
  * conversation, jlpt, reading, video-player, dictation); Task 8 had put it
  * in `vocab.json` where it never belonged (P4 — a string needed by 2+
  * modules is promoted to `common`, never duplicated). Only
- * `vocab-examples-panel.tsx` and `dictation-view.tsx` consume it as of this
- * task; the other ~26 call sites still hardcode their own copy and will
+ * `vocab-examples-panel.tsx` and `dictation-view.tsx` (retired in practice
+ * modes B2) consumed it as of this task; the other ~26 call sites still hardcode their own copy and will
  * consume this key when Tasks 12–16 extract their namespaces. This pin was
  * moved from (not duplicated out of) `messages/en/vocab.pin.test.ts` — see
  * the note left there.

@@ -8,25 +8,33 @@ import { recognitionEndpoint, speechCredentials } from "./config";
 import { SpeechRequestError, SpeechThrottledError, throwForHttpStatus } from "./errors";
 import type { SpeechAudioInput } from "./types";
 
-/** Raw per-word entry from Azure's detailed recognition (assessment mode). */
-export interface RawRecognizedWord {
-  Word: string;
-  PronunciationAssessment?: {
-    AccuracyScore: number;
-    ErrorType: "None" | "Omission" | "Insertion" | "Mispronunciation";
-  };
+interface RawWordScores {
+  AccuracyScore: number;
+  ErrorType: "None" | "Omission" | "Insertion" | "Mispronunciation";
 }
 
-/** Raw NBest entry — pronunciation fields present only in assessment mode. */
-export interface RawRecognitionNBest {
+interface RawSentenceScores {
+  AccuracyScore: number;
+  FluencyScore: number;
+  CompletenessScore: number;
+  PronScore: number;
+}
+
+/**
+ * Raw per-word entry from Azure's detailed recognition (assessment mode).
+ * The REST short-audio endpoint puts scores FLAT on the word (verified live
+ * 2026-10-31); the Speech SDK JSON nests them under `PronunciationAssessment`.
+ */
+export interface RawRecognizedWord extends Partial<RawWordScores> {
+  Word: string;
+  PronunciationAssessment?: RawWordScores;
+}
+
+/** Raw NBest entry — pronunciation fields present only in assessment mode (flat on REST, nested on SDK). */
+export interface RawRecognitionNBest extends Partial<RawSentenceScores> {
   Confidence?: number;
   Display?: string;
-  PronunciationAssessment?: {
-    AccuracyScore: number;
-    FluencyScore: number;
-    CompletenessScore: number;
-    PronScore: number;
-  };
+  PronunciationAssessment?: RawSentenceScores;
   Words?: RawRecognizedWord[];
 }
 

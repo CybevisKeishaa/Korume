@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { modeQuality } from "./thresholds";
+import { modeQuality, scoreBand } from "./thresholds";
 
 const scored = (score: number) => ({ kind: "scored" as const, score });
 
@@ -9,8 +9,8 @@ describe("modeQuality (spec §5.1 table)", () => {
       .toEqual(["needs_work", "practiced", "practiced", "strong"]);
   });
 
-  it("keeps listening boundary scores on the intended quality side", () => {
-    expect([79, 80, 94, 95].map((score) => modeQuality("listening", scored(score))))
+  it.each(["listeningDictation", "listeningCloze"] as const)("keeps %s boundary scores on the one Listening cut", (mode) => {
+    expect([79, 80, 94, 95].map((score) => modeQuality(mode, scored(score))))
       .toEqual(["needs_work", "practiced", "practiced", "strong"]);
   });
 
@@ -29,5 +29,13 @@ describe("modeQuality (spec §5.1 table)", () => {
   it("reads a watched-to position as practised, never strong", () => {
     expect(modeQuality("shadowing", { kind: "reached", line: 51, total: 194 })).toBe("practiced");
     expect(modeQuality("shadowing", { kind: "reached", line: 194, total: 194 })).toBe("practiced");
+  });
+});
+
+describe("scoreBand (result chimes, owner 2026-10-31)", () => {
+  it("uses each mode's own Summary cuts, boundaries included", () => {
+    expect([59, 60, 79, 80].map((s) => scoreBand("pronunciation", s))).toEqual(["needs_work", "practiced", "practiced", "strong"]);
+    expect([79, 80, 94, 95].map((s) => scoreBand("listeningDictation", s))).toEqual(["needs_work", "practiced", "practiced", "strong"]);
+    expect(scoreBand("listeningCloze", 100)).toBe("strong");
   });
 });

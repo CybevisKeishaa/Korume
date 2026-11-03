@@ -51,38 +51,4 @@ grant execute on function claim_pronunciation_scoring(uuid, uuid) to service_rol
 grant execute on function finish_pronunciation_scoring(uuid, uuid, numeric, numeric, jsonb) to service_role;
 grant execute on function release_pronunciation_scoring(uuid, uuid) to service_role;
 
--- §3.6: one aggregate for the stat strip and the navigator. score = latest valid scored; state = latest of any kind.
-create function practice_stats(p_video uuid, p_mode text, p_review_below numeric) returns jsonb
-language plpgsql stable security invoker set search_path = public as $$
-begin
-  if p_mode <> 'pronunciation' then raise exception 'practice_stats: unknown mode %', p_mode using errcode = '22023'; end if;
-  return (
-    with lesson_transcript as (
-      select t.id from transcripts t where t.video_id = p_video order by t.created_at desc, t.id limit 1
-    ), lines as (
-      select tl.id from transcript_lines tl
-      where tl.transcript_id = (select id from lesson_transcript) and btrim(coalesce(tl.text_jp, '')) <> ''
-    ), sessions as (
-      select s.transcript_line_id as line_id, s.pronunciation_score, s.created_at, s.id
-      from shadowing_sessions s where s.user_id = auth.uid() and s.transcript_line_id in (select id from lines)
-    ), latest_scored as (
-      select distinct on (line_id) line_id, pronunciation_score as score
-      from sessions where pronunciation_score is not null order by line_id, created_at desc, id desc
-    ), latest_any as (
-      select distinct on (line_id) line_id, pronunciation_score is null as unscored
-      from sessions order by line_id, created_at desc, id desc
-    )
-    select jsonb_build_object(
-      'lineCount', (select count(*) from lines),
-      'scoredLines', (select count(*) from latest_scored),
-      'mean', (select avg(score) from latest_scored),
-      'lines', coalesce((select jsonb_agg(jsonb_build_object(
-          'lineId', a.line_id,
-          'state', case when a.unscored then 'unscored'
-                        when ls.score < p_review_below then 'needs_review' else 'scored' end,
-          'score', ls.score) order by a.line_id)
-        from latest_any a left join latest_scored ls on ls.line_id = a.line_id), '[]'::jsonb))
-  );
-end $$;
-revoke all on function practice_stats(uuid, text, numeric) from public, anon;
-grant execute on function practice_stats(uuid, text, numeric) to authenticated;
+-- practice_stats: defined in 20261021000048_practice_listening.sql (it reads B2 columns).

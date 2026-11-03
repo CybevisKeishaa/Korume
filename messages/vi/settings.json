@@ -169,6 +169,10 @@
       "large": "Lớn",
       "extra_large": "Rất lớn"
     },
+    "feedbackSounds": {
+      "label": "Âm thanh hiệu ứng",
+      "description": "Một âm ngắn, nhỏ khi có kết quả luyện tập: âm khác nhau cho điểm tốt và điểm cần luyện thêm."
+    },
     "reducedMotion": {
       "label": "Giảm chuyển động",
       "description": "Cắt bớt hiệu ứng, chỉ giữ lại những gì mang ý nghĩa.",

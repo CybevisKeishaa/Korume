@@ -42,6 +42,7 @@ describe("preference options", () => {
       readingLineHeight: "comfortable", readingWidth: "normal", readingEmphasis: "soft",
       readingColorPreset: "warm_cream", playbackDefaultRate: 1, playbackLoopCount: 1, playbackAutoPause: false,
       showShortcutHints: false, resumeBehavior: "resume", studyAtmosphere: "none",
+      feedbackSounds: true, // migration 050 (20261031000050_feedback_sounds.sql), not 033
     });
   });
 });

@@ -169,6 +169,10 @@
       "large": "Large",
       "extra_large": "Extra large"
     },
+    "feedbackSounds": {
+      "label": "Result sounds",
+      "description": "A short, quiet chime when a practice result arrives — different for a strong score and one to work on."
+    },
     "reducedMotion": {
       "label": "Reduced Motion",
       "description": "Cuts animation down to what carries meaning.",

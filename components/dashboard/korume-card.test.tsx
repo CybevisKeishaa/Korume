@@ -15,8 +15,8 @@ describe("KorumeCard", () => {
   });
 
   it("renders only the actions supported by a cue", () => {
-    render(<><WeaknessCard rows={[]} /><KorumeCard enabled cue={{ key: "cue.weakSkill", values: { skill: "listening", score: 42 }, practiceHref: "/shadowing/v1/dictation", viewWeakness: true }} /></>);
-    expect(screen.getByRole("link", { name: "Practice now" })).toHaveAttribute("href", "/en/shadowing/v1/dictation");
+    render(<><WeaknessCard rows={[]} /><KorumeCard enabled cue={{ key: "cue.weakSkill", values: { skill: "listening", score: 42 }, practiceHref: "/shadowing/v1/listening?format=typing", viewWeakness: true }} /></>);
+    expect(screen.getByRole("link", { name: "Practice now" })).toHaveAttribute("href", "/en/shadowing/v1/listening?format=typing");
     fireEvent.click(screen.getByRole("button", { name: "View weakness" }));
     expect(document.activeElement).toHaveAttribute("id", "weakness-snapshot");
   });

@@ -11,13 +11,16 @@ const mock = vi.hoisted(() => ({
   index: 0, pause: vi.fn(), seek: vi.fn(), refresh: vi.fn(), convert: vi.fn(), pitch: vi.fn(), mark: vi.fn(), drawer: vi.fn(),
   start: vi.fn(), stop: vi.fn(), reset: vi.fn(), change: null as null | ((state: { state: UseRecorderResult["state"]; blob: Blob | null; error: string | null }) => void),
   lines: [] as WorkspaceLine[],
+  sounds: false, chime: vi.fn(),
 }));
 vi.mock("../workspace-context", () => ({
   useLesson: () => ({ video: { id: "video", durationSeconds: 10 }, lines: mock.lines, transcriptId: "transcript" }),
   useCurrentSentence: () => ({ index: mock.index, isSpoken: true }), useStartPosition: () => 0,
   usePlaybackController: () => ({ pause: mock.pause, seekToSentence: mock.seek }),
   useMarks: () => ({ isMarked: () => false, toggleMark: mock.mark, pending: () => false }),
+  usePreferences: () => ({ preferences: { feedbackSounds: mock.sounds } }),
 }));
+vi.mock("@/lib/sound/result-chime", () => ({ playResultChime: mock.chime }));
 vi.mock("../drawer/drawer-context", () => ({ useOptionalDrawer: () => ({ dispatch: mock.drawer }) }));
 vi.mock("next/navigation", async (original) => ({ ...await original<typeof import("next/navigation")>(), useRouter: () => ({ refresh: vi.fn(), push: vi.fn(), replace: vi.fn() }), usePathname: () => "/en/shadowing/video/pronunciation" }));
 vi.mock("../live-sentence", () => ({ LiveSentence: ({ renderSentence }: { renderSentence?: (props: { text: string }) => React.ReactNode }) => renderSentence ? renderSentence({ text: mock.lines[mock.index]?.textJp ?? "" }) : <p>{mock.lines[mock.index]?.textJp}</p> }));
@@ -56,6 +59,7 @@ describe("pronunciation capture, save and score", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mock.index = 0;
+    mock.sounds = false;
     mock.lines = ["one", "two"].map((id, index) => ({ id, index, textJp: index ? "次の文" : "日本語", startTime: index * 2, endTime: index * 2 + 2, textTranslation: null, furigana: null }));
     mock.start.mockImplementation(async () => { mock.change?.({ state: "recording", blob: null, error: null }); });
     mock.reset.mockImplementation(() => { mock.change?.({ state: "idle", blob: null, error: null }); });
@@ -69,6 +73,7 @@ describe("pronunciation capture, save and score", () => {
   afterEach(() => { vi.useRealTimers(); vi.unstubAllGlobals(); });
 
   it("pauses native audio before opening the microphone, converts once, saves WAV then scores only its session", async () => {
+    mock.sounds = true;
     mock.pitch.mockResolvedValue({ score: 77, overlay: [], confidence: 1, lowConfidence: false });
     mount(); await start();
     expect(at(mock.pause.mock.invocationCallOrder, 0)).toBeLessThan(at(mock.start.mock.invocationCallOrder, 0));
@@ -81,7 +86,12 @@ describe("pronunciation capture, save and score", () => {
     const scores = posts("/api/pronunciation/score"); expect(scores).toHaveLength(1);
     expect(JSON.parse(at(scores, 0)[1].body as string)).toEqual({ sessionId: "session-one" });
     expect(mock.refresh).toHaveBeenCalled(); expect(screen.getByTestId("take-status")).toHaveTextContent("88");
+    // Result sounds on: 88 is a strong pronunciation score (Summary cut 80), one chime for the one result.
+    expect(mock.chime.mock.calls).toEqual([["strong"]]);
     expect(document.querySelectorAll("mark[data-error-type]")).toHaveLength(1);
+    // Korume reacts like the chime: a strong first score on the sentence is an ace, with its quip.
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toHaveAttribute("data-mascot-pose", "korume-ace");
+    expect(screen.getByTestId("take-status")).toHaveTextContent("Nailed it!");
   });
   it("retains the same WAV on save failure, blocks navigation and retries without another recording", async () => {
     fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([]) : url.endsWith("/score") ? response(result) : response({}, 500));
@@ -150,6 +160,10 @@ describe("pronunciation capture, save and score", () => {
     await act(async () => { score.resolve(response(result)); });
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.result.pronunciationScore).toBe(88);
     expect(screen.queryByText("Excellent")).not.toBeInTheDocument();
+    // A score that lands after the learner moved on gets no reaction, here or when they come back.
+    mock.index = 0; view.rerender(<PronunciationAttemptsProvider><PronunciationModeBody /><Probe /></PronunciationAttemptsProvider>);
+    await graded("Excellent");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toBeNull();
     expect((at(posts("/api/shadowing/session"), 0)[1].body as FormData).get("lineId")).toBe("one");
   });
   it("says when Azure heard no speech (422) and offers a new take, not a rescore that cannot succeed", async () => {
@@ -215,6 +229,17 @@ describe("pronunciation capture, save and score", () => {
     await act(async () => { score.resolve(response(result)); });
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.phase).toBe("scored");
     expect(mock.refresh).toHaveBeenCalled();
+  });
+  it("keeps Korume's reaction on the take it judged: an older scored take on another sentence shows none", async () => {
+    const older = { ...historyItem("scored", "older-two"), pronunciationScore: 70, rhythmScore: 70, assessment: result.assessment };
+    fetchMock.mockImplementation(async (url: string) => url.endsWith("lineId=two") ? response([older]) : url.includes("?") ? response([])
+      : url === "/api/shadowing/session" ? response({ id: "session-one", signedUrl: "/saved.wav" }, 201) : response(result));
+    const view = mount(); await start(); await finish();
+    await graded("Excellent");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toHaveAttribute("data-mascot-pose", "korume-ace");
+    mock.index = 1; view.rerender(tree());
+    await graded("Good");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toBeNull();
   });
   it("drops a stale history response after changing lines", async () => {
     const history = deferred<Response>();

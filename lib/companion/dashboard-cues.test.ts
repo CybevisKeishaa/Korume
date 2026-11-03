@@ -13,7 +13,7 @@ describe("resolveDashboardCue", () => {
       ...noFacts,
       missionCompletedToday: true,
       weeklyDeltas: { listening: 8, pronunciation: 6 },
-      weakest: [{ family: "listening", metric: "accuracy", score: 40, practiceHref: "/shadowing/a/dictation" }],
+      weakest: [{ family: "listening", metric: "accuracy", score: 40, practiceHref: "/shadowing/a/listening?format=typing" }],
     })).toEqual({ key: "cue.missionCompleted", values: {}, practiceHref: null, viewWeakness: false });
   });
 
@@ -33,11 +33,11 @@ describe("resolveDashboardCue", () => {
       ...noFacts,
       weakest: [
         { family: "reading", metric: "score", score: 40, practiceHref: null },
-        { family: "listening", metric: "accuracy", score: 55, practiceHref: "/shadowing/a/dictation" },
+        { family: "listening", metric: "accuracy", score: 55, practiceHref: "/shadowing/a/listening?format=typing" },
       ],
     })).toEqual({
       key: "cue.weakSkill", values: { skill: "listening", score: 55 },
-      practiceHref: "/shadowing/a/dictation", viewWeakness: true,
+      practiceHref: "/shadowing/a/listening?format=typing", viewWeakness: true,
     });
   });
 

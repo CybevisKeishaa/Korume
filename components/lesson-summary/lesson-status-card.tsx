@@ -5,9 +5,12 @@ import { modeQuality } from "@/lib/summary/thresholds";
 import { cn } from "@/lib/utils";
 import { areaProps } from "./area";
 
-const MODES = ["shadowing", "pronunciation", "listening", "retention"] as const;
+const MODES = ["shadowing", "pronunciation", "listeningDictation", "listeningCloze", "retention"] as const;
 
-/** Spec §3.1: four rows, read from the tables; "Not started" and a real 0 are different things. */
+/**
+ * Spec §3.1: five rows read from the tables; "Not started" and a real 0 differ. Listening is one row per exercise
+ * (listening spec §3.10), never averaged; each says how many of its lines were done without help.
+ */
 export function LessonStatusCard({ status }: { status: LessonStatus }) {
   const t = useTranslations("shadowing.lessonSummary.status");
   const value = (state: ModeState) => {
@@ -36,6 +39,10 @@ export function LessonStatusCard({ status }: { status: LessonStatus }) {
                 quality === "not_started" && "font-normal text-muted-foreground",
               )}>
                 {value(status[mode])}
+                {status[mode].kind === "scored" && (() => {
+                  const selfDone = (status[mode] as Extract<ModeState, { kind: "scored" }>).selfDone;
+                  return selfDone && <span data-self-done className="block text-caption font-normal text-muted-foreground">{t("selfDone", { count: selfDone.count, total: selfDone.of })}</span>;
+                })()}
               </dd>
             </div>
           );

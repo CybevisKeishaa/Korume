@@ -33,12 +33,13 @@ interface PreferencesRow {
   playback_loop_count: UserPreferences["playbackLoopCount"];
   playback_auto_pause: boolean;
   show_shortcut_hints: boolean;
+  feedback_sounds: boolean;
   resume_behavior: UserPreferences["resumeBehavior"];
   study_atmosphere: UserPreferences["studyAtmosphere"];
 }
 
 const COLUMNS =
-  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, companion_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed, reading_furigana, reading_translation, reading_jp_font, reading_text_size, reading_line_height, reading_width, reading_emphasis, reading_color_preset, playback_default_rate, playback_loop_count, playback_auto_pause, show_shortcut_hints, resume_behavior, study_atmosphere";
+  "learning_schedule, schedule_days, review_frequency, difficulty, display_scale, reduce_motion, microphone_enabled, camera_enabled, companion_enabled, pronunciation_sort, pronunciation_duration, pronunciation_hide_completed, reading_furigana, reading_translation, reading_jp_font, reading_text_size, reading_line_height, reading_width, reading_emphasis, reading_color_preset, playback_default_rate, playback_loop_count, playback_auto_pause, show_shortcut_hints, feedback_sounds, resume_behavior, study_atmosphere";
 
 function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferences {
   if (!row) return { ...DEFAULT_PREFERENCES, dailyMinutes };
@@ -67,6 +68,7 @@ function fromRow(row: PreferencesRow | null, dailyMinutes: number): UserPreferen
     playbackLoopCount: row.playback_loop_count,
     playbackAutoPause: row.playback_auto_pause,
     showShortcutHints: row.show_shortcut_hints,
+    feedbackSounds: row.feedback_sounds,
     resumeBehavior: row.resume_behavior,
     studyAtmosphere: row.study_atmosphere,
     dailyMinutes,
@@ -158,6 +160,7 @@ const TO_COLUMN: Record<Exclude<keyof UserPreferences, "dailyMinutes">, string> 
   playbackLoopCount: "playback_loop_count",
   playbackAutoPause: "playback_auto_pause",
   showShortcutHints: "show_shortcut_hints",
+  feedbackSounds: "feedback_sounds",
   resumeBehavior: "resume_behavior",
   studyAtmosphere: "study_atmosphere",
 };

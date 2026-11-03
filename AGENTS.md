@@ -126,6 +126,10 @@ learners. Treat them as first-class, not add-ons:
   live copy's `search_path`, grants and quota literal unpinned. Re-run the subsystem's live gate on
   a fresh reset after any such edit. If a migration ever *does* reach an environment that cannot be
   reset, this rule is what must change first — deliberately, not by one commit choosing otherwise.
+  **Changed from 049 on (owner 2026-10-26):** the owner's local DB can no longer be reset (049 is
+  applied to it once), so files up to 048 are frozen and new behaviour goes in a NEW migration that
+  `CREATE OR REPLACE`s the object. The static test of the object's latest migration pins the live
+  body; an earlier file's pins are historical (labelled superseded).
 - Interface type uses the `--text-*` tokens only (`text-caption` … `text-display`); a Figma frame's
   own unit scales layout and art, never type (L-051, L-052). `lib/typography-scan.test.ts` and
   `tests/e2e/typography.spec.ts` must stay green; an exemption is one element in

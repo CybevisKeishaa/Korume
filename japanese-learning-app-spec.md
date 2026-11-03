@@ -70,7 +70,7 @@
     /grammar
     /videos
       /[videoId]/shadowing
-      /[videoId]/dictation
+      /[videoId]/dictation   (đã gộp vào /shadowing/[id]/listening, B2)
     /reading
     /speaking
     /certification
@@ -260,7 +260,7 @@ GET    /api/grammar?level=N3
 POST   /api/videos/import        { youtubeUrl }  -> lấy metadata + trigger transcript pipeline
 GET    /api/videos/:id/transcript
 POST   /api/shadowing/session     { videoId, lineId, recordingBlob }
-POST   /api/dictation/attempt     { videoId, lineId, userInput }
+POST   /api/dictation/attempt     { kind: submit|reveal, format: word_bank|typing, videoId, lineId, version, textHash, hintedUnits, chunkOrder | input+hintUnit }  -> Listening Practice (B2); trang dictation cũ đã gộp vào /shadowing/:id/listening?format=typing
 POST   /api/pronunciation/score   { audioBlob, referenceText }
 POST   /api/conversation/message  { sessionId, message }  -> gọi Claude API
 GET    /api/certification/tests?level=N3

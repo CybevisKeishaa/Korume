@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Korume — bản mẫu kéo giãn</title>
+<style>
+  :root {
+    --bg: #0b0d11; --recessed: #12151b; --card: #171a20; --surface: #20242c;
+    --line: #26292e; --fg: #f5f4f0; --meta: #89909f; --ember: #ff8a3d;
+    --ember-soft: rgba(255,138,61,.12); --ember-line: rgba(255,138,61,.35);
+    --r-lg: 14px; --r-md: 10px; --r-full: 999px;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px/1.55 system-ui, sans-serif; overflow: hidden; }
+  [lang="ja"] { font-family: "Hiragino Sans", "Yu Gothic UI", "Meiryo", system-ui, sans-serif; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+
+  /* The app's own scrollbar (app/globals.css): a slim --border capsule, transparent track. */
+  ::-webkit-scrollbar { width: 12px; height: 12px; }
+  ::-webkit-scrollbar-track, ::-webkit-scrollbar-corner { background: transparent; }
+  ::-webkit-scrollbar-thumb { background-color: var(--line); border: 3px solid transparent; background-clip: content-box; border-radius: 9999px; }
+  ::-webkit-scrollbar-thumb:hover { background-color: rgba(137,144,159,.5); }
+  /* Korume panes, quieter still (same idea as .sentence-rail): 8px, the thumb appears only while you are over the
+     pane or focused inside it, so a resting chat shows no bar at all. Track always reserved → nothing shifts. */
+  .scroll::-webkit-scrollbar, .rail::-webkit-scrollbar { width: 8px; }
+  .scroll::-webkit-scrollbar-thumb, .rail::-webkit-scrollbar-thumb { border-width: 2px; background-color: transparent; }
+  .scroll:hover::-webkit-scrollbar-thumb, .scroll:focus-within::-webkit-scrollbar-thumb,
+  .rail:hover::-webkit-scrollbar-thumb, .rail:focus-within::-webkit-scrollbar-thumb { background-color: var(--line); }
+  .scroll::-webkit-scrollbar-thumb:hover, .rail::-webkit-scrollbar-thumb:hover { background-color: rgba(255,138,61,.55); }
+
+  /* ---------- fake workspace ---------- */
+  .ws { position: absolute; inset: 0; display: grid; grid-template-columns: 1fr 34%; gap: 16px; padding: 16px; }
+  .player { background: #000 url() center/cover; border-radius: var(--r-lg); display: grid; place-items: center; color: var(--meta); border: 1px solid var(--line); }
+  .player span { font-size: 13px; }
+  .transcript { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; overflow: hidden; }
+  .tline { padding: 10px 12px; border-radius: var(--r-md); color: var(--meta); }
+  .tline.on { background: var(--ember-soft); color: var(--fg); box-shadow: inset 2px 0 0 var(--ember); }
+
+  /* ---------- launcher ---------- */
+  .launcher { position: fixed; width: 64px; height: 64px; z-index: 30; touch-action: none; cursor: grab; border-radius: 50%;
+    filter: drop-shadow(0 6px 14px rgba(0,0,0,.45)); transition: transform .15s; }
+  .launcher:hover { transform: scale(1.06); }
+  .launcher.dragging { cursor: grabbing; transform: scale(1.1); transition: none; }
+  .launcher img { width: 100%; height: 100%; pointer-events: none; user-select: none; }
+  .launcher .tip { position: absolute; right: 70px; top: 50%; translate: 0 -50%; white-space: nowrap; background: var(--surface); border: 1px solid var(--line);
+    color: var(--meta); font-size: 12px; padding: 4px 8px; border-radius: var(--r-md); opacity: 0; pointer-events: none; transition: opacity .15s; }
+  .launcher:hover .tip { opacity: 1; }
+
+  /* ---------- sheet ---------- */
+  .sheet { position: fixed; z-index: 40; display: none; flex-direction: column; background: var(--bg); border: 1px solid var(--line);
+    border-radius: var(--r-lg); box-shadow: 0 24px 60px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.02); overflow: hidden; min-width: 340px; min-height: 380px; }
+  .sheet.open { display: flex; }
+  .sheet.animating { transition: width .22s cubic-bezier(.2,.8,.2,1), height .22s cubic-bezier(.2,.8,.2,1), left .22s, top .22s; }
+
+  .handle { position: absolute; z-index: 5; touch-action: none; }
+  .h-x { top: 14px; bottom: 14px; width: 10px; cursor: ew-resize; }
+  .h-y { left: 14px; right: 14px; height: 10px; cursor: ns-resize; }
+  .h-c { width: 18px; height: 18px; }
+  .handle::after { content: ""; position: absolute; border-radius: 2px; background: var(--ember); opacity: 0; transition: opacity .15s; }
+  .h-x::after { top: 50%; height: 36px; translate: 0 -50%; width: 3px; left: 3px; }
+  .h-y::after { left: 50%; width: 36px; translate: -50% 0; height: 3px; top: 3px; }
+  .handle:hover::after, .handle.active::after { opacity: .9; }
+  .grip { position: absolute; width: 12px; height: 12px; opacity: .55; pointer-events: none; }
+
+  header.bar { display: flex; align-items: center; gap: 10px; padding: 10px 12px 10px 14px; border-bottom: 1px solid var(--line); cursor: move; user-select: none; }
+  .avatar { width: 28px; height: 28px; border-radius: 50%; background: var(--surface) center/150% no-repeat; flex: none; }
+  .title { flex: 1; min-width: 0; line-height: 1.2; }
+  .title b { display: block; font-size: 14px; }
+  .title small { color: var(--meta); font-size: 11.5px; }
+  .ibtn { width: 30px; height: 30px; border-radius: 8px; display: grid; place-items: center; color: var(--meta); }
+  .ibtn:hover { background: var(--surface); color: var(--fg); }
+  .ibtn svg { width: 16px; height: 16px; }
+  .size { font-variant-numeric: tabular-nums; color: var(--meta); font-size: 11px; padding: 2px 6px; border: 1px solid var(--line); border-radius: var(--r-full); }
+
+  .body { position: relative; flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0,1fr) 0px; transition: grid-template-columns .22s; }
+  .sheet.wide .body { grid-template-columns: minmax(0,1fr) var(--rail-w, 300px); }
+  .sheet.splitting .body, .sheet.splitting .rail-in { transition: none; }
+  /* Splitter between chat and rail: a 10px hit area on the rail's left edge, a hairline that lights up. */
+  .split { position: absolute; top: 0; bottom: 0; right: calc(var(--rail-w, 300px) - 5px); width: 10px; cursor: col-resize; z-index: 4; display: none; touch-action: none; }
+  .sheet.wide .split { display: block; }
+  .split::after { content: ""; position: absolute; left: 4px; top: 50%; translate: 0 -50%; width: 3px; height: 44px; border-radius: 2px; background: var(--ember); opacity: 0; transition: opacity .15s; }
+  .split:hover::after, .split.active::after { opacity: .9; }
+  .tag-wide { display: none; } .sheet.wide .tag-wide { display: inline; } .sheet.wide .tag-small { display: none; }
+  .open-chat { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; border-radius: 8px; color: var(--meta); font-size: 12.5px; white-space: nowrap; }
+  .open-chat:hover { background: var(--surface); color: var(--fg); }
+  .open-chat svg { width: 15px; height: 15px; }
+  .open-chat .lbl { display: none; } .sheet.wide .open-chat .lbl { display: inline; }
+  .chat { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .anchorbar { display: flex; gap: 8px; align-items: center; padding: 8px 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .chip { border-radius: var(--r-full); padding: 3px 10px; font-size: 12px; background: var(--recessed); border: 1px solid var(--line); max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .chip.link { background: none; border-color: transparent; color: var(--ember); }
+  .sheet.wide .anchorbar { display: none; }
+
+  .scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+  .col { max-width: 720px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+  .divider { display: flex; align-items: center; gap: 12px; color: var(--meta); font-size: 11px; letter-spacing: .12em; }
+  .divider::before, .divider::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .ground { display: flex; gap: 8px; align-items: center; color: var(--meta); font-size: 12.5px; padding: 8px 12px; border: 1px dashed var(--line); border-radius: var(--r-md); }
+  .ground i { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); flex: none; }
+  .me { align-self: flex-end; max-width: 82%; background: var(--surface); border: 1px solid var(--line); padding: 10px 14px; border-radius: 16px 16px 4px 16px; }
+  .ans { display: grid; grid-template-columns: 30px 1fr; gap: 10px; }
+  .ans .avatar { width: 30px; height: 30px; }
+  .sig { font-size: 10.5px; letter-spacing: .14em; color: var(--ember); font-weight: 700; display: flex; align-items: center; gap: 6px; }
+  .sig::after { content: ""; width: 4px; height: 4px; border-radius: 50%; background: var(--meta); }
+  .card { margin-top: 8px; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .card p { margin: 0; }
+  .jp { color: var(--ember); background: var(--ember-soft); border-radius: 6px; padding: 0 5px; }
+  .ex { background: var(--recessed); border: 1px solid var(--line); border-left: 2px solid var(--ember); border-radius: var(--r-md); padding: 12px 14px; }
+  .ex .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .ex ruby { font-size: 17px; } .ex rt { font-size: 9.5px; color: var(--meta); }
+  .listen { font-size: 12px; color: var(--meta); display: inline-flex; gap: 4px; align-items: center; padding: 2px 8px; border-radius: var(--r-full); border: 1px solid var(--line); }
+  .listen:hover { color: var(--fg); }
+  .ex .tr { color: var(--meta); font-size: 13px; margin-top: 4px; }
+  .ccard { border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 14px; background: linear-gradient(180deg, rgba(255,255,255,.015), transparent); }
+  .ccard .top { display: flex; justify-content: space-between; align-items: center; }
+  .kind { font-size: 10.5px; letter-spacing: .14em; color: var(--meta); font-weight: 600; }
+  .badge { font-size: 11px; padding: 1px 8px; border-radius: var(--r-full); border: 1px solid var(--ember-line); color: var(--ember); }
+  .ccard .head { display: flex; gap: 10px; align-items: baseline; margin-top: 6px; }
+  .ccard .head b { font-size: 20px; }
+  .ccard .gl { color: var(--meta); }
+  .ccard .note { font-size: 13px; margin-top: 4px; }
+  .ccard a { display: inline-flex; margin-top: 8px; font-size: 12.5px; color: var(--ember); text-decoration: none; gap: 4px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .achip { font-size: 12.5px; padding: 6px 12px; border-radius: var(--r-full); border: 1px solid var(--line); background: var(--recessed); }
+  .achip:hover { border-color: var(--ember-line); color: var(--ember); }
+
+  .composer { border-top: 1px solid var(--line); padding: 10px 14px 12px; }
+  .box { display: flex; gap: 8px; align-items: flex-end; background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 8px; }
+  .box:focus-within { border-color: var(--ember-line); }
+  .box textarea { flex: 1; resize: none; background: none; border: 0; color: var(--fg); font: inherit; min-height: 22px; max-height: 120px; outline: none; padding: 4px 6px; }
+  .send { width: 34px; height: 34px; border-radius: 10px; background: var(--ember); color: #1a0e05; display: grid; place-items: center; flex: none; }
+  .hint { display: flex; justify-content: flex-end; color: var(--meta); font-size: 11px; margin-top: 6px; }
+
+  /* ---------- rail (Figma Sidebar) ---------- */
+  .rail { min-width: 0; overflow: hidden; border-left: 1px solid var(--line); background: var(--recessed); opacity: 0; transition: opacity .2s .05s; }
+  .sheet.wide .rail { opacity: 1; overflow-y: auto; }
+  .rail-in { width: var(--rail-w, 300px); padding: 18px 18px 24px; display: flex; flex-direction: column; gap: 22px; }
+  .rh { font-size: 10.5px; letter-spacing: .14em; font-weight: 700; color: var(--meta); margin: 0 0 10px; }
+  .rh.accent { color: var(--ember); }
+  .ctx { background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 14px; }
+  .ctx .jp-line { font-size: 16px; line-height: 1.7; }
+  .ctx .tr { color: var(--meta); font-size: 13px; margin-top: 6px; }
+  .ctx .src { display: flex; gap: 8px; align-items: center; margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; }
+  .ctx .src .t { color: var(--ember); font-variant-numeric: tabular-nums; }
+  .ctx .src .v { color: var(--meta); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ent { display: grid; grid-template-columns: 36px 1fr 14px; gap: 12px; align-items: center; padding: 10px 12px; border-radius: var(--r-md); border: 1px solid var(--line); background: var(--card); text-align: left; width: 100%; }
+  .ent + .ent { margin-top: 8px; }
+  .ent:hover { border-color: var(--ember-line); }
+  .tile { width: 36px; height: 36px; border-radius: 9px; background: var(--surface); display: grid; place-items: center; font-size: 15px; }
+  .ent .g { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .ent .m { font-size: 11.5px; color: var(--meta); }
+  .ent .m b { color: var(--ember); font-weight: 600; }
+  .mem { border-left: 2px solid var(--ember); padding: 2px 0 2px 12px; font-size: 13px; }
+  .mem a { color: var(--ember); font-size: 12px; text-decoration: none; display: inline-block; margin-top: 6px; }
+
+  /* ---------- prototype controls ---------- */
+  .lab { position: fixed; left: 16px; bottom: 16px; z-index: 20; background: rgba(23,26,32,.92); border: 1px solid var(--line); border-radius: var(--r-md);
+    padding: 10px 12px; font-size: 12px; color: var(--meta); display: flex; flex-direction: column; gap: 6px; width: 290px; backdrop-filter: blur(6px); }
+  .lab b { color: var(--fg); }
+  .lab input { width: 100%; accent-color: var(--ember); }
+  .lab .rowb { display: flex; gap: 6px; flex-wrap: wrap; }
+  .lab button { border: 1px solid var(--line); border-radius: 8px; padding: 3px 8px; font-size: 12px; }
+  .lab button:hover { color: var(--fg); border-color: var(--ember-line); }
+</style>
+</head>
+<body>
+
+<div class="ws">
+  <div class="player"><span>▶ Video bài học</span></div>
+  <div class="transcript">
+    <div class="tline">Googleマップ狂が教える美味しいお店の見つけ方</div>
+    <div class="tline">まず、レビューの数を見ます</div>
+    <div class="tline on" lang="ja">「美味しそうだね」とか言ってピン留めですよ</div>
+    <div class="tline">星の数だけじゃないんです</div>
+    <div class="tline">写真もちゃんと見てください</div>
+  </div>
+</div>
+
+<div class="launcher" id="launcher" role="button" tabindex="0" aria-label="Hỏi Korume">
+  <img src="/files/korume.png" alt=""><span class="tip">Kéo để di chuyển · bấm để hỏi</span>
+</div>
+
+<section class="sheet" id="sheet" role="dialog" aria-label="Korume">
+  <div class="handle h-x" data-edge="w" style="left:-2px"></div>
+  <div class="handle h-x" data-edge="e" style="right:-2px"></div>
+  <div class="handle h-y" data-edge="n" style="top:-2px"></div>
+  <div class="handle h-y" data-edge="s" style="bottom:-2px"></div>
+  <div class="handle h-c" data-edge="nw" style="left:-2px;top:-2px;cursor:nwse-resize"></div>
+  <div class="handle h-c" data-edge="ne" style="right:-2px;top:-2px;cursor:nesw-resize"></div>
+  <div class="handle h-c" data-edge="sw" style="left:-2px;bottom:-2px;cursor:nesw-resize"></div>
+  <div class="handle h-c" data-edge="se" style="right:-2px;bottom:-2px;cursor:nwse-resize"></div>
+
+  <header class="bar" id="bar">
+    <div class="avatar" style="background-image:url(/files/korume.png)"></div>
+    <div class="title"><b>Korume</b><small><span class="tag-small">Kiến thức tiếng Nhật</span><span class="tag-wide">Một góc yên tĩnh để hiểu tiếng Nhật</span></small></div>
+    <span class="size" id="size">400 × 560</span>
+    <button class="open-chat" id="openchat" title="Mở trang trò chuyện — xem lại các cuộc trò chuyện trước">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z"/><path d="M8.5 10.5h7M8.5 13.5h4"/></svg>
+      <span class="lbl">Tất cả cuộc trò chuyện</span>
+    </button>
+    <button class="ibtn" id="toggle" title="Phóng to / thu nhỏ (nhấp đúp vào thanh tiêu đề)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path id="tgl" d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+    </button>
+    <button class="ibtn" id="close" title="Đóng"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </header>
+
+  <div class="body">
+    <div class="chat">
+      <div class="anchorbar">
+        <span class="chip" lang="ja">「美味しそうだね」とか言ってピン留め… · 02:14</span>
+      </div>
+      <div class="scroll">
+        <div class="col">
+          <div class="divider">HÔM NAY</div>
+          <div class="ground"><i></i>Bạn đã gặp <span class="jp" lang="ja">ピン</span> trong 2 bài Shadowing.</div>
+          <div class="me">Pin ở đây có thể dùng từ tiếng Nhật thay vì katakana không, nó là gì</div>
+          <div class="ans">
+            <div class="avatar" style="background-image:url(/files/korume.png)"></div>
+            <div>
+              <div class="sig">KORUME</div>
+              <div class="card">
+                <p>Câu hỏi hay! <span class="jp" lang="ja">ピン</span> ở đây là từ mượn của tiếng Anh <b>pin</b> — cái ghim định vị trên bản đồ.</p>
+                <p><span class="jp" lang="ja">ピン留め</span> nghĩa là <b>ghim lại / lưu</b> một địa điểm trên Google Maps. Người Nhật gần như luôn nói bằng katakana; từ thuần Nhật gần nghĩa là <span class="jp" lang="ja">保存</span> (lưu), nhưng nghe trang trọng hơn.</p>
+                <div class="ex">
+                  <div class="row" lang="ja">
+                    <span><ruby>気<rt>き</rt></ruby>になるお<ruby>店<rt>みせ</rt></ruby>は<ruby>全部<rt>ぜんぶ</rt></ruby>ピン<ruby>留<rt>ど</rt></ruby>めしてます。</span>
+                    <button class="listen">♪ Nghe</button>
+                  </div>
+                  <div class="tr">Quán nào thấy hay là tôi ghim lại hết.</div>
+                </div>
+                <div class="ccard">
+                  <div class="top"><span class="kind">TỪ VỰNG</span><span class="badge">JLPT N3</span></div>
+                  <div class="head"><b lang="ja">ピン留め</b><span class="gl">ghim lại; kẹp tóc</span></div>
+                  <div class="note">Bạn gặp từ này lần đầu ở bài Google Maps — 1 lần.</div>
+                  <a href="#">Mở bài học →</a>
+                </div>
+                <p>Muốn mình so sánh với <span class="jp" lang="ja">保存</span> không?</p>
+                <div class="chips">
+                  <button class="achip">So sánh với 保存</button>
+                  <button class="achip">Thêm ví dụ</button>
+                  <button class="achip">Luyện cùng nhau</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="box"><textarea rows="1" placeholder="Hỏi Korume về câu này…"></textarea>
+          <button class="send" title="Gửi"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button></div>
+        <div class="hint">Enter để gửi · Shift+Enter xuống dòng</div>
+      </div>
+    </div>
+
+    <div class="split" id="split" role="separator" aria-orientation="vertical" aria-label="Kéo để đổi độ rộng cột ngữ cảnh" title="Kéo để đổi độ rộng · nhấp đúp để đặt lại"></div>
+    <aside class="rail" aria-label="Ngữ cảnh học tập">
+      <div class="rail-in">
+        <section>
+          <h3 class="rh accent">NGỮ CẢNH HỌC TẬP</h3>
+          <div class="ctx">
+            <div class="jp-line" lang="ja">「美味しそうだね」とか言ってピン留めですよ</div>
+            <div class="tr">"Trông ngon nhỉ", nói vậy rồi ghim lại đó.</div>
+            <div class="src"><span class="t">02:14</span><span class="v">【偏見】Googleマップ狂が教える美味しいお店の見つけ方</span></div>
+          </div>
+        </section>
+        <section>
+          <h3 class="rh">TRONG CUỘC TRÒ CHUYỆN NÀY</h3>
+          <button class="ent"><span class="tile" lang="ja">ピン</span><span><div class="g">pin — cái ghim</div><div class="m">Từ vựng · <b>Đã gặp 2 lần</b></div></span><span>›</span></button>
+          <button class="ent"><span class="tile" lang="ja" style="font-size:11px">ピン留</span><span><div class="g">ピン留め — ghim lại</div><div class="m">JLPT N3 · <b>Đã gặp 1 lần</b></div></span><span>›</span></button>
+          <button class="ent"><span class="tile" lang="ja">保存</span><span><div class="g">lưu, bảo quản</div><div class="m">JLPT N3 · Chưa gặp</div></span><span>›</span></button>
+        </section>
+        <section>
+          <h3 class="rh">MỘT KỶ NIỆM NHỎ</h3>
+          <div class="mem">Hôm qua bạn luyện câu <span lang="ja">美味しいお店</span> và đạt 86 điểm phát âm.<br><a href="#">Mở Korume Memory →</a></div>
+        </section>
+      </div>
+    </aside>
+  </div>
+</section>
+
+<div class="lab">
+  <b>Bản mẫu — thử kéo</b>
+  <span>Kéo mép / góc khung chat để đổi cỡ — qua ngưỡng thì tự về giữa. Kéo đường giữa chat và cột ngữ cảnh để chia lại (nhấp đúp để đặt lại). Kéo biểu tượng Korume đi chỗ khác rồi bấm để mở.</span>
+  <label>Rộng từ <b id="bpv">720</b>px thì hiện cột “Ngữ cảnh học tập”
+    <input id="bp" type="range" min="600" max="900" step="20" value="720"></label>
+  <div class="rowb">
+    <button data-preset="small">Nhỏ (400×560)</button>
+    <button data-preset="large">Lớn (1040×680)</button>
+    <button id="reset">Đặt lại vị trí</button>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+const sheet = $("#sheet"), launcher = $("#launcher"), sizeEl = $("#size");
+const M = 16, MINW = 340, MINH = 380, SMALL = { w: 400, h: 560 }, LARGE = { w: 1040, h: 680 };
+let bp = 720;
+const vw = () => innerWidth, vh = () => innerHeight;
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+/* --- state: launcher position + sheet rect, remembered --- */
+let L = JSON.parse(localStorage.getItem("k-launch") || "null") || { x: vw() - 64 - 28, y: vh() - 64 - 28 };
+let R = JSON.parse(localStorage.getItem("k-rect") || "null");
+function save() { localStorage.setItem("k-launch", JSON.stringify(L)); if (R) localStorage.setItem("k-rect", JSON.stringify(R)); }
+
+function placeLauncher() {
+  L.x = clamp(L.x, M, vw() - 64 - M); L.y = clamp(L.y, M, vh() - 64 - M);
+  launcher.style.left = L.x + "px"; launcher.style.top = L.y + "px";
+}
+/* Open beside the mascot: the sheet grows away from the corner the mascot sits in. */
+function rectFromLauncher(size) {
+  const right = L.x + 32 > vw() / 2, bottom = L.y + 32 > vh() / 2;
+  const w = Math.min(size.w, vw() - 2 * M), h = Math.min(size.h, vh() - 2 * M);
+  return { x: right ? L.x + 64 - w : L.x, y: bottom ? L.y + 64 - h : L.y, w, h };
+}
+/* Rail width: its own remembered value; the chat column never drops under CHAT_MIN. */
+const RAIL_MIN = 260, RAIL_MAX = 520, RAIL_DEFAULT = 320, CHAT_MIN = 380;
+let railW = +(localStorage.getItem("k-rail") || RAIL_DEFAULT);
+const railMax = () => Math.max(RAIL_MIN, Math.min(RAIL_MAX, R.w - CHAT_MIN));
+function apply(animate) {
+  R.w = clamp(R.w, MINW, vw() - 2 * M); R.h = clamp(R.h, MINH, vh() - 2 * M);
+  R.x = clamp(R.x, M, vw() - R.w - M); R.y = clamp(R.y, M, vh() - R.h - M);
+  sheet.classList.toggle("animating", !!animate);
+  Object.assign(sheet.style, { left: R.x + "px", top: R.y + "px", width: R.w + "px", height: R.h + "px" });
+  sheet.style.setProperty("--rail-w", clamp(railW, RAIL_MIN, railMax()) + "px");
+  sheet.classList.toggle("wide", R.w >= bp);
+  sizeEl.textContent = Math.round(R.w) + " × " + Math.round(R.h);
+  $("#tgl").setAttribute("d", R.w >= bp ? "M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7" : "M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7");
+  if (animate) setTimeout(() => sheet.classList.remove("animating"), 240);
+  save();
+}
+function open() { if (!R) R = rectFromLauncher(SMALL); sheet.classList.add("open"); launcher.style.display = "none"; apply(false); }
+function close() { sheet.classList.remove("open"); launcher.style.display = ""; placeLauncher(); }
+
+/* --- generic pointer drag --- */
+function drag(el, onStart, onMove, onEnd) {
+  el.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0 || e.target.closest("button:not(.launcher)") && el !== launcher) return;
+    e.preventDefault(); el.setPointerCapture(e.pointerId);
+    document.body.style.userSelect = "none"; // no text selection while dragging
+    const s = { x: e.clientX, y: e.clientY, moved: false, ...onStart(e) };
+    const mv = (ev) => { const dx = ev.clientX - s.x, dy = ev.clientY - s.y; if (Math.hypot(dx, dy) > 4) s.moved = true; onMove(dx, dy, s); };
+    const up = () => { document.body.style.userSelect = ""; getSelection().removeAllRanges(); el.removeEventListener("pointermove", mv); el.removeEventListener("pointerup", up); onEnd && onEnd(s); };
+    el.addEventListener("pointermove", mv); el.addEventListener("pointerup", up);
+  });
+}
+
+/* launcher: drag to move, click (no move) to open */
+drag(launcher, () => ({ ox: L.x, oy: L.y }),
+  (dx, dy, s) => { if (!s.moved) return; launcher.classList.add("dragging"); L.x = s.ox + dx; L.y = s.oy + dy; placeLauncher(); },
+  (s) => { launcher.classList.remove("dragging"); save(); if (!s.moved) { R = null; open(); } });
+launcher.addEventListener("keydown", (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); R = null; open(); } });
+
+/* header: drag to move the sheet; double-click toggles small/large */
+const bar = $("#bar");
+drag(bar, () => ({ r: { ...R } }), (dx, dy, s) => { R = { ...s.r, x: s.r.x + dx, y: s.r.y + dy }; apply(false); });
+bar.addEventListener("dblclick", (e) => { if (!e.target.closest("button")) toggleSize(); });
+
+/* edges and corners */
+sheet.querySelectorAll(".handle").forEach((h) => {
+  const ed = h.dataset.edge;
+  drag(h, () => { h.classList.add("active"); return { r: { ...R }, wasWide: R.w >= bp }; }, (dx, dy, s) => {
+    const r = { ...s.r };
+    if (ed.includes("e")) r.w = s.r.w + dx;
+    if (ed.includes("s")) r.h = s.r.h + dy;
+    if (ed.includes("w")) { r.w = clamp(s.r.w - dx, MINW, s.r.x + s.r.w - M); r.x = s.r.x + s.r.w - r.w; }
+    if (ed.includes("n")) { r.h = clamp(s.r.h - dy, MINH, s.r.y + s.r.h - M); r.y = s.r.y + s.r.h - r.h; }
+    R = r; apply(false);
+  }, (s) => {
+    h.classList.remove("active");
+    // Crossing into the large layout: glide to the middle on release (never mid-drag, which would jump under the pointer).
+    if (!s.wasWide && R.w >= bp) center();
+  });
+});
+
+/* Large layout sits in the middle of the screen; the small one goes back beside the mascot. */
+function center() { R = { ...R, x: (vw() - R.w) / 2, y: (vh() - R.h) / 2 }; apply(true); }
+function preset(size) {
+  if (size === LARGE) { R = { w: Math.min(size.w, vw() - 2 * M), h: Math.min(size.h, vh() - 2 * M) }; center(); }
+  else { R = rectFromLauncher(size); apply(true); }
+}
+
+/* splitter between chat and rail; double-click resets */
+const split = $("#split");
+drag(split, () => { split.classList.add("active"); sheet.classList.add("splitting"); return { rw: clamp(railW, RAIL_MIN, railMax()) }; },
+  (dx, dy, s) => { railW = clamp(s.rw - dx, RAIL_MIN, railMax()); sheet.style.setProperty("--rail-w", railW + "px"); },
+  () => { split.classList.remove("active"); sheet.classList.remove("splitting"); localStorage.setItem("k-rail", railW); });
+split.addEventListener("dblclick", () => { railW = RAIL_DEFAULT; localStorage.setItem("k-rail", railW); apply(true); });
+
+/* open the full chat page (thread history lives there) */
+$("#openchat").onclick = () => {
+  const t = document.createElement("div");
+  t.textContent = "→ Sẽ mở /korume/chat?thread=… (trang có danh sách các cuộc trò chuyện)";
+  Object.assign(t.style, { position: "fixed", left: "50%", top: "16px", translate: "-50% 0", zIndex: 60, background: "var(--surface)", border: "1px solid var(--line)", padding: "8px 14px", borderRadius: "10px", fontSize: "13px" });
+  document.body.append(t); setTimeout(() => t.remove(), 2200);
+};
+function toggleSize() { preset(R.w >= bp ? SMALL : LARGE); }
+function bindHeaderButtons() {
+  $("#toggle").onclick = toggleSize; $("#close").onclick = close;
+}
+bindHeaderButtons();
+document.addEventListener("keydown", (e) => { if (e.key === "Escape" && sheet.classList.contains("open")) { R.w >= bp ? preset(SMALL) : close(); } });
+
+/* prototype lab */
+$("#bp").oninput = (e) => { bp = +e.target.value; $("#bpv").textContent = bp; if (R) apply(false); };
+document.querySelectorAll("[data-preset]").forEach((b) => b.onclick = () => { if (!sheet.classList.contains("open")) open(); preset(b.dataset.preset === "large" ? LARGE : SMALL); });
+$("#reset").onclick = () => { localStorage.removeItem("k-launch"); localStorage.removeItem("k-rect"); localStorage.removeItem("k-rail"); railW = RAIL_DEFAULT; L = { x: vw() - 92, y: vh() - 92 }; R = null; close(); };
+addEventListener("resize", () => { placeLauncher(); if (R && sheet.classList.contains("open")) apply(false); });
+placeLauncher();
+</script>
+</body>
+</html>

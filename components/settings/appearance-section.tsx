@@ -20,7 +20,9 @@ export function AppearanceSection() {
   const { preferences } = usePreferences();
   const scale = usePreferenceSave("displayScale");
   const motion = usePreferenceSave("reduceMotion");
+  const sounds = usePreferenceSave("feedbackSounds");
   const motionId = useId();
+  const soundsId = useId();
   const noteId = useId();
   const [osReduces, setOsReduces] = useState(false);
 
@@ -85,6 +87,22 @@ export function AppearanceSection() {
           </p>
         ) : null}
       </SettingsRow>
+
+      <SettingsRow
+        icon="sound"
+        label={t("page.feedbackSounds.label")}
+        description={t("page.feedbackSounds.description")}
+        htmlFor={soundsId}
+        control={
+          <Switch
+            id={soundsId}
+            checked={preferences.feedbackSounds}
+            onCheckedChange={(checked) =>
+              void sounds.save({ feedbackSounds: checked }, { feedbackSounds: checked })
+            }
+          />
+        }
+      />
     </SettingsSection>
   );
 }

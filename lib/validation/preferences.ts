@@ -54,6 +54,7 @@ export const preferencesPatchSchema = z.union([
   z.object({ playbackLoopCount: z.number().refine((value) => (PLAYBACK_LOOP_COUNT_OPTIONS as readonly number[]).includes(value)) }).strict(),
   z.object({ playbackAutoPause: z.boolean() }).strict(),
   z.object({ showShortcutHints: z.boolean() }).strict(),
+  z.object({ feedbackSounds: z.boolean() }).strict(),
   z.object({ resumeBehavior: z.enum(RESUME_BEHAVIOR_OPTIONS) }).strict(),
   z.object({ studyAtmosphere: z.enum(STUDY_ATMOSPHERE_OPTIONS) }).strict(),
 ]);

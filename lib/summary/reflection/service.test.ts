@@ -32,7 +32,7 @@ const SNAPSHOT: LessonSnapshot = {
   status: {
     shadowing: { kind: "in_progress", percent: 43 },
     pronunciation: { kind: "scored", score: 57 },
-    listening: { kind: "not_started" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" },
     retention: { kind: "not_enough_data" },
   },
   savedKnowledge: { vocabulary: 4, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },
@@ -42,7 +42,7 @@ const SNAPSHOT: LessonSnapshot = {
 const EMPTY: LessonSnapshot = {
   status: {
     shadowing: { kind: "not_started" }, pronunciation: { kind: "not_started" },
-    listening: { kind: "not_started" }, retention: { kind: "not_enough_data" },
+    listeningDictation: { kind: "not_started" }, listeningCloze: { kind: "not_started" }, retention: { kind: "not_enough_data" },
   },
   savedKnowledge: { vocabulary: 0, expressions: 0, grammar: 0, retention: { kind: "not_enough_data" } },
   reviewTargets: [],
@@ -201,7 +201,7 @@ describe("requestLessonReflection", () => {
   it("serves an older reflection as stale — never as ready — once the evidence band moves, then regenerates", async () => {
     fake.queueStructured(reply("First pass."), USAGE);
     await run("generate");
-    snapshot = { ...SNAPSHOT, status: { ...SNAPSHOT.status, listening: { kind: "scored", score: 88 } } };
+    snapshot = { ...SNAPSHOT, status: { ...SNAPSHOT.status, listeningCloze: { kind: "scored", score: 88 } } };
     await expect(run("read")).resolves.toEqual({
       kind: "ok",
       body: { state: "stale", stale: true, reflection: { text: "First pass.", highlight: { lineId: "line-b", span: "ありがとう" }, generatedAt: NOW.toISOString() } },

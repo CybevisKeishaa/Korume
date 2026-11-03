@@ -828,8 +828,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     specRef: null,
   },
   // §9.3 — a state-variant (a Learning Mode of the workspace) that HAS a
-  // real, distinct route: shipped named for its sub-mode (Dictation) rather
-  // than its mode (Listening Practice), per §9.0.
+  // real, distinct route. Its route is the Listening mode since practice modes
+  // B2 (the legacy /dictation route redirects there); id and name stay as the
+  // frame map records them.
   {
     screenId: "dictation-in-shadowing",
     name: "Dictation (in shadowing)",
@@ -838,7 +839,7 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     figmaNodeId: "123:2835",
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
-    route: "/shadowing/[id]/dictation",
+    route: "/shadowing/[id]/listening",
     chrome: "focus",
     impl: "built",
     navGroup: null,

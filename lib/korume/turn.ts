@@ -209,6 +209,8 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       );
     } catch (error) {
       const validation = isValidationError(error);
+      // The learner sees only "could not answer"; this line is what tells a schema miss from a dead provider.
+      console.warn(`[korume/answer] failed: ${error instanceof Error ? error.message.slice(0, 1500) : String(error)}`);
       const cost = validation ? answerUpper : 0;
       spentUsd += cost;
       await knowledge.recordGeneration({
