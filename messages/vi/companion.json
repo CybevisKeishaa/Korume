@@ -66,6 +66,7 @@
     "seen": "{count, plural, other {Đã gặp {count} lần}}",
     "seenCapped": "Đã gặp {count}+ lần",
     "unseen": "Chưa gặp",
+    "kind": { "vocabulary": "Từ vựng", "grammar": "Ngữ pháp", "particle": "Trợ từ" },
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
     "followups": "Câu hỏi gợi ý",

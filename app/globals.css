@@ -606,6 +606,9 @@
     .sentence-rail:not(:hover):not(:focus-within) {
       scrollbar-color: transparent transparent;
     }
+    .korume-scroll:not(:hover):not(:focus-within) {
+      scrollbar-color: transparent transparent;
+    }
   }
 }
 
@@ -622,6 +625,26 @@
 .sentence-rail:hover::-webkit-scrollbar-thumb,
 .sentence-rail:focus-within::-webkit-scrollbar-thumb {
   background-color: hsl(var(--border));
+}
+
+/* Ask Korume scrollers (sheet chat, rail, chat page): same quiet bar as the sentence rail, 8px, shown on hover or focus.
+   The gutter is stable so showing the bar never reflows the conversation. */
+.korume-scroll {
+  scrollbar-gutter: stable;
+}
+.korume-scroll::-webkit-scrollbar {
+  width: var(--space-xs);
+}
+.korume-scroll::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-width: 0;
+}
+.korume-scroll:hover::-webkit-scrollbar-thumb,
+.korume-scroll:focus-within::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+}
+.korume-scroll::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--primary) / 0.5);
 }
 
 /* Kanji stroke-order drawing (paths use pathLength=1). */

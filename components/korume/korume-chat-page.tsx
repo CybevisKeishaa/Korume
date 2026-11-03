@@ -1,11 +1,11 @@
 "use client";
 
 import { startTransition, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useLocale, useRouter, useTranslations } from "@/lib/i18n";
+import { Link, useRouter, useTranslations } from "@/lib/i18n";
 import { railEntities } from "@/lib/korume/grounding";
 import { Composer } from "./composer";
 import { KorumeRail, type SmallMemory } from "./korume-rail";
-import { MessageList } from "./message-list";
+import { ConversationHeader, MessageList } from "./message-list";
 import { ThreadMenu } from "./thread-menu";
 import { TurnNotice } from "./turn-notice";
 import { LOCKING_NOTICES, useKorumeThread } from "./use-korume-thread";
@@ -63,19 +63,6 @@ export function KorumeChatPage(props: KorumeChatPageProps) {
   }
 }
 
-/** "Today" for today, else the locale's date — computed after mount: server and learner may be in different days. */
-function useDividerLabel(firstAt: string | undefined): string | null {
-  const t = useTranslations("companion");
-  const locale = useLocale();
-  const [label, setLabel] = useState<string | null>(firstAt ? null : t("ask.chat.today"));
-  useEffect(() => {
-    if (!firstAt) return;
-    const first = new Date(firstAt);
-    setLabel(first.toDateString() === new Date().toDateString() ? t("ask.chat.today") : new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(first));
-  }, [firstAt, locale, t]);
-  return label;
-}
-
 function KorumeConversation({
   detail,
   threads,
@@ -96,7 +83,6 @@ function KorumeConversation({
     initial: detail ?? undefined,
   });
   const entities = useMemo(() => railEntities(state.messages), [state.messages]);
-  const dividerLabel = useDividerLabel(state.messages[0]?.createdAt);
   // The client router caches this page's payload (staleTimes.dynamic): once a turn is answered here, drop that cache
   // so coming back to this thread from ⋯ or the browser does not seed it without the turn. Same key → state kept.
   const answers = state.messages.filter((message) => message.role === "assistant").length;
@@ -115,12 +101,6 @@ function KorumeConversation({
     window.history.replaceState(null, "", url);
     onThreadCreated(state.threadId);
   }, [state.created, state.threadId, detail, onThreadCreated]);
-  const latest = [...state.messages]
-    .reverse()
-    .find((message) => message.role === "assistant");
-  const exposure = latest?.grounding?.find(
-    (entity) => (entity.seenCount ?? 0) > 0,
-  );
   const locked =
     state.notice !== null && LOCKING_NOTICES.has(state.notice.kind);
   const goBack = () => {
@@ -230,25 +210,11 @@ function KorumeConversation({
               <ThreadMenu initialThreads={threads} initialCursor={nextCursor} onNewConversation={onNewConversation} />
             </header>
             <div className="flex min-h-[30rem] flex-1 flex-col lg:min-h-0">
-              <div data-korume-scroll className="min-h-0 flex-1 space-y-lg overflow-y-auto px-lg py-lg">
-                {dividerLabel ? (
-                  <p className="flex items-center gap-sm text-caption uppercase tracking-wide text-muted-foreground before:h-px before:flex-1 before:bg-border after:h-px after:flex-1 after:bg-border">
-                    {dividerLabel}
-                  </p>
-                ) : null}
+              <div data-korume-scroll className="korume-scroll min-h-0 flex-1 space-y-lg overflow-y-auto px-lg py-lg">
+                <ConversationHeader messages={state.messages} />
                 {notFound ? (
                   <p role="status" className="text-body text-muted-foreground">
                     {t("ask.chat.notFound")}
-                  </p>
-                ) : null}
-                {exposure ? (
-                  <p className="rounded-lg border border-border bg-muted px-md py-sm text-body text-muted-foreground">
-                    {t(
-                      exposure.seenCapped
-                        ? "ask.chat.groundingCapped"
-                        : "ask.chat.grounding",
-                      { label: exposure.label, count: exposure.seenCount ?? 0 },
-                    )}
                   </p>
                 ) : null}
                 <MessageList

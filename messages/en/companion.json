@@ -66,6 +66,7 @@
     "seen": "{count, plural, one {Seen {count} time} other {Seen {count} times}}",
     "seenCapped": "Seen {count}+ times",
     "unseen": "Not seen yet",
+    "kind": { "vocabulary": "Vocabulary", "grammar": "Grammar", "particle": "Particle" },
     "signature": "KORUME",
     "messages": "Conversation with Korume",
     "followups": "Suggested questions",

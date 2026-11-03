@@ -6,7 +6,7 @@ import { railEntities } from "@/lib/korume/grounding";
 import { besideLauncher, centred, clampRail, clampRect, resizeRect, type Edge, type Rect, type SheetBounds } from "@/lib/korume/sheet-geometry";
 import { Composer } from "@/components/korume/composer";
 import { clock, KorumeRail, type SmallMemory } from "@/components/korume/korume-rail";
-import { MessageList } from "@/components/korume/message-list";
+import { ConversationHeader, MessageList } from "@/components/korume/message-list";
 import { TurnNotice } from "@/components/korume/turn-notice";
 import { LOCKING_NOTICES, useKorumeThread, type DraftAnchor } from "@/components/korume/use-korume-thread";
 import { useCurrentSentence, useLesson, usePlaybackController } from "./workspace-context";
@@ -324,7 +324,8 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
               ) : null}
             </div>
           )}
-          <div data-korume-scroll className="min-h-0 flex-1 overflow-y-auto px-md py-md">
+          <div data-korume-scroll className="korume-scroll min-h-0 flex-1 space-y-lg overflow-y-auto px-md py-md">
+            <ConversationHeader messages={thread.messages} />
             <MessageList messages={thread.messages} pending={thread.pending} onFollowup={locked ? undefined : (text) => void thread.send(text)} onRetry={() => void thread.retry()} />
           </div>
           <div className="flex flex-col gap-sm border-t border-border px-md py-sm">
@@ -350,7 +351,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
           />
         ) : null}
         {large ? (
-          <div id={railId} data-korume-rail className="min-h-0 overflow-y-auto p-md">
+          <div id={railId} data-korume-rail className="korume-scroll min-h-0 overflow-y-auto p-md">
             <KorumeRail
               anchor={line ? { videoId: video.id, videoTitle: video.title, lineId: line.id, lineText: line.textJp, translation: line.textTranslation, startTime: line.startTime, span: anchor.span } : null}
               entities={entities}
