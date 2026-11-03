@@ -6,17 +6,28 @@ import { grapheme1Units, type ListeningRevealData, type ListeningSubmitData } fr
 import { korumeMood, type MoodEntry, type MoodResult } from "@/lib/practice/korume-mood";
 import { REVIEW_DICTATION_BELOW } from "@/lib/summary/thresholds";
 import { normalizeJa } from "@/lib/dictation/normalize";
-import type { LineChunks } from "@/lib/dictation/types";
+import type { LineChunks, LineCloze } from "@/lib/dictation/types";
 import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
 import { useLesson } from "../workspace-context";
 import { clozeHints } from "./cloze-panel";
 import { draftKey, useListeningDrafts, type ListeningDraft } from "./listening-drafts";
 import { useListeningReveal } from "./listening-reveal-context";
 import { usePracticeStats } from "./practice-stats-context";
-import { useLineCloze } from "./use-line-cloze";
+import { useLineAnswer } from "./use-line-answer";
 import { useResultChime } from "./use-result-chime";
 
-export type ListeningAttemptError = "network" | "line_changed" | "rate_limited";
+/**
+ * Why a Check or Show answer did not land. Only `network` (offline, 5xx) says to try again: a 401 is the session
+ * (sign in again, ultra review 3), any other 4xx is a request the server will refuse again (reload).
+ */
+export type ListeningAttemptError = "network" | "line_changed" | "rate_limited" | "signed_out" | "rejected";
+
+function attemptError(status: number): ListeningAttemptError {
+  if (status === 409) return "line_changed";
+  if (status === 429) return "rate_limited";
+  if (status === 401) return "signed_out";
+  return status >= 400 && status < 500 ? "rejected" : "network";
+}
 /** A submitted result as later attempts compare with it; `version` + `textHash` say which cut of the line it scored. */
 export interface PreviousResult { score: number; ownCorrect?: number; wrongPieces?: number[]; errorCount?: number; version: number; textHash: string }
 type SubmitPayload = { chunkOrder: number[] } | { input: string } | { answers: string[] };
@@ -45,7 +56,6 @@ interface AttemptState {
   /** Korume's reaction to this attempt's Check or Show answer, judged once when it lands. */
   reaction: MoodResult | null;
 }
-type ChunksState = { lineId: string; load: number; data: LineChunks | null; status: "loading" | "ready" | "error" };
 
 const fresh = (key: string, carry: Carry | null): AttemptState => ({
   key, hinted: [], submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
@@ -78,13 +88,9 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const { attempt, newAttempt, markChecked, markRevealed } = useListeningReveal();
   const { refresh } = usePracticeStats();
   const chime = useResultChime();
-  const [load, setLoad] = useState(0);
   const isCloze = requested === "cloze";
-  const { cloze, status: clozeStatus, reload: reloadCloze } = useLineCloze(isCloze ? lineId : null);
-  const [chunksState, setChunksState] = useState<ChunksState | null>(null);
-  const currentChunks = chunksState !== null && chunksState.lineId === lineId && chunksState.load === load ? chunksState : null;
-  const chunks = currentChunks?.data ?? null;
-  const chunksStatus = currentChunks?.status ?? "loading";
+  const { data: cloze, status: clozeStatus, reload: reloadCloze } = useLineAnswer<LineCloze>(isCloze ? lineId : null, "cloze");
+  const { data: chunks, status: chunksStatus, reload: reloadChunks } = useLineAnswer<LineChunks>(isCloze ? null : lineId, "chunks");
   const format: ListeningFormat = requested === "word_bank" && chunks !== null && !chunks.reliable ? "typing" : requested;
 
   const lineKey = `${lineId}|${format}`;
@@ -123,23 +129,6 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     return reaction;
   }
 
-  useEffect(() => {
-    if (!lineId || isCloze) return;
-    const request = new AbortController();
-    setChunksState({ lineId, load, data: null, status: "loading" });
-    void (async () => {
-      try {
-        const response = await fetch(`/api/lines/${lineId}/chunks`, { cache: "no-store", signal: request.signal });
-        if (!response.ok) throw new Error(`chunks ${response.status}`);
-        const { data } = await response.json() as { data: LineChunks };
-        if (!request.signal.aborted) setChunksState({ lineId, load, data, status: "ready" });
-      } catch {
-        if (!request.signal.aborted) setChunksState({ lineId, load, data: null, status: "error" });
-      }
-    })();
-    return () => request.abort();
-  }, [lineId, load, isCloze]);
-
   // Word pieces hint a piece; Typing in Chép chính tả reveals one star = one grapheme (spec §3.3); Điền từ one kana
   // of a blank's reading (§3.4).
   const unit = format === "word_bank" ? "chunk" : "grapheme1";
@@ -175,7 +164,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     try {
       const response = await fetch("/api/dictation/attempt", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
       outcome = response.ok ? await response.json() as { data: ListeningSubmitData | ListeningRevealData }
-        : response.status === 409 ? "line_changed" : response.status === 429 ? "rate_limited" : "network";
+        : attemptError(response.status);
     } catch {
       outcome = "network";
     }
@@ -186,7 +175,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     if (outcome === "line_changed") {
       // 409 line_changed / chunker_version: the line's chunks moved; restart on fresh ones, without the stale draft.
       setState((prev) => ({ ...prev, submitting: false, carry: { lineKey, retry: false, error: "line_changed" } }));
-      setLoad((n) => n + 1);
+      reloadChunks();
       reloadCloze();
       newAttempt();
     } else if (typeof outcome === "string") {
@@ -343,6 +332,6 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     submit,
     reveal,
     tryAgain,
-    reloadChunks: () => setLoad((n) => n + 1),
+    reloadChunks,
   };
 }

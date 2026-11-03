@@ -1,8 +1,8 @@
 import "server-only";
 import { readLineForAnswer, type LineAnswerAccess } from "@/lib/data/line-chunks";
-import { getKnownVocabLemmas } from "@/lib/data/difficulty";
+import { getKnownVocabAmong } from "@/lib/data/difficulty";
 import { lineTextHash, lineTokens } from "@/lib/dictation/chunk";
-import { CURRENT_CLOZE_SELECTOR, clozeBlank, pickDistractors, selectBlanks, tokenRanges } from "@/lib/dictation/cloze";
+import { CURRENT_CLOZE_SELECTOR, clozeBlank, clozeKnownKeys, pickDistractors, selectBlanks, tokenRanges } from "@/lib/dictation/cloze";
 import type { Token } from "@/lib/japanese/types";
 import { displayMap, displayRange, normalizeJa, type LineCloze } from "@/lib/dictation";
 import { lineRomaji } from "@/lib/japanese/romaji";
@@ -45,7 +45,18 @@ export async function loadLineCloze(lineId: string): Promise<LineClozeResult> {
   const base = normalizeJa(text);
   const tokens = await lineTokens(text);
   const ranges = tokenRanges(tokens, base);
-  const blanks = ranges ? selectBlanks(tokens, await getKnownVocabLemmas(supabase, userId)) : [];
+  // Only a line with candidates reads anything more; the learner's known words (asked about this line's candidates
+  // only) and the nearby lines for distractors load side by side.
+  const keys = ranges ? clozeKnownKeys(tokens) : [];
+  const [known, pool] = keys.length === 0 ? [new Set<string>(), []] : await Promise.all([
+    getKnownVocabAmong(supabase, userId, keys),
+    transcriptId === null || start === null ? [] : nearbyTokens(supabase, transcriptId, start).catch((error: unknown) => {
+      // Distractors are a UI extra (spec §3.5): the blanks still load, easy mode just shows the words alone.
+      console.error("[cloze] nearby lines for distractors failed", error);
+      return [];
+    }),
+  ]);
+  const blanks = ranges ? selectBlanks(tokens, known) : [];
   const map = displayMap(text);
   const all = { start: 0, end: Array.from(base).length };
 
@@ -71,12 +82,6 @@ export async function loadLineCloze(lineId: string): Promise<LineClozeResult> {
     blanks,
     segments,
     readings: blanks.map((i) => clozeBlank(tokens, i).reading),
-    distractors: blanks.length > 0 && transcriptId !== null && start !== null
-      ? pickDistractors(tokens, blanks, await nearbyTokens(supabase, transcriptId, start).catch((error: unknown) => {
-        // Distractors are a UI extra (spec §3.5): the blanks still load, easy mode just shows the words alone.
-        console.error("[cloze] nearby lines for distractors failed", error);
-        return [];
-      }))
-      : [],
+    distractors: pickDistractors(tokens, blanks, pool),
   } };
 }

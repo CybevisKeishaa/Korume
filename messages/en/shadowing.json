@@ -267,7 +267,7 @@
         "hint": "Hint",
         "showAnswer": "Show answer",
         "tryAgain": "Try again",
-        "error": {"network": "Your answer could not be checked. It is kept here, so try again.", "line_changed": "This sentence changed, start again", "rate_limited": "Too many attempts. Wait a moment, then try again."},
+        "error": {"network": "Your answer could not be checked. It is kept here, so try again.", "line_changed": "This sentence changed, start again", "rate_limited": "Too many attempts. Wait a moment, then try again.", "signed_out": "Your session has ended. Sign in again, then check this answer.", "rejected": "This answer could not be checked. Reload the page and try again."},
         "score": "Score",
         "metrics": {"recall": "Recall", "slots": "Slots", "kanji": "Kanji", "grammar": "Grammar"},
         "answer": "Answer",

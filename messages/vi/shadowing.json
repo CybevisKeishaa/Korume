@@ -273,7 +273,7 @@
         "hint": "Gợi ý",
         "showAnswer": "Xem đáp án",
         "tryAgain": "Thử lại",
-        "error": {"network": "Chưa kiểm tra được bài làm. Bài làm vẫn được giữ, hãy thử lại.", "line_changed": "Câu này đã thay đổi, hãy làm lại từ đầu", "rate_limited": "Bạn thử quá nhiều lần. Hãy đợi một chút rồi thử lại."},
+        "error": {"network": "Chưa kiểm tra được bài làm. Bài làm vẫn được giữ, hãy thử lại.", "line_changed": "Câu này đã thay đổi, hãy làm lại từ đầu", "rate_limited": "Bạn thử quá nhiều lần. Hãy đợi một chút rồi thử lại.", "signed_out": "Phiên đăng nhập đã hết. Hãy đăng nhập lại rồi kiểm tra bài làm này.", "rejected": "Không kiểm tra được bài làm này. Hãy tải lại trang rồi thử lại."},
         "score": "Điểm",
         "metrics": {"recall": "Nhớ lại", "slots": "Ô đúng", "kanji": "Kanji", "grammar": "Ngữ pháp"},
         "answer": "Đáp án",

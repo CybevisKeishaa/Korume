@@ -51,6 +51,44 @@ export async function getVideoDifficulty(videoId: string): Promise<VideoDifficul
 }
 
 /**
+ * `getKnownVocabLemmas` asked about `keys` only (lemmas or readings), so one line's cloze does not read the learner's
+ * whole mastered vocabulary (ultra review 3): the vocab rows whose word or reading is a key, then the learner's
+ * mastered progress on just those. Returns every word and reading of those rows, so `known.has(key)` answers exactly
+ * as it would on the full set for any key asked about. RLS confines the progress read to `userId`'s rows.
+ */
+export async function getKnownVocabAmong(
+  supabase: ReturnType<typeof createClient>,
+  userId: string,
+  keys: readonly string[],
+): Promise<Set<string>> {
+  const wanted = [...new Set(keys)];
+  if (wanted.length === 0) return new Set();
+  const byColumn = async (column: "word" | "reading") => {
+    const { data, error } = await supabase.from("vocab").select("id, word, reading").in(column, wanted);
+    if (error) throw error;
+    return (data as { id: string; word: string; reading: string | null }[] | null) ?? [];
+  };
+  const rows = new Map((await Promise.all([byColumn("word"), byColumn("reading")])).flat().map((row) => [row.id, row]));
+  if (rows.size === 0) return new Set();
+
+  const mastered = await fetchByIdChunks([...rows.keys()], async (ids) => {
+    const { data, error } = await supabase.from("user_vocab_progress").select("vocab_id")
+      .eq("user_id", userId).gte("srs_stage", MASTERY_THRESHOLD).in("vocab_id", ids);
+    if (error) throw error;
+    return (data as { vocab_id: string }[] | null) ?? [];
+  });
+
+  const known = new Set<string>();
+  for (const { vocab_id } of mastered) {
+    const row = rows.get(vocab_id);
+    if (!row) continue;
+    known.add(row.word);
+    if (row.reading) known.add(row.reading);
+  }
+  return known;
+}
+
+/**
  * The set of vocab lemmas (both the written word and, when available, its
  * reading) the user has mastered — `srs_stage >= MASTERY_THRESHOLD` — used to
  * match against transcript content-word base forms. RLS confines the

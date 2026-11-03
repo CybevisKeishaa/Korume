@@ -28,10 +28,15 @@ export function clozeCandidates(tokens: Token[]): number[] {
   return out;
 }
 
+/** The keys `selectBlanks` looks a token up by in the known set: its lemma, then its hiragana reading. */
+const knownKeys = (t: Token): string[] => (t.reading === null ? [t.base] : [t.base, katakanaToHiragana(t.reading)]);
+
+/** Every key `selectBlanks` may ask the known set about for this line: what the learner's vocab read must cover. */
+export const clozeKnownKeys = (tokens: Token[]): string[] => clozeCandidates(tokens).flatMap((i) => knownKeys(tokens[i]!));
+
 /** Up to `max` blanks: unknown first, then longer surface, then earlier; never adjacent. Ascending indices. */
 export function selectBlanks(tokens: Token[], known: Set<string>, max = 3): number[] {
-  const isKnown = (t: Token) =>
-    known.has(t.base) || (t.reading !== null && known.has(katakanaToHiragana(t.reading)));
+  const isKnown = (t: Token) => knownKeys(t).some((key) => known.has(key));
   const ranked = clozeCandidates(tokens)
     .map((i) => ({ i, known: Number(isKnown(tokens[i]!)), len: Array.from(tokens[i]!.surface).length }))
     .sort((a, b) => a.known - b.known || b.len - a.len || a.i - b.i);

@@ -662,6 +662,20 @@ describe("ListeningModeBody — Typing and Chế độ dễ", () => {
     expect(feedback()).not.toHaveTextContent("Every character written from memory.");
   });
 
+  it.each([
+    [401, "Your session has ended. Sign in again, then check this answer."],
+    [400, "This answer could not be checked. Reload the page and try again."],
+    [500, "Your answer could not be checked. It is kept here, so try again."],
+  ])("a %i on Check says why, keeps the typed text and stays concealed (ultra review 3)", async (status, said) => {
+    server.attempt = () => Promise.resolve(Response.json({ error: "x" }, { status }));
+    await openTyping("line-4");
+    typeInto("テスト");
+    fireEvent.click(check());
+    expect(await screen.findByRole("alert")).toHaveTextContent(said);
+    expect(input()).toHaveValue("テスト");
+    expect(screen.queryByTestId("listening-answer")).toBeNull();
+  });
+
   it("keeps the typed text and stays concealed when the submit fails (Review Focus 2)", async () => {
     server.attempt = () => Promise.resolve(new Response(null, { status: 500 }));
     await openTyping("line-4");

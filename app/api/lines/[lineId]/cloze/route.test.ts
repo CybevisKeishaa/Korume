@@ -2,14 +2,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, type QueryCall } from "@/test/supabase-mock";
 import { createClient } from "@/lib/supabase/server";
-import { getKnownVocabLemmas } from "@/lib/data/difficulty";
+import { getKnownVocabAmong } from "@/lib/data/difficulty";
 import { lineTextHash } from "@/lib/dictation/chunk";
 import { LINE_ANSWER_LIMIT } from "@/lib/data/line-chunks";
 import { DISTRACTOR_NEIGHBOURS } from "@/lib/data/line-cloze";
 import { GET } from "./route";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
-vi.mock("@/lib/data/difficulty", () => ({ getKnownVocabLemmas: vi.fn(async () => new Set<string>()) }));
+vi.mock("@/lib/data/difficulty", () => ({ getKnownVocabAmong: vi.fn(async () => new Set<string>()) }));
 
 // kuromoji dictionary load is slow under suite contention (lib/dictation/chunk.test.ts).
 const T = 60000;
@@ -57,7 +57,7 @@ describe("GET /api/lines/[lineId]/cloze", () => {
   it("404 when the learner cannot read the line", async () => {
     asLearner({ id: "u" }, null);
     await expect(expectPrivate(await get(), 404)).resolves.toEqual({ error: "Not found" });
-    expect(getKnownVocabLemmas).not.toHaveBeenCalled();
+    expect(getKnownVocabAmong).not.toHaveBeenCalled();
   });
 
   it("429 with Retry-After once the learner's budget is spent, before the line read", async () => {
@@ -108,11 +108,12 @@ describe("GET /api/lines/[lineId]/cloze", () => {
   it("the learner's known words change which of two adjacent candidates is blanked", async () => {
     asLearner({ id: "u" }, "日本語勉強");
     expect((await expectPrivate(await get(), 200)).data.blanks).toEqual([0]);
-    vi.mocked(getKnownVocabLemmas).mockResolvedValueOnce(new Set(["日本語"]));
+    vi.mocked(getKnownVocabAmong).mockResolvedValueOnce(new Set(["日本語"]));
     const { data } = await expectPrivate(await get(), 200);
     expect(data.blanks).toEqual([1]);
     expect(data.readings).toEqual(["べんきょう"]);
-    expect(getKnownVocabLemmas).toHaveBeenLastCalledWith(expect.anything(), "u");
+    // Asked about this line's candidates only (lemma + hiragana reading), never the whole vocabulary (ultra review 3).
+    expect(getKnownVocabAmong).toHaveBeenLastCalledWith(expect.anything(), "u", ["日本語", "にほんご", "勉強", "べんきょう"]);
   }, T);
 
   it("a line with no candidate has no blank and one plain segment, and reads no neighbour", async () => {
@@ -120,6 +121,7 @@ describe("GET /api/lines/[lineId]/cloze", () => {
     const { data } = await expectPrivate(await get(), 200);
     expect(data).toMatchObject({ blanks: [], readings: [], distractors: [], segments: [{ text: "それは", blank: null }] });
     expect(lineQueries).toHaveLength(1);
+    expect(getKnownVocabAmong).not.toHaveBeenCalled();
   }, T);
 
   it("distractors: the blank's kind from the nearby lines of the same transcript, nearest first, never a word of the line", async () => {
