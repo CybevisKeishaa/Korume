@@ -118,6 +118,12 @@ describe("pickDistractors", () => {
     expect(pickDistractors(line, [0], pool)).toEqual(["元気"]);
   });
 
+  it("prefers the blank's noun kind before a closer length", () => {
+    const pool = [[tok("東京", "名詞", "トウキョウ", "東京", "固有名詞"), tok("料理人", "名詞", "リョウリニン")]];
+    // 天気 is 一般: 料理人 (一般, 3 chars) beats 東京 (固有名詞, 2 chars).
+    expect(pickDistractors(line, [0], pool, 1)).toEqual(["料理人"]);
+  });
+
   it("never gives two blanks the same distractor, and gives none without a pool", () => {
     const two = [tok("駅", "名詞", "エキ"), tok("に", "助詞"), tok("店", "名詞", "ミセ")];
     const pool = [[tok("家", "名詞", "イエ"), tok("国", "名詞", "クニ"), tok("町", "名詞", "マチ")]];

@@ -34,11 +34,11 @@ export async function readLineForAnswer(lineId: string): Promise<LineAnswerAcces
 
   const { data, error } = await supabase.from("transcript_lines").select("text_jp, transcript_id, start_time").eq("id", lineId).maybeSingle();
   if (error) throw error;
-  const row = data as { text_jp: string | null; transcript_id?: string; start_time?: number | string } | null;
+  const row = data as { text_jp: string | null; transcript_id?: string; start_time?: number | string | null } | null;
   const text = row?.text_jp;
   if (!text) return { kind: "not_found" };
   return { kind: "ok", supabase, userId: user.id, text, transcriptId: row.transcript_id ?? null,
-    start: row.start_time === undefined ? null : Number(row.start_time) };
+    start: row.start_time == null ? null : Number(row.start_time) };
 }
 
 /** The line's word-piece cut, behind `readLineForAnswer`. */

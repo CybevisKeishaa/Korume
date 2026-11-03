@@ -18,7 +18,7 @@ async function nearbyTokens(supabase: Extract<LineAnswerAccess, { kind: "ok" }>[
   const side = (before: boolean) => {
     const query = supabase.from("transcript_lines").select("text_jp").eq("transcript_id", transcriptId);
     return (before ? query.lt("start_time", start) : query.gt("start_time", start))
-      .order("start_time", { ascending: !before }).limit(DISTRACTOR_NEIGHBOURS);
+      .order("start_time", { ascending: !before }).order("id").limit(DISTRACTOR_NEIGHBOURS);
   };
   const [earlier, later] = await Promise.all([side(true), side(false)]);
   if (earlier.error) throw earlier.error;
@@ -72,7 +72,11 @@ export async function loadLineCloze(lineId: string): Promise<LineClozeResult> {
     segments,
     readings: blanks.map((i) => clozeBlank(tokens, i).reading),
     distractors: blanks.length > 0 && transcriptId !== null && start !== null
-      ? pickDistractors(tokens, blanks, await nearbyTokens(supabase, transcriptId, start))
+      ? pickDistractors(tokens, blanks, await nearbyTokens(supabase, transcriptId, start).catch((error: unknown) => {
+        // Distractors are a UI extra (spec §3.5): the blanks still load, easy mode just shows the words alone.
+        console.error("[cloze] nearby lines for distractors failed", error);
+        return [];
+      }))
       : [],
   } };
 }

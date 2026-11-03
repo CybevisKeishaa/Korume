@@ -43,7 +43,9 @@ export function SentenceNavigator({ disabled = false, disabledHint, draftLineIds
   const measure = useCallback(() => {
     const el = rail.current;
     if (!el) return;
-    setEdges({ start: el.scrollLeft <= 0, end: el.scrollLeft + el.clientWidth >= el.scrollWidth - 1 });
+    const start = el.scrollLeft <= 0;
+    const end = el.scrollLeft + el.clientWidth >= el.scrollWidth - 1;
+    setEdges((prev) => (prev.start === start && prev.end === end ? prev : { start, end }));
   }, []);
 
   useEffect(() => {

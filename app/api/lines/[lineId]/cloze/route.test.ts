@@ -135,4 +135,19 @@ describe("GET /api/lines/[lineId]/cloze", () => {
     expect(earlier).toContainEqual({ op: "lt", column: "start_time", value: 10 });
     expect(later).toContainEqual({ op: "gt", column: "start_time", value: 10 });
   }, T);
+
+  it("a failed neighbour read still serves the blanks, without distractors", async () => {
+    vi.spyOn(console, "error").mockImplementation(() => undefined);
+    vi.mocked(createClient).mockReturnValue(createMockSupabase({
+      user: { id: "u" },
+      tables: {
+        transcript_lines: (calls) => calls.some((c) => c.op === "lt" || c.op === "gt")
+          ? { data: null, error: { message: "neighbour read failed" } }
+          : { data: { text_jp: "泣いて勉強した", transcript_id: "t1", start_time: "10.000" }, error: null },
+      },
+    }) as unknown as ReturnType<typeof createClient>);
+    const { data } = await expectPrivate(await get(), 200);
+    expect(data).toMatchObject({ blanks: [2], readings: ["べんきょう"], distractors: [] });
+    expect(console.error).toHaveBeenCalled();
+  }, T);
 });
