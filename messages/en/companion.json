@@ -78,7 +78,8 @@
       "enlarge": "Enlarge Korume",
       "shrink": "Shrink Korume",
       "tagline": "A quiet place to understand Japanese",
-      "allChats": "All conversations"
+      "allChats": "All conversations",
+      "splitter": "Resize chat and context"
     },
     "chat": {
       "brand": "Korume",

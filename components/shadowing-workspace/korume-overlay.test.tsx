@@ -9,7 +9,7 @@ import { ShadowingWorkspaceShell } from "./workspace-shell";
 
 // jsdom resolves no CSS variable, so the sheet's token widths come from here (design px at density 1).
 vi.mock("./workspace-divider", async (importOriginal) => {
-  const px: Record<string, number> = { "--space-md": 16, "--korume-min-w": 340, "--korume-min-h": 380, "--korume-breakpoint": 720, "--korume-small-w": 400, "--korume-small-h": 560, "--korume-large-w": 1040, "--korume-large-h": 680 };
+  const px: Record<string, number> = { "--space-md": 16, "--korume-min-w": 340, "--korume-min-h": 380, "--korume-breakpoint": 720, "--korume-small-w": 400, "--korume-small-h": 560, "--korume-large-w": 1040, "--korume-large-h": 680, "--korume-rail-min": 260, "--korume-rail-max": 520, "--korume-rail-default": 320, "--korume-chat-min": 380 };
   return { ...(await importOriginal<typeof import("./workspace-divider")>()), tokenPixels: (_root: HTMLElement, token: string) => px[token] ?? 0 };
 });
 
@@ -131,6 +131,42 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     expect(document.body.style.userSelect).toBe("none");
     fireEvent.click(screen.getByRole("button", { name: "Close Korume" }));
     expect(document.body.style.userSelect).toBe("");
+  });
+
+  it("the splitter moves with arrow keys and resets on double-click", () => {
+    localStorage.clear();
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    const bar = screen.getByRole("separator", { name: "Resize chat and context" });
+    expect(bar).toHaveAttribute("aria-orientation", "vertical");
+    expect(bar).toHaveAttribute("aria-controls", (sheet() as HTMLElement).querySelector("[data-korume-rail]")?.id);
+    expect(bar).toHaveAttribute("aria-valuenow", "320");
+    expect(bar).toHaveAttribute("aria-valuemin", "260");
+    expect(bar).toHaveAttribute("aria-valuemax", "520");
+    fireEvent.keyDown(bar, { key: "ArrowLeft" });
+    expect(bar).toHaveAttribute("aria-valuenow", "336");
+    expect(localStorage.getItem("korume.rail")).toBe("336");
+    fireEvent.keyDown(bar, { key: "ArrowRight" });
+    fireEvent.keyDown(bar, { key: "ArrowRight" });
+    expect(bar).toHaveAttribute("aria-valuenow", "304");
+    fireEvent.doubleClick(bar);
+    expect(bar).toHaveAttribute("aria-valuenow", "320");
+    expect(localStorage.getItem("korume.rail")).toBe("320");
+  });
+
+  it("a stored rail width that is garbage is ignored", () => {
+    localStorage.setItem("korume.rail", "abc");
+    mount();
+    fireEvent.click(mascot() as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    expect(screen.getByRole("separator", { name: "Resize chat and context" })).toHaveAttribute("aria-valuenow", "320");
+    localStorage.setItem("korume.rail", "9999");
+    fireEvent.click(screen.getByRole("button", { name: "Close Korume" }));
+    fireEvent.click(mascot() as HTMLElement);
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    expect(screen.getByRole("separator", { name: "Resize chat and context" })).toHaveAttribute("aria-valuenow", "520");
+    localStorage.clear();
   });
 
   it("keeps the thread when the layout toggles", () => {

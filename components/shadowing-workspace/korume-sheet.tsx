@@ -1,9 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, type CSSProperties, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
 import { Link, useTranslations } from "@/lib/i18n";
 import { unionGrounding } from "@/lib/korume/grounding";
-import { besideLauncher, centred, clampRect, resizeRect, type Edge, type Rect, type SheetBounds } from "@/lib/korume/sheet-geometry";
+import { besideLauncher, centred, clampRail, clampRect, resizeRect, type Edge, type Rect, type SheetBounds } from "@/lib/korume/sheet-geometry";
 import { Composer } from "@/components/korume/composer";
 import { KorumeRail } from "@/components/korume/korume-rail";
 import { MessageList } from "@/components/korume/message-list";
@@ -24,10 +24,11 @@ function clock(seconds: number): string {
 }
 
 /** Token values in px, resolved once per open and per window resize — never on a pointermove. */
-interface Metrics extends Pick<SheetBounds, "margin" | "minW" | "minH"> { breakpoint: number; small: Size; large: Size }
+interface Metrics extends Pick<SheetBounds, "margin" | "minW" | "minH"> { breakpoint: number; small: Size; large: Size; railMin: number; railMax: number; railDefault: number; chatMin: number }
 function resolveMetrics(): Metrics {
   const px = (token: string) => tokenPixels(document.body, token);
   return {
+    railMin: px("--korume-rail-min"), railMax: px("--korume-rail-max"), railDefault: px("--korume-rail-default"), chatMin: px("--korume-chat-min"),
     margin: px("--space-md"), minW: px("--korume-min-w"), minH: px("--korume-min-h"), breakpoint: px("--korume-breakpoint"),
     small: { w: px("--korume-small-w"), h: px("--korume-small-h") }, large: { w: px("--korume-large-w"), h: px("--korume-large-h") },
   };
@@ -49,7 +50,18 @@ const HANDLES: Record<Edge, string> = {
   sw: "bottom-0 left-0 size-[--korume-handle] cursor-nesw-resize hover:bg-primary/30",
 };
 
-interface Drag { id: number; x: number; y: number; start: Rect; edge: Edge | null; wasLarge: boolean }
+/** `rail` is set only for a splitter drag: the rail width it started from. */
+interface Drag { id: number; x: number; y: number; start: Rect; edge: Edge | null; wasLarge: boolean; rail?: number }
+
+const RAIL_KEY = "korume.rail";
+// Private mode and blocked storage throw; a missing, empty or non-numeric value is no preference.
+function storedRail(): number | null {
+  try {
+    const raw = localStorage.getItem(RAIL_KEY);
+    const n = raw === null || raw === "" ? NaN : Number(raw);
+    return Number.isFinite(n) ? n : null;
+  } catch { return null; }
+}
 
 /**
  * Korume beside the transcript (spec §5.1, §6.2): a non-modal, fixed sheet with an inline rect that the learner drags
@@ -88,6 +100,12 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   const [gliding, setGliding] = useState(false);
   const drag = useRef<Drag | null>(null);
   const glideTimer = useRef<ReturnType<typeof setTimeout>>();
+  const railId = useId();
+  // The width the learner asked for; the one drawn is clamped to the sheet, so widening the sheet again gives it back.
+  const [wantedRail, setWantedRail] = useState<number | null>(null);
+  const railRef = useRef<number | null>(null);
+  const setRail = useCallback((n: number) => { railRef.current = n; setWantedRail(n); }, []);
+  const saveRail = () => { try { if (railRef.current !== null) localStorage.setItem(RAIL_KEY, String(railRef.current)); } catch { /* private mode: kept for this open only */ } };
 
   const commit = useCallback((next: Rect) => { rectRef.current = next; setRect(next); }, []);
   const bounds = useCallback((): SheetBounds => ({ vw: window.innerWidth, vh: window.innerHeight, ...(metrics.current as Metrics) }), []);
@@ -123,7 +141,9 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     clearTimeout(glideTimer.current);
     setGliding(false);
     commit(beside(sizes.current?.small ?? metrics.current.small));
-  }, [beside, commit, open, sizes]);
+    const stored = storedRail();
+    if (stored !== null) setRail(stored);
+  }, [beside, commit, open, setRail, sizes]);
   useEffect(() => {
     if (!open) return;
     const onResize = () => {
@@ -163,6 +183,8 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     if (!d || d.id !== event.pointerId) return;
     const dx = event.clientX - d.x;
     const dy = event.clientY - d.y;
+    // The splitter sits left of the rail: dragging it left grows the rail.
+    if (d.rail !== undefined) return setRail(clampRail(d.rail - dx, d.start.w, metrics.current as Metrics));
     // Mid-drag the rect only follows the pointer: crossing the breakpoint never re-centres under it.
     commit(d.edge ? resizeRect(d.start, d.edge, dx, dy, bounds()) : clampRect({ ...d.start, x: d.start.x + dx, y: d.start.y + dy }, bounds()));
   };
@@ -172,6 +194,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     drag.current = null;
     document.body.style.userSelect = "";
     document.getSelection()?.removeAllRanges();
+    if (d.rail !== undefined) return saveRail();
     const r = rectRef.current;
     if (!r) return;
     remember(r);
@@ -179,6 +202,22 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
     if (d.edge && !d.wasLarge && isLarge(r)) glideTo(centred(r, bounds()));
   };
   const dragProps = { onPointerMove: moveDrag, onPointerUp: endDrag, onPointerCancel: endDrag };
+  const m = metrics.current;
+  const railW = m && rect ? clampRail(wantedRail ?? m.railDefault, rect.w, m) : 0;
+  const splitterDown = (event: ReactPointerEvent<HTMLElement>) => {
+    const start = rectRef.current;
+    if (event.button !== 0 || !start) return;
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+    document.body.style.userSelect = "none";
+    drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, start, edge: null, wasLarge: true, rail: railW };
+  };
+  const splitterKey = (event: ReactKeyboardEvent<HTMLElement>) => {
+    const dir = event.key === "ArrowLeft" ? 1 : event.key === "ArrowRight" ? -1 : 0;
+    if (!dir || !m || !rect) return;
+    event.preventDefault();
+    setRail(clampRail(railW + dir * m.margin, rect.w, m));
+    saveRail();
+  };
 
   const index = lines.findIndex((line) => line.id === anchor.lineId);
   const line = index >= 0 ? lines[index] : undefined;
@@ -246,7 +285,10 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-icon-sm" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><path d="M6 6l12 12M18 6 6 18" /></svg>
         </button>
       </header>
-      <div className={large ? "grid min-h-0 flex-1 grid-cols-[minmax(0,1fr)_var(--korume-rail-default)]" : "flex min-h-0 flex-1 flex-col"}>
+      <div
+        className={large ? "grid min-h-0 flex-1 grid-cols-[minmax(var(--korume-chat-min),1fr)_auto_var(--korume-rail-w)]" : "flex min-h-0 flex-1 flex-col"}
+        style={large ? ({ "--korume-rail-w": `${railW}px` } as CSSProperties) : undefined}
+      >
         <div className="flex min-h-0 flex-1 flex-col">
           {large ? null : (
             <div className="flex flex-wrap items-center gap-xs border-b border-border px-md py-xs">
@@ -275,8 +317,25 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
             <Composer onSend={(text) => void thread.send(text)} disabled={locked} placeholder={t("ask.composerPlaceholder")} />
           </div>
         </div>
+        {large && m ? (
+          <div
+            role="separator"
+            tabIndex={0}
+            aria-orientation="vertical"
+            aria-label={t("ask.sheet.splitter")}
+            aria-controls={railId}
+            aria-valuenow={Math.round(railW)}
+            aria-valuemin={Math.round(m.railMin)}
+            aria-valuemax={Math.round(clampRail(Infinity, rect?.w ?? 0, m))}
+            onPointerDown={splitterDown}
+            onKeyDown={splitterKey}
+            onDoubleClick={() => { setRail(m.railDefault); saveRail(); }}
+            {...dragProps}
+            className="relative w-[--korume-handle] cursor-col-resize touch-none after:absolute after:inset-y-0 after:left-1/2 after:w-px after:bg-border hover:after:bg-primary/60 focus-visible:after:bg-primary active:after:bg-primary/60 focus-visible:outline-none"
+          />
+        ) : null}
         {large ? (
-          <div className="min-h-0 overflow-y-auto border-l border-border p-md">
+          <div id={railId} data-korume-rail className="min-h-0 overflow-y-auto p-md">
             <KorumeRail
               anchor={line ? { videoId: video.id, videoTitle: video.title, lineId: line.id, lineText: line.textJp, translation: line.textTranslation, startTime: line.startTime, span: anchor.span } : null}
               entities={entities}

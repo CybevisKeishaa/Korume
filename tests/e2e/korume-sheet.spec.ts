@@ -168,5 +168,39 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       expect(await player!.evaluate((el) => el.isConnected)).toBe(true);
       expect((await fakeYt(page)).mounts).toBe(1);
     });
+
+    const splitter = (page: Page) => sheet(page).getByRole("separator", { name: "Resize chat and context" });
+    const rail = (page: Page) => sheet(page).locator("[data-korume-rail]");
+    async function openLarge(page: Page) {
+      await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await expect(sheet(page)).not.toHaveAttribute("data-gliding", ""); // the glide moves the splitter under the pointer
+    }
+
+    test("9 · the splitter drags the rail wider and never squeezes the chat below its minimum", async ({ page }) => {
+      await openSheet(page);
+      await openLarge(page);
+      const before = (await box(rail(page))).width;
+      await dragBy(page, await centreOf(splitter(page)), -80, 0);
+      await expect.poll(async () => (await box(rail(page))).width).toBeCloseTo(before + 80, 0);
+      const chatMin = await tokenPx(page, "--korume-chat-min");
+      await dragBy(page, await centreOf(splitter(page)), -900, 0);
+      const chat = sheet(page).locator("[data-korume-scroll]").locator("xpath=..");
+      expect((await box(chat)).width).toBeGreaterThanOrEqual(chatMin - 1);
+      expect(Number(await splitter(page).getAttribute("aria-valuenow"))).toBeLessThanOrEqual(Number(await splitter(page).getAttribute("aria-valuemax")));
+    });
+
+    test("10 · the rail width survives a reload, and the mascot still opens small", async ({ page }) => {
+      await openSheet(page);
+      await openLarge(page);
+      await dragBy(page, await centreOf(splitter(page)), -60, 0);
+      const width = (await box(rail(page))).width;
+      await page.reload();
+      await expect(page.getByTestId("korume-mascot")).toBeVisible();
+      await openMascot(page);
+      await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+      await openLarge(page);
+      expect((await box(rail(page))).width).toBeCloseTo(width, 0);
+    });
   });
 }
