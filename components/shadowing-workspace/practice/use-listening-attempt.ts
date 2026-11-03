@@ -1,8 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { listeningFeedback, typingErrorCount, type FeedbackHelp, type FeedbackMessage } from "@/lib/dictation/listening-feedback";
+import { feedbackOutcome, listeningFeedback, typingErrorCount, type FeedbackHelp, type FeedbackMessage } from "@/lib/dictation/listening-feedback";
 import { grapheme1Units, type ListeningRevealData, type ListeningSubmitData } from "@/lib/dictation/listening-score";
+import { korumeMood, type MoodEntry, type MoodResult } from "@/lib/practice/korume-mood";
+import { REVIEW_DICTATION_BELOW } from "@/lib/summary/thresholds";
 import { normalizeJa } from "@/lib/dictation/normalize";
 import type { LineChunks } from "@/lib/dictation/types";
 import type { ListeningFormat } from "@/lib/shadowing-workspace/learning-modes";
@@ -40,12 +42,14 @@ interface AttemptState {
   order: number[];
   /** The draft key this attempt already restored from (or chose not to); a draft is applied once, before any edit. */
   restored: string | null;
+  /** Korume's reaction to this attempt's Check or Show answer, judged once when it lands. */
+  reaction: MoodResult | null;
 }
 type ChunksState = { lineId: string; load: number; data: LineChunks | null; status: "loading" | "ready" | "error" };
 
 const fresh = (key: string, carry: Carry | null): AttemptState => ({
   key, hinted: [], submitting: false, result: null, comparedTo: null, answer: null, revealed: false,
-  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null, answers: [], easyUsed: false, input: "", order: [], restored: null,
+  error: carry?.error ?? null, retry: carry?.retry ?? false, carry: null, answers: [], easyUsed: false, input: "", order: [], restored: null, reaction: null,
 });
 
 const sameBlanks = (a: readonly number[] | undefined, b: readonly number[]) => a !== undefined && a.length === b.length && a.every((x, i) => x === b[i]);
@@ -111,6 +115,13 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
   const inFlight = useRef<string | null>(null);
   /** The last submitted result per line + format in this visit; never persisted. */
   const previousResults = useRef(new Map<string, PreviousResult>());
+  /** Every Check and Show answer of this visit, oldest first, for Korume's reaction; never persisted. */
+  const moodLog = useRef<MoodEntry[]>([]);
+  function react(entry: MoodEntry, opts?: Parameters<typeof korumeMood>[2]): MoodResult {
+    const reaction = korumeMood(moodLog.current, entry, opts);
+    moodLog.current.push(entry);
+    return reaction;
+  }
 
   useEffect(() => {
     if (!lineId || isCloze) return;
@@ -203,7 +214,11 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       // "fixed" / "fewer" only against the same cut of the line: never v1 against v2, never an edited line.
       const comparedTo = last?.version === cut.version && last.textHash === cut.textHash ? last : null;
       previousResults.current.set(lineKey, summarize(result, cut));
-      setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, result, answer: result.answer, comparedTo } : prev);
+      // Korume reads the same outcome the learner reads: *_perfect only without help, *_helped_all right with help.
+      const messages = checkedFeedback(result, comparedTo);
+      const outcome = feedbackOutcome(messages) ?? "partial";
+      const reaction = react({ line: lineId, outcome, score: result.score }, { close: result.score >= REVIEW_DICTATION_BELOW, extraOnly: messages.some((message) => message.id === "ty_extra") });
+      setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, result, answer: result.answer, comparedTo, reaction } : prev);
       markChecked(requestAttempt);
     });
   }
@@ -217,7 +232,8 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
       ...(format === "typing" ? { hintUnit: unit } : isCloze ? { blanks: cloze?.blanks, easy: state.easyUsed } : {}),
     };
     return post(body, (data) => {
-      setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, answer: (data as ListeningRevealData).answer, revealed: true } : prev);
+      const reaction = react({ line: lineId, outcome: "revealed", score: null });
+      setState((prev) => prev.key === requestKey ? { ...prev, submitting: false, answer: (data as ListeningRevealData).answer, revealed: true, reaction } : prev);
       markRevealed(requestAttempt);
     });
   }
@@ -275,16 +291,20 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     newAttempt();
   }
 
-  // The server says whether the attempt was helped (spec §3.6); the client names the help it used.
-  const help: FeedbackHelp | null = state.result?.helped
-    ? { stars: format === "typing" ? state.hinted.length : 0, hints: format === "typing" ? 0 : state.hinted.length, easy: format === "word_bank" || state.easyUsed }
-    : null;
+  /** P14 for a checked result. Also called when the result lands, so Korume judges exactly what the learner reads. */
+  function checkedFeedback(result: ListeningSubmitData, comparedTo: PreviousResult | null): FeedbackMessage[] {
+    // The server says whether the attempt was helped (spec §3.6); the client names the help it used.
+    const help: FeedbackHelp | null = result.helped
+      ? { stars: format === "typing" ? state.hinted.length : 0, hints: format === "typing" ? 0 : state.hinted.length, easy: format === "word_bank" || state.easyUsed }
+      : null;
+    return listeningFeedback(result.blanks
+      ? { kind: "checked_cloze", blanks: result.blanks, words: cloze?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], help }
+      : result.slots
+      ? { kind: "checked_word_bank", slots: result.slots, display: chunks?.display ?? [], previous: comparedTo?.wrongPieces ? { wrongPieces: comparedTo.wrongPieces } : null, help }
+      : { kind: "checked_typing", diff: result.diff ?? [], metrics: result.metrics, previous: comparedTo?.errorCount !== undefined ? { errorCount: comparedTo.errorCount } : null, help });
+  }
   const feedback: FeedbackMessage[] = state.result
-    ? listeningFeedback(state.result.blanks
-      ? { kind: "checked_cloze", blanks: state.result.blanks, words: cloze?.segments.flatMap((s) => s.blank === null ? [] : [s.text]) ?? [], help }
-      : state.result.slots
-      ? { kind: "checked_word_bank", slots: state.result.slots, display: chunks?.display ?? [], previous: state.comparedTo?.wrongPieces ? { wrongPieces: state.comparedTo.wrongPieces } : null, help }
-      : { kind: "checked_typing", diff: state.result.diff ?? [], metrics: state.result.metrics, previous: state.comparedTo?.errorCount !== undefined ? { errorCount: state.comparedTo.errorCount } : null, help })
+    ? checkedFeedback(state.result, state.comparedTo)
     : state.revealed ? listeningFeedback({ kind: "revealed" })
     : [
       ...(state.retry ? listeningFeedback({ kind: "retry", previousScore: previous?.score ?? null }) : []),
@@ -316,6 +336,7 @@ export function useListeningAttempt(lineId: string | null, requested: ListeningF
     error: state.error,
     previous,
     feedback,
+    reaction: state.reaction,
     hint,
     revealUnit,
     submit,

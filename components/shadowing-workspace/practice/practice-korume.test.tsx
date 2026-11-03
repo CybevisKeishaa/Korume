@@ -54,7 +54,7 @@ beforeEach(() => {
 });
 afterEach(() => { yt.restore(); vi.unstubAllGlobals(); });
 
-describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
+describe("PracticeKorume inside the Listening body", () => {
   it("shows no figure in the first render, while answering, or while a Check is pending", async () => {
     const release = holdAttempt();
     await open();
@@ -84,25 +84,25 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()).toBeNull();
   });
 
-  it("never shows joy for word pieces (Chế độ dễ is help): encourage after a perfect Check and a hinted one, review after Show answer", async () => {
+  it("word pieces are help (Chế độ dễ): a perfect Check giggles, a worse hinted one sulks, Show answer after a try peeks", async () => {
     await open();
     await checkPerfect();
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-encourage");
-    expect(figure()?.getAttribute("src")).toContain("neutral.png");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-giggle");
+    expect(figure()?.getAttribute("src")).toContain("cuoi-che-mieng.png");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     fireEvent.click(screen.getByRole("button", { name: "Hint" }));
     LINE.slice(1).forEach(place);
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-encourage");
-    expect(figure()?.getAttribute("src")).toContain("neutral.png");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-sulk");
+    expect(figure()?.getAttribute("src")).toContain("gian-doi-mat-xi.png");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     fireEvent.click(screen.getByRole("button", { name: "Show the sentence (Alt+H)" }));
     await screen.findByTestId("listening-answer");
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-review");
-    expect(figure()?.getAttribute("src")).toContain("thinking.png");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-peek");
+    expect(figure()?.getAttribute("src")).toContain("cuoi-bi-hiem.png");
   });
 
   it("is decorative: no accessible name, outside the live region, and the P14 text is still read", async () => {
@@ -118,6 +118,9 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(feedback()).toHaveAttribute("aria-live", "polite");
     expect(feedback().textContent).toBe("You placed all 4 pieces right! Next time, try turning easy mode off and typing the sentence yourself.");
     expect(feedback().contains(korume)).toBe(false);
+    // The quip is visible text beside the facts, outside the live region so a Check announces only the facts.
+    const quip = screen.getByText("Right… with a little help, hehe~");
+    expect(feedback().contains(quip)).toBe(false);
   });
 
   it("is gone in the same commit as the concealment on Try again", async () => {
@@ -174,7 +177,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()).toBeNull();
   });
 
-  it("Điền từ: no figure while answering; joy after an unhelped perfect Check, encourage after a helped one, review after Show answer", async () => {
+  it("Điền từ: no figure while answering; ace after an unhelped perfect Check, giggle after a helped one, peek after Show answer", async () => {
     searchParams = new URLSearchParams("line=line-1&format=cloze");
     render(shell());
     const blank = async (n: number) => screen.findByRole("textbox", { name: `Blank ${n}` });
@@ -183,7 +186,7 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     expect(figure()).toBeNull();
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-joy");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-ace");
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     expect(figure()).toBeNull();
@@ -193,11 +196,11 @@ describe("ListeningFeedbackKorume inside the Listening body (P15)", () => {
     fireEvent.change(await blank(2), { target: { value: "あした" } });
     fireEvent.click(check());
     await screen.findByTestId("listening-score");
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-encourage"); // all right, but helped: never joy
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-giggle"); // all right, but helped: never ace
 
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
     fireEvent.click(screen.getByRole("button", { name: "Show answer" }));
     await screen.findByTestId("listening-answer");
-    expect(figure()).toHaveAttribute("data-mascot-pose", "listening-review");
+    expect(figure()).toHaveAttribute("data-mascot-pose", "korume-peek");
   });
 });

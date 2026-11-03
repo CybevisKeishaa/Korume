@@ -1,11 +1,12 @@
 "use client";
 
 import { useTranslations } from "@/lib/i18n";
-import type { FeedbackMessage, FeedbackMood } from "@/lib/dictation/listening-feedback";
+import type { FeedbackMessage } from "@/lib/dictation/listening-feedback";
 import type { ListeningSubmitData } from "@/lib/dictation/listening-score";
 import { scoreBand } from "@/lib/summary/thresholds";
 import { EYEBROW } from "./listening-puzzle";
-import { ListeningFeedbackKorume } from "./listening-feedback-korume";
+import type { MoodResult } from "@/lib/practice/korume-mood";
+import { KorumeQuip, PracticeKorume } from "./practice-korume";
 import { PracticeGlyph } from "./practice-glyph";
 import type { ListeningAttemptError } from "./use-listening-attempt";
 
@@ -15,10 +16,10 @@ import type { ListeningAttemptError } from "./use-listening-attempt";
  * the metrics that exist for this result, the answer and the saved footnote appear only once the attempt is
  * checked or revealed (`answer` is non-null exactly then, and both are stored server side).
  */
-export function ListeningFeedback({ messages, mood, error, submitting, result, answer }: {
+export function ListeningFeedback({ messages, reaction, error, submitting, result, answer }: {
   messages: FeedbackMessage[];
-  /** P15: null unless the current attempt's answer is visible. */
-  mood: FeedbackMood | null;
+  /** Korume's reaction: null unless the current attempt's answer is visible. */
+  reaction: MoodResult | null;
   error: ListeningAttemptError | null;
   submitting: boolean;
   result: ListeningSubmitData | null;
@@ -40,12 +41,14 @@ export function ListeningFeedback({ messages, mood, error, submitting, result, a
   ];
 
   // The divider and eyebrow belong to content; the live region stays mounted so a first message is announced.
-  const content = error !== null || heading !== undefined || result !== null || answer !== null;
+  const content = error !== null || reaction !== null || heading !== undefined || result !== null || answer !== null;
   return <section className={`flex flex-col gap-sm ${content ? "border-t border-border pt-md" : ""}`}>
     {error && <p role="alert" className="text-caption text-danger-strong">{t(`listening.error.${error}`)}</p>}
     <div className="flex items-start justify-between gap-sm">
       <div className="flex min-w-0 flex-1 flex-col gap-2xs">
         {content && <p className={`${EYEBROW} text-primary-strong`}>{t("listening.liveFeedback")}</p>}
+        {/* Korume's quip is flavour beside the P14 facts, readable but not announced on every Check. */}
+        <KorumeQuip reaction={reaction} />
         <div role="status" aria-live="polite" data-testid="listening-feedback" className="flex flex-col gap-xs">
           {heading !== undefined && <p data-feedback-heading className="text-body font-semibold text-foreground">{heading}</p>}
           {tips.map((tip, i) => <p key={i} data-feedback-tip className="flex items-center gap-xs rounded-lg bg-primary/5 px-sm py-xs text-caption text-foreground">
@@ -54,7 +57,7 @@ export function ListeningFeedback({ messages, mood, error, submitting, result, a
         </div>
       </div>
       <div className="flex shrink-0 items-center gap-sm">
-        <ListeningFeedbackKorume mood={mood} />
+        <PracticeKorume reaction={reaction} />
         {/* Pops in with the result chime; a strong score (Summary's cut, both Listening formats) also glows. */}
         {score !== undefined && <span data-testid="listening-score" data-band={scoreBand("listeningDictation", score)} className="result-pop rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}%</span>}
       </div>

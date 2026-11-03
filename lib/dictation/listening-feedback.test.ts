@@ -2,7 +2,7 @@ import { IntlMessageFormat } from "intl-messageformat";
 import { describe, expect, it } from "vitest";
 import en from "@/messages/en/shadowing.json";
 import vi from "@/messages/vi/shadowing.json";
-import { FEEDBACK_IDS, feedbackMood, listeningFeedback, typingErrorCount } from "./listening-feedback";
+import { FEEDBACK_IDS, feedbackOutcome, listeningFeedback, typingErrorCount } from "./listening-feedback";
 import type { ListeningDiffOp } from "./listening-score";
 
 const ids = (messages: { id: string }[]) => messages.map((message) => message.id);
@@ -142,21 +142,21 @@ describe("helped results and Điền từ (spec §3.7)", () => {
     blanks: correct.map((c, i) => ({ correct: c, hinted: hintedPerBlank[i] ?? 0 })),
   });
 
-  it("a helped word_bank (easy) result 8/10 says wb_helped_partial with 8 and 10, never wb_perfect, never joy", () => {
+  it("a helped word_bank (easy) result 8/10 says wb_helped_partial with 8 and 10, never wb_perfect, never perfect", () => {
     const slots = Array.from({ length: 10 }, (_, i) => ({ correct: i < 8, hinted: false, chunkIndex: i }));
     const messages = listeningFeedback({ kind: "checked_word_bank", display: DISPLAY, previous: null, slots, help: EASY });
     expect(messages[0]).toEqual({ id: "wb_helped_partial", values: { correct: 8, total: 10 } });
     expect(ids(messages)).not.toContain("wb_perfect");
-    expect(feedbackMood(messages)).toBe("encourage");
+    expect(feedbackOutcome(messages)).toBe("partial");
     const all = listeningFeedback({ kind: "checked_word_bank", display: DISPLAY, previous: null, slots: slots.map((s) => ({ ...s, correct: true })), help: EASY });
     expect(all).toEqual([{ id: "wb_helped_all", values: { total: 10 } }]);
-    expect(feedbackMood(all)).toBe("encourage");
+    expect(feedbackOutcome(all)).toBe("helped");
   });
 
-  it("a typing result with 2 stars and every other character right is ty_helped_all, not ty_perfect, never joy", () => {
+  it("a typing result with 2 stars and every other character right is ty_helped_all, not ty_perfect, never perfect", () => {
     const messages = listeningFeedback({ kind: "checked_typing", diff: [match("今"), hinted("日"), hinted("は"), match("雨")], metrics: { recall: 50 }, previous: null, help: STARS });
     expect(messages).toEqual([{ id: "ty_helped_all", values: { stars: 2 } }]);
-    expect(feedbackMood(messages)).toBe("encourage");
+    expect(feedbackOutcome(messages)).toBe("helped");
     // Help is the fact, not the diff: a fully matched line after 2 stars is still helped.
     expect(ids(listeningFeedback({ kind: "checked_typing", diff: [match("今"), match("日")], metrics: { recall: 100 }, previous: null, help: STARS }))).toEqual(["ty_helped_all"]);
   });
@@ -169,19 +169,19 @@ describe("helped results and Điền từ (spec §3.7)", () => {
     ]);
   });
 
-  it("cloze: easy 3/3 is cz_helped_all; unhelped 3/3 is cz_perfect with joy", () => {
+  it("cloze: easy 3/3 is cz_helped_all; unhelped 3/3 is cz_perfect, perfect", () => {
     const helped = cz([true, true, true], EASY);
     expect(helped).toEqual([{ id: "cz_helped_all", values: { total: 3 } }]);
-    expect(feedbackMood(helped)).toBe("encourage");
+    expect(feedbackOutcome(helped)).toBe("helped");
     const own = cz([true, true, true], null);
     expect(own).toEqual([{ id: "cz_perfect", values: { total: 3 } }]);
-    expect(feedbackMood(own)).toBe("joy");
+    expect(feedbackOutcome(own)).toBe("perfect");
   });
 
   it("cloze 1/3 is cz_partial naming only the two wrong blanks' words, in blank order", () => {
     const messages = cz([false, true, false], null);
     expect(messages).toEqual([{ id: "cz_partial", values: { correct: 1, total: 3, words: "勉強、雨" } }]);
-    expect(feedbackMood(messages)).toBe("encourage");
+    expect(feedbackOutcome(messages)).toBe("partial");
   });
 
   it("cloze with 💡 kana: helped, names the help and counts the hinted characters", () => {
@@ -200,38 +200,38 @@ describe("helped results and Điền từ (spec §3.7)", () => {
   });
 });
 
-describe("feedbackMood (P15)", () => {
-  const mood = (slots: Slot[], previous: { wrongPieces: number[] } | null = null) => feedbackMood(wb(slots, previous));
+describe("feedbackOutcome (Korume's reaction)", () => {
+  const mood = (slots: Slot[], previous: { wrongPieces: number[] } | null = null) => feedbackOutcome(wb(slots, previous));
   const ty = (diff: ListeningDiffOp[], previous: { errorCount: number } | null = null) =>
-    feedbackMood(listeningFeedback({ kind: "checked_typing", diff, metrics: { recall: 100 }, previous }));
+    feedbackOutcome(listeningFeedback({ kind: "checked_typing", diff, metrics: { recall: 100 }, previous }));
 
-  it("is joy only for a perfect result with no hint", () => {
-    expect(mood([slot(true), slot(true), slot(true)])).toBe("joy");
-    expect(ty([match("今"), match("日")])).toBe("joy");
+  it("is perfect only for a perfect result with no hint", () => {
+    expect(mood([slot(true), slot(true), slot(true)])).toBe("perfect");
+    expect(ty([match("今"), match("日")])).toBe("perfect");
   });
 
-  it("never gives joy to an attempt with a hint, even when every part is right", () => {
-    expect(mood([slot(true, true), slot(true), slot(true)])).toBe("encourage");
-    expect(ty([hinted("今"), match("日")])).toBe("encourage");
+  it("never calls an attempt with a hint perfect, even when every part is right", () => {
+    expect(mood([slot(true, true), slot(true), slot(true)])).toBe("partial");
+    expect(ty([hinted("今"), match("日")])).toBe("partial");
   });
 
-  it("encourages a partial result and real progress between two submitted results", () => {
-    expect(mood([slot(true), slot(false), slot(true)])).toBe("encourage");
-    expect(ty([match("今"), wrong("日")])).toBe("encourage");
-    expect(ty([match("今"), extra])).toBe("encourage");
-    expect(mood([slot(true), slot(false), slot(true)], { wrongPieces: [0, 1] })).toBe("encourage");
-    expect(ty([match("今"), missing("日")], { errorCount: 3 })).toBe("encourage");
+  it("is partial for a partial result, progress or not", () => {
+    expect(mood([slot(true), slot(false), slot(true)])).toBe("partial");
+    expect(ty([match("今"), wrong("日")])).toBe("partial");
+    expect(ty([match("今"), extra])).toBe("partial");
+    expect(mood([slot(true), slot(false), slot(true)], { wrongPieces: [0, 1] })).toBe("partial");
+    expect(ty([match("今"), missing("日")], { errorCount: 3 })).toBe("partial");
   });
 
-  it("is review after Show answer", () => {
-    expect(feedbackMood(listeningFeedback({ kind: "revealed" }))).toBe("review");
+  it("is revealed after Show answer", () => {
+    expect(feedbackOutcome(listeningFeedback({ kind: "revealed" }))).toBe("revealed");
   });
 
   it("is null before a successful Check or Show answer: hints, a restart, or a failed request", () => {
-    expect(feedbackMood(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 1, total: 3 }))).toBeNull();
-    expect(feedbackMood(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 3, total: 3 }))).toBeNull();
-    expect(feedbackMood(listeningFeedback({ kind: "retry", previousScore: 40 }))).toBeNull();
-    expect(feedbackMood([])).toBeNull();
+    expect(feedbackOutcome(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 1, total: 3 }))).toBeNull();
+    expect(feedbackOutcome(listeningFeedback({ kind: "hint", unit: "chunk", hinted: 3, total: 3 }))).toBeNull();
+    expect(feedbackOutcome(listeningFeedback({ kind: "retry", previousScore: 40 }))).toBeNull();
+    expect(feedbackOutcome([])).toBeNull();
   });
 });
 

@@ -55,7 +55,7 @@ const SURFACES = {
   // The card toggles' text (spec §3.5): answer surfaces in Chép chính tả until Check / 💡 (D4).
   translation: "[data-testid='listening-translation']",
   romaji: "[data-testid='listening-romaji']",
-  korume: "[data-mascot-pose^='listening-']",
+  korume: "[data-mascot-pose^='korume-']",
   feedback: "[data-testid='listening-feedback']",
 } as const;
 type Surface = { kind: keyof typeof SURFACES; text: string };
@@ -295,7 +295,7 @@ test("2 · entering Listening conceals from the first frame, with the video show
   await expectNoSurface(page);
 });
 
-test("3 · Word Bank, correct: score 100, encourage (Chế độ dễ is help, spec §3.7), the subtitle for this line only; Next conceals again", async ({ page }) => {
+test("3 · Word Bank, correct: score 100, Korume giggles (Chế độ dễ is help, spec §3.7), the subtitle for this line only; Next conceals again", async ({ page }) => {
   await registerLearner(page);
   await openWordBank(page);
   await expect(korume(page)).toHaveCount(0);
@@ -305,7 +305,7 @@ test("3 · Word Bank, correct: score 100, encourage (Chế độ dễ is help, s
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   for (const index of pieces.keys()) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
   await expect(feedback(page)).toContainText(`You placed all ${pieces.length} pieces right! Next time, try turning easy mode off and typing the sentence yourself.`);
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "korume-giggle");
   await expect(page.getByTestId("workspace-subtitle")).toHaveText(LINES[0].text);
   // Positive control: the observer every "never" below relies on does see each surface once it is attached.
   expect(new Set((await surfaces(page, [...ANSWER_KINDS, "korume"])).map((surface) => surface.kind))).toEqual(new Set(["subtitle", "answer", "slotResult", "korume"]));
@@ -358,7 +358,8 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   await expect(slot(page, 0)).toHaveAttribute("data-result", "wrong");
   for (const index of pieces.keys()) if (index > 0) await expect(slot(page, index)).toHaveAttribute("data-result", "correct");
   await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} pieces right. You used help this time. Try listening again and finishing the sentence without hints!`);
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
+  // A first partial: nearly there (close) or not yet (focus), by the line's piece count.
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", /^korume-(close|focus)$/);
 
   await button(page, "Try again").click();
   await expect(korume(page)).toHaveCount(0);
@@ -370,7 +371,7 @@ test("4 · Word Bank, wrong then Try again: counts match the colours; the fix is
   await heldSubmit(page, () => button(page, "Check").click());
   await expect(page.getByTestId("listening-score")).toHaveText("100%");
   await expect(feedback(page)).toContainText("You fixed 1 chunk since your last try.");
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage"); // all right, but with Chế độ dễ: never joy
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "korume-giggle"); // all right, but with Chế độ dễ: never ace
 });
 
 test("5 · Hint moves the next piece to the front, keeping the placed one; the hinted piece counts as hinted, never as correct", async ({ page }) => {
@@ -394,7 +395,7 @@ test("5 · Hint moves the next piece to the front, keeping the placed one; the h
   await expect(feedback(page)).toContainText(`You got ${pieces.length - 1}/${pieces.length} pieces right.`);
   await expect(feedback(page)).toContainText("1 hinted chunk doesn't count as your own.");
   await expect(feedback(page)).not.toContainText("whole sentence yourself");
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-encourage");
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", /^korume-(close|focus)$/);
 });
 
 test("6 · Show answer: revealed, no score; navigator, strip and Summary agree", async ({ page }) => {
@@ -416,8 +417,9 @@ test("6 · Show answer: revealed, no score; navigator, strip and Summary agree",
   await expect(page.getByTestId("listening-answer")).toHaveText(LINES[0].text);
   await expect(feedback(page)).toContainText("This sentence is marked for review. This attempt has no score and doesn't count toward today's mission.");
   await expect(page.getByTestId("listening-score")).toHaveCount(0);
-  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "listening-review");
-  // R32: the review figure goes with the line.
+  // Show answer before any Check on the line: Korume is cutely furious.
+  await expect(korume(page)).toHaveAttribute("data-mascot-pose", "korume-furious");
+  // R32: the figure goes with the line.
   await button(page, "Next sentence").click();
   await expectConcealed(page);
 

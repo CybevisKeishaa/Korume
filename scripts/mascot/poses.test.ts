@@ -61,7 +61,7 @@ describe("mascot pose manifest", () => {
     // Pattern-gathered collection: assert its size explicitly too, so an
     // empty `supplied` array (or one that silently shrank) can't pass this
     // by vacuous truth.
-    expect(manifest.supplied.length).toBe(31);
+    expect(manifest.supplied.length).toBe(50);
     for (const pose of manifest.supplied) {
       expect(pose.depicts.length, `${pose.out} depicts`).toBeGreaterThan(0);
       expect(pose.origin.length, `${pose.out} origin`).toBeGreaterThan(0);
@@ -182,12 +182,12 @@ describe("mascot pose manifest", () => {
     // a file and a record drifted apart by the same count, so compare names.
     expect(onDisk.sort()).toEqual(named.sort());
 
-    // TODAY'S STATE. Not an invariant (L-031). 31 supplied (2026-10-08: the 5 extracted cuts deleted, 3 action-art cuts added).
+    // TODAY'S STATE. Not an invariant (L-031). 50 supplied (2026-11-03: the owner's 19 emotion poses added; 2026-10-08: the 5 extracted cuts deleted, 3 action-art cuts added).
     // Adding a pose is legitimate and SHOULD fail here — update this number,
     // never the manifest, to make it green again. Kept separate from the
     // invariant above so a later reader can tell which is which.
-    expect(onDisk.length, "poses on disk today").toBe(31);
-    expect(named.length, "poses the manifest names today").toBe(31);
+    expect(onDisk.length, "poses on disk today").toBe(50);
+    expect(named.length, "poses the manifest names today").toBe(50);
   });
 
 });

@@ -287,7 +287,26 @@
         "draft": "đang làm dở",
         "state": { "none": "chưa luyện", "scored": "{score} điểm", "needs_review": "cần ôn lại", "unscored": "chưa chấm", "revealed": "đã xem đáp án", "helped": "có trợ giúp" }
       },
-      "leave": { "title": "Bỏ bản thu chưa lưu?", "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.", "stay": "Ở lại", "discard": "Rời đi và bỏ bản thu" }
+      "leave": { "title": "Bỏ bản thu chưa lưu?", "body": "Bản thu này chưa được lưu. Nếu rời đi, nó sẽ bị bỏ.", "stay": "Ở lại", "discard": "Rời đi và bỏ bản thu" },
+      "korume": {
+        "ace": { "a": "Chuẩn không cần chỉnh!", "b": "Ối, đúng ngay phát đầu luôn á?! Ghê răng đấy chứ" },
+        "smug": { "a": "Hai câu liền rồi đó, hehe~", "b": "Ai dạy mà giỏi thế? À, Korume chứ ai hẹ hẹ hẹ hẹ hẹ hẹ" },
+        "hype": { "a": "{streak} câu liền! Bắt đầu thấy vào form rồi đó!", "b": "Chuỗi {streak} câu! Ghê chưa ghê chưa!" },
+        "proud": { "a": "Đấm {streak} câu không trượt phát lào. Lể luônnn!", "b": "Thôi xong, sắp giỏi hơn cả Korume rồi!" },
+        "comeback": { "a": "Đấy, bảo rồi! Làm lại là được mà!", "b": "Cuối cùng cũng chịu đúng rồi nha! Quá giỏii" },
+        "giggle": { "a": "Đúng rồi… nhưng có trợ giúp nha, hihi~", "b": "Hehe, lần sau tự làm không cần trợ giúp nhé!" },
+        "laugh": { "a": "Gõ thừa chữ kìa, hahaha!", "b": "Não chạy hơi nhanh rồi đó, haha!" },
+        "improved": { "a": "Ồ, khá hơn lần trước rồi đó! Quá ok", "b": "Đang tiến bộ nha, cố thêm chút nữa!" },
+        "close": { "a": "Hmm… suýt nữa thì đúng rồi!", "b": "Gần lắm rồi, nghe kỹ lại chỗ sai xem!" },
+        "focus": { "a": "Không sao, nghe lại rồi làm tiếp nào!", "b": "Đeo băng đô vào, học tiếp thôi!" },
+        "sulk": { "a": "Ơ kìa, sao càng làm càng toang thế?! Hứ!", "b": "Hứ! Lại đang nghĩ tới crush đúng không!" },
+        "tantrum": { "a": "Lại tụt nữa?! Korume giận rồi đó nha!!", "b": "Aaaa! Nghe kỹ giùm Korume cái!" },
+        "dizzy": { "a": "Sai mấy lần rồi… Korume chóng mặt quá~", "b": "Lần thứ mấy rồi ta? Có thích lương 10 man chưa đớp không!" },
+        "cry": { "a": "Huhu… câu này khó thật mà…", "b": "Huhuhu! Nghỉ xíu rồi thử lại nhé…" },
+        "shock": { "a": "Hả?! Không trúng phát lào luôn á?!", "b": "Khoan… bạn có nghe câu này chưa đó?!" },
+        "peek": { "a": "Nhìn trộm đáp án hả~ Nhớ kỹ rồi làm lại nha!", "b": "Hì hì, xem đáp án rồi thì lần sau phải đúng đó!" },
+        "furious": { "a": "Chưa thử lần nào đã xem đáp án?! Bỏ ra bạn êii", "b": "Ê ê! Phải tự làm trước chứ!" }
+      }
     },
     "mining": {
       "loading": "Đang tải thẻ của bạn…",

@@ -1,4 +1,5 @@
 import type { ListeningDiffOp, ListeningMetrics } from "./listening-score";
+import type { MoodOutcome } from "@/lib/practice/korume-mood";
 
 /** Message ids under `shadowing.workspace.practice.listening.feedback` (P14). */
 export const FEEDBACK_IDS = [
@@ -103,15 +104,16 @@ export function listeningFeedback(event: FeedbackEvent): FeedbackMessage[] {
 }
 
 const CHECKED: ReadonlySet<FeedbackId> = new Set(FEEDBACK_IDS.filter((id) => id.startsWith("wb_") || id.startsWith("ty_") || id.startsWith("cz_")));
-export type FeedbackMood = "joy" | "encourage" | "review";
 
 /**
- * P15: Korume's expression, from the P14 outcome ids only, never from a score. `*_perfect` is emitted only when no
- * help was used (spec §3.7), so a helped or hinted attempt can never reach joy. Hints and restarts while
- * answering, and a failed request, carry no checked id: no figure.
+ * The outcome Korume reacts to (lib/practice/korume-mood.ts), from the P14 ids the learner reads, never from a
+ * score. `*_perfect` is emitted only when no help was used (spec §3.7), so a helped or hinted attempt is never
+ * perfect; `*_helped_all` is right with help. Hints and restarts while answering, and a failed request, carry no
+ * checked id: null, no figure.
  */
-export function feedbackMood(messages: FeedbackMessage[]): FeedbackMood | null {
-  if (messages.some((m) => m.id === "wb_perfect" || m.id === "ty_perfect" || m.id === "cz_perfect")) return "joy";
-  if (messages.some((m) => m.id === "revealed")) return "review";
-  return messages.some((m) => CHECKED.has(m.id)) ? "encourage" : null;
+export function feedbackOutcome(messages: FeedbackMessage[]): MoodOutcome | null {
+  if (messages.some((m) => m.id === "wb_perfect" || m.id === "ty_perfect" || m.id === "cz_perfect")) return "perfect";
+  if (messages.some((m) => m.id === "revealed")) return "revealed";
+  if (messages.some((m) => m.id === "wb_helped_all" || m.id === "ty_helped_all" || m.id === "cz_helped_all")) return "helped";
+  return messages.some((m) => CHECKED.has(m.id)) ? "partial" : null;
 }

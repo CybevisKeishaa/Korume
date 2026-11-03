@@ -108,7 +108,7 @@ export function stubListeningFetch() {
 }
 
 export function slotList() { return document.querySelector<HTMLElement>("ol[aria-label='Your sentence']"); }
-export const korume = () => document.querySelector<HTMLImageElement>("[data-mascot-pose^='listening-']");
+export const korume = () => document.querySelector<HTMLImageElement>("[data-mascot-pose^='korume-']");
 
 type Frame = { attempt: number; subtitle: boolean; dock: boolean; filled: number; typed: string | null; answer: boolean; korume: string | null };
 /** The reveal context and every commit CommitProbe saw; a test empties `frames` in its own `beforeEach`. */

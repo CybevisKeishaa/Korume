@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { SessionListItem } from "@/lib/data/shadowing";
 import type { Attempt, ScoreFailureKind } from "@/lib/pronunciation/attempts";
+import { korumeMood, type MoodEntry, type MoodResult } from "@/lib/practice/korume-mood";
+import { REVIEW_PRONUNCIATION_BELOW, STRONG_PRONUNCIATION_AT } from "@/lib/summary/thresholds";
 import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { usePracticeStats } from "./practice-stats-context";
 import { useResultChime } from "./use-result-chime";
@@ -25,6 +27,9 @@ export function usePronunciationSessions(lineId: string | null) {
   const latest = useRef(attempts);
   latest.current = attempts;
   const inFlight = useRef(new Set<string>());
+  /** Every score of this visit, oldest first, for Korume's reaction; and the reaction per scored take. */
+  const moodLog = useRef<MoodEntry[]>([]);
+  const [reactions, setReactions] = useState<Record<string, MoodResult>>({});
 
   const reload = useCallback(async (owner: string) => {
     if (!mounted.current || currentLine.current !== owner) return;
@@ -90,7 +95,15 @@ export function usePronunciationSessions(lineId: string | null) {
       if (response.ok) {
         const { data } = await response.json() as { data: NonNullable<Attempt["result"]> };
         // Chime only while the learner is still on that sentence: a score landing after they moved on stays silent.
-        if (mounted.current && currentLine.current === owner && typeof data.pronunciationScore === "number") chime("pronunciation", data.pronunciationScore);
+        if (mounted.current && currentLine.current === owner && typeof data.pronunciationScore === "number") {
+          chime("pronunciation", data.pronunciationScore);
+          // Korume reacts like the chime: only to a score that lands while the learner is still on that sentence.
+          const value = data.pronunciationScore;
+          const entry: MoodEntry = { line: owner, outcome: value >= STRONG_PRONUNCIATION_AT ? "perfect" : "partial", score: value };
+          const reaction = korumeMood(moodLog.current, entry, { close: value >= REVIEW_PRONUNCIATION_BELOW });
+          moodLog.current.push(entry);
+          setReactions((previous) => ({ ...previous, [sessionId]: reaction }));
+        }
         dispatch({ type: "scored", sessionId, result: data });
         refresh();
         if (mounted.current) setHistory((previous) => previous?.lineId === owner ? { ...previous, items: previous.items.map((item) => item.id === sessionId ? { ...item, ...data, state: "scored" } : item) } : previous);
@@ -120,7 +133,8 @@ export function usePronunciationSessions(lineId: string | null) {
   const sessionId = attempt?.sessionId ?? selected?.id ?? null;
   const failure = sessionId ? failures[sessionId] : undefined;
   const retrySeconds = failure?.retryAt ? Math.max(0, Math.ceil((failure.retryAt - clock) / 1000)) : null;
-  return { items, attempt, selected, sessionId, failure, retrySeconds, score, reload,
+  const reaction = sessionId ? reactions[sessionId] ?? null : null;
+  return { items, attempt, selected, sessionId, failure, retrySeconds, score, reload, reaction,
     saved: (id: string, owner: string) => { refresh(); void score(id, owner); },
     retryDisabled: (id: string) => (failures[id]?.retryAt ?? 0) > clock,
     historyStatus: history?.lineId === lineId ? history.status : "loading" as const };

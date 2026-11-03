@@ -89,6 +89,9 @@ describe("pronunciation capture, save and score", () => {
     // Result sounds on: 88 is a strong pronunciation score (Summary cut 80), one chime for the one result.
     expect(mock.chime.mock.calls).toEqual([["strong"]]);
     expect(document.querySelectorAll("mark[data-error-type]")).toHaveLength(1);
+    // Korume reacts like the chime: a strong first score on the sentence is an ace, with its quip.
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toHaveAttribute("data-mascot-pose", "korume-ace");
+    expect(screen.getByTestId("take-status")).toHaveTextContent("Nailed it!");
   });
   it("retains the same WAV on save failure, blocks navigation and retries without another recording", async () => {
     fetchMock.mockImplementation(async (url: string) => url.includes("?") ? response([]) : url.endsWith("/score") ? response(result) : response({}, 500));
@@ -157,6 +160,10 @@ describe("pronunciation capture, save and score", () => {
     await act(async () => { score.resolve(response(result)); });
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.result.pronunciationScore).toBe(88);
     expect(screen.queryByText("Excellent")).not.toBeInTheDocument();
+    // A score that lands after the learner moved on gets no reaction, here or when they come back.
+    mock.index = 0; view.rerender(<PronunciationAttemptsProvider><PronunciationModeBody /><Probe /></PronunciationAttemptsProvider>);
+    await graded("Excellent");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toBeNull();
     expect((at(posts("/api/shadowing/session"), 0)[1].body as FormData).get("lineId")).toBe("one");
   });
   it("says when Azure heard no speech (422) and offers a new take, not a rescore that cannot succeed", async () => {
@@ -222,6 +229,17 @@ describe("pronunciation capture, save and score", () => {
     await act(async () => { score.resolve(response(result)); });
     expect(JSON.parse(screen.getByTestId("attempts").textContent ?? "{}").one.phase).toBe("scored");
     expect(mock.refresh).toHaveBeenCalled();
+  });
+  it("keeps Korume's reaction on the take it judged: an older scored take on another sentence shows none", async () => {
+    const older = { ...historyItem("scored", "older-two"), pronunciationScore: 70, rhythmScore: 70, assessment: result.assessment };
+    fetchMock.mockImplementation(async (url: string) => url.endsWith("lineId=two") ? response([older]) : url.includes("?") ? response([])
+      : url === "/api/shadowing/session" ? response({ id: "session-one", signedUrl: "/saved.wav" }, 201) : response(result));
+    const view = mount(); await start(); await finish();
+    await graded("Excellent");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toHaveAttribute("data-mascot-pose", "korume-ace");
+    mock.index = 1; view.rerender(tree());
+    await graded("Good");
+    expect(document.querySelector("[data-mascot-pose^='korume-']")).toBeNull();
   });
   it("drops a stale history response after changing lines", async () => {
     const history = deferred<Response>();

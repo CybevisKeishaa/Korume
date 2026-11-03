@@ -6,7 +6,6 @@ import { useSearchParams } from "next/navigation";
 import { Tooltip } from "@/components/ui/tooltip";
 import { useTranslations } from "@/lib/i18n";
 import { usePathname, useRouter } from "@/lib/i18n/navigation";
-import { feedbackMood } from "@/lib/dictation/listening-feedback";
 import { toRomaji } from "@/lib/japanese/romaji";
 import { dictationFormat, listeningExercise, type ListeningExercise } from "@/lib/shadowing-workspace/learning-modes";
 import { NextGlyph } from "../player-glyphs";
@@ -131,7 +130,7 @@ export function ListeningModeBody() {
     <ListeningToolbar easyDisabled={dictation && unreliable} />
   </div>;
   return <PracticePanel label={tl("region")} header={header} navigator={<SentenceNavigator draftLineIds={draftLineIds} />}
-    feedback={<ListeningFeedback messages={attempt.feedback} mood={answerVisible ? feedbackMood(attempt.feedback) : null} error={attempt.error} submitting={attempt.submitting}
+    feedback={<ListeningFeedback messages={attempt.feedback} reaction={answerVisible ? attempt.reaction : null} error={attempt.error} submitting={attempt.submitting}
       result={answerVisible ? attempt.result : null} answer={answerVisible ? attempt.answer : null} />}
     actions={ready && <>
       {/* The panel's Check renders here (CheckButton's slot): Check | Try again | Next, one row (A3 §3.6). */}

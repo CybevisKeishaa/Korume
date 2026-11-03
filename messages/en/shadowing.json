@@ -281,7 +281,26 @@
         "draft": "in progress",
         "state": { "none": "not practised", "scored": "scored {score}", "needs_review": "needs review", "unscored": "not scored yet", "revealed": "answer shown", "helped": "with help" }
       },
-      "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" }
+      "leave": { "title": "Leave this take unsaved?", "body": "This recording has not been saved yet. If you leave, it will be discarded.", "stay": "Stay", "discard": "Leave and discard" },
+      "korume": {
+        "ace": { "a": "Nailed it!", "b": "Whoa, right on the first try?!" },
+        "smug": { "a": "Two in a row, hehe~", "b": "Who taught you that? Oh right, Korume!" },
+        "hype": { "a": "{streak} in a row! You're on fire!", "b": "A {streak}-line streak! Look at you go!" },
+        "proud": { "a": "{streak} lines without a slip. Respect!", "b": "Uh-oh, you're about to out-study Korume!" },
+        "comeback": { "a": "See? Trying again works!", "b": "Finally got it right, huh!" },
+        "giggle": { "a": "Right… with a little help, hehe~", "b": "Hehe, next time try it without help!" },
+        "laugh": { "a": "Extra letters! Hahaha!", "b": "Your fingers beat your brain there, haha!" },
+        "improved": { "a": "Ooh, better than last time!", "b": "You're getting there, a bit more!" },
+        "close": { "a": "Hmm… so close!", "b": "Almost! Listen again to the part you missed." },
+        "focus": { "a": "No worries, listen again and keep going!", "b": "Headband on, back to work!" },
+        "sulk": { "a": "Hey, why is it getting worse?! Hmph!", "b": "Hmph! Focus, please!" },
+        "tantrum": { "a": "Down again?! Korume is mad now!!", "b": "Argh! Listen closely for Korume!" },
+        "dizzy": { "a": "How many misses now… Korume is dizzy~", "b": "Which try is this? Slow it down and listen!" },
+        "cry": { "a": "Waaah… this one really is hard…", "b": "Waaah! Take a breather, then try again…" },
+        "shock": { "a": "What?! All of it missed?!", "b": "Wait… did you even hear this one?!" },
+        "peek": { "a": "Peeking at the answer, huh~ Remember it and try again!", "b": "Hehe, you've seen the answer, so next time you get it right!" },
+        "furious": { "a": "Showing the answer before even trying?! Nope!", "b": "Hey hey! Try it yourself first!" }
+      }
     },
     "mining": {
       "loading": "Loading your cards…",

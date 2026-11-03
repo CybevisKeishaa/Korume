@@ -14,6 +14,7 @@ import { usePronunciationAttempts } from "./pronunciation-attempts-context";
 import { ScoredSentence } from "./scored-sentence";
 import { PracticeGlyph } from "./practice-glyph";
 import { PronunciationAnalysis } from "./pronunciation-analysis";
+import { KorumeQuip, PracticeKorume } from "./practice-korume";
 import { TakePlayer } from "./take-player";
 import type { usePronunciationCapture } from "./use-pronunciation-capture";
 import type { usePronunciationSessions } from "./use-pronunciation-sessions";
@@ -83,7 +84,13 @@ export function PronunciationPanel({ index, capture, sessions, detailsOpen, deta
         {!scoring && kind === "throttled" && <p>{retrySeconds !== null && retrySeconds > 0 ? t("throttledIn", { seconds: retrySeconds }) : t("throttled")}</p>}
         {!scoring && kind === "unheard" && <p>{t("unheard")}</p>}
         {!scoring && kind === "error" && <p>{t("scoreError")}</p>}
-        {label && score != null && <p className="flex items-center justify-center gap-sm"><span className="font-semibold">{t(`label.${label}`)}</span><span className="rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}</span></p>}
+        {label && score != null && <div className="flex items-center justify-center gap-sm">
+          <PracticeKorume reaction={sessions.reaction} />
+          <div className="flex flex-col items-center gap-2xs">
+            <KorumeQuip reaction={sessions.reaction} />
+            <p className="flex items-center justify-center gap-sm"><span className="font-semibold">{t(`label.${label}`)}</span><span className="rounded-full bg-primary px-sm py-2xs text-caption font-bold tabular-nums text-primary-foreground">{Math.round(score)}</span></p>
+          </div>
+        </div>}
       </div>
       {recorder.error && <div role="alert" className="text-center text-caption text-danger-strong"><p>{recorder.error}</p>
         {recorder.state === "error" && <p>{t("micHint")}</p>}

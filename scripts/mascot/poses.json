@@ -271,6 +271,158 @@
       "width": 276,
       "height": 213,
       "origin": "public/mascot/actions/sleeping.png (owner-supplied action art, commit 13e9ab9), trimmed to its bounding box of pixels with alpha > 8 (1264x977) and downscaled to 276x213 with sharp on 2026-10-08, replacing the extractor cut resting.png the owner ruled broken."
+    },
+    {
+      "out": "chinh-xac.png",
+      "caption": "CHÍNH XÁC — pointing, nailed it",
+      "depicts": "Crouched three-quarter view, one paw pointing forward at the viewer, open grin, yellow burst lines beside the head.",
+      "width": 412,
+      "height": 270,
+      "origin": "assets/newpose/chinh-xac.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 412x270 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "choang-vang.png",
+      "caption": "CHOÁNG VÁNG — dizzy",
+      "depicts": "Seated front view, spiral eyes, open mouth, a ring of yellow stars circling the head.",
+      "width": 219,
+      "height": 243,
+      "origin": "assets/newpose/choang-vang.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 219x243 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "cuoi-bi-hiem.png",
+      "caption": "CƯỜI BÍ HIỂM — sly grin",
+      "depicts": "Lying prone, chin on paws, half-lidded smug eyes and a small cat smile, yellow burst and a puff on the left, tail raised.",
+      "width": 344,
+      "height": 300,
+      "origin": "assets/newpose/cuoi-bi-hiem.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 439x383 after dropping a stray edge fragment and downscaled to 344x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "cuoi-che-mieng.png",
+      "caption": "CƯỜI CHE MIỆNG — giggling behind paws",
+      "depicts": "Seated front view, eyes squeezed shut, both paws covering the mouth, small hash-mark sparkles on both sides.",
+      "width": 226,
+      "height": 300,
+      "origin": "assets/newpose/cuoi-che-mieng.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 296x393 and downscaled to 226x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "cuoi-nac-ne.png",
+      "caption": "CƯỜI NẮC NẺ — rolling with laughter",
+      "depicts": "Lying on its back, mouth wide open laughing, tears flying, paws in the air, two yellow ハ marks above.",
+      "width": 300,
+      "height": 254,
+      "origin": "assets/newpose/cuoi-nac-ne.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 300x254 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "cuoi-phan-khich.png",
+      "caption": "CƯỜI PHẤN KHÍCH — gleeful cackle",
+      "depicts": "Standing, eyes closed, wide open laugh, paw at the chest, sparkles, a speech bubble with a grinning devil-cat face.",
+      "width": 279,
+      "height": 300,
+      "origin": "assets/newpose/cuoi-phan-khich.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 353x380 after dropping a stray edge fragment and downscaled to 279x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "gian-doi-mat-xi.png",
+      "caption": "GIẬN DỖI MẶT XỊ — sulking",
+      "depicts": "Seated, arms crossed, flat half-closed eyes, pouting mouth, a huff puff beside the head.",
+      "width": 240,
+      "height": 223,
+      "origin": "assets/newpose/gian-doi-mat-xi.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 240x223 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "hmm.png",
+      "caption": "HMM — doubtful",
+      "depicts": "Seated, arms crossed, frowning brows and a small frown, huff puff on the left, tail to the right.",
+      "width": 347,
+      "height": 256,
+      "origin": "assets/newpose/hmm.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 347x256 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "khoc.png",
+      "caption": "KHÓC — crying a river",
+      "depicts": "Seated front view, eyes shut, mouth wide open wailing, two streams of tears splashing into puddles.",
+      "width": 279,
+      "height": 300,
+      "origin": "assets/newpose/khoc.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 351x377 and downscaled to 279x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "nhay-mat.png",
+      "caption": "NHÁY MẮT — wink",
+      "depicts": "Standing three-quarter view, one eye winking, paw at the brow in a salute, a yellow star flying off.",
+      "width": 336,
+      "height": 296,
+      "origin": "assets/newpose/nhay-mat.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 336x296 after dropping a stray edge fragment with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "quyet-tam-cao-do.png",
+      "caption": "QUYẾT TÂM CAO ĐỘ — studying hard",
+      "depicts": "Lying over an open scroll, writing with a brush pen, headband reading 勉強!, determined eyes, books beside it.",
+      "width": 394,
+      "height": 300,
+      "origin": "assets/newpose/quyet-tam-cao-do.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 450x343 and downscaled to 394x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "shock.png",
+      "caption": "SHOCK — shocked",
+      "depicts": "Seated, blank white eyes, mouth open, paws raised, a red !! burst above the head.",
+      "width": 281,
+      "height": 262,
+      "origin": "assets/newpose/shock.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 281x262 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "thich-thu-vao-vi-tri.png",
+      "caption": "THÍCH THÚ VÀO VỊ TRÍ — ready, play bow",
+      "depicts": "Play bow with the front low and tail up, bright eyes, small open smile, orange burst lines.",
+      "width": 278,
+      "height": 300,
+      "origin": "assets/newpose/thich-thu-vao-vi-tri.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 371x401 and downscaled to 278x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "tien-len.png",
+      "caption": "TIẾN LÊN — let's go",
+      "depicts": "Jumping three-quarter view, one fist raised, eyes closed, wide happy laugh, tail streaming behind.",
+      "width": 340,
+      "height": 300,
+      "origin": "assets/newpose/tien-len.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 384x339 and downscaled to 340x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "tu-hao-hanh-dien.png",
+      "caption": "TỰ HÀO HÃNH DIỆN — swaggering",
+      "depicts": "Standing three-quarter view, paws on hips, half-lidded smug eyes, cat smile, long tail behind.",
+      "width": 326,
+      "height": 300,
+      "origin": "assets/newpose/tu-hao-hanh-dien.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 416x383 and downscaled to 326x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "tu-hao.png",
+      "caption": "TỰ HÀO — pleased with itself",
+      "depicts": "Standing, eyes closed, smug cat smile, paws on hips, four yellow sparkles.",
+      "width": 289,
+      "height": 268,
+      "origin": "assets/newpose/tu-hao.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 289x268 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "tuc-gian-dap-tay-xuong-dat.png",
+      "caption": "TỨC GIẬN ĐẬP TAY XUỐNG ĐẤT — tantrum",
+      "depicts": "Crouched, slamming a paw into the ground with an impact burst, anger mark, huff puffs and pebbles flying.",
+      "width": 268,
+      "height": 300,
+      "origin": "assets/newpose/tuc-gian-dap-tay-xuong-dat.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 423x473 and downscaled to 268x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "tuc-gian.png",
+      "caption": "TỨC GIẬN — fuming",
+      "depicts": "Seated, eyes squeezed, mouth open shouting, a raised fist, orange flames all around.",
+      "width": 257,
+      "height": 255,
+      "origin": "assets/newpose/tuc-gian.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 257x255 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
+    },
+    {
+      "out": "xin-chao.png",
+      "caption": "XIN CHÀO — hello",
+      "depicts": "Seated, one paw waving, winking with the tongue out, small burst lines.",
+      "width": 284,
+      "height": 300,
+      "origin": "assets/newpose/xin-chao.png (owner-supplied emotion art, commit 8c33ae14, 2026-11-02), trimmed at alpha > 8 to 338x357 and downscaled to 284x300 with sharp on 2026-11-03. Korume's practice feedback (components/mascot/mascot-poses.ts, korume-* moods)."
     }
   ]
 }
