@@ -3,7 +3,7 @@ import { entriesFor, lookupForms, staticAnalyses } from "@/lib/analysis/line-ana
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
 import { fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { AnalysisToken } from "@/lib/analysis/types";
-import type { Tool } from "../retrieval";
+import type { RetrievalContext, Tool } from "../retrieval";
 
 export const EXPOSURE_MAX_VIDEOS = 20;
 export const EXPOSURE_MAX_LINES = 3_000;
@@ -80,9 +80,8 @@ export function countExposure(
   };
 }
 
-/** `learner_exposure`: "seen N times" over the learner's own recent progress (spec §5.3). */
-export const exposureTool: Tool = async (step, ctx) => {
-  if (step.tool !== "learner_exposure") return { status: "not_found" };
+/** The analysed lines this learner reached, newest videos first, and whether the line cap cut the scan (spec §5.3). */
+export async function scanSeenLines(ctx: RetrievalContext): Promise<{ lines: { videoId: string; lineId: string; tokens: AnalysisToken[] }[]; capped: boolean }> {
   const { supabase, userId } = ctx;
 
   const progress = await supabase.from("user_video_progress")
@@ -93,7 +92,7 @@ export const exposureTool: Tool = async (step, ctx) => {
   if (progress.error) throw progress.error;
   const rows: ProgressRow[] = ((progress.data ?? []) as { video_id: string; last_watched_position: number | string; completed_at: string | null }[])
     .map((r) => ({ videoId: r.video_id, lastWatchedPosition: Number(r.last_watched_position), completed: r.completed_at !== null }));
-  if (rows.length === 0) return { status: "ok", data: { ...countExposure(step.term, new Set(), []), capped: false } };
+  if (rows.length === 0) return { lines: [], capped: false };
 
   const videoIds = rows.map((r) => r.videoId);
   const transcripts = await supabase.rpc("latest_transcript_ids", { p_video_ids: videoIds });
@@ -137,10 +136,31 @@ export const exposureTool: Tool = async (step, ctx) => {
   const scanned = seen.slice(0, EXPOSURE_MAX_LINES);
   const analyses = await staticAnalyses(supabase, scanned.map((l) => ({ id: l.id, textJp: l.textJp })), undefined, "lexical");
 
-  const snapshotId = await getActiveSnapshotId();
+  return { lines: scanned.map((l) => ({ videoId: l.videoId, lineId: l.id, tokens: analyses.get(l.id)?.tokens ?? [] })), capped };
+}
+
+/** `learner_exposure`: "seen N times" over the learner's own recent progress (spec §5.3). */
+export const exposureTool: Tool = async (step, ctx) => {
+  if (step.tool !== "learner_exposure") return { status: "not_found" };
+  const { lines, capped } = await scanSeenLines(ctx);
+  const snapshotId = lines.length ? await getActiveSnapshotId() : null;
   const entSeqs = snapshotId
-    ? new Set(entriesFor(step.term, step.term, await lookupForms(supabase, snapshotId, [step.term])).map((m) => m.entSeq))
+    ? new Set(entriesFor(step.term, step.term, await lookupForms(ctx.supabase, snapshotId, [step.term])).map((m) => m.entSeq))
     : new Set<number>();
-  const counted = countExposure(step.term, entSeqs, scanned.map((l) => ({ videoId: l.videoId, lineId: l.id, tokens: analyses.get(l.id)?.tokens ?? [] })));
-  return { status: "ok", data: { ...counted, capped } satisfies ExposureData };
+  return { status: "ok", data: { ...countExposure(step.term, entSeqs, lines), capped } satisfies ExposureData };
 };
+
+/** One scan, then each `ent:<n>` counted by its own entry (R5). `tok:` ids are skipped: nothing here knows their term. */
+export async function exposureForEntities(
+  ctx: RetrievalContext, entities: { id: string; label: string }[],
+): Promise<Map<string, { seenCount: number; capped: boolean; firstSeen?: { videoId: string; lineId: string } }>> {
+  const { lines, capped } = await scanSeenLines(ctx);
+  const out = new Map<string, { seenCount: number; capped: boolean; firstSeen?: { videoId: string; lineId: string } }>();
+  for (const { id, label } of entities) {
+    const match = /^ent:(\d+)$/.exec(id);
+    if (!match) continue;
+    const { seenCount, firstSeen } = countExposure(label, new Set([Number(match[1])]), lines);
+    out.set(id, { seenCount, capped, ...(firstSeen ? { firstSeen } : {}) });
+  }
+  return out;
+}

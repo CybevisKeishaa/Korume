@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { groundingSchema } from "./answer";
-import { buildGroundedEntities, unionGrounding } from "./grounding";
+import { buildGroundedEntities, railEntities, RAIL_MAX_ROWS, unionGrounding } from "./grounding";
 import type { ToolResult } from "./retrieval";
 
 const dictionary: ToolResult = {
@@ -57,6 +57,40 @@ describe("buildGroundedEntities", () => {
       { ...dictionary, status: "not_found", data: undefined },
       exposure({ seenCount: 0 }),
     ], new Set([VIDEO]))).toEqual([]);
+  });
+});
+
+describe("railEntities", () => {
+  const ent = (n: number, label: string, gloss?: string) => ({ id: `ent:${n}`, label, kind: "vocabulary" as const, ...(gloss ? { gloss } : {}) });
+  const grounding = [
+    ent(1486650, "美味しい"), ent(1006610, "そう"), ent(1587040, "言う"), ent(1107060, "ピン", "pin (e.g. hairpin, safety pin)"),
+    ent(1310670, "留める"), ent(2833406, "ピン留め"), ent(2855585, "ピン", "(a) one (on dice or Japanese playing cards)"),
+    ent(2322860, "ピン", "ping"), ent(1513940, "保存"),
+  ];
+  const card = (entityRef: string) => ({ type: "context_card" as const, entityRef });
+  const user = (text: string) => ({ role: "user" as const, text, answer: null, grounding: null });
+  const ai = (blocks: ReturnType<typeof card>[], g: typeof grounding | null = null) => ({ role: "assistant" as const, text: "", answer: { blocks }, grounding: g });
+
+  it("keeps card-referenced and question-named entities only, collapses homographs", () => {
+    const messages = [
+      user("Phân tích cấu trúc ngữ pháp"), ai([card("ent:1006610")], grounding.slice(0, 3)),
+      user("Pin ở đây có thể dùng từ tiếng nhật thay vì katakana không, nó là gì"), ai([card("ent:2833406"), card("ent:2833406")], grounding.slice(3, 8)),
+      user("Sự khác biệt giữa ghim và lưu?"), ai([card("ent:1513940")], grounding.slice(8)),
+    ];
+    expect(railEntities(messages).map((e) => e.label)).toEqual(["そう", "ピン留め", "保存"]);
+  });
+
+  it("joins the glosses of one named homograph into a single row", () => {
+    const rows = railEntities([user("ピンって何?"), ai([], grounding)]);
+    expect(rows).toHaveLength(1);
+    expect(rows[0]).toMatchObject({ id: "ent:1107060", label: "ピン" });
+    expect(rows[0]?.gloss).toContain("pin");
+    expect(rows[0]?.gloss).toContain("ping");
+  });
+
+  it("caps the rows", () => {
+    const many = Array.from({ length: RAIL_MAX_ROWS + 3 }, (_, i) => ent(i + 1, `語${i}`));
+    expect(railEntities([ai(many.map((e) => card(e.id)), many)])).toHaveLength(RAIL_MAX_ROWS);
   });
 });
 

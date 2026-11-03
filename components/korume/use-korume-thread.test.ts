@@ -74,7 +74,7 @@ describe("useKorumeThread", () => {
     await act(() => result.current.send("Q"));
     expect(result.current.pending?.status).toBe("running");
     const detail = (done: boolean): KorumeThreadDetail => ({
-      thread, pendingTurns: done ? [] : [{ turnId, status: "running" }],
+      thread, memory: null, pendingTurns: done ? [] : [{ turnId, status: "running" }],
       messages: [{ id: "u", turnId, role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }, ...(done ? [answer(turnId) as never] : [])],
     });
     fetchMock.mockResolvedValueOnce(json(200, detail(false))).mockResolvedValueOnce(json(200, detail(true)));
@@ -91,7 +91,7 @@ describe("useKorumeThread", () => {
   it("turns a poll into Try again when the server says retryable, or after the limit", async () => {
     vi.useFakeTimers();
     const detail = (turnId: string, status: "running" | "retryable"): KorumeThreadDetail => ({
-      thread, pendingTurns: [{ turnId, status }], messages: [{ id: "u", turnId, role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }],
+      thread, memory: null, pendingTurns: [{ turnId, status }], messages: [{ id: "u", turnId, role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }],
     });
     const { result } = renderHook(() => useKorumeThread({ anchor: null, initial: detail("t1", "running") }));
     expect(result.current.pending).toEqual({ turnId: "t1", text: "Q", status: "running" });
@@ -108,7 +108,7 @@ describe("useKorumeThread", () => {
 
   it("stops polling for good on unmount, even when a poll was in flight", async () => {
     vi.useFakeTimers();
-    const running: KorumeThreadDetail = { thread, pendingTurns: [{ turnId: "t1", status: "running" }], messages: [{ id: "u", turnId: "t1", role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }] };
+    const running: KorumeThreadDetail = { thread, memory: null, pendingTurns: [{ turnId: "t1", status: "running" }], messages: [{ id: "u", turnId: "t1", role: "user", text: "Q", answer: null, grounding: null, createdAt: "x" }] };
     let release: (r: Response) => void = () => undefined;
     fetchMock.mockImplementationOnce(() => new Promise<Response>((resolve) => { release = resolve; }));
     fetchMock.mockImplementation(async () => json(200, running));

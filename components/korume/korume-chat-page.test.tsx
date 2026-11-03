@@ -14,7 +14,7 @@ const THREAD = "00000000-0000-4000-8000-000000000001";
 const anchor = { videoId: "video", videoTitle: "Particles", lineId: "line", lineText: "私は学生です", translation: "I am a student.", startTime: 12, span: null };
 const thread = (over: Partial<KorumeThreadDetail["thread"]> = {}): KorumeThreadDetail["thread"] => ({ id: THREAD, title: null, anchor: null, originRoute: null, updatedAt: "2026-10-03T00:00:00.000Z", ...over });
 const answer = (turnId: string, grounding: GroundedEntity[]): KorumeMessageView => ({ id: `ai:${turnId}`, turnId, role: "assistant", text: "", answer: { blocks: [{ type: "paragraph", runs: [{ text: "Because." }] }] } as never, grounding, createdAt: "2026-10-03T00:00:01.000Z" });
-const detailWith = (over: Partial<KorumeThreadDetail["thread"]> = {}, messages: KorumeMessageView[] = []): KorumeThreadDetail => ({ thread: thread(over), messages, pendingTurns: [] });
+const detailWith = (over: Partial<KorumeThreadDetail["thread"]> = {}, messages: KorumeMessageView[] = []): KorumeThreadDetail => ({ thread: thread(over), messages, pendingTurns: [], memory: null });
 const page = (props: Partial<Parameters<typeof KorumeChatPage>[0]> = {}) => <KorumeChatPage detail={null} threads={[]} nextCursor={null} memory={null} disabled={false} notFound={false} {...props} />;
 const referrer = (value: string) => Object.defineProperty(document, "referrer", { value, configurable: true });
 const wa: GroundedEntity = { id: "ent:wa", label: "は", kind: "particle", seenCount: 3 };
@@ -84,6 +84,10 @@ describe("KorumeChatPage", () => {
   describe("grounding line", () => {
     it("is absent when the latest answer carries no exposure", () => {
       render(page({ detail: detailWith({}, [answer("t1", [{ id: "ent:x", label: "x", kind: "particle" }])]) }));
+      expect(screen.queryByText(/You've seen/)).toBeNull();
+    });
+    it("no grounding line for seen 0", () => {
+      render(page({ detail: detailWith({}, [answer("t1", [{ ...wa, seenCount: 0, seenCapped: false }])]) }));
       expect(screen.queryByText(/You've seen/)).toBeNull();
     });
     it("counts Shadowing LINES with a plural, from the latest answer", () => {

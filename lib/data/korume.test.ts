@@ -154,6 +154,28 @@ describe("getThread", () => {
     });
   });
 
+  it("carries the small memory of the rail's entities as detail.memory (R7)", async () => {
+    const labels: string[] = [];
+    const memory = { title: "T", line_text_jp: "今日は", occurred_at: "2026-10-02T00:00:00.000Z" };
+    const supabase = { from: () => { const q = { select: () => q, eq: () => q, ilike: (_c: string, p: string) => { labels.push(p); return q; }, order: () => q, limit: async () => ({ data: [memory], error: null }) }; return q; } };
+    vi.mocked(korumeGate).mockResolvedValue({ kind: "ok", supabase: supabase as never, userId: ME });
+    const { store } = fakeStore([thread()], [
+      msg({ id: "m1", turnId: "t1", content: "今日は?" }),
+      msg({ id: "m2", turnId: "t1", role: "ai", contentJson: { blocks: [{ type: "context_card", entityRef: "ent:1" }] }, contentSchemaVersion: 1,
+        groundingJson: [{ id: "ent:1", label: "今日", kind: "vocabulary" }, { id: "ent:2", label: "犬", kind: "vocabulary" }], groundingSchemaVersion: 1 }),
+    ]);
+    const result = await getThread(THREAD, { store });
+    expect(result).toMatchObject({ kind: "ok", detail: { memory: { title: "T", lineTextJp: "今日は", occurredAt: memory.occurred_at } } });
+    // 犬 is neither referenced by a card nor named by the learner, so it never reaches the lookup.
+    expect(labels.join()).toContain("今日");
+    expect(labels.join()).not.toContain("犬");
+  });
+
+  it("answers memory null when the thread has nothing to look up", async () => {
+    const { store } = fakeStore([thread()], []);
+    await expect(getThread(THREAD, { store })).resolves.toMatchObject({ kind: "ok", detail: { memory: null } });
+  });
+
   it("drops the chip and the route when the anchored line is gone (Review Focus 5)", async () => {
     const { store } = fakeStore([thread({ originLineId: "d0000000-0000-4000-8000-00000000dead" })]);
     const result = await getThread(THREAD, { store });

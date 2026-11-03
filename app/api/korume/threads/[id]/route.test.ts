@@ -18,7 +18,7 @@ describe("GET /api/korume/threads/[id]", () => {
   });
 
   it("returns the detail and maps refusals", async () => {
-    const detail = { thread: { id: THREAD, title: null, anchor: null, originRoute: null, updatedAt: "x" }, messages: [], pendingTurns: [] };
+    const detail = { thread: { id: THREAD, title: null, anchor: null, originRoute: null, updatedAt: "x" }, messages: [], pendingTurns: [], memory: null };
     vi.mocked(getThread).mockResolvedValueOnce({ kind: "ok", detail });
     await expect((await get(THREAD)).json()).resolves.toEqual(detail);
     vi.mocked(getThread).mockResolvedValueOnce({ kind: "not_found" });

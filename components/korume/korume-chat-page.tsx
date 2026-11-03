@@ -119,7 +119,7 @@ function KorumeConversation({
     .reverse()
     .find((message) => message.role === "assistant");
   const exposure = latest?.grounding?.find(
-    (entity) => entity.seenCount !== undefined,
+    (entity) => (entity.seenCount ?? 0) > 0,
   );
   const locked =
     state.notice !== null && LOCKING_NOTICES.has(state.notice.kind);
