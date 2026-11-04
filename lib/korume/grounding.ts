@@ -2,7 +2,7 @@ import type { DictionaryMatch } from "@/lib/analysis/types";
 import { GLOSS_MAX, GROUNDING_MAX, groundedEntitySchema } from "./answer";
 import type { ToolResult } from "./retrieval";
 import type { ExposureData } from "./tools/exposure";
-import type { GroundedEntity } from "./types";
+import type { GroundedEntity, KorumeMessageView } from "./types";
 
 const JLPT = ["N1", "N2", "N3", "N4", "N5"] as const;
 const jlptLabel = (level: number | null | undefined): GroundedEntity["jlpt"] =>
@@ -32,6 +32,29 @@ export function unionGrounding(messages: readonly { grounding: GroundedEntity[] 
   const byId = new Map<string, GroundedEntity>();
   for (const message of messages) for (const entity of message.grounding ?? []) merge(byId, entity);
   return [...byId.values()];
+}
+
+export const RAIL_MAX_ROWS = 6;
+
+/**
+ * What the sheet's rail shows (R4, display only): the thread's entities that an answer's card references, then those
+ * whose label or reading the learner typed. Homographs collapse to one row; a card-referenced id wins.
+ */
+export function railEntities(messages: readonly Pick<KorumeMessageView, "role" | "text" | "answer" | "grounding">[]): GroundedEntity[] {
+  const byId = new Map(unionGrounding(messages).map((e) => [e.id, e]));
+  const cards = [...new Set(messages.flatMap((m) => m.answer?.blocks.flatMap((b) => (b.type === "context_card" ? [b.entityRef] : [])) ?? []))];
+  const asked = messages.filter((m) => m.role === "user").map((m) => m.text.normalize("NFKC")).join("\n");
+  const named = [...byId.values()].filter((e) => !cards.includes(e.id) && [e.label, e.reading].some((t) => t && asked.includes(t.normalize("NFKC"))));
+  const rows = new Map<string, GroundedEntity>();
+  for (const e of [...cards.flatMap((id) => byId.get(id) ?? []), ...named]) {
+    const row = rows.get(e.label);
+    if (!row) rows.set(e.label, e);
+    else if (!cards.includes(row.id)) {
+      const gloss = [...new Set([row.gloss, e.gloss].flatMap((g) => g?.split(" · ") ?? []))].join(" · ");
+      rows.set(e.label, { ...row, ...(gloss ? { gloss } : {}) });
+    }
+  }
+  return [...rows.values()].slice(0, RAIL_MAX_ROWS);
 }
 
 /**

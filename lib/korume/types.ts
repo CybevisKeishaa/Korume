@@ -25,4 +25,5 @@ export interface KorumeMessageView {
   createdAt: string;
 }
 export interface PendingTurn { turnId: string; status: "running" | "retryable" }
-export interface KorumeThreadDetail { thread: KorumeThreadView; messages: KorumeMessageView[]; pendingTurns: PendingTurn[] }
+export interface SmallMemoryResult { title: string | null; lineTextJp: string | null; occurredAt: string }
+export interface KorumeThreadDetail { thread: KorumeThreadView; messages: KorumeMessageView[]; pendingTurns: PendingTurn[]; memory: SmallMemoryResult | null }

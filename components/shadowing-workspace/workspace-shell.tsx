@@ -184,8 +184,8 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
   // Ask Korume (spec §6.2): off means no mascot, no sheet, no `k`, and so no request at all. Listening hides it
   // like the drawer, because both can quote the sentence (spec §3.2).
   const korumeEnabled = preferences.companionEnabled;
-  const korume = useKorumeOverlay(rootRef);
   const mascotRef = useRef<HTMLDivElement>(null);
+  const korume = useKorumeOverlay(rootRef, mascotRef);
   const korumeVisible = korumeEnabled && !listening && session.view !== "focus" && session.fullscreen === "none";
   const openKorume = korume.openSheet;
   const closeKorume = korume.close;
@@ -262,7 +262,7 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
       {session.view !== "focus" && (
         <div className={fullTranscript ? "relative col-span-1 row-start-2 min-h-0 min-w-0 p-md" : dock ? "relative row-start-2 min-h-0 min-w-0" : "relative min-h-0 min-w-0"}>
           {children}
-          {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} onOpen={openKorume} onPress={korume.rememberSelection} />}
+          {korumeVisible && !korume.open && <KorumeMascot mascotRef={mascotRef} workspaceRef={rootRef} onOpen={openKorume} onPress={korume.rememberSelection} onMove={korume.measureLauncher} />}
         </div>
       )}
       {korumeEnabled && korume.draft && (
@@ -273,6 +273,9 @@ function WorkspaceLayout({ children }: { children: React.ReactNode }) {
           onClose={closeKorume}
           onAskCurrent={korume.askCurrent}
           onReturnFocus={returnFocusToMascot}
+          launcherRect={korume.launcherRect}
+          sizes={korume.sizes}
+          workspaceRef={rootRef}
         />
       )}
       <SelectionPopoverHost workspaceRef={rootRef} />

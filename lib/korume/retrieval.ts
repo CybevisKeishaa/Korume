@@ -40,9 +40,9 @@ export const DEFAULT_TOOLS: Record<ToolName, Tool> = {
   learner_exposure: exposureTool,
 };
 
-const TIMED_OUT = Symbol("timeout");
+export const TIMED_OUT = Symbol("timeout");
 
-function within<T>(promise: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
+export function within<T>(promise: Promise<T>, ms: number): Promise<T | typeof TIMED_OUT> {
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<typeof TIMED_OUT>((resolve) => { timer = setTimeout(() => resolve(TIMED_OUT), ms); });
   return Promise.race([promise, deadline]).finally(() => clearTimeout(timer));

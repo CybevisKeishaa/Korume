@@ -32,7 +32,7 @@ export function exampleSegments(block: Extract<Block, { type: "example" }>): { t
 
 function RunText({ run }: { run: Run }) {
   if ("jp" in run) {
-    return <span lang="ja" className="mx-2xs rounded-sm bg-muted px-2xs font-jp text-foreground">{run.jp}</span>;
+    return <span lang="ja" className="mx-2xs rounded-sm bg-primary/10 px-2xs font-jp text-primary-strong">{run.jp}</span>;
   }
   return run.strong ? <strong className="font-semibold text-foreground">{run.text}</strong> : <>{run.text}</>;
 }
@@ -48,7 +48,7 @@ function AnswerBlock({ block, entities, onFollowup }: {
       return <p className="text-foreground/90">{block.runs.map((run, i) => <RunText key={i} run={run} />)}</p>;
     case "example":
       return (
-        <figure className="rounded-lg border border-primary/20 bg-primary/5 px-md py-sm">
+        <figure className="rounded-lg border border-primary/15 bg-primary/5 px-md py-sm">
           <div className="flex flex-wrap items-baseline gap-x-sm gap-y-2xs">
             <FuriganaText className="font-jp text-body-lg text-foreground" segments={exampleSegments(block)} />
             <ListenButton text={block.jp} />
@@ -62,20 +62,17 @@ function AnswerBlock({ block, entities, onFollowup }: {
       const seen = entity.seenCount === undefined ? null
         : t(entity.seenCapped ? "ask.seenCapped" : "ask.seen", { count: entity.seenCount });
       return (
-        <aside className="flex items-start gap-sm rounded-lg border border-border bg-card px-md py-sm">
-          <span lang="ja" className="flex size-icon-lg shrink-0 items-center justify-center rounded-full bg-muted font-jp text-body-lg text-foreground">
-            {Array.from(entity.label)[0]}
-          </span>
-          <div className="min-w-0">
-            <p className="text-body font-medium text-foreground">
-              <span lang="ja" className="font-jp">{entity.label}</span>
-              {entity.reading ? <span lang="ja" className="ms-xs font-jp text-caption text-muted-foreground">{entity.reading}</span> : null}
-            </p>
-            <p className="text-caption text-muted-foreground">
-              {[entity.jlpt, seen].filter(Boolean).join(" · ")}
-            </p>
-            {block.note ? <p className="mt-2xs text-body text-foreground/80">{block.note}</p> : null}
+        <aside className="rounded-lg border border-border bg-background px-md py-sm">
+          <div className="flex items-center justify-between gap-sm">
+            <p className="text-caption font-semibold uppercase tracking-widest text-primary-strong">{t(`ask.kind.${entity.kind}`)}</p>
+            {entity.jlpt ? <span className="rounded-full bg-primary/10 px-xs text-caption font-bold text-primary-strong">{`JLPT ${entity.jlpt}`}</span> : null}
           </div>
+          <p className="mt-xs text-body-lg font-medium text-foreground">
+            <span lang="ja" className="font-jp">{entity.label}</span>
+            {entity.reading ? <span lang="ja" className="ms-xs font-jp text-caption text-muted-foreground">{entity.reading}</span> : null}
+          </p>
+          {seen ? <p className="text-caption text-muted-foreground">{seen}</p> : null}
+          {block.note ? <p className="mt-2xs text-body text-foreground/80">{block.note}</p> : null}
         </aside>
       );
     }
@@ -88,7 +85,7 @@ function AnswerBlock({ block, entities, onFollowup }: {
                 type="button"
                 onClick={() => onFollowup?.(chip)}
                 disabled={!onFollowup}
-                className="min-h-hit-target rounded-full border border-primary/30 px-sm text-caption text-primary-strong hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
+                className="min-h-hit-target rounded-full border border-primary/20 bg-primary/10 px-sm text-caption font-medium text-primary-strong hover:bg-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-60"
               >
                 {chip}
               </button>

@@ -9,16 +9,16 @@ import { readKnowledgeConfig, type KnowledgeConfig } from "@/lib/knowledge/confi
 import { creditsFor, estimateCostUsd, upperBoundCostUsdForTier } from "@/lib/knowledge/pricing";
 import { createSqlKnowledgeStore } from "@/lib/knowledge/store";
 import type { GenerationRow, KnowledgeLocale, KnowledgeStore, PlanTier } from "@/lib/knowledge/types";
-import { answerToPlainText, answerV1Schema, dropUngroundedCards } from "./answer";
+import { answerToPlainText, answerV1Schema, dropUngroundedCards, groundedEntitySchema } from "./answer";
 import { buildGroundedEntities } from "./grounding";
-import { MAX_RECENT_TURNS, TURN_RESERVATION_TTL_SECONDS } from "./limits";
+import { MAX_RECENT_TURNS, RETRIEVAL_DEADLINE_MS, TOOL_DEADLINE_MS, TURN_RESERVATION_TTL_SECONDS } from "./limits";
 import { toMessageView } from "./messages";
 import { fallbackPlan, planSchema, validatePlan, type PlanStep } from "./plan";
 import { answerInputBytesUpperBound, answerPrompt, plannerPrompt, type PromptAnchor, type RecentTurn } from "./prompts";
-import { DEFAULT_TOOLS, runRetrieval, type Tool, type ToolName } from "./retrieval";
+import { DEFAULT_TOOLS, runRetrieval, TIMED_OUT, within, type RetrievalContext, type Tool, type ToolName } from "./retrieval";
 import { sqlKorumeStore, type KorumeStore, type MessageRow } from "./store";
 import { normalizeTurnText, threadTitle } from "./text";
-import type { ExposureData } from "./tools/exposure";
+import { exposureForEntities, type ExposureData } from "./tools/exposure";
 import type { KorumeMessageView } from "./types";
 
 type Supabase = ReturnType<typeof createClient>;
@@ -48,6 +48,7 @@ export interface TurnDeps {
   tier?: PlanTier;
   tools?: Partial<Record<ToolName, Tool>>;
   clock?: { toolMs: number; stageMs: number };
+  exposureForEntities?: typeof exposureForEntities;
 }
 
 const bytes = (system: SystemBlock[], user: string) =>
@@ -182,10 +183,11 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       steps = fallbackPlan({ hasAnchor: anchor !== null });
     }
 
-    const results = await runRetrieval(steps, {
+    const retrievalCtx: RetrievalContext = {
       supabase, userId, tier, locale: input.locale,
       anchor: anchor ? { lineId: anchor.lineId, videoId: anchor.videoId, lineText: anchor.lineText, videoTitle: anchor.videoTitle } : null,
-    }, deps.tools ?? DEFAULT_TOOLS, deps.clock);
+    };
+    const results = await runRetrieval(steps, retrievalCtx, deps.tools ?? DEFAULT_TOOLS, deps.clock);
     const linkVideos = results.flatMap((r) => {
       const first = r.tool === "learner_exposure" && r.status === "ok" ? (r.data as ExposureData).firstSeen : undefined;
       return first ? [first.videoId] : [];
@@ -235,15 +237,43 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       return { status: "answer_failed" };
     }
 
-    const content = answerToPlainText(answer, grounding);
+    // R5: the planner may never have asked for exposure, so the cards the learner will see are counted here, once.
+    let sealed = grounding;
+    const asked = [...new Set(answer.blocks.flatMap((b) => (b.type === "context_card" && b.entityRef.startsWith("ent:") ? [b.entityRef] : [])))]
+      .slice(0, 4).flatMap((id) => grounding.find((e) => e.id === id) ?? []).map(({ id, label }) => ({ id, label }));
+    if (asked.length) {
+      try {
+        // One deadline for the whole sequence: the scan and the readable-video check both read the database.
+        const merged = await within((async () => {
+          const counted = await (deps.exposureForEntities ?? exposureForEntities)(retrievalCtx, asked);
+          const unchecked = [...new Set([...counted.values()].flatMap((c) => (c.firstSeen && !readable.has(c.firstSeen.videoId) ? [c.firstSeen.videoId] : [])))];
+          const nowReadable = unchecked.length ? await korume.readableVideoIds(supabase, unchecked) : new Set<string>();
+          return grounding.map((e) => {
+            const c = counted.get(e.id);
+            if (!c) return e;
+            const next = {
+              ...e, seenCount: c.seenCount, seenCapped: c.capped,
+              ...(!e.lessonLink && c.firstSeen && (readable.has(c.firstSeen.videoId) || nowReadable.has(c.firstSeen.videoId)) ? { lessonLink: c.firstSeen } : {}),
+            };
+            return groundedEntitySchema.safeParse(next).success ? next : e;
+          });
+        })(), (deps.clock ?? { toolMs: TOOL_DEADLINE_MS, stageMs: RETRIEVAL_DEADLINE_MS }).toolMs);
+        if (merged === TIMED_OUT) throw new Error("timed out");
+        sealed = merged;
+      } catch (error) {
+        console.warn(`[korume/exposure] failed: ${error instanceof Error ? error.message.slice(0, 1500) : String(error)}`);
+      }
+    }
+
+    const content = answerToPlainText(answer, sealed);
     const done = await korume.completeTurn({
       sessionId: threadId, turnId, reservationId, generationId,
       credits: tier === "plus" ? creditsFor(spentUsd, config.creditUsdUnit) : 0,
-      usd: spentUsd, content, contentJson: answer, groundingJson: grounding, title: threadTitle(text),
+      usd: spentUsd, content, contentJson: answer, groundingJson: sealed, title: threadTitle(text),
     });
     return {
       status: "answered",
-      message: { id: done.messageId, turnId, role: "assistant", text: content, answer, grounding, createdAt: new Date().toISOString() },
+      message: { id: done.messageId, turnId, role: "assistant", text: content, answer, grounding: sealed, createdAt: new Date().toISOString() },
     };
   } catch (error) {
     // Anything unexpected after the hold: give it back with what was spent, then let the route answer 500.

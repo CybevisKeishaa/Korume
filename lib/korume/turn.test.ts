@@ -46,7 +46,8 @@ let provider: AiProvider;
 function deps(over: Partial<TurnDeps> = {}): TurnDeps {
   return {
     korume, knowledge: knowledge.store, provider, config: readKnowledgeConfig({}), aiEnabled: true, tier: "free",
-    tools: { line_analysis: lineTool, knowledge_lookup: knowledgeTool }, clock: { toolMs: 50, stageMs: 80 }, ...over,
+    tools: { line_analysis: lineTool, knowledge_lookup: knowledgeTool }, clock: { toolMs: 50, stageMs: 80 },
+    exposureForEntities: async () => new Map(), ...over,
   };
 }
 const input = (over: Partial<TurnInput> = {}): TurnInput =>
@@ -94,6 +95,70 @@ describe("runTurn — the happy path", () => {
     await runTurn(input(), deps({ tier: "plus" }));
     expect(knowledge.reservations[0]?.entitlementKind).toBe("korume_plus_turn");
     expect(knowledge.charges[0]?.credits).toBe(Math.ceil((PLAN_USD + ANSWER_USD) / 0.001));
+  });
+});
+
+describe("runTurn — exposure for the answer's cards (R5)", () => {
+  it("counts exposure for the answer's card entities and stores 0 as seen 0", async () => {
+    queueHappy();
+    const exposureForEntities = vi.fn(async () => new Map([["ent:1", { seenCount: 0, capped: false }]]));
+    await runTurn(input(), deps({ exposureForEntities }));
+    // Only the grounded card is asked about; the invented ent:999 was dropped before.
+    expect(exposureForEntities).toHaveBeenCalledWith(expect.anything(), [{ id: "ent:1", label: "今日" }]);
+    expect(assistantRows()[0]?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5", seenCount: 0, seenCapped: false }]);
+  });
+
+  it("links the first line seen only when the video is readable", async () => {
+    korume.readable.add(VIDEO);
+    queueHappy();
+    const firstSeen = { videoId: VIDEO, lineId: LINE };
+    await runTurn(input(), deps({ exposureForEntities: async () => new Map([["ent:1", { seenCount: 4, capped: true, firstSeen }]]) }));
+    expect(assistantRows()[0]?.groundingJson).toMatchObject([{ seenCount: 4, seenCapped: true, lessonLink: firstSeen }]);
+  });
+
+  const OTHER = "c0000000-0000-4000-8000-000000000002";
+  const seenIn = (videoId: string) => async () => new Map([["ent:1", { seenCount: 4, capped: false, firstSeen: { videoId, lineId: LINE } }]]);
+
+  it("never links a first-seen line in a video the learner cannot read", async () => {
+    queueHappy();
+    await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    const [row] = (assistantRows()[0]?.groundingJson ?? []) as Record<string, unknown>[];
+    expect(row).toMatchObject({ seenCount: 4 });
+    expect(row).not.toHaveProperty("lessonLink");
+  });
+
+  it("links a video that the extra readable check reports readable", async () => {
+    korume.readable.add(OTHER);
+    queueHappy();
+    await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    expect(assistantRows()[0]?.groundingJson).toMatchObject([{ seenCount: 4, lessonLink: { videoId: OTHER, lineId: LINE } }]);
+  });
+
+  it("a readable check that never answers still completes the turn with grounding unchanged", async () => {
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const real = korume.readableVideoIds.bind(korume);
+    vi.spyOn(korume, "readableVideoIds").mockImplementation((s, ids) => (ids.includes(OTHER) ? new Promise(() => undefined) : real(s, ids)));
+    queueHappy();
+    const outcome = await runTurn(input(), deps({ exposureForEntities: seenIn(OTHER) }));
+    expect(outcome.status).toBe("answered");
+    expect(assistantRows()[0]?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5" }]);
+  });
+
+  it("an exposure failure still completes the turn with grounding unchanged", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    queueHappy();
+    const outcome = await runTurn(input(), deps({ exposureForEntities: async () => { throw new Error("db down"); } }));
+    expect(outcome.status).toBe("answered");
+    expect(assistantRows()[0]?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5" }]);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining("[korume/exposure]"));
+    warn.mockRestore();
+  });
+
+  it("an exposure timeout leaves the grounding unchanged", async () => {
+    queueHappy();
+    const outcome = await runTurn(input(), deps({ exposureForEntities: () => new Promise(() => undefined) }));
+    expect(outcome.status).toBe("answered");
+    expect(assistantRows()[0]?.groundingJson).not.toHaveProperty("0.seenCount");
   });
 });
 

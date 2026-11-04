@@ -560,3 +560,10 @@ affected migration steps and both acceptance criteria with what replaced each.
 **Why:** Tailwind emits no CSS for an unknown class, so nothing fails: tsc, lint, unit tests and E2E all pass, and the element falls back to an inherited or user-agent style. For `<mark>`, that fallback is black text, which on the dark card reads as an invisible word.
 **Evidence:** `practice-pronunciation`, 2026-10-19 — Task 10 coloured a mispronounced word `text-destructive`; the theme's danger token is `danger`/`danger-strong`. Every gate was green. The first owner-look screenshots showed 文 in black on the dark card. Fixed in `493fdd08` with a test pinning each grade to a real token class. In the same pass, `size-control-sm` was caught before shipping: the theme defines `control-sm` under `height`, not `size`. The pre-existing `text-destructive` in the print workspace was queued as a separate task.
 **Applies to:** every new class that names a theme token; most of all colour on a `<mark>`, `<button>` or other element with a user-agent colour.
+
+### L-054 — A `fixed` overlay inside an `isolate` root clamps to the viewport but paints under the root's siblings
+**Rule:** An overlay rendered inside a positioned, `isolate` container is bounded by that container's box, not the viewport: position it `absolute` in the container (or translate by its rect) and clamp to `clientWidth`/`clientHeight`, re-measured by a ResizeObserver on the container, not `window` resize.
+**Why:** `isolate` makes a stacking context, so the overlay's `z-40` only competes inside the root; the app nav beside the root (`--z-nav`) wins. A viewport clamp lets the overlay slide under the nav, and a nav collapse resizes the root without any window `resize` event.
+**Evidence:** `ask-korume-sheet`, 2026-11-04 — the sheet clamped to the viewport margin went ~56px under the collapsed nav at 1280; every E2E bound was the viewport, so all passed. The opus whole-branch review found it; E2E now bounds against the `shadowing-workspace` box (case 1b).
+**Applies to:** every floating element inside the workspace (sheet, mascot, popovers) and any E2E that asserts "inside the screen".
+

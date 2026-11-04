@@ -84,7 +84,8 @@ describe("AnswerBlocks", () => {
     expect(screen.getByText("bold").tagName).toBe("STRONG");
     expect(container.querySelector("rt")?.textContent).toBe("わたし");
     expect(screen.getByText("I am a student")).toBeInTheDocument();
-    expect(screen.getByText("N5 · Seen 31 times")).toBeInTheDocument();
+    expect(screen.getByText("JLPT N5")).toBeInTheDocument();
+    expect(screen.getByText("Seen 31 times")).toBeInTheDocument();
     expect(screen.getByText("Seen 3000+ times")).toBeInTheDocument();
     expect(container.querySelectorAll("aside")).toHaveLength(2);
     await userEvent.click(screen.getByRole("button", { name: "Compare に / で" }));

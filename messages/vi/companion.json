@@ -65,6 +65,8 @@
     "listen": "Nghe",
     "seen": "{count, plural, other {Đã gặp {count} lần}}",
     "seenCapped": "Đã gặp {count}+ lần",
+    "unseen": "Chưa gặp",
+    "kind": { "vocabulary": "Từ vựng", "grammar": "Ngữ pháp", "particle": "Trợ từ" },
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
     "followups": "Câu hỏi gợi ý",
@@ -76,7 +78,11 @@
       "askCurrent": "Hỏi về câu đang phát",
       "anchor": "Đang hỏi về câu này",
       "enlarge": "Phóng to Korume",
-      "shrink": "Thu nhỏ Korume"
+      "shrink": "Thu nhỏ Korume",
+      "tagline": "Một góc yên tĩnh để hiểu tiếng Nhật",
+      "allChats": "Tất cả cuộc trò chuyện",
+      "splitter": "Chia cột trò chuyện và ngữ cảnh",
+      "moveMascot": "Kéo, hoặc dùng các phím mũi tên, để di chuyển Korume"
     },
     "chat": {
       "brand": "Korume",
@@ -90,7 +96,7 @@
       "inConversation": "Trong cuộc trò chuyện này",
       "smallMemory": "Một ký ức nhỏ",
       "openMemory": "Mở Ký ức Korume",
-      "openLesson": "Mở bài học",
+      "openLessonFor": "Mở bài học: {label}",
       "disabledTitle": "Korume đã tắt",
       "disabledDescription": "Bật lại Korume trong Cài đặt để tiếp tục cuộc trò chuyện này.",
       "notFound": "Không tìm thấy cuộc trò chuyện đó. Bạn có thể bắt đầu một cuộc trò chuyện mới tại đây.",

@@ -4,7 +4,7 @@ import { staticAnalyses } from "@/lib/analysis/line-analysis";
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
 import type { AnalysisToken } from "@/lib/analysis/types";
 import type { RetrievalContext } from "../retrieval";
-import { countExposure, EXPOSURE_MAX_LINES, exposureTool, seenLines, tokenIdentity, type ExposureLine, type ProgressRow } from "./exposure";
+import { countExposure, EXPOSURE_MAX_LINES, exposureForEntities, exposureTool, seenLines, tokenIdentity, type ExposureLine, type ProgressRow } from "./exposure";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/dictionary/snapshot", () => ({ getActiveSnapshotId: vi.fn() }));
@@ -140,6 +140,37 @@ describe("exposureTool", () => {
     const supabase = createMockSupabase({ tables: { user_video_progress: () => ({ data: [], error: null }) } });
     const ctx = { supabase, userId: "u1", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;
     await expect(exposureTool({ tool: "learner_exposure", term: "は" }, ctx)).resolves.toMatchObject({ status: "ok", data: { seenCount: 0, capped: false } });
+    expect(staticAnalyses).not.toHaveBeenCalled();
+  });
+});
+
+describe("exposureForEntities", () => {
+  it("scans once, counts each ent: id by its entry, and skips tok: ids", async () => {
+    vi.mocked(staticAnalyses).mockImplementation(async (_s, ls) => new Map(ls.map((l) => [l.id, {
+      lineId: l.id, snapshotId: null, tokens: l.id === "b1" ? [tok("今日/名詞:ent:1")] : [tok("今日/名詞:ent:1"), tok("犬/名詞:ent:2")],
+    }])) as never);
+    const supabase = createMockSupabase({
+      tables: {
+        user_video_progress: () => ({ data: [{ video_id: "A", last_watched_position: 0, completed_at: "2026-10-01T00:00:00Z" }], error: null }),
+        shadowing_sessions: () => ({ data: [], error: null }),
+        transcript_lines: () => ({ data: [{ id: "a1", start_time: 1, text_jp: "x" }, { id: "b1", start_time: 2, text_jp: "y" }], error: null }),
+      },
+      rpcs: { latest_transcript_ids: () => ({ data: [{ video_id: "A", transcript_id: "tA" }], error: null }) },
+    });
+    const ctx = { supabase, userId: "u1", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;
+    const result = await exposureForEntities(ctx, [{ id: "ent:1", label: "今日" }, { id: "ent:2", label: "犬" }, { id: "ent:3", label: "猫" }, { id: "tok:は:助詞", label: "は" }]);
+    expect(vi.mocked(staticAnalyses)).toHaveBeenCalledTimes(1);
+    expect([...result.keys()]).toEqual(["ent:1", "ent:2", "ent:3"]);
+    expect(result.get("ent:1")).toMatchObject({ seenCount: 2, capped: false, firstSeen: { videoId: "A", lineId: "a1" } });
+    expect(result.get("ent:2")).toMatchObject({ seenCount: 1 });
+    expect(result.get("ent:3")).toEqual({ seenCount: 0, capped: false });
+  });
+
+  it("answers 0 for every id without reading lines when the learner has no progress", async () => {
+    const supabase = createMockSupabase({ tables: { user_video_progress: () => ({ data: [], error: null }) } });
+    const ctx = { supabase, userId: "u1", tier: "free", locale: "en", anchor: null } as unknown as RetrievalContext;
+    const result = await exposureForEntities(ctx, [{ id: "ent:1", label: "今日" }]);
+    expect(result.get("ent:1")).toEqual({ seenCount: 0, capped: false });
     expect(staticAnalyses).not.toHaveBeenCalled();
   });
 });

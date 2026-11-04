@@ -8,7 +8,8 @@ import { originRouteFor } from "@/lib/korume/route";
 import { toMessageView } from "@/lib/korume/messages";
 import { runTurn, type TurnDeps, type TurnOutcome } from "@/lib/korume/turn";
 import { sqlKorumeStore, type AnchorLine, type KorumeStore, type ReservationState, type ThreadRow } from "@/lib/korume/store";
-import type { KorumeMessageView, KorumeThreadDetail, KorumeThreadView, PendingTurn } from "@/lib/korume/types";
+import { railEntities } from "@/lib/korume/grounding";
+import type { KorumeMessageView, KorumeThreadDetail, KorumeThreadView, PendingTurn, SmallMemoryResult } from "@/lib/korume/types";
 import type { CreateThreadBody, PostTurnBody } from "@/lib/validation/korume";
 
 const THREAD_CREATE_LIMIT = { limit: 20, windowMs: 60_000 };
@@ -16,7 +17,7 @@ const THREAD_READ_LIMIT = { limit: 120, windowMs: 60_000 };
 const TURN_LIMIT = { limit: 20, windowMs: 60_000 };
 export const THREAD_PAGE_SIZE = 20;
 
-export interface SmallMemoryResult { title: string | null; lineTextJp: string | null; occurredAt: string }
+export type { SmallMemoryResult };
 
 /** The newest private journal memory that literally mentions an entity in this thread. */
 export async function smallMemoryFor(userId: string, entities: { label: string }[], supabase: ReturnType<typeof createClient>): Promise<SmallMemoryResult | null> {
@@ -171,7 +172,8 @@ export async function getThread(id: string, deps: Deps = {}): Promise<GetThreadR
   const userTurns = [...new Set(rows.filter((m) => m.role === "user" && m.turnId).map((m) => m.turnId as string))];
   const open = userTurns.filter((t) => !answered.has(t));
   const states = open.length ? await store.reservationStates(open) : new Map<string, ReservationState>();
-  return { kind: "ok", detail: { thread: threadView(row, lines), messages, pendingTurns: pendingTurnsFor(userTurns, answered, states) } };
+  const memory = await smallMemoryFor(gate.userId, railEntities(messages), gate.supabase);
+  return { kind: "ok", detail: { thread: threadView(row, lines), messages, pendingTurns: pendingTurnsFor(userTurns, answered, states), memory } };
 }
 
 export type PostTurnResult = GateRefusal | RateLimited | TurnOutcome | { status: "not_found" };

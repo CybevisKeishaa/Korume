@@ -1,8 +1,7 @@
 import { z } from "zod";
 import { KorumeChatPage } from "@/components/korume/korume-chat-page";
-import { smallMemoryFor, getThread, listThreads } from "@/lib/data/korume";
+import { getThread, listThreads } from "@/lib/data/korume";
 import { korumeGate } from "@/lib/korume/gate";
-import { unionGrounding } from "@/lib/korume/grounding";
 import { redirect } from "@/lib/i18n";
 
 const threadIdSchema = z.string().uuid();
@@ -24,14 +23,13 @@ export default async function KorumeChatRoute({ searchParams, params }: { search
     listThreads(null).catch(() => null),
   ]);
   const detail = result?.kind === "ok" ? result.detail : null;
-  const memory = await smallMemoryFor(gate.userId, unionGrounding(detail?.messages ?? []), gate.supabase);
   return (
     // Not keyed here: KorumeChatPage keys its conversation itself, so the thread a free chat creates is not remounted.
     <KorumeChatPage
       detail={detail}
       threads={threads?.kind === "ok" ? threads.threads : []}
       nextCursor={threads?.kind === "ok" ? threads.nextCursor : null}
-      memory={memory}
+      memory={detail?.memory ?? null}
       disabled={false}
       unavailable={false}
       notFound={requested !== undefined && detail === null}

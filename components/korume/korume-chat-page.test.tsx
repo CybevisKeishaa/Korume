@@ -14,7 +14,7 @@ const THREAD = "00000000-0000-4000-8000-000000000001";
 const anchor = { videoId: "video", videoTitle: "Particles", lineId: "line", lineText: "私は学生です", translation: "I am a student.", startTime: 12, span: null };
 const thread = (over: Partial<KorumeThreadDetail["thread"]> = {}): KorumeThreadDetail["thread"] => ({ id: THREAD, title: null, anchor: null, originRoute: null, updatedAt: "2026-10-03T00:00:00.000Z", ...over });
 const answer = (turnId: string, grounding: GroundedEntity[]): KorumeMessageView => ({ id: `ai:${turnId}`, turnId, role: "assistant", text: "", answer: { blocks: [{ type: "paragraph", runs: [{ text: "Because." }] }] } as never, grounding, createdAt: "2026-10-03T00:00:01.000Z" });
-const detailWith = (over: Partial<KorumeThreadDetail["thread"]> = {}, messages: KorumeMessageView[] = []): KorumeThreadDetail => ({ thread: thread(over), messages, pendingTurns: [] });
+const detailWith = (over: Partial<KorumeThreadDetail["thread"]> = {}, messages: KorumeMessageView[] = []): KorumeThreadDetail => ({ thread: thread(over), messages, pendingTurns: [], memory: null });
 const page = (props: Partial<Parameters<typeof KorumeChatPage>[0]> = {}) => <KorumeChatPage detail={null} threads={[]} nextCursor={null} memory={null} disabled={false} notFound={false} {...props} />;
 const referrer = (value: string) => Object.defineProperty(document, "referrer", { value, configurable: true });
 const wa: GroundedEntity = { id: "ent:wa", label: "は", kind: "particle", seenCount: 3 };
@@ -86,6 +86,10 @@ describe("KorumeChatPage", () => {
       render(page({ detail: detailWith({}, [answer("t1", [{ id: "ent:x", label: "x", kind: "particle" }])]) }));
       expect(screen.queryByText(/You've seen/)).toBeNull();
     });
+    it("no grounding line for seen 0", () => {
+      render(page({ detail: detailWith({}, [answer("t1", [{ ...wa, seenCount: 0, seenCapped: false }])]) }));
+      expect(screen.queryByText(/You've seen/)).toBeNull();
+    });
     it("counts Shadowing LINES with a plural, from the latest answer", () => {
       render(page({ detail: detailWith({}, [answer("t1", [{ ...wa, seenCount: 1 }]), answer("t2", [wa])]) }));
       expect(screen.getByText("You've seen は in 3 Shadowing lines.")).toBeInTheDocument();
@@ -98,12 +102,14 @@ describe("KorumeChatPage", () => {
 
   it("adds the grounding of a turn answered on this page to the rail", async () => {
     vi.mocked(fetch).mockImplementationOnce(async (_url, init) => new Response(JSON.stringify({ message: answer(JSON.parse(String(init?.body)).turnId, [{ id: "ent:ga", label: "が", kind: "particle", seenCount: 2 }]) }), { status: 200 }));
-    render(page({ detail: detailWith({}, [answer("t1", [wa])]) }));
-    const rail = screen.getByRole("complementary");
-    expect(within(rail).queryByText("が")).toBeNull();
+    // R4: the rail shows what an answer's card names or the learner asked about, not every grounded entity.
+    const carded = { ...answer("t1", [wa]), answer: { blocks: [{ type: "context_card", entityRef: "ent:wa" }] } as never };
+    render(page({ detail: detailWith({}, [carded]) }));
+    const rail = screen.getByRole("complementary", { name: "Learning context" });
+    expect(within(rail).queryAllByText("が")).toHaveLength(0);
     await userEvent.type(screen.getByRole("textbox"), "What about が?{Enter}");
-    expect(await within(rail).findByText("が")).toBeInTheDocument();
-    expect(within(rail).getByText("は")).toBeInTheDocument();
+    expect(await within(rail).findAllByText("が")).not.toHaveLength(0);
+    expect(within(rail).getAllByText("は")).not.toHaveLength(0);
     // …and the cached server payload is dropped, so returning to this thread shows the new turn.
     expect(refresh).toHaveBeenCalledOnce();
   });
