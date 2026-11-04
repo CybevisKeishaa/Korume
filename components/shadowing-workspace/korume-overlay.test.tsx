@@ -109,13 +109,21 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     expect(sheet()).toBeNull();
   });
 
-  it("Escape from the splitter in the large layout moves focus to the composer, not the body", () => {
+  it("Escape from the splitter or the rail in the large layout moves focus to the composer, not the body", () => {
     mount();
     fireEvent.click(mascot() as HTMLElement);
     fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
     const splitter = screen.getByRole("separator", { name: "Resize chat and context" });
     splitter.focus();
     fireEvent.keyDown(splitter, { key: "Escape" });
+    expect(sheet()).toHaveAttribute("data-layout", "small");
+    expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Message Korume" }));
+    // The same from inside the rail.
+    fireEvent.click(screen.getByRole("button", { name: "Enlarge Korume" }));
+    const rail = (sheet() as HTMLElement).querySelector<HTMLElement>("[data-korume-rail]") as HTMLElement;
+    rail.tabIndex = -1;
+    rail.focus();
+    fireEvent.keyDown(rail, { key: "Escape" });
     expect(sheet()).toHaveAttribute("data-layout", "small");
     expect(document.activeElement).toBe(screen.getByRole("textbox", { name: "Message Korume" }));
   });

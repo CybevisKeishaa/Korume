@@ -16,7 +16,8 @@ describe("KorumeRail", () => {
     expect(screen.getByText("ピン留")).toHaveAttribute("aria-hidden", "true");
     // The tile cuts a long label; the row shows it whole, visibly, before the meaning.
     expect(screen.getByText("ピン留め")).not.toHaveClass("sr-only");
-    expect(screen.getByText("ピン留め").parentElement).toHaveTextContent("ピン留め — pinning");
+    expect(screen.getByText("ピン留め").nextElementSibling).toHaveTextContent("pinning");
+    expect(screen.getByText("ピン留め")).not.toHaveClass("line-clamp-2");
     expect(screen.getByText("JLPT N3 · Seen 3 times")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Open lesson: ピン留め" })).toHaveAttribute("href", "/en/shadowing/v?line=l");
     expect(screen.getByText("Not seen yet")).toBeInTheDocument();

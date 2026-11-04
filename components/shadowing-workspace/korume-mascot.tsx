@@ -126,7 +126,8 @@ export function KorumeMascot({ onOpen, onPress, onMove, mascotRef, workspaceRef 
       const home = cell.getBoundingClientRect();
       const box = el.getBoundingClientRect();
       const margin = tokenPixels(document.body, "--space-md");
-      place(storedPoint() ?? { x: home.right - box.width - margin, y: home.bottom - box.height - margin });
+      // No stored spot (private mode) keeps where it was dragged this mount; never snaps back home on a resize.
+      place(storedPoint() ?? posRef.current ?? { x: home.right - box.width - margin, y: home.bottom - box.height - margin });
     };
     settle();
     // The root, not the window: a nav collapse or expand resizes the workspace without a window resize.

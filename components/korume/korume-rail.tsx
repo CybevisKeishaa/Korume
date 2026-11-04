@@ -34,10 +34,9 @@ function EntityRow({ entity }: { entity: GroundedEntity }) {
         {glyph.slice(0, 3).join("")}
       </span>
       <div className="min-w-0 flex-1">
-        <p className="line-clamp-2 text-caption text-muted-foreground">
-          <span lang="ja" className="font-jp text-body text-foreground">{entity.label}</span>
-          {meaning ? <> — {meaning}</> : null}
-        </p>
+        {/* The label is never clamped: only the meaning gives way to a narrow rail. */}
+        <p lang="ja" className="break-words font-jp text-body text-foreground">{entity.label}</p>
+        {meaning ? <p className="line-clamp-2 text-caption text-muted-foreground">{meaning}</p> : null}
         {meta ? <p className="text-caption text-muted-foreground">{meta}</p> : null}
       </div>
       {lesson ? (
