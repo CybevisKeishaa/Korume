@@ -46,6 +46,14 @@ chat column to Figma `215:15164`, quiet scrollbars.
 - Owner: Claude
 - `.env.local` copied from main; `npm ci` done in the worktree.
 
+## Owner calls (decided 2026-11-04, owner: "follow your recommendation")
+
+- WCAG 2.2 SC 2.5.7: the sheet's drag-move and drag-resize have single-pointer alternatives (Enlarge/Shrink toggles
+  size and place; Close + the mascot reopens beside it). The mascot's spot is a convenience; arrow keys move it. No
+  extra control built.
+- Mascot hint: "Drag, or use the arrow keys, to move Korume" / "Kéo, hoặc dùng các phím mũi tên, để di chuyển Korume".
+- vi `ask.kind.*`: kept Từ vựng / Ngữ pháp / Trợ từ (standard terms; 助詞 = trợ từ).
+
 ## Blockers
 
 ## Next actions

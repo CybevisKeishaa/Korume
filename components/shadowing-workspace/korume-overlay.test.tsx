@@ -201,7 +201,7 @@ describe("Ask Korume in the Shadowing workspace (spec §6.2)", () => {
     it("moves by --space-md per arrow key, remembers it, and describes the gesture", () => {
       mount();
       const button = mascot() as HTMLElement;
-      expect(button).toHaveAccessibleDescription("Drag to move Korume");
+      expect(button).toHaveAccessibleDescription("Drag, or use the arrow keys, to move Korume");
       fireEvent.keyDown(button, { key: "ArrowRight" });
       fireEvent.keyDown(button, { key: "ArrowDown" });
       const wrapper = screen.getByTestId("korume-mascot");
