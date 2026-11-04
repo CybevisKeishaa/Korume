@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, type CSSProperties, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent } from "react";
+import { useCallback, type CSSProperties, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent as ReactKeyboardEvent, type MutableRefObject, type PointerEvent as ReactPointerEvent, type RefObject } from "react";
 import { Link, useTranslations } from "@/lib/i18n";
 import { railEntities } from "@/lib/korume/grounding";
 import { besideLauncher, centred, clampRail, clampRect, resizeRect, type Edge, type Rect, type SheetBounds } from "@/lib/korume/sheet-geometry";
@@ -59,14 +59,15 @@ function storedRail(): number | null {
 }
 
 /**
- * Korume beside the transcript (spec §5.1, §6.2): a non-modal, fixed sheet with an inline rect that the learner drags
+ * Korume beside the transcript (spec §5.1, §6.2): a non-modal sheet, absolute in the workspace root (so it never slides
+ * under the app nav; rects are workspace-local), with an inline rect that the learner drags
  * by the header and resizes by any edge or corner. One sheet, two layouts: below the breakpoint width it is the small
- * chat beside the mascot, at or above it the large one (chat + Learning context) centred in the viewport. The player
+ * chat beside the mascot, at or above it the large one (chat + Learning context) centred in the workspace. The player
  * is never wrapped, resized or remounted, and neither is the thread: a toggle only moves the rect. The anchor is fixed
  * for the life of the draft. Kept mounted while closed, so reopening returns to the thread — but every open starts
  * small beside the mascot, at the last small size used (R1).
  */
-export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus, launcherRect, sizes }: {
+export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus, launcherRect, sizes, workspaceRef }: {
   open: boolean;
   anchor: DraftAnchor;
   onClose: () => void;
@@ -77,6 +78,8 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   launcherRect: () => Rect | null;
   /** Last small and large size of this workspace mount; shared with the overlay hook so a new draft keeps them. */
   sizes: MutableRefObject<SheetSizes | null>;
+  /** The positioned workspace root the sheet lives in and is clamped to. */
+  workspaceRef: RefObject<HTMLElement>;
 }) {
   const t = useTranslations("companion");
   const { video, lines } = useLesson();
@@ -103,12 +106,18 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   const saveRail = () => { try { if (railRef.current !== null) localStorage.setItem(RAIL_KEY, String(railRef.current)); } catch { /* private mode: kept for this open only */ } };
 
   const commit = useCallback((next: Rect) => { rectRef.current = next; setRect(next); }, []);
-  const bounds = useCallback((): SheetBounds => ({ vw: window.innerWidth, vh: window.innerHeight, ...(metrics.current as Metrics) }), []);
+  /** A drag takes over from a running glide: no transition under the pointer. */
+  const stopGlide = () => { clearTimeout(glideTimer.current); setGliding(false); };
+  // An unlaid-out root (jsdom) measures 0: the window stands in.
+  const bounds = useCallback((): SheetBounds => ({ vw: workspaceRef.current?.clientWidth || window.innerWidth, vh: workspaceRef.current?.clientHeight || window.innerHeight, ...(metrics.current as Metrics) }), [workspaceRef]);
   const isLarge = (r: Rect | null) => r !== null && metrics.current !== null && r.w >= metrics.current.breakpoint;
   const beside = useCallback((size: Size): Rect => {
     const b = bounds();
-    return besideLauncher(size, launcherRect() ?? { x: b.vw - b.margin, y: b.vh - b.margin, w: 0, h: 0 }, b);
-  }, [bounds, launcherRect]);
+    const l = launcherRect();
+    // The launcher rect is in viewport px; the sheet's are workspace-local.
+    const origin = workspaceRef.current?.getBoundingClientRect() ?? { left: 0, top: 0 };
+    return besideLauncher(size, l ? { ...l, x: l.x - origin.left, y: l.y - origin.top } : { x: b.vw - b.margin, y: b.vh - b.margin, w: 0, h: 0 }, b);
+  }, [bounds, launcherRect, workspaceRef]);
   /** The first small and large sizes are the tokens; after that, whatever the learner last left them at. */
   const remember = useCallback((r: Rect) => {
     const m = metrics.current;
@@ -141,13 +150,16 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   }, [beside, commit, open, setRail, sizes]);
   useEffect(() => {
     if (!open) return;
-    const onResize = () => {
+    const root = workspaceRef.current;
+    if (!root) return;
+    // The root, not the window: a nav collapse or expand resizes the workspace without a window resize.
+    const observer = new ResizeObserver(() => {
       metrics.current = resolveMetrics();
       if (rectRef.current) commit(clampRect(rectRef.current, bounds()));
-    };
-    window.addEventListener("resize", onResize);
-    return () => window.removeEventListener("resize", onResize);
-  }, [bounds, commit, open]);
+    });
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [bounds, commit, open, workspaceRef]);
   useEffect(() => () => clearTimeout(glideTimer.current), []);
   // A sheet that closes or unmounts mid-drag (a disabled notice, a hidden workspace) must not leave the page unselectable.
   useEffect(() => {
@@ -187,6 +199,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   const startDrag = (event: ReactPointerEvent<HTMLElement>, edge: Edge | null) => {
     const start = rectRef.current;
     if (event.button !== 0 || !start || (edge === null && (event.target as HTMLElement).closest("button, a"))) return;
+    stopGlide();
     event.currentTarget.setPointerCapture?.(event.pointerId);
     document.body.style.userSelect = "none";
     drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, start, edge, wasLarge: isLarge(start) };
@@ -222,6 +235,7 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
   const splitterDown = (event: ReactPointerEvent<HTMLElement>) => {
     const start = rectRef.current;
     if (event.button !== 0 || !start) return;
+    stopGlide();
     event.currentTarget.setPointerCapture?.(event.pointerId);
     document.body.style.userSelect = "none";
     drag.current = { id: event.pointerId, x: event.clientX, y: event.clientY, start, edge: null, wasLarge: true, rail: railW };
@@ -269,10 +283,12 @@ export function KorumeSheet({ open, anchor, onClose, onAskCurrent, onReturnFocus
       onKeyDown={(event) => {
         if (event.key !== "Escape") return;
         event.preventDefault();
-        if (large) toggle();
-        else onClose();
+        if (!large) return onClose();
+        toggle();
+        // Small has no rail or splitter: focus held there would fall to the body.
+        if ((event.target as HTMLElement).closest("[data-korume-rail], [role='separator']")) sheetRef.current?.querySelector<HTMLTextAreaElement>("[data-korume-composer]")?.focus();
       }}
-      className={`${open ? "flex" : "hidden"} fixed z-40 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-overlay`}
+      className={`${open ? "flex" : "hidden"} absolute z-40 flex-col overflow-hidden rounded-lg border border-border bg-background shadow-overlay`}
       style={rect ? { left: rect.x, top: rect.y, width: rect.w, height: rect.h } : undefined}
     >
       <header

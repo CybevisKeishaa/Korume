@@ -85,12 +85,14 @@ const storedPoint = () => { try { return parseStoredPoint(localStorage.getItem(L
  * (never over the video). Dragged by the pointer, nudged by the arrow keys; a drag ends without opening the sheet.
  * Drag listeners sit on window, not the wrapper — pointer capture would retarget the click that opens away from the button.
  */
-export function KorumeMascot({ onOpen, onPress, onMove, mascotRef }: {
+export function KorumeMascot({ onOpen, onPress, onMove, mascotRef, workspaceRef }: {
   onOpen: () => void;
   onPress: () => void;
   /** Called after the mascot has moved, so the sheet's launcher rect follows it. */
   onMove: () => void;
   mascotRef: RefObject<HTMLDivElement>;
+  /** The workspace root: the mascot stays inside it, as the sheet does. */
+  workspaceRef: RefObject<HTMLElement>;
 }) {
   const t = useTranslations("companion");
   const hintId = useId();
@@ -106,13 +108,13 @@ export function KorumeMascot({ onOpen, onPress, onMove, mascotRef }: {
     const box = el.getBoundingClientRect();
     // Inside the workspace, not the bare viewport: the app's side navigation is above the mascot and would hide it
     // where it could no longer be grabbed.
-    const area = el.parentElement?.parentElement?.getBoundingClientRect() ?? new DOMRect(0, 0, window.innerWidth, window.innerHeight);
+    const area = workspaceRef.current?.getBoundingClientRect() ?? new DOMRect(0, 0, window.innerWidth, window.innerHeight);
     const inside = clampPoint({ x: wanted.x - area.left, y: wanted.y - area.top }, { w: box.width, h: box.height }, { vw: Math.min(area.width || window.innerWidth, window.innerWidth), vh: Math.min(area.height || window.innerHeight, window.innerHeight), margin: tokenPixels(document.body, "--space-md") });
     const next = { x: inside.x + area.left, y: inside.y + area.top };
     posRef.current = next;
     setPos(next);
     if (save) try { localStorage.setItem(LAUNCHER_KEY, JSON.stringify(next)); } catch { /* private mode: kept for this mount only */ }
-  }, [mascotRef]);
+  }, [mascotRef, workspaceRef]);
 
   // Remembered spot, else the old one: the transcript cell's bottom right. A stored value is only ever clamped for
   // display, so a window that grows again gives it back.
@@ -127,9 +129,13 @@ export function KorumeMascot({ onOpen, onPress, onMove, mascotRef }: {
       place(storedPoint() ?? { x: home.right - box.width - margin, y: home.bottom - box.height - margin });
     };
     settle();
-    window.addEventListener("resize", settle);
-    return () => window.removeEventListener("resize", settle);
-  }, [mascotRef, place]);
+    // The root, not the window: a nav collapse or expand resizes the workspace without a window resize.
+    const root = workspaceRef.current;
+    if (!root) return;
+    const observer = new ResizeObserver(settle);
+    observer.observe(root);
+    return () => observer.disconnect();
+  }, [mascotRef, place, workspaceRef]);
   useLayoutEffect(() => { if (pos) onMove(); }, [onMove, pos]);
   useEffect(() => () => stopDrag.current?.(), []);
 

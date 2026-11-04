@@ -267,8 +267,8 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  /* Ask Korume's popup (spec 2026-10-03 §6.2, owner ruling: a floating popup, not a full-height sheet):
-     min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
+  /* Ask Korume's resizable sheet (spec 2026-10-31 §5.1): opens small beside the mascot, toggles to large centred in
+     the workspace; the learner resizes it down to the min size. Small and large are the starting sizes only. */
   --korume-small-w: calc(400 * var(--density-unit));
   --korume-small-h: calc(560 * var(--density-unit));
   --korume-large-w: calc(1040 * var(--density-unit));
@@ -489,8 +489,8 @@
   --workspace-divider-width: calc(8 * var(--density-unit));
   --workspace-pip-width: calc(320 * var(--density-unit));
   --workspace-pip-clearance: calc(320 * var(--density-unit));
-  /* Ask Korume's popup (spec 2026-10-03 §6.2, owner ruling: a floating popup, not a full-height sheet):
-     min(400px, 40vw) wide, never narrower than 340px; 420px tall at most, always inside the transcript column. */
+  /* Ask Korume's resizable sheet (spec 2026-10-31 §5.1): opens small beside the mascot, toggles to large centred in
+     the workspace; the learner resizes it down to the min size. Small and large are the starting sizes only. */
   --korume-small-w: calc(400 * var(--density-unit));
   --korume-small-h: calc(560 * var(--density-unit));
   --korume-large-w: calc(1040 * var(--density-unit));

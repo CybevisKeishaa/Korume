@@ -5,7 +5,7 @@ import { seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data
 
 /**
  * The resizable, movable Ask Korume sheet (spec §5.1, §6): where it opens, how handles and the header move it, how it
- * toggles, and that none of it touches the thread or the player. Run at the owner viewport (1280×529) and a roomier 1280×672.
+ * toggles, and that none of it touches the thread or the player. Every bound is the workspace box, which starts right of the app nav. Run at the owner viewport (1280×529) and a roomier 1280×672.
  */
 let data: WorkspaceData;
 test.beforeAll(async () => { data = await seedWorkspaceData(); });
@@ -26,6 +26,9 @@ const handle = (page: Page, edge: string) => page.locator(`[data-korume-handle="
 const centreOf = async (target: Locator) => { const b = await box(target); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
 const header = (page: Page) => sheet(page).locator("[data-korume-drag]");
 const title = (page: Page) => sheet(page).getByRole("heading", { name: "Korume" });
+/** The sheet and the mascot live inside the workspace (right of the app nav), not the bare viewport. */
+const workspace = (page: Page) => box(page.getByTestId("shadowing-workspace"));
+const offCentre = async (page: Page) => { const [b, w] = [await box(sheet(page)), await workspace(page)]; return Math.abs(b.x + b.width / 2 - (w.x + w.width / 2)); };
 
 /** Press at `from`, move by (dx, dy) in steps; `release` false leaves the button down for a mid-drag look. */
 async function dragBy(page: Page, from: { x: number; y: number }, dx: number, dy: number, release = true) {
@@ -55,20 +58,32 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
   test.describe(`sheet at ${viewport.width}×${viewport.height}`, () => {
     test.use({ viewport });
 
-    test("1 · opens small beside the mascot, inside the viewport", async ({ page }) => {
+    test("1 · opens small beside the mascot, inside the workspace", async ({ page }) => {
       const mascot = await openSheet(page);
       const margin = await tokenPx(page, "--space-md");
       const b = await box(sheet(page));
-      expect(b.x).toBeGreaterThanOrEqual(margin - 1);
-      expect(b.y).toBeGreaterThanOrEqual(margin - 1);
-      expect(b.x + b.width).toBeLessThanOrEqual(viewport.width - margin + 1);
-      expect(b.y + b.height).toBeLessThanOrEqual(viewport.height - margin + 1);
+      const w = await workspace(page);
+      expect(b.x).toBeGreaterThanOrEqual(w.x + margin - 1);
+      expect(b.y).toBeGreaterThanOrEqual(w.y + margin - 1);
+      expect(b.x + b.width).toBeLessThanOrEqual(w.x + w.width - margin + 1);
+      expect(b.y + b.height).toBeLessThanOrEqual(w.y + w.height - margin + 1);
       expect(Math.abs(b.x + b.width - (mascot.x + mascot.width))).toBeLessThanOrEqual(margin + 1);
       // Taller than the room above the mascot (the owner viewport): the sheet is clamped to the top margin instead.
       if (b.y > margin + 1) expect(Math.abs(b.y + b.height - (mascot.y + mascot.height))).toBeLessThanOrEqual(margin + 1);
       else expect(b.y + b.height).toBeGreaterThanOrEqual(mascot.y + mascot.height - 1);
       expect(b.width).toBeCloseTo(await tokenPx(page, "--korume-small-w"), 0);
-      expect(b.height).toBeCloseTo(Math.min(await tokenPx(page, "--korume-small-h"), viewport.height - 2 * margin), 0);
+      expect(b.height).toBeCloseTo(Math.min(await tokenPx(page, "--korume-small-h"), w.height - 2 * margin), 0);
+    });
+
+    test("1b · dragged at the top-left corner, the sheet stops at the workspace margin, clear of the app nav", async ({ page }) => {
+      await openSheet(page);
+      const margin = await tokenPx(page, "--space-md");
+      await dragBy(page, await centreOf(title(page)), -3000, -3000);
+      const b = await box(sheet(page));
+      const w = await workspace(page);
+      expect(w.x).toBeGreaterThan(0); // the app nav takes the left of the viewport
+      expect(Math.abs(b.x - (w.x + margin))).toBeLessThanOrEqual(1);
+      expect(Math.abs(b.y - (w.y + margin))).toBeLessThanOrEqual(1);
     });
 
     test("2 · the se handle grows the box and the w handle keeps the right edge", async ({ page }) => {
@@ -96,7 +111,7 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       expect(Math.abs(mid.x - before.x)).toBeLessThanOrEqual(1);
       await page.mouse.up();
       await expect(sheet(page)).toHaveAttribute("data-layout", "large");
-      await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width / 2 - viewport.width / 2); }).toBeLessThanOrEqual(2);
+      await expect.poll(() => offCentre(page)).toBeLessThanOrEqual(2);
     });
 
     test("4 · the header moves the sheet, a header button does not", async ({ page }) => {
@@ -118,7 +133,7 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       const margin = await tokenPx(page, "--space-md");
       await title(page).dblclick();
       await expect(sheet(page)).toHaveAttribute("data-layout", "large");
-      await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width / 2 - viewport.width / 2); }).toBeLessThanOrEqual(2);
+      await expect.poll(() => offCentre(page)).toBeLessThanOrEqual(2);
       await title(page).dblclick();
       await expect(sheet(page)).toHaveAttribute("data-layout", "small");
       await expect.poll(async () => { const b = await box(sheet(page)); return Math.abs(b.x + b.width - (mascot.x + mascot.width)); }).toBeLessThanOrEqual(margin + 1);
@@ -132,7 +147,7 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       // Below 1024px wide the workspace hides Korume altogether, so 1024 is the narrowest reachable width.
       await page.setViewportSize({ width: 1024, height: viewport.height });
       const sheetBox = page.getByTestId("korume-sheet");
-      await expect.poll(async () => { const b = await box(sheetBox); return b.x >= 0 && b.y >= 0 && b.x + b.width <= 1024 && b.y + b.height <= viewport.height; }).toBe(true);
+      await expect.poll(async () => { const [b, w] = [await box(sheetBox), await workspace(page)]; return b.x >= w.x && b.y >= w.y && b.x + b.width <= w.x + w.width && b.y + b.height <= w.y + w.height; }).toBe(true);
       const b = await box(sheetBox);
       const breakpoint = await tokenPx(page, "--korume-breakpoint");
       await expect(sheetBox).toHaveAttribute("data-layout", b.width >= breakpoint ? "large" : "small");
@@ -143,9 +158,9 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       await page.emulateMedia({ reducedMotion: "reduce" });
       await openSheet(page);
       await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+      expect(await sheet(page).getAttribute("data-gliding")).toBeNull(); // read at once: a glide would be set by now
       expect(await sheet(page).evaluate((el) => el.getAnimations().length)).toBe(0);
-      const b = await box(sheet(page));
-      expect(Math.abs(b.x + b.width / 2 - viewport.width / 2)).toBeLessThanOrEqual(2);
+      expect(await offCentre(page)).toBeLessThanOrEqual(2);
     });
 
     test("8 · the thread and the player survive toggling", async ({ page }) => {
@@ -261,7 +276,7 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       expect(b.x + b.width).toBeGreaterThan(corner.x + corner.width);
     });
 
-    test("13 · a stored position from a bigger window is clamped into the viewport", async ({ page }) => {
+    test("13 · a stored position from a bigger window is clamped into the workspace", async ({ page }) => {
       await registerLearner(data, page, "e2e_korume_sheet_clamp");
       await openLessonAt(data, page, 3);
       await page.evaluate(() => localStorage.setItem("korume.launcher", JSON.stringify({ x: 5000, y: 3000 })));
@@ -269,10 +284,11 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
       await expect(page.getByTestId("korume-mascot")).toBeVisible();
       const margin = await tokenPx(page, "--space-md");
       const b = await mascotBox(page);
-      expect(b.x).toBeGreaterThanOrEqual(margin - 3);
-      expect(b.y).toBeGreaterThanOrEqual(margin - 3);
-      expect(b.x + b.width).toBeLessThanOrEqual(viewport.width - margin + 3);
-      expect(b.y + b.height).toBeLessThanOrEqual(viewport.height - margin + 3);
+      const w = await workspace(page);
+      expect(b.x).toBeGreaterThanOrEqual(w.x + margin - 3);
+      expect(b.y).toBeGreaterThanOrEqual(w.y + margin - 3);
+      expect(b.x + b.width).toBeLessThanOrEqual(w.x + w.width - margin + 3);
+      expect(b.y + b.height).toBeLessThanOrEqual(w.y + w.height - margin + 3);
     });
   });
 }

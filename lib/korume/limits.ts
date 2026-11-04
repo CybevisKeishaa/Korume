@@ -10,7 +10,7 @@ export const RETRIEVAL_DEADLINE_MS = 4_000;
 export const TURN_RESERVATION_TTL_SECONDS = 180;
 export const MAX_RECENT_TURNS = 6;
 
-/** Planner + answer, each up to the provider timeout, plus the retrieval stage between them. */
+/** Planner + answer, each up to the provider timeout, the retrieval stage between them, and the post-answer exposure pass. */
 export function turnLifetimeUpperBoundMs(): number {
-  return 2 * PROVIDER_TIMEOUT_MS + RETRIEVAL_DEADLINE_MS;
+  return 2 * PROVIDER_TIMEOUT_MS + RETRIEVAL_DEADLINE_MS + TOOL_DEADLINE_MS;
 }

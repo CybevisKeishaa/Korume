@@ -15,7 +15,7 @@ export function clock(seconds: number): string {
   return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
 }
 
-/** One row: glyph tile, meaning (Vietnamese when ready, R6), `JLPT Nx · seen N`, and a chevron to the lesson when there is one. */
+/** One row: glyph tile (decorative, first three characters), the full label then its meaning (Vietnamese when ready, R6), `JLPT Nx · seen N`, and a chevron to the lesson when there is one. */
 function EntityRow({ entity }: { entity: GroundedEntity }) {
   const t = useTranslations("companion");
   // A collapsed homograph row joins glosses with " · " and keeps the stored English.
@@ -30,12 +30,14 @@ function EntityRow({ entity }: { entity: GroundedEntity }) {
   const lesson = entity.lessonLink;
   return (
     <li className="flex items-center gap-md rounded-full border border-border bg-card px-md py-sm">
-      <span lang="ja" className={`flex h-control-md aspect-square shrink-0 items-center justify-center rounded-full bg-muted font-jp ${glyph.length > 2 ? "text-caption" : "text-body"} text-foreground`}>
-        <span aria-hidden="true">{glyph.slice(0, 3).join("")}</span>
-        <span className="sr-only">{entity.label}</span>
+      <span aria-hidden="true" lang="ja" className={`flex h-control-md aspect-square shrink-0 items-center justify-center rounded-full bg-muted font-jp ${glyph.length > 2 ? "text-caption" : "text-body"} text-foreground`}>
+        {glyph.slice(0, 3).join("")}
       </span>
       <div className="min-w-0 flex-1">
-        {meaning ? <p className="line-clamp-2 text-caption text-muted-foreground">{meaning}</p> : null}
+        <p className="line-clamp-2 text-caption text-muted-foreground">
+          <span lang="ja" className="font-jp text-body text-foreground">{entity.label}</span>
+          {meaning ? <> — {meaning}</> : null}
+        </p>
         {meta ? <p className="text-caption text-muted-foreground">{meta}</p> : null}
       </div>
       {lesson ? (
