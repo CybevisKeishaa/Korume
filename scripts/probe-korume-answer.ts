@@ -39,6 +39,7 @@ const planner = plannerPrompt({ question, anchor, recent: [] });
 let http400 = false;
 for (let i = 1; i <= runs; i++) {
   let status = "ok", types = "", out: number | string = "n/a", kind: AnswerKind = "explain";
+  let plannerErr = false, t0 = Date.now(), ms = 0, chips = "";
   let n = 0, h1 = 0, table = false, check = false, numbered = false, followups = false;
   try {
     try {
@@ -47,7 +48,12 @@ for (let i = 1; i <= runs; i++) {
         planSchema,
       );
       kind = planKind(plan.parsed);
-    } catch { /* planner failure never fails a turn: explain */ }
+    } catch (e) {
+      // planner failure never fails a turn: explain; a 400 is a schema bug and must still fail the probe
+      plannerErr = true;
+      if (/400|INVALID_ARGUMENT/.test(e instanceof Error ? e.message : String(e))) http400 = true;
+    }
+    t0 = Date.now();
     const { system, user } = answerPrompt({
       question, locale: "vi", anchor, recent: [], retrieval: [], entities: [], depth: { tier, kind, maxBlocks },
     });
@@ -63,7 +69,10 @@ for (let i = 1; i <= runs; i++) {
     table = blocks.some((b) => b.type === "table");
     check = blocks.some((b) => b.type === "list" && b.style === "check");
     numbered = blocks.some((b) => b.type === "list" && b.style === "number");
-    followups = blocks.at(-1)?.type === "followups";
+    ms = Date.now() - t0;
+    const last = blocks.at(-1);
+    followups = last?.type === "followups";
+    if (last?.type === "followups") chips = last.chips.map((c) => [...c].length).join(",");
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     if (e instanceof AiError && e.kind === "invalid_output") status = "invalid";
@@ -73,6 +82,6 @@ for (let i = 1; i <= runs; i++) {
     }
     types = msg.slice(0, 300);
   }
-  console.log(`run ${i} · kind=${kind} · ${status} · blocks: ${types} · n=${n} · out=${out}/${maxTokens} · h1=${h1} · table=${table} · check=${check} · numbered=${numbered} · followups=${followups}`);
+  console.log(`run ${i} · kind=${kind}${plannerErr ? "(planner error)" : ""} · ${status} · blocks: ${types} · n=${n} · out=${out}/${maxTokens} · h1=${h1} · table=${table} · check=${check} · numbered=${numbered} · followups=${followups} · chips=[${chips}] · ms=${ms}`);
 }
 if (http400) process.exit(1);

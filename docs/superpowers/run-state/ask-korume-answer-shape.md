@@ -27,8 +27,9 @@ Plus answer token default is 6144.
 
 - Ruling: floor table is a code constant (ANSWER_SHAPES), not env vars — told the owner it would be "config"; one-place
   edit, YAGNI — cost if wrong: add env knobs later.
-- Ruling: Plus default answer tokens 6144 (not 8192) — room for §7 depth while keeping latency under
-  PROVIDER_TIMEOUT_MS 60s for slower production models — cost if wrong: a truncated Plus answer fails; raise via env.
+- Ruling: Plus default answer tokens 6144 (not 8192) — room for §7 depth; latency is bounded by the 60 s
+  PROVIDER_TIMEOUT_MS, not by the token cap; measure one live Anthropic Plus analyze turn before enabling Anthropic —
+  cost if wrong: a truncated Plus answer fails; raise via env.
 - Ruling: floor misses are logged with console.info (no DB column/migration) — cost if wrong: no queryable metric; add
   a column later.
 - Ruling: plan-mandated "planSchema refuses kind: deep" conflicts with spec §2.3 (invalid kind → explain) and would
@@ -53,6 +54,13 @@ Plus answer token default is 6144.
   - explain: `--question "まま và ながら khác nhau thế nào?" --line ""`
   - analyze: `--question "Phân tích câu này giúp mình" --line "<the section 7 line>"` (間違った使い方のまま、間違った発音のまま、間違った文法のまま、そのまま覚えてしまうっていうのが一番良くないんですね。)
 - Gates: vitest 735 files / 6682 tests passed; `tsc --noEmit` clean; `npm run lint` 0 errors (warnings only); `verify:protocol` valid.
+
+- Final-review fix wave (I1 chip cap in FULLER_CHIP, P1 go-deeper never quick, M3 probe planner 400 + ms, M5 block
+  singular, M6 turn.ts shadow, M7 L-055): commit see git log. Live (Gemini, vi, no anchor):
+  - quick free: `run 1 · kind=quick · ok · paragraph,example,followups · n=3 · out=294/2048 · followups=true · chips=[22,18,17] · ms=1387`
+  - go-deeper free: `run 1 · kind=explain · ok · n=5 · out=760/2048 · followups=false · ms=2933`
+  - quick plus (first run missed: planner said kind=explain, n=7; one planner text tweak "what does X mean?", re-run once): `run 1 · kind=quick · ok · paragraph,example,followups · n=3 · out=403/6144 · followups=true · chips=[22,21,17] · ms=1688`
+  - go-deeper plus: `run 1 · kind=explain · ok · n=8 · out=958/6144 · followups=false · ms=3127`
 
 ## Working tree and environment
 

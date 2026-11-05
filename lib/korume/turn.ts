@@ -203,7 +203,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
     const prompt = answerPrompt({
       question: text, locale: input.locale, anchor: promptAnchor, recent, learnerProfile,
       retrieval: results.map(({ tool, status, data, errorCode }) => ({ tool, status, data, errorCode })),
-      entities: grounding.map(({ id, label, kind }) => ({ id, label, kind })), depth,
+      entities: grounding.map(({ id, label, kind: entityKind }) => ({ id, label, kind: entityKind })), depth,
     });
     started = Date.now();
     let answered;

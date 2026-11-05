@@ -153,7 +153,7 @@ describe("answerPrompt - structured depth", () => {
         const cell = ANSWER_SHAPES[kind][tier];
         const { system } = answerPrompt({ ...base, depth: { tier, kind, maxBlocks } });
         personas.add(system[0]!.text);
-        expect(system[1]!.text).toContain(`at least ${cell.min} blocks`);
+        expect(system[1]!.text).toContain(`at least ${cell.min} block${cell.min === 1 ? "" : "s"}`);
         expect(system[1]!.text).toContain(`at most ${cell.max ?? maxBlocks} blocks`);
         expect(system[1]!.text).toContain(cell.elements);
         expect(answerFloor(kind, tier)).toBe(cell.min);
@@ -166,10 +166,13 @@ describe("answerPrompt - structured depth", () => {
     for (const w of ["level-1", "table", "check list", "numbered list"]) expect(t).toContain(w);
     for (const tier of ["free", "plus"] as const) {
       expect(answerPrompt({ ...base, depth: { tier, kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("first chip");
+      expect(answerPrompt({ ...base, depth: { tier, kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("at most 40 characters");
     }
+    expect(answerPrompt({ ...base, depth: { tier: "free", kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("at least 1 block and");
   });
   it("planner names the three kinds and asks for kind", () => {
     const t = plannerPrompt({ question: "x", anchor: null, recent: [] }).system[0]!.text;
     for (const w of ["quick", "explain", "analyze", "Also return kind"]) expect(t).toContain(w);
+    expect(t).toContain("fuller analysis (like a go-deeper chip) is never quick");
   });
 });
