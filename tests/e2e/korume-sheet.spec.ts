@@ -311,7 +311,7 @@ test.describe("rich answers (rich-answers spec §8)", () => {
         for (const name of RICH_HEADERS) await expect(scope.getByRole("columnheader", { name })).toBeVisible();
         await expect(scope.getByText("Correct", { exact: true })).toBeVisible();
         await expect(scope.getByText("Wrong", { exact: true })).toBeVisible();
-        expect(await scope.locator("table").evaluate((el) => (el.parentElement?.scrollWidth ?? 0) >= (el.parentElement?.clientWidth ?? 1))).toBe(true);
+        await expect(scope.locator("table").locator("xpath=..")).toHaveCSS("overflow-x", /^(auto|scroll)$/);
       };
       await expect(sheet(page)).toHaveAttribute("data-layout", "small");
       await check(sheet(page));

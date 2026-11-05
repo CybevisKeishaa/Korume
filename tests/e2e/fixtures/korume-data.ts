@@ -83,7 +83,7 @@ export async function seedKorumeData(admin: SupabaseClient, { userId, videoId, l
     richThreadId,
     async cleanup() {
       await admin.from("ai_reservations").delete().eq("turn_id", retryTurnId);
-      await admin.from("conversation_sessions").delete().in("id", [threadId, retryThreadId]);
+      await admin.from("conversation_sessions").delete().in("id", [threadId, retryThreadId, richThreadId]);
     },
   };
 }
