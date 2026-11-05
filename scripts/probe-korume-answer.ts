@@ -69,7 +69,7 @@ for (let i = 1; i <= runs; i++) {
     if (e instanceof AiError && e.kind === "invalid_output") status = "invalid";
     else {
       status = "error";
-      if (/400|INVALID_ARGUMENT/.test(msg)) http400 = true;
+      if (/\b400\b|INVALID_ARGUMENT/.test(msg)) http400 = true;
     }
     types = msg.slice(0, 300);
   }
