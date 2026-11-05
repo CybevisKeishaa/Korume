@@ -14,7 +14,7 @@ process.loadEnvFile(".env.local");
 
 const arg = (name: string, fallback: string) => {
   const i = process.argv.indexOf(`--${name}`);
-  return i >= 0 ? process.argv[i + 1] : fallback;
+  return i >= 0 ? process.argv[i + 1]! : fallback;
 };
 const tier = arg("tier", "free");
 const runs = Number(arg("runs", "1"));
