@@ -1,5 +1,6 @@
 "use client";
 
+import { Check, X } from "lucide-react";
 import { useTranslations } from "@/lib/i18n";
 import { FuriganaText } from "@/components/video-player/furigana-text";
 import type { Answer, Block, Run } from "@/lib/korume/answer";
@@ -76,6 +77,60 @@ function AnswerBlock({ block, entities, onFollowup }: {
         </aside>
       );
     }
+    case "heading": {
+      const [first, ...rest] = block.runs;
+      const numeral = block.level === 1 && first && "text" in first ? /^(\d+[.)]|[①-⑳])(\s*)/.exec(first.text) : null;
+      const runs: Run[] = numeral && first && "text" in first ? [{ ...first, text: first.text.slice(numeral[1]?.length) }, ...rest] : block.runs;
+      return (
+        <h3 className={block.level === 1 ? "text-body-lg font-semibold text-foreground" : "text-body font-semibold text-foreground"}>
+          {numeral ? <span className="text-primary-strong">{numeral[1]}</span> : null}
+          {runs.map((run, i) => <RunText key={i} run={run} />)}
+        </h3>
+      );
+    }
+    case "list": {
+      const Tag = block.style === "number" ? "ol" : "ul";
+      return (
+        <Tag className={`flex flex-col gap-2xs ${block.style === "number" ? "list-decimal ps-md" : block.style === "bullet" ? "list-disc ps-md" : ""}`}>
+          {block.items.map((item, i) => (
+            <li key={i} className={block.style === "check" ? "flex items-baseline gap-xs" : undefined}>
+              {block.style === "check" && item.mark ? (
+                <>
+                  {item.mark === "good" ? <Check aria-hidden className="size-4 shrink-0 self-center text-success" /> : <X aria-hidden className="size-4 shrink-0 self-center text-danger" />}
+                  <span className="sr-only">{t(`ask.mark.${item.mark}`)}</span>
+                </>
+              ) : null}
+              <span>{item.runs.map((run, j) => <RunText key={j} run={run} />)}</span>
+            </li>
+          ))}
+        </Tag>
+      );
+    }
+    case "table":
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-max border-collapse text-body">
+            <thead>
+              <tr>
+                {block.header.map((cell, i) => (
+                  <th key={i} scope="col" className="border border-border bg-muted px-sm py-2xs text-start font-semibold text-foreground">
+                    {cell.map((run, j) => <RunText key={j} run={run} />)}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, i) => (
+                <tr key={i}>
+                  {row.map((cell, j) => (
+                    <td key={j} className="border border-border px-sm py-2xs text-foreground/90">{cell.map((run, k) => <RunText key={k} run={run} />)}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     case "followups":
       return (
         <ul aria-label={t("ask.followups")} className="flex flex-wrap gap-xs">

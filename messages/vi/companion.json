@@ -70,6 +70,7 @@
     "signature": "KORUME",
     "messages": "Cuộc trò chuyện với Korume",
     "followups": "Câu hỏi gợi ý",
+    "mark": { "good": "Đúng", "bad": "Sai" },
     "open": "Hỏi Korume",
     "sheet": {
       "title": "Korume",

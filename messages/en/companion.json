@@ -70,6 +70,7 @@
     "signature": "KORUME",
     "messages": "Conversation with Korume",
     "followups": "Suggested questions",
+    "mark": { "good": "Correct", "bad": "Wrong" },
     "open": "Ask Korume",
     "sheet": {
       "title": "Korume",
