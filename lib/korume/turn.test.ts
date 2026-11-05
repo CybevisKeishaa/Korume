@@ -4,7 +4,7 @@ import { AiError } from "@/lib/ai/errors";
 import { readKnowledgeConfig } from "@/lib/knowledge/config";
 import { createMemoryKnowledgeStore, type MemoryKnowledgeStore } from "@/lib/knowledge/memory-store";
 import { getOrGenerateSection, readCachedSection } from "@/lib/knowledge/orchestrator";
-import type { AiProvider } from "@/lib/ai/port";
+import type { AiProvider, AiRequest } from "@/lib/ai/port";
 import { createMemoryKorumeStore, type MemoryKorumeStore } from "./memory-store";
 import { upperBoundCostUsdForTier } from "@/lib/knowledge/pricing";
 import { answerInputBytesUpperBound, plannerPrompt } from "./prompts";
@@ -104,11 +104,11 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
   const reserved = async (tier: "free" | "plus") => {
     queueHappy();
     await runTurn(input(), deps({ tier }));
-    const planReq = fake.requests[0]!;
-    const planBytes = planReq.system.reduce((n, b) => n + Buffer.byteLength(b.text, "utf8"), 0) + Buffer.byteLength(planReq.messages[0]!.content as string, "utf8");
+    const planReq = (fake.requests[0] as AiRequest);
+    const planBytes = planReq.system.reduce((n, b) => n + Buffer.byteLength(b.text, "utf8"), 0) + Buffer.byteLength(String(planReq.messages[0]?.content), "utf8");
     const cfg = readKnowledgeConfig({}).askKorumeAnswer[tier];
     return {
-      actual: knowledge.reservations[0]!.reservedUsd,
+      actual: knowledge.reservations[0]?.reservedUsd ?? 0,
       expected: upperBoundCostUsdForTier("anthropic", "fast", planBytes, 512) +
         upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound({ tier, maxBlocks: cfg.maxBlocks }), cfg.maxTokens),
     };
@@ -117,7 +117,7 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
   it("sends the tier max tokens and block cap to the answer request", async () => {
     queueHappy();
     await runTurn(input(), deps());
-    const free = fake.requests[1]!;
+    const free = (fake.requests[1] as AiRequest);
     expect(free.maxTokens).toBe(2048);
     expect(free.system).toHaveLength(2);
     expect(free.system[1]?.text).toContain("at most 16 blocks");
@@ -128,7 +128,7 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     korume.lines.push({ lineId: LINE, lineText: "今日は晴れ", translation: null, startTime: 1, videoId: VIDEO, videoTitle: "Ep" });
     queueHappy();
     await runTurn(input(), deps({ tier: "plus" }));
-    const plus = fake.requests[1]!;
+    const plus = (fake.requests[1] as AiRequest);
     expect(plus.maxTokens).toBe(4096);
     expect(sysText(plus)).toContain("at most 32 blocks");
   });
