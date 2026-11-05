@@ -9,7 +9,7 @@ import { readKnowledgeConfig, type KnowledgeConfig } from "@/lib/knowledge/confi
 import { creditsFor, estimateCostUsd, upperBoundCostUsdForTier } from "@/lib/knowledge/pricing";
 import { createSqlKnowledgeStore } from "@/lib/knowledge/store";
 import type { GenerationRow, KnowledgeLocale, KnowledgeStore, PlanTier } from "@/lib/knowledge/types";
-import { ANSWER_SCHEMA_VERSION, answerToPlainText, answerV1Schema, dropUngroundedCards, groundedEntitySchema } from "./answer";
+import { ANSWER_SCHEMA_VERSION, answerToPlainText, answerV2Schema, capBlocks, dropUngroundedCards, groundedEntitySchema } from "./answer";
 import { buildGroundedEntities } from "./grounding";
 import { MAX_RECENT_TURNS, RETRIEVAL_DEADLINE_MS, TOOL_DEADLINE_MS, TURN_RESERVATION_TTL_SECONDS } from "./limits";
 import { toMessageView } from "./messages";
@@ -24,7 +24,6 @@ import type { KorumeMessageView } from "./types";
 type Supabase = ReturnType<typeof createClient>;
 
 export const PLAN_MAX_TOKENS = 512;
-export const ANSWER_MAX_TOKENS = 2_048;
 const RECENT_TEXT_MAX = 600;
 
 export type TurnOutcome =
@@ -108,11 +107,11 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
   const promptAnchor: PromptAnchor | null = anchor ? { lineText: anchor.lineText, videoTitle: anchor.videoTitle } : null;
   const recent = recentTurns(rows, turnId);
 
-  // Temporary: Task 6 finishes the turn wiring.
-  const depth = { tier, maxBlocks: config.askKorumeAnswer[tier].maxBlocks };
+  const depthCfg = config.askKorumeAnswer[tier];
+  const depth = { tier, maxBlocks: depthCfg.maxBlocks };
   const planner = plannerPrompt({ question: text, anchor: promptAnchor, recent });
   const planUpper = upperBoundCostUsdForTier(provider.name, "fast", bytes(planner.system, planner.user), PLAN_MAX_TOKENS);
-  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(depth), ANSWER_MAX_TOKENS);
+  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(depth), depthCfg.maxTokens);
   const upperUsd = planUpper + answerUpper;
 
   const reservation = await knowledge.reserve({
@@ -208,8 +207,8 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
     let answered;
     try {
       answered = await provider.generateStructured(
-        { tier: "deep", system: prompt.system, messages: [{ role: "user", content: prompt.user }], maxTokens: ANSWER_MAX_TOKENS, reasoning: false },
-        answerV1Schema,
+        { tier: "deep", system: prompt.system, messages: [{ role: "user", content: prompt.user }], maxTokens: depthCfg.maxTokens, reasoning: false },
+        answerV2Schema,
       );
     } catch (error) {
       const validation = isValidationError(error);
@@ -226,7 +225,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
     }
     const answerUsd = answered.usage ? estimateCostUsd(answered.model, answered.usage) : answerUpper;
     spentUsd += answerUsd;
-    const answer = dropUngroundedCards(answered.parsed, grounding);
+    const answer = capBlocks(dropUngroundedCards(answered.parsed, grounding), depth.maxBlocks);
     const usable = answer.blocks.some((b) => b.type !== "followups");
     const generationId = await knowledge.recordGeneration({
       ...generation, section: "korume_answer", model: answered.model, inputTokens: answered.usage?.inputTokens ?? 0,
