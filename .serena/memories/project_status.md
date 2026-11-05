@@ -1,5 +1,17 @@
 # Korume (was Nihongo Cinema) — Project Status
 
+> ## ▶ WHERE EXECUTION STANDS — 2026-11-04 (supersedes every block below)
+>
+> ⭐ **`ask-korume-sheet` MERGED → master `4c51862c`** 2026-11-04 (not pushed; owner said "check then merge";
+> re-gated at `b410fdb5`: vitest 6649, tsc, lint, verify:protocol). History below. Next: owner picks (rich-answers
+> spec `fdc8bef0`, optional 10–14, Certification).
+> (was: worktree `.worktrees/ask-korume-sheet`, tip `b410fdb5`) — read
+> `mem:ask_korume_sheet_run_state` first. Built, Opus whole-branch review (0 Critical), fix round `41ffd9ad` +
+> Sonnet review + minors `96f8cb54` + owner-call rulings `b410fdb5` DONE; vitest 6649, E2E 38/38, tsc clean.
+> Next: owner Chrome look (real-mouse drag, rail with a live answer, glide), then merge. Since 10-14 these MERGED
+> (not pushed): app-chrome-refresh `aea3e1da`, youtube-vi-captions `55f069b5`, practice-listening `63e42083`.
+> Sibling spec still deferred: Ask Korume rich answers (`fdc8bef0`).
+>
 > ## ▶ WHERE EXECUTION STANDS — 2026-10-14 night (supersedes every block below)
 >
 > ▶ **RESUME HERE: `app-chrome-refresh`** (worktree `.worktrees/app-chrome-refresh`, tip `c47a95db`, NOT merged, no
