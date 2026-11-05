@@ -567,7 +567,6 @@ affected migration steps and both acceptance criteria with what replaced each.
 **Evidence:** `ask-korume-sheet`, 2026-11-04 — the sheet clamped to the viewport margin went ~56px under the collapsed nav at 1280; every E2E bound was the viewport, so all passed. The opus whole-branch review found it; E2E now bounds against the `shadowing-workspace` box (case 1b).
 **Applies to:** every floating element inside the workspace (sheet, mascot, popovers) and any E2E that asserts "inside the screen".
 
-
 ### L-055 — A provider's zod output helper turns enum, const and maxLength into description text; state limits in the prompt and keep a lenient `.catch`
 **Rule:** Never rely on a schema `enum`, `const` or `maxLength` to constrain model output. Write every limit the model must respect (chip length, allowed kinds) in the prompt text, and give a model-chosen enum a lenient `.catch(default)` so one bad value does not discard an otherwise good plan.
 **Why:** Anthropic's zod output helper rewrites those keywords into description strings, so nothing enforces them provider-side. The strict app-side schema then rejects the value after the paid call: one chip over 40 characters made `dropInvalidBlocks` remove the whole followups block.

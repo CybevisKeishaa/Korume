@@ -51,7 +51,7 @@ for (let i = 1; i <= runs; i++) {
     } catch (e) {
       // planner failure never fails a turn: explain; a 400 is a schema bug and must still fail the probe
       plannerErr = true;
-      if (/400|INVALID_ARGUMENT/.test(e instanceof Error ? e.message : String(e))) http400 = true;
+      if (/\b400\b|INVALID_ARGUMENT/.test(e instanceof Error ? e.message : String(e))) http400 = true;
     }
     t0 = Date.now();
     const { system, user } = answerPrompt({
