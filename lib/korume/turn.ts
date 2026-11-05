@@ -13,8 +13,8 @@ import { ANSWER_SCHEMA_VERSION, answerToPlainText, answerV2Schema, capBlocks, dr
 import { buildGroundedEntities } from "./grounding";
 import { MAX_RECENT_TURNS, RETRIEVAL_DEADLINE_MS, TOOL_DEADLINE_MS, TURN_RESERVATION_TTL_SECONDS } from "./limits";
 import { toMessageView } from "./messages";
-import { fallbackPlan, planSchema, validatePlan, type PlanStep } from "./plan";
-import { answerInputBytesUpperBound, answerPrompt, plannerPrompt, type PromptAnchor, type RecentTurn } from "./prompts";
+import { fallbackPlan, planKind, planSchema, validatePlan, type AnswerKind, type PlanStep } from "./plan";
+import { answerFloor, answerInputBytesUpperBound, answerPrompt, plannerPrompt, type PromptAnchor, type RecentTurn } from "./prompts";
 import { DEFAULT_TOOLS, runRetrieval, TIMED_OUT, within, type RetrievalContext, type Tool, type ToolName } from "./retrieval";
 import { sqlKorumeStore, type KorumeStore, type MessageRow } from "./store";
 import { normalizeTurnText, threadTitle } from "./text";
@@ -108,10 +108,9 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
   const recent = recentTurns(rows, turnId);
 
   const depthCfg = config.askKorumeAnswer[tier];
-  const depth = { tier, maxBlocks: depthCfg.maxBlocks };
   const planner = plannerPrompt({ question: text, anchor: promptAnchor, recent });
   const planUpper = upperBoundCostUsdForTier(provider.name, "fast", bytes(planner.system, planner.user), PLAN_MAX_TOKENS);
-  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(depth), depthCfg.maxTokens);
+  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(tier, depthCfg.maxBlocks), depthCfg.maxTokens);
   const upperUsd = planUpper + answerUpper;
 
   const reservation = await knowledge.reserve({
@@ -159,6 +158,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
 
     // Stage 1: the planner. Its failure never fails the turn — retrieval falls back to the anchor.
     let steps: PlanStep[];
+    let kind: AnswerKind = "explain";
     let started = Date.now();
     try {
       const plan = await provider.generateStructured(
@@ -173,6 +173,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
         latencyMs: Date.now() - started, estimatedCostUsd: cost, outcome: "success",
       });
       steps = validatePlan(plan.parsed, { hasAnchor: anchor !== null });
+      kind = planKind(plan.parsed);
     } catch (error) {
       const validation = isValidationError(error);
       const cost = validation ? planUpper : 0;
@@ -198,10 +199,11 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
     const grounding = buildGroundedEntities(results, readable);
 
     // Stage 2: the answer. Its failure fails the turn and releases the hold.
+    const depth = { tier, kind, maxBlocks: depthCfg.maxBlocks };
     const prompt = answerPrompt({
       question: text, locale: input.locale, anchor: promptAnchor, recent, learnerProfile,
       retrieval: results.map(({ tool, status, data, errorCode }) => ({ tool, status, data, errorCode })),
-      entities: grounding.map(({ id, label, kind }) => ({ id, label, kind })), depth,
+      entities: grounding.map(({ id, label, kind: entityKind }) => ({ id, label, kind: entityKind })), depth,
     });
     started = Date.now();
     let answered;
@@ -237,6 +239,9 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       await knowledge.release(reservationId, spentUsd);
       return { status: "answer_failed" };
     }
+
+    const floor = answerFloor(kind, tier);
+    console.info(`[korume/answer] kind=${kind} tier=${tier} blocks=${answer.blocks.length} floor=${floor} below=${answer.blocks.length < floor}`);
 
     // R5: the planner may never have asked for exposure, so the cards the learner will see are counted here, once.
     let sealed = grounding;

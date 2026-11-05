@@ -32,7 +32,7 @@ export const knowledgeEnvSchema = z.object({
   AI_ASK_KORUME_FREE_MAX_BLOCKS: blocks.default(16),
   AI_ASK_KORUME_PLUS_MAX_BLOCKS: blocks.default(32),
   AI_ASK_KORUME_FREE_ANSWER_MAX_TOKENS: answerTokens.default(2048),
-  AI_ASK_KORUME_PLUS_ANSWER_MAX_TOKENS: answerTokens.default(4096),
+  AI_ASK_KORUME_PLUS_ANSWER_MAX_TOKENS: answerTokens.default(6144),
   AI_SYSTEM_GENERATIONS_PER_USER_PER_DAY: count.default(100),
   AI_GLOBAL_BUDGET_USD_PER_DAY: usd.default(5),
   AI_CREDIT_USD_UNIT: usd.optional(),

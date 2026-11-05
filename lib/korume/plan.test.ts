@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { fallbackPlan, planSchema, validatePlan, type PlanStep } from "./plan";
+import { z } from "zod/v4";
+import { fallbackPlan, planKind, planSchema, validatePlan, type PlanStep } from "./plan";
 
 const anchor = { hasAnchor: true };
 const free = { hasAnchor: false };
@@ -30,6 +31,22 @@ describe("validatePlan (Review Focus 4)", () => {
       { tool: "memory_lookup", topic: "x".repeat(65) },
     ] }, free)).toEqual([]);
     expect(validatePlan({ steps: [{ tool: "dictionary_lookup", term: "<script>" }] }, free)).toEqual([{ tool: "dictionary_lookup", term: "<script>" }]);
+  });
+});
+
+describe("plan kind", () => {
+  it("is optional, limited to the three kinds, and defaults to explain", () => {
+    expect(planSchema.safeParse({ steps: [], kind: "analyze" }).success).toBe(true);
+    expect(planSchema.safeParse({ steps: [] }).success).toBe(true);
+    const bad = planSchema.safeParse({ steps: [{ tool: "line_analysis" }], kind: "deep" });
+    expect(bad.success).toBe(true);
+    if (bad.success) {
+      expect(bad.data.steps).toHaveLength(1);
+      expect(planKind(bad.data)).toBe("explain");
+    }
+    expect(JSON.stringify(z.toJSONSchema(planSchema))).toMatch(/quick.*explain.*analyze/);
+    expect(planKind({ steps: [] })).toBe("explain");
+    expect(planKind({ steps: [], kind: "quick" })).toBe("quick");
   });
 });
 

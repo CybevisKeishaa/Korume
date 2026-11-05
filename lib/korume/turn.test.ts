@@ -112,7 +112,7 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     return {
       actual: knowledge.reservations[0]?.reservedUsd ?? 0,
       expected: upperBoundCostUsdForTier("anthropic", "fast", planBytes, 512) +
-        upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound({ tier, maxBlocks: cfg.maxBlocks }), cfg.maxTokens),
+        upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound(tier, cfg.maxBlocks), cfg.maxTokens),
     };
   };
 
@@ -131,7 +131,7 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     queueHappy();
     await runTurn(input(), deps({ tier: "plus" }));
     const plus = (fake.requests[1] as AiRequest);
-    expect(plus.maxTokens).toBe(4096);
+    expect(plus.maxTokens).toBe(6144);
     expect(sysText(plus)).toContain("at most 32 blocks");
   });
 
@@ -172,6 +172,46 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     expect(outcome.status).toBe("answered");
     if (outcome.status !== "answered") throw new Error("not answered");
     expect(outcome.message.answer).toEqual(answer);
+  });
+});
+
+describe("runTurn — the planner's kind shapes the answer", () => {
+  const para = (t: string) => ({ type: "paragraph", runs: [{ text: t }] });
+  const answerOf = (n: number) => ({ blocks: Array.from({ length: n }, (_, i) => para(String(i))) });
+  const floorText = (r: AiRequest | undefined) => r?.system[1]?.text ?? "";
+
+  it("uses the planner kind for the floor, and explain when the planner throws", async () => {
+    fake.queueStructured({ steps: [], kind: "analyze" }, PLAN_USAGE);
+    fake.queueStructured(answerOf(5), ANSWER_USAGE);
+    await runTurn(input(), deps({ tier: "plus" }));
+    expect(floorText(fake.requests[1])).toContain("This question is analyze: use at least 8 blocks");
+    fake.requests.length = 0;
+    knowledge = createMemoryKnowledgeStore(START);
+    korume = createMemoryKorumeStore(knowledge, ME);
+    korume.threads.push({ id: THREAD, userId: ME, kind: "ask_korume", title: null, originVideoId: VIDEO, originLineId: LINE, originSpan: null, originRoute: "/x", updatedAt: START.toISOString() });
+    korume.lines.push({ lineId: LINE, lineText: "今日は晴れ", translation: null, startTime: 1, videoId: VIDEO, videoTitle: "Ep" });
+    fake.queueError(new Error("boom"));
+    fake.queueStructured(answerOf(5), ANSWER_USAGE);
+    await runTurn(input(), deps({ tier: "plus" }));
+    expect(floorText(fake.requests[1])).toContain("This question is explain");
+  });
+
+  it("logs whether the answer met its floor; a miss is still answered", async () => {
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
+    fake.queueStructured({ steps: [], kind: "analyze" }, PLAN_USAGE);
+    fake.queueStructured(answerOf(5), ANSWER_USAGE);
+    expect((await runTurn(input(), deps({ tier: "plus" }))).status).toBe("answered");
+    expect(info).toHaveBeenCalledWith("[korume/answer] kind=analyze tier=plus blocks=5 floor=8 below=true");
+    info.mockClear();
+    knowledge = createMemoryKnowledgeStore(START);
+    korume = createMemoryKorumeStore(knowledge, ME);
+    korume.threads.push({ id: THREAD, userId: ME, kind: "ask_korume", title: null, originVideoId: VIDEO, originLineId: LINE, originSpan: null, originRoute: "/x", updatedAt: START.toISOString() });
+    korume.lines.push({ lineId: LINE, lineText: "今日は晴れ", translation: null, startTime: 1, videoId: VIDEO, videoTitle: "Ep" });
+    fake.queueStructured({ steps: [], kind: "quick" }, PLAN_USAGE);
+    fake.queueStructured(answerOf(2), ANSWER_USAGE);
+    expect((await runTurn(input(), deps())).status).toBe("answered");
+    expect(info).toHaveBeenCalledWith("[korume/answer] kind=quick tier=free blocks=2 floor=1 below=false");
+    info.mockRestore();
   });
 });
 
