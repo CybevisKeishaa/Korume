@@ -48,6 +48,10 @@ Plus answer token default is 6144.
   - analyze plus: `kind=analyze ok n=14 out=1394/6144 h1=3 table check numbered` / `n=13 out=1250/6144 h1=3 table
     check numbered`
   - All 12 runs meet the spec §5 bar (kind, block range, elements, quick ends with followups, tokens < 90 %).
+- Commands (each `npx vite-node --config vitest.config.ts scripts/probe-korume-answer.ts -- --tier <free|plus> --runs 2 ...`, both tiers):
+  - quick: `--question "まま nghĩa là gì?" --line ""`
+  - explain: `--question "まま và ながら khác nhau thế nào?" --line ""`
+  - analyze: `--question "Phân tích câu này giúp mình" --line "<the section 7 line>"` (間違った使い方のまま、間違った発音のまま、間違った文法のまま、そのまま覚えてしまうっていうのが一番良くないんですね。)
 - Gates: vitest 735 files / 6682 tests passed; `tsc --noEmit` clean; `npm run lint` 0 errors (warnings only); `verify:protocol` valid.
 
 ## Working tree and environment
