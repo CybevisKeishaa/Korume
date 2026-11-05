@@ -31,7 +31,7 @@ const USER = "u0000000-0000-4000-8000-000000000001";
 const NOW = new Date("2026-10-04T09:00:00Z");
 const CONFIG: KnowledgeConfig = {
   freeSentencesPerDay: 3, plusCreditsPerMonth: 1000, plusMaxSectionsPerDay: 200, askKorumeFreeTurnsPerDay: 10,
-  askKorumePlusTurnsPerDay: 100, systemGenerationsPerUserPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001,
+  askKorumePlusTurnsPerDay: 100, systemGenerationsPerUserPerDay: 100, globalBudgetUsdPerDay: 5, creditUsdUnit: 0.001, askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 4096 } },
 };
 const USAGE = { model: "gemini-2.5-flash", usage: { inputTokens: 900, outputTokens: 700, cacheReadTokens: 0, cacheWriteTokens: 0 } };
 const LINES = [

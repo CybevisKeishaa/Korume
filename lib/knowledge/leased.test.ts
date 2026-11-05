@@ -15,7 +15,7 @@ const CONFIG: KnowledgeConfig = {
   askKorumePlusTurnsPerDay: 100,
   systemGenerationsPerUserPerDay: 100,
   globalBudgetUsdPerDay: 5,
-  creditUsdUnit: 0.001,
+  creditUsdUnit: 0.001, askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 4096 } },
 };
 const NOW = new Date("2026-10-04T09:00:00Z");
 const USAGE = { model: "claude-haiku-4-5", usage: { inputTokens: 400, outputTokens: 300, cacheReadTokens: 0, cacheWriteTokens: 0 } };

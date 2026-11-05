@@ -4,9 +4,10 @@ import { AiError } from "@/lib/ai/errors";
 import { readKnowledgeConfig } from "@/lib/knowledge/config";
 import { createMemoryKnowledgeStore, type MemoryKnowledgeStore } from "@/lib/knowledge/memory-store";
 import { getOrGenerateSection, readCachedSection } from "@/lib/knowledge/orchestrator";
-import type { AiProvider } from "@/lib/ai/port";
+import type { AiProvider, AiRequest } from "@/lib/ai/port";
 import { createMemoryKorumeStore, type MemoryKorumeStore } from "./memory-store";
-import { plannerPrompt } from "./prompts";
+import { upperBoundCostUsdForTier } from "@/lib/knowledge/pricing";
+import { answerInputBytesUpperBound, plannerPrompt } from "./prompts";
 import { runTurn, type TurnDeps, type TurnInput } from "./turn";
 import type { Tool } from "./retrieval";
 import { knowledgeTool } from "./tools/knowledge";
@@ -87,7 +88,9 @@ describe("runTurn — the happy path", () => {
     expect(JSON.stringify(stored?.contentJson)).not.toContain("ent:999");
     expect(stored?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5" }]);
     expect(korume.threads[0]?.title).toBe("Why は here?");
-    if (outcome.status === "answered") expect(outcome.message).toMatchObject({ role: "assistant", turnId: TURN, grounding: stored?.groundingJson });
+    expect(outcome.status).toBe("answered");
+    if (outcome.status !== "answered") throw new Error("not answered");
+    expect(outcome.message).toMatchObject({ role: "assistant", turnId: TURN, grounding: stored?.groundingJson });
   });
 
   it("charges a Plus turn credits for what it actually cost", async () => {
@@ -95,6 +98,80 @@ describe("runTurn — the happy path", () => {
     await runTurn(input(), deps({ tier: "plus" }));
     expect(knowledge.reservations[0]?.entitlementKind).toBe("korume_plus_turn");
     expect(knowledge.charges[0]?.credits).toBe(Math.ceil((PLAN_USD + ANSWER_USD) / 0.001));
+  });
+});
+
+describe("runTurn — depth and reservation follow the plan tier", () => {
+  const sysText = (r: { system: { text: string }[] }) => r.system.map((b) => b.text).join(" ");
+  const reserved = async (tier: "free" | "plus") => {
+    queueHappy();
+    await runTurn(input(), deps({ tier }));
+    const planReq = (fake.requests[0] as AiRequest);
+    const planBytes = planReq.system.reduce((n, b) => n + Buffer.byteLength(b.text, "utf8"), 0) + Buffer.byteLength(String(planReq.messages[0]?.content), "utf8");
+    const cfg = readKnowledgeConfig({}).askKorumeAnswer[tier];
+    return {
+      actual: knowledge.reservations[0]?.reservedUsd ?? 0,
+      expected: upperBoundCostUsdForTier("anthropic", "fast", planBytes, 512) +
+        upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound({ tier, maxBlocks: cfg.maxBlocks }), cfg.maxTokens),
+    };
+  };
+
+  it("sends the tier max tokens and block cap to the answer request", async () => {
+    queueHappy();
+    await runTurn(input(), deps());
+    const free = (fake.requests[1] as AiRequest);
+    expect(free.maxTokens).toBe(2048);
+    expect(free.system).toHaveLength(2);
+    expect(free.system[1]?.text).toContain("at most 16 blocks");
+    fake.requests.length = 0;
+    knowledge = createMemoryKnowledgeStore(START);
+    korume = createMemoryKorumeStore(knowledge, ME);
+    korume.threads.push({ id: THREAD, userId: ME, kind: "ask_korume", title: null, originVideoId: VIDEO, originLineId: LINE, originSpan: null, originRoute: "/x", updatedAt: START.toISOString() });
+    korume.lines.push({ lineId: LINE, lineText: "今日は晴れ", translation: null, startTime: 1, videoId: VIDEO, videoTitle: "Ep" });
+    queueHappy();
+    await runTurn(input(), deps({ tier: "plus" }));
+    const plus = (fake.requests[1] as AiRequest);
+    expect(plus.maxTokens).toBe(4096);
+    expect(sysText(plus)).toContain("at most 32 blocks");
+  });
+
+  it("reserves credits for the tier max tokens", async () => {
+    const plus = await reserved("plus");
+    expect(plus.actual).toBeCloseTo(plus.expected, 10);
+    knowledge = createMemoryKnowledgeStore(START);
+    korume = createMemoryKorumeStore(knowledge, ME);
+    korume.threads.push({ id: THREAD, userId: ME, kind: "ask_korume", title: null, originVideoId: VIDEO, originLineId: LINE, originSpan: null, originRoute: "/x", updatedAt: START.toISOString() });
+    korume.lines.push({ lineId: LINE, lineText: "今日は晴れ", translation: null, startTime: 1, videoId: VIDEO, videoTitle: "Ep" });
+    const free = await reserved("free");
+    expect(free.actual).toBeCloseTo(free.expected, 10);
+    expect(free.actual).toBeLessThan(plus.actual);
+  });
+
+  it("caps the stored answer at the configured block count, keeping followups last", async () => {
+    const para = (t: string) => ({ type: "paragraph", runs: [{ text: t }] });
+    fake.queueStructured({ steps: [{ tool: "line_analysis" }] }, PLAN_USAGE);
+    fake.queueStructured({ blocks: [para("1"), para("2"), para("3"), para("4"), para("5"), { type: "followups", chips: ["More?"] }] }, ANSWER_USAGE);
+    const config = readKnowledgeConfig({ AI_ASK_KORUME_FREE_MAX_BLOCKS: "3" });
+    await runTurn(input(), deps({ config }));
+    const blocks = (assistantRows()[0]?.contentJson as { blocks: { type: string }[] }).blocks;
+    expect(blocks).toHaveLength(3);
+    expect(blocks.at(-1)?.type).toBe("followups");
+  });
+
+  it("stores a heading and table intact at schema version 2", async () => {
+    const answer = { blocks: [
+      { type: "heading", level: 1, runs: [{ text: "は vs が" }] },
+      { type: "table", header: [[{ text: "A" }], [{ text: "B" }]], rows: [[[{ text: "1" }], [{ text: "2" }]]] },
+    ] };
+    fake.queueStructured({ steps: [{ tool: "line_analysis" }] }, PLAN_USAGE);
+    fake.queueStructured(answer, ANSWER_USAGE);
+    const outcome = await runTurn(input(), deps());
+    const [stored] = assistantRows();
+    expect(stored?.contentSchemaVersion).toBe(2);
+    expect(stored?.contentJson).toEqual(answer);
+    expect(outcome.status).toBe("answered");
+    if (outcome.status !== "answered") throw new Error("not answered");
+    expect(outcome.message.answer).toEqual(answer);
   });
 });
 

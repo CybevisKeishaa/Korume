@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod/v4";
-import { answerToPlainText, answerV1Schema, dropUngroundedCards, groundingSchema, type AnswerV1, type Block } from "./answer";
+import { answerToPlainText, answerV1Schema, answerV2Schema, capBlocks, dropUngroundedCards, groundingSchema, type AnswerV1, type Block } from "./answer";
 import type { GroundedEntity } from "./types";
 
 const para: Block = { type: "paragraph", runs: [{ text: "は marks the " }, { text: "topic", strong: true }, { text: ": " }, { jp: "今日は" }] };
@@ -47,6 +47,69 @@ describe("answerV1Schema", () => {
   });
 });
 
+const t = (x: string) => [{ text: x }];
+const heading = { type: "heading", level: 1, runs: t("1. Liệt kê thành phần câu") };
+const table = { type: "table", header: [t("Thành phần"), t("Tiếng Nhật"), t("Vai trò")], rows: Array.from({ length: 10 }, () => [t("x"), [{ jp: "のまま" }], t("y")]) };
+const check = { type: "list", style: "check", items: [{ mark: "bad", runs: [{ jp: "間違ったのまま" }]}, { mark: "good", runs: [{ jp: "間違ったまま" }] }] };
+const numbered = { type: "list", style: "number", items: [{ runs: t("a") }, { runs: t("b") }] };
+const chips = { type: "followups", chips: ["More?"] };
+
+describe("answerV2Schema", () => {
+  const kinds = (b: unknown[]) => { const r = answerV2Schema.safeParse({ blocks: b }); return r.success ? r.data.blocks.map((x) => x.type) : r.success; };
+
+  it("accepts the section 7 shape", () => {
+    expect(kinds([heading, table, check, numbered, chips])).toEqual(["heading", "table", "list", "list", "followups"]);
+  });
+
+  it("drops an out-of-bounds block, keeps the rest", () => {
+    const cols = (n: number) => Array.from({ length: n }, () => t("h"));
+    const bad = [
+      { ...table, header: cols(5) }, { ...table, header: cols(1) },
+      { type: "list", style: "bullet", items: Array.from({ length: 13 }, () => ({ runs: t("a") })) },
+      { ...heading, level: 3 }, { ...heading, runs: Array.from({ length: 9 }, () => ({ text: "a" })) },
+      { ...table, rows: [Array.from({ length: 5 }, () => t("c"))] },
+      { ...table, rows: [[Array.from({ length: 9 }, () => ({ text: "a" }))]] },
+      { ...heading, html: "<b>" }, { ...table, html: "<b>" }, { ...check, html: "<b>" },
+    ];
+    for (const b of bad) expect(kinds([b, para]), JSON.stringify(b).slice(0, 50)).toEqual(["paragraph"]);
+  });
+
+  it("keeps a ragged table", () => {
+    expect(kinds([{ ...table, rows: [[t("a"), t("b")]] }])).toEqual(["table"]);
+  });
+
+  it("accepts 32 blocks, cuts 33 to 32 keeping trailing followups", () => {
+    const followups: Block = { type: "followups", chips: ["ok"] };
+    expect(answerV2Schema.safeParse({ blocks: Array.from({ length: 32 }, () => para) }).success).toBe(true);
+    const cut = answerV2Schema.safeParse({ blocks: [...Array.from({ length: 32 }, () => para), followups] });
+    expect(cut.success && cut.data.blocks).toHaveLength(32);
+    expect(cut.success && cut.data.blocks[31]).toEqual(followups);
+  });
+
+  it("v1 still drops a valid v2 heading", () => {
+    const parsed = answerV1Schema.safeParse({ blocks: [para, heading, table, check] });
+    expect(parsed.success && parsed.data.blocks).toEqual([para]);
+  });
+
+  it("sends Gemini all 7 block types", () => {
+    const json = JSON.stringify(z.toJSONSchema(answerV2Schema));
+    for (const type of ["paragraph", "example", "context_card", "followups", "heading", "list", "table"]) expect(json).toContain(`"${type}"`);
+  });
+});
+
+describe("capBlocks", () => {
+  const p = (n: number) => Array.from({ length: n }, () => para);
+  it("keeps a trailing followups when cutting", () => {
+    expect(capBlocks({ blocks: [...p(4), chips as Block] }, 3).blocks).toEqual([para, para, chips]);
+  });
+  it("cuts plain blocks", () => {
+    expect(capBlocks({ blocks: p(4) }, 3).blocks).toEqual(p(3));
+  });
+  it("leaves an answer within the cap", () => {
+    expect(capBlocks({ blocks: p(3) }, 3)).toEqual({ blocks: p(3) });
+  });
+});
+
 const grounding: GroundedEntity[] = [{ id: "tok:は:助詞", label: "は", kind: "particle", seenCount: 3 }];
 
 describe("dropUngroundedCards", () => {
@@ -68,6 +131,18 @@ describe("answerToPlainText", () => {
     ] }, grounding);
     expect(text).toBe("は marks the topic: 今日は\n\n私は学生です — I am a student\n\nは: topic marker");
     expect(text).not.toMatch(/[<>*_]/);
+  });
+});
+
+describe("answerToPlainText rich blocks", () => {
+  it("renders heading, lists and table as plain text", () => {
+    const text = answerToPlainText({ blocks: [
+      heading, numbered, { type: "list", style: "bullet", items: [{ runs: t("a") }] },
+      { type: "list", style: "check", items: [{ mark: "good", runs: t("a") }, { mark: "bad", runs: t("b") }, { runs: t("c") }] },
+      { type: "table", header: [t("H1"), t("H2")], rows: [[t("a"), [{ text: "b" }, { jp: "c" }]]] },
+    ] } as never, grounding);
+    expect(text).toBe("1. Liệt kê thành phần câu\n\n1. a\n2. b\n\n- a\n\n✓ a\n✗ b\n- c\n\nH1 | H2\na | bc");
+    expect(text).not.toMatch(/[{<*#]/);
   });
 });
 

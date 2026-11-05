@@ -1,4 +1,4 @@
-import { ANSWER_SCHEMA_VERSION, answerV1Schema, GROUNDING_SCHEMA_VERSION, groundingSchema } from "./answer";
+import { ANSWER_SCHEMA_VERSION, answerV1Schema, answerV2Schema, GROUNDING_SCHEMA_VERSION, groundingSchema } from "./answer";
 import type { MessageRow } from "./store";
 import type { KorumeMessageView } from "./types";
 
@@ -8,7 +8,8 @@ import type { KorumeMessageView } from "./types";
  */
 export function toMessageView(m: MessageRow): KorumeMessageView {
   const assistant = m.role === "ai";
-  const answer = assistant && m.contentSchemaVersion === ANSWER_SCHEMA_VERSION ? answerV1Schema.safeParse(m.contentJson) : null;
+  const schema = m.contentSchemaVersion === 1 ? answerV1Schema : m.contentSchemaVersion === ANSWER_SCHEMA_VERSION ? answerV2Schema : null;
+  const answer = assistant && schema ? schema.safeParse(m.contentJson) : null;
   const grounding = assistant && m.groundingSchemaVersion === GROUNDING_SCHEMA_VERSION ? groundingSchema.safeParse(m.groundingJson) : null;
   return {
     id: m.id,

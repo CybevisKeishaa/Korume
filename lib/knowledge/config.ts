@@ -1,5 +1,7 @@
 import { z } from "zod";
+import { MAX_ANSWER_BLOCKS } from "@/lib/korume/answer";
 import type { EnvCheckResult, EnvSource, EnvSpec } from "@/lib/env/validate";
+import type { PlanTier } from "./types";
 
 export interface KnowledgeConfig {
   freeSentencesPerDay: number;
@@ -10,9 +12,12 @@ export interface KnowledgeConfig {
   systemGenerationsPerUserPerDay: number;
   globalBudgetUsdPerDay: number;
   creditUsdUnit: number;
+  askKorumeAnswer: Record<PlanTier, { maxBlocks: number; maxTokens: number }>;
 }
 
 const count = z.coerce.number().int().nonnegative();
+const blocks = z.coerce.number().int().min(1).max(MAX_ANSWER_BLOCKS);
+const answerTokens = z.coerce.number().int().min(256).max(8192);
 const usd = z.coerce.number().positive();
 
 /** Server-only Knowledge Economy limits (spec §4.3). Defaults outside production; production must set them. */
@@ -24,6 +29,10 @@ export const knowledgeEnvSchema = z.object({
   AI_PLUS_MAX_SECTIONS_PER_DAY: count.default(200),
   AI_ASK_KORUME_FREE_TURNS_PER_DAY: count.default(10),
   AI_ASK_KORUME_PLUS_TURNS_PER_DAY: count.default(100),
+  AI_ASK_KORUME_FREE_MAX_BLOCKS: blocks.default(16),
+  AI_ASK_KORUME_PLUS_MAX_BLOCKS: blocks.default(32),
+  AI_ASK_KORUME_FREE_ANSWER_MAX_TOKENS: answerTokens.default(2048),
+  AI_ASK_KORUME_PLUS_ANSWER_MAX_TOKENS: answerTokens.default(4096),
   AI_SYSTEM_GENERATIONS_PER_USER_PER_DAY: count.default(100),
   AI_GLOBAL_BUDGET_USD_PER_DAY: usd.default(5),
   AI_CREDIT_USD_UNIT: usd.optional(),
@@ -61,5 +70,9 @@ export function readKnowledgeConfig(env: EnvSource = process.env): KnowledgeConf
     systemGenerationsPerUserPerDay: parsed.AI_SYSTEM_GENERATIONS_PER_USER_PER_DAY,
     globalBudgetUsdPerDay: parsed.AI_GLOBAL_BUDGET_USD_PER_DAY,
     creditUsdUnit: parsed.AI_CREDIT_USD_UNIT ?? DEV_CREDIT_USD_UNIT,
+    askKorumeAnswer: {
+      free: { maxBlocks: parsed.AI_ASK_KORUME_FREE_MAX_BLOCKS, maxTokens: parsed.AI_ASK_KORUME_FREE_ANSWER_MAX_TOKENS },
+      plus: { maxBlocks: parsed.AI_ASK_KORUME_PLUS_MAX_BLOCKS, maxTokens: parsed.AI_ASK_KORUME_PLUS_ANSWER_MAX_TOKENS },
+    },
   };
 }

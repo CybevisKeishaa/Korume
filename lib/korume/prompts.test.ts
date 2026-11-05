@@ -28,12 +28,15 @@ describe("plannerPrompt", () => {
   });
 });
 
+const free = { tier: "free" as const, maxBlocks: 16 };
+const plus = { tier: "plus" as const, maxBlocks: 32 };
+
 describe("answerPrompt — today's output (snapshot taken before the learner profile existed)", () => {
   it("is what it was", () => {
     const { user } = answerPrompt({
       question: "Why は?", locale: "en", anchor: { lineText: "今日は晴れ", videoTitle: "Ep" },
       recent: [{ question: "q", answer: "a" }], retrieval: [{ tool: "line_analysis", status: "ok", data: { n: 1 } }],
-      entities: [{ id: "ent:1", label: "今日", kind: "vocabulary" }],
+      entities: [{ id: "ent:1", label: "今日", kind: "vocabulary" }], depth: free,
     });
     expect(user).toMatchInlineSnapshot(`
       "<locale>English</locale>
@@ -50,7 +53,7 @@ describe("answerPrompt — today's output (snapshot taken before the learner pro
 
 describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
   const base = {
-    question: "Why は?", locale: "en" as const, anchor: null, recent: [], retrieval: [], entities: [],
+    question: "Why は?", locale: "en" as const, anchor: null, recent: [], retrieval: [], entities: [], depth: free,
   };
   const full = { nativeLanguage: "vi", targetJlptLevel: "N2", learningGoal: "Speak on my trip", preferredPractices: ["shadowing", "pronunciation"] };
   const today = answerPrompt(base).user;
@@ -97,6 +100,12 @@ describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
     );
   });
 
+  it("states the nested bounds Gemini cannot see, identically on both tiers", () => {
+    const sentence = "Tables have 2 to 4 columns and at most 12 rows, and every cell has text (write \"—\" for an empty one); lists have at most 12 items; do not put numbers or ✓/✗ inside list-item text, the list style adds them.";
+    expect(answerPrompt(base).system[0]?.text).toContain(sentence);
+    expect(answerPrompt({ ...base, depth: { tier: "plus", maxBlocks: 32 } }).system[0]?.text).toContain(sentence);
+  });
+
   it("counts the profile inside the data cap: a result that fits without it is omitted with it", () => {
     const bytes = (t: string) => Buffer.byteLength(t, "utf8");
     const head0 = bytes(answerPrompt(base).user) - bytes("\n<retrieval></retrieval>");
@@ -106,6 +115,33 @@ describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
     const withProfile = answerPrompt({ ...base, retrieval, learnerProfile: { ...full, learningGoal: "g".repeat(200) } }).user;
     expect(withProfile).toContain('"status":"omitted"');
     expect(withProfile).not.toContain('"status":"ok"');
-    expect(answerInputBytesUpperBound()).toBe(bytes(answerPrompt(base).system[0]!.text) + ANSWER_DATA_MAX_BYTES);
+  });
+});
+
+describe("answerPrompt - structured depth", () => {
+  const base = { question: "q", locale: "en" as const, anchor: null, recent: [], retrieval: [], entities: [] };
+  it("persona names every block type, forbids HTML/Markdown, lets length follow the question", () => {
+    const t = answerPrompt({ ...base, depth: free }).system[0]!.text;
+    expect(t).not.toContain("concise");
+    for (const b of ["paragraph", "example", "context_card", "followups", "heading", "list", "table"]) expect(t).toContain(b);
+    expect(t).toContain("No HTML, no Markdown");
+    expect(t).toContain("short question");
+  });
+  it("depth block differs by tier; persona is identical (stable cache key)", () => {
+    const f = answerPrompt({ ...base, depth: free }).system;
+    const p = answerPrompt({ ...base, depth: plus }).system;
+    expect(f[1]!.text).toContain("answer fully but compactly: what it means, the key grammar, one example");
+    expect(f[1]!.text).toContain("at most 16 blocks");
+    expect(p[1]!.text).toContain("give the full analysis when the question warrants it: components (table), grammar points, common mistakes (✓/✗), practice sentences, follow-ups");
+    expect(p[1]!.text).toContain("at most 32 blocks");
+    expect(f[0]!.text).toBe(p[0]!.text);
+    expect(f.every((b) => b.cacheable)).toBe(true);
+  });
+  it("upper bound counts both system blocks, for each tier", () => {
+    const bytes = (t: string) => Buffer.byteLength(t, "utf8");
+    for (const depth of [free, plus]) {
+      const sys = answerPrompt({ ...base, depth }).system;
+      expect(answerInputBytesUpperBound(depth)).toBe(sys.reduce((n, b) => n + bytes(b.text), 0) + ANSWER_DATA_MAX_BYTES);
+    }
   });
 });

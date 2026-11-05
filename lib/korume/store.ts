@@ -3,7 +3,7 @@ import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { fetchAllPages, fetchByIdChunks } from "@/lib/data/query-pagination";
 import type { Utf16Span } from "@/lib/analysis/types";
-import type { AnswerV1 } from "./answer";
+import type { Answer } from "./answer";
 import { NATIVE_LANGUAGES } from "@/lib/profile/languages";
 import { PREFERRED_PRACTICES } from "@/lib/profile/practices";
 import type { LearnerProfileContext } from "./prompts";
@@ -54,7 +54,8 @@ export type ReservationState = "held" | "settled" | "released";
 
 export interface CompleteTurnArgs {
   sessionId: string; turnId: string; reservationId: string; generationId: string;
-  credits: number; usd: number; content: string; contentJson: AnswerV1; groundingJson: GroundedEntity[]; title: string;
+  credits: number; usd: number; content: string; contentJson: Answer; groundingJson: GroundedEntity[]; title: string;
+  contentSchemaVersion: number;
 }
 
 /**
@@ -212,6 +213,7 @@ export const sqlKorumeStore: KorumeStore = {
       p_session: args.sessionId, p_turn: args.turnId, p_reservation: args.reservationId, p_generation: args.generationId,
       p_credits: args.credits, p_usd: args.usd, p_content: args.content, p_content_json: args.contentJson,
       p_grounding_json: args.groundingJson, p_title: args.title,
+      p_content_schema_version: args.contentSchemaVersion,
     });
     if (error) throw error;
     const row = (Array.isArray(data) ? data[0] : data) as { message_id: string; charged: boolean } | undefined;

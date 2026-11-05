@@ -412,9 +412,9 @@ begin
     'korumegate-ent-complete-plus', 3, 0.02, pg_temp.korume_limits(), 120, t);
   if r.outcome <> 'reserved' then raise exception 'FAIL 13 setup: %', r.outcome; end if;
   select * into answer from korume_complete_turn(s, t, r.reservation_id, null, 3, 0.01,
-    'answer', '{"blocks":[]}', '{"sources":[]}', 'first title');
+    'answer', '{"blocks":[]}', '{"sources":[]}', 'first title', 2::smallint);
   select * into again from korume_complete_turn(s, t, r.reservation_id, null, 3, 0.01,
-    'duplicate', '{"blocks":[]}', '{"sources":[]}', 'second title');
+    'duplicate', '{"blocks":[]}', '{"sources":[]}', 'second title', 2::smallint);
   if not answer.charged or again.charged or answer.message_id is distinct from again.message_id
     or (select count(*) from conversation_messages where session_id = s and turn_id = t and role = 'ai') <> 1
     or (select count(*) from ai_usage_charges where reservation_id = r.reservation_id and credits = 3) <> 1
@@ -422,7 +422,7 @@ begin
     or (select title from conversation_sessions where id = s) <> 'first title'
     or (select updated_at from conversation_sessions where id = s) <= old_update
     or (select count(*) from conversation_messages where id = answer.message_id
-        and content_schema_version = 1 and grounding_schema_version = 1) <> 1 then
+        and content_schema_version = 2 and grounding_schema_version = 1) <> 1 then
     raise exception 'FAIL 13: Plus completion or idempotency';
   end if;
   insert into conversation_sessions (user_id, kind, title)
@@ -431,7 +431,7 @@ begin
   select * into free_r from ai_reserve(pg_temp.kgate_user('ent-complete'), 'learner', 'korume_free_turn',
     'korumegate-ent-complete-free', 0, 0.02, pg_temp.korume_limits(), 120, free_t);
   select * into free_answer from korume_complete_turn(free_s, free_t, free_r.reservation_id, null, 99, 0.01,
-    'free answer', '{"blocks":[]}', '{"sources":[]}', 'new title');
+    'free answer', '{"blocks":[]}', '{"sources":[]}', 'new title', 2::smallint);
   if not free_answer.charged or (select credits from ai_usage_charges where reservation_id = free_r.reservation_id) <> 0
     or (select title from conversation_sessions where id = free_s) <> 'saved title' then
     raise exception 'FAIL 13: Free completion charged credits or replaced title';

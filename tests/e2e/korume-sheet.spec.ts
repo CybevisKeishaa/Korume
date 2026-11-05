@@ -1,6 +1,7 @@
 import { expect, test, type Locator, type Page } from "@playwright/test";
 import { fakeYt } from "./fixtures/fake-youtube";
 import { answerOf, composer, openLessonAt, openMascot, registerLearner, sheet, stubTurns } from "./fixtures/korume-page";
+import { RICH_BLOCKS, RICH_HEADERS, RICH_HEADING, seedKorumeData } from "./fixtures/korume-data";
 import { seedWorkspaceData, type WorkspaceData } from "./fixtures/workspace-data";
 
 /**
@@ -292,3 +293,34 @@ for (const viewport of [{ width: 1280, height: 672 }, { width: 1280, height: 529
     });
   });
 }
+
+test.describe("rich answers (rich-answers spec §8)", () => {
+  test.use({ viewport: { width: 1280, height: 529 } });
+
+  test("rich answer renders in both layouts", async ({ page }) => {
+    const learner = await registerLearner(data, page, "e2e_korume_sheet_rich");
+    const seeded = await seedKorumeData(data.admin, { userId: learner.userId, videoId: data.videoId, lineIds: data.lineIds });
+    try {
+      await stubTurns(page, (body) => ({ status: 200, body: { message: { ...answerOf(body.turnId, RICH_HEADING).message, answer: { blocks: RICH_BLOCKS } } } }));
+      await openLessonAt(data, page, 3);
+      await openMascot(page);
+      await composer(sheet(page)).fill("Compare は and が");
+      await composer(sheet(page)).press("Enter");
+      const check = async (scope: Locator) => {
+        await expect(scope.getByRole("heading", { name: RICH_HEADING })).toBeVisible();
+        for (const name of RICH_HEADERS) await expect(scope.getByRole("columnheader", { name })).toBeVisible();
+        await expect(scope.getByText("Correct", { exact: true })).toBeVisible();
+        await expect(scope.getByText("Wrong", { exact: true })).toBeVisible();
+        await expect(scope.locator("table").locator("xpath=..")).toHaveCSS("overflow-x", /^(auto|scroll)$/);
+      };
+      await expect(sheet(page)).toHaveAttribute("data-layout", "small");
+      await check(sheet(page));
+      await sheet(page).getByRole("button", { name: "Enlarge Korume" }).click();
+      await expect(sheet(page)).toHaveAttribute("data-layout", "large");
+      await check(sheet(page));
+      // The persisted v2 row reads back the same on the chat page.
+      await page.goto(`/en/korume/chat?thread=${seeded.richThreadId}`);
+      await check(page.locator("main"));
+    } finally { await seeded.cleanup(); }
+  });
+});
