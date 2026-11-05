@@ -62,6 +62,11 @@ Plus answer token default is 6144.
   - quick plus (first run missed: planner said kind=explain, n=7; one planner text tweak "what does X mean?", re-run once): `run 1 · kind=quick · ok · paragraph,example,followups · n=3 · out=403/6144 · followups=true · chips=[22,21,17] · ms=1688`
   - go-deeper plus: `run 1 · kind=explain · ok · n=8 · out=958/6144 · followups=false · ms=3127`
 
+- Stability, plus quick x3 (no tuning), 3/3 kind=quick, followups last, all chips <= 40; lint 0 errors after turn.test.ts:200 `() => undefined`:
+  - run 1 · kind=quick · n=4 · out=477/6144 · chips=[22,21,18] · ms=2253
+  - run 2 · kind=quick · n=3 · out=442/6144 · chips=[22,21,22] · ms=1906
+  - run 3 · kind=quick · n=4 · out=416/6144 · chips=[22,18,19] · ms=1916
+
 ## Working tree and environment
 
 - Owner: Claude

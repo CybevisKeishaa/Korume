@@ -197,7 +197,7 @@ describe("runTurn — the planner's kind shapes the answer", () => {
   });
 
   it("logs whether the answer met its floor; a miss is still answered", async () => {
-    const info = vi.spyOn(console, "info").mockImplementation(() => {});
+    const info = vi.spyOn(console, "info").mockImplementation(() => undefined);
     fake.queueStructured({ steps: [], kind: "analyze" }, PLAN_USAGE);
     fake.queueStructured(answerOf(5), ANSWER_USAGE);
     expect((await runTurn(input(), deps({ tier: "plus" }))).status).toBe("answered");
