@@ -163,7 +163,7 @@ describe("answerPrompt - structured depth", () => {
   });
   it("plus analyze asks for the full shape; quick always offers a fuller analysis first", () => {
     const t = answerPrompt({ ...base, depth: { tier: "plus", kind: "analyze", maxBlocks: 32 } }).system[1]!.text;
-    for (const w of ["level-1", "table", "check list", "numbered list"]) expect(t).toContain(w);
+    for (const w of ["exactly four level-1", "1. sentence components", "2. grammar points", "3. common mistakes", "4. practice sentences", "check list", "numbered list", "End with a followups block"]) expect(t).toContain(w);
     for (const tier of ["free", "plus"] as const) {
       expect(answerPrompt({ ...base, depth: { tier, kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("first chip");
       expect(answerPrompt({ ...base, depth: { tier, kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("at most 40 characters");
