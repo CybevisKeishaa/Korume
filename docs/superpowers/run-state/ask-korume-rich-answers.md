@@ -25,7 +25,8 @@ analysis), the schema version persisted per message, and rendering of the new bl
 | 5 Schema version persisted | done | `1c323e7e` |
 | 6 Turn wiring by tier | done | `54dce280`, `5917f49b` |
 | 7 Render heading/list/table | done | `387290eb`, `5bc6451e` |
-| 8 Proof: E2E, live, gates, run state | done | this commit |
+| 8 Proof: E2E, live, gates, run state | done | `6af65215`, `cd7041d9` (fixture cleanup + real scroll check) |
+| Whole-branch review (Opus): 0 Critical, 2 Important | fixed | `1124d431` (over-long v2 answers cut not refused; persona states table/list bounds; h4 for level 2; table region a11y; superseded-test label) |
 
 ## Contracts and decisions
 
@@ -51,6 +52,12 @@ analysis), the schema version persisted per message, and rendering of the new bl
 - Task 8: persona tuned (live bar missed on round 1): the "short question" rule now says one word or its meaning, at
   most three blocks including followups, never a heading, and that a whole-sentence analysis is not short; a common
   mistake is always a check list. Depth strings are unchanged.
+- Ruling: `capBlocks` may leave a heading with nothing under it on an over-cap answer (review m4) — left, cosmetic and
+  rare. Cost if wrong: a dangling section title.
+- Ruling: Anthropic (production provider) acceptance of the v2 schema is NOT live-checked; spec §8 proof is Gemini-only.
+  Cost if wrong: production answers fail on schema until fixed — run one paid live Anthropic answer before production.
+- Ruling: `korume-sheet` case 10 (rail width survives reload, 1280×672) failed once under parallel load after the fix
+  wave and passed 6/6 in isolation; it predates this branch (master `4c51862c`). Treated as a load flake, not a blocker.
 
 ## Verification
 
@@ -64,7 +71,10 @@ analysis), the schema version persisted per message, and rendering of the new bl
     `ok paragraph,table,list out=699 table=true check=true`
   - free, "まま là gì?", no line: `ok paragraph,example,followups out=351` (3 blocks, no heading)
   - Before tuning (round 0): plus table=true but check=false in 3/3; short question 4 blocks.
-- Gates: vitest 735 files / 6675 tests passed; `tsc --noEmit` clean; `npm run lint` 0 errors (warnings only, in
+- After the review fix wave (`1124d431`): live plus `ok paragraph,table,list out=634 table=true check=true`; short
+  question `ok paragraph,example out=387`; E2E korume-sheet 30/31 (case 10 load flake, 6/6 isolated); final gates
+  vitest 735 files / 6676 passed, tsc clean, verify:protocol valid.
+- Gates (Task 8): vitest 735 files / 6675 tests passed; `tsc --noEmit` clean; `npm run lint` 0 errors (warnings only, in
   pre-existing test files); `verify:protocol` valid. `verify:db:korume` not run (see Blockers).
 
 ## Working tree and environment
@@ -80,4 +90,10 @@ analysis), the schema version persisted per message, and rendering of the new bl
 
 - Owner call: Plus page wording "phan tich day du" (spec §6).
 - Owner runs `verify:db:korume` on a fresh DB; the shared local DB already has the 11-arg migration applied.
-- Optional deferred minors are listed in `.superpowers/sdd/2026-11-05-ask-korume-rich-answers/progress.md`.
+- Before production: apply the migration before the app deploy (new code calls the 11-arg RPC); one live Anthropic
+  answer; watch the `korume_answer` validation_error rate per tier (a §7-depth Plus answer may approach 4096 tokens).
+- Live Plus answers are 3–5 blocks (table + ✓/✗ list) — far shorter than the §7 four-section target; tune further only
+  if the owner wants §7 depth before approving "phân tích đầy đủ" copy.
+- Optional deferred minors: probe flag parsing; 2-byte system-join slack in the input bound; `size-4` icon class;
+  repeated `askKorumeAnswer` test literals; no korume.sql call on the default (10-arg) path; shared check-list persona
+  line may nudge free answers; ragged-row / h2-class test strength.
