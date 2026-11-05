@@ -100,6 +100,12 @@ describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
     );
   });
 
+  it("states the nested bounds Gemini cannot see, identically on both tiers", () => {
+    const sentence = "Tables have 2 to 4 columns and at most 12 rows, and every cell has text (write \"—\" for an empty one); lists have at most 12 items; do not put numbers or ✓/✗ inside list-item text, the list style adds them.";
+    expect(answerPrompt(base).system[0]?.text).toContain(sentence);
+    expect(answerPrompt({ ...base, depth: { tier: "plus", maxBlocks: 32 } }).system[0]?.text).toContain(sentence);
+  });
+
   it("counts the profile inside the data cap: a result that fits without it is omitted with it", () => {
     const bytes = (t: string) => Buffer.byteLength(t, "utf8");
     const head0 = bytes(answerPrompt(base).user) - bytes("\n<retrieval></retrieval>");

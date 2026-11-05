@@ -48,6 +48,7 @@
     "dismissSpeech": "Đóng lời nhắn"
   },
   "ask": {
+    "table": "Bảng",
     "thinking": "Korume đang suy nghĩ…",
     "tryAgain": "Thử lại",
     "failed": "Korume chưa trả lời được câu này.",

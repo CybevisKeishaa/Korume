@@ -81,11 +81,12 @@ function AnswerBlock({ block, entities, onFollowup }: {
       const [first, ...rest] = block.runs;
       const numeral = block.level === 1 && first && "text" in first ? /^(\d+[.)]|[①-⑳])(\s*)/.exec(first.text) : null;
       const runs: Run[] = numeral && first && "text" in first ? [{ ...first, text: first.text.slice(numeral[1]?.length) }, ...rest] : block.runs;
+      const H = block.level === 1 ? "h3" : "h4";
       return (
-        <h3 className={block.level === 1 ? "text-body-lg font-semibold text-foreground" : "text-body font-semibold text-foreground"}>
+        <H className={block.level === 1 ? "text-body-lg font-semibold text-foreground" : "text-body font-semibold text-foreground"}>
           {numeral ? <span className="text-primary-strong">{numeral[1]}</span> : null}
           {runs.map((run, i) => <RunText key={i} run={run} />)}
-        </h3>
+        </H>
       );
     }
     case "list": {
@@ -108,7 +109,7 @@ function AnswerBlock({ block, entities, onFollowup }: {
     }
     case "table":
       return (
-        <div className="overflow-x-auto">
+        <div className="korume-scroll overflow-x-auto" role="region" tabIndex={0} aria-label={t("ask.table")}>
           <table className="min-w-max border-collapse text-body">
             <thead>
               <tr>

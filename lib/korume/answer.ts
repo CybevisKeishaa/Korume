@@ -71,7 +71,11 @@ export const answerV1Schema: z.ZodType<AnswerV1> = z.object({
 
 /** The shape new answers take (rich-answers spec §4): v1 blocks plus heading, list and table; invalid blocks dropped alike. */
 export const answerV2Schema: z.ZodType<Answer> = z.object({
-  blocks: z.preprocess(dropInvalidBlocks(block), z.array(block).min(1).max(MAX_ANSWER_BLOCKS)),
+  // Over-long answers are cut here, not refused: the Plus cap equals the ceiling, so a refusal would bill the learner for nothing.
+  blocks: z.preprocess((blocks) => {
+    const kept = dropInvalidBlocks(block)(blocks);
+    return Array.isArray(kept) ? capBlocks({ blocks: kept as Block[] }, MAX_ANSWER_BLOCKS).blocks : kept;
+  }, z.array(block).min(1).max(MAX_ANSWER_BLOCKS)),
 }).strict();
 
 /** Cut to `max` blocks, keeping a trailing followups block (the chips are the answer's exit). */

@@ -25,6 +25,7 @@ describe("AnswerBlocks", () => {
     const h1 = getAllByRole("heading")[0] as HTMLElement, h2 = getAllByRole("heading")[1] as HTMLElement;
     expect(h1.textContent).toBe("1. Meaning");
     expect(h1.querySelector(".text-primary-strong")?.textContent).toBe("1.");
+    expect([h1.tagName, h2.tagName]).toEqual(["H3", "H4"]);
     expect(h2.className).toContain("text-body");
     expect(h2.querySelector(".text-primary-strong")).toBeNull();
   });

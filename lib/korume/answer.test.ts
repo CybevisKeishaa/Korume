@@ -78,9 +78,12 @@ describe("answerV2Schema", () => {
     expect(kinds([{ ...table, rows: [[t("a"), t("b")]] }])).toEqual(["table"]);
   });
 
-  it("accepts 32 blocks, refuses 33", () => {
+  it("accepts 32 blocks, cuts 33 to 32 keeping trailing followups", () => {
+    const followups: Block = { type: "followups", chips: ["ok"] };
     expect(answerV2Schema.safeParse({ blocks: Array.from({ length: 32 }, () => para) }).success).toBe(true);
-    expect(answerV2Schema.safeParse({ blocks: Array.from({ length: 33 }, () => para) }).success).toBe(false);
+    const cut = answerV2Schema.safeParse({ blocks: [...Array.from({ length: 32 }, () => para), followups] });
+    expect(cut.success && cut.data.blocks).toHaveLength(32);
+    expect(cut.success && cut.data.blocks[31]).toEqual(followups);
   });
 
   it("v1 still drops a valid v2 heading", () => {

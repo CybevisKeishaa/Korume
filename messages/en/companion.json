@@ -48,6 +48,7 @@
     "dismissSpeech": "Dismiss"
   },
   "ask": {
+    "table": "Table",
     "thinking": "Korume is thinking…",
     "tryAgain": "Try again",
     "failed": "Korume couldn't answer that.",

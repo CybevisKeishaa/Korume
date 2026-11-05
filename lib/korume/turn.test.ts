@@ -88,7 +88,9 @@ describe("runTurn — the happy path", () => {
     expect(JSON.stringify(stored?.contentJson)).not.toContain("ent:999");
     expect(stored?.groundingJson).toEqual([{ id: "ent:1", label: "今日", kind: "vocabulary", gloss: "today", jlpt: "N5" }]);
     expect(korume.threads[0]?.title).toBe("Why は here?");
-    if (outcome.status === "answered") expect(outcome.message).toMatchObject({ role: "assistant", turnId: TURN, grounding: stored?.groundingJson });
+    expect(outcome.status).toBe("answered");
+    if (outcome.status !== "answered") throw new Error("not answered");
+    expect(outcome.message).toMatchObject({ role: "assistant", turnId: TURN, grounding: stored?.groundingJson });
   });
 
   it("charges a Plus turn credits for what it actually cost", async () => {
@@ -167,7 +169,9 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     const [stored] = assistantRows();
     expect(stored?.contentSchemaVersion).toBe(2);
     expect(stored?.contentJson).toEqual(answer);
-    if (outcome.status === "answered") expect(outcome.message.answer).toEqual(answer);
+    expect(outcome.status).toBe("answered");
+    if (outcome.status !== "answered") throw new Error("not answered");
+    expect(outcome.message.answer).toEqual(answer);
   });
 });
 

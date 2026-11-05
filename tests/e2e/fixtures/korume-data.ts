@@ -31,7 +31,7 @@ export interface KorumeData {
 
 /**
  * Seeds two Ask Korume threads for one learner with the SERVICE ROLE — exactly what the turn pipeline persists
- * (spec §2.2): a user message, then an `ai` message whose `content_json` is a valid `AnswerV1` and whose
+ * (spec §2.2): a user message, then an `ai` message whose `content_json` is a valid `AnswerV1` (plus one v2 rich row: heading, list and table blocks) and whose
  * `grounding_json` holds one dictionary (`ent:`) and one token (`tok:`) entity with exposure. Nothing calls an AI.
  */
 export async function seedKorumeData(admin: SupabaseClient, { userId, videoId, lineIds }: { userId: string; videoId: string; lineIds: string[] }): Promise<KorumeData> {

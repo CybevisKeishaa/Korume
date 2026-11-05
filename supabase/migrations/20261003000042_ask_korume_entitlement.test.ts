@@ -5,7 +5,8 @@ import { expect, it } from "vitest";
 const normalized = (file: string): string => readFileSync(join(process.cwd(), "supabase/migrations", file), "utf8")
   .replace(/--[^\n]*/g, "").replace(/\s+/g, " ").toLowerCase();
 
-it("completes one assistant turn, settles once, and keeps the function service-only", () => {
+// Historical: 042 as written; 20261105000052 supersedes korume_complete_turn (schema version 2) and pins the live body.
+it("042 as written — superseded by 052: completes one assistant turn, settles once, and keeps the function service-only", () => {
   const sql = normalized("20261003000042_ask_korume_entitlement.sql");
   expect(sql).toContain("create function korume_complete_turn(");
   expect(sql).toContain("language plpgsql security definer set search_path = public");
