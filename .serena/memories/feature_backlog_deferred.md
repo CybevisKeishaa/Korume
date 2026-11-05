@@ -103,6 +103,11 @@ tech nits vẫn đọc ở project_status.
 20. **Nghĩa sai trong danh sách từ của bài** — endpoint `/api/videos/[id]/vocabulary` lấy mục JMdict đầu tiên mỗi
     token (人 → じん "-ian", ん → "yes; yeah"). Ảnh hưởng list view của Summary và panel từ vựng của workspace.
 
+## Nguồn: Ask Korume Plus depth (2026-11-06)
+21. **Copy "phân tích đầy đủ" cho Plus** — owner đồng ý quảng bá; app chưa có trang giá/upsell nên chưa có chỗ đặt.
+    Làm cùng trang giá L8 (item 13). Nội dung đã giao: Plus analyze = 4 mục §7 (thành phần câu / ngữ pháp / lỗi
+    thường gặp ✓/✗ / luyện tập) + followups — live Gemini 6/6 đủ 4 mục, followups 5/6 (branch `ask-korume-plus-sections`).
+
 ## Đã trả nợ (để đối chiếu, không cần làm lại)
 - Weekly leaderboard (L6→L7, ship `01ae59d`, opt-in + own-week-first).
 - Leaderboard đặt ở L7 thay vì L6 = đúng kế hoạch G2, không phải bỏ sót.

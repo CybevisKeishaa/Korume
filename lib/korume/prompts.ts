@@ -82,7 +82,7 @@ export const ANSWER_SHAPES: Record<AnswerKind, Record<PlanTier, { min: number; m
   },
   analyze: {
     free: { min: 4, max: null, elements: "Include a components table and the key grammar points, compact; a practice section is not needed." },
-    plus: { min: 8, max: null, elements: "Give the full analysis: level-1 numbered section headings; a components table; grammar points, each a level-2 heading with a short explanation and an example; a common-mistakes check list (✓/✗); practice sentences as a numbered list; followups last." },
+    plus: { min: 8, max: null, elements: "Give the full analysis: open with the sentence and its translation, then exactly four level-1 numbered section headings in this order: 1. sentence components (a table, then the general pattern); 2. grammar points, each a level-2 heading with its form, nuance and an example; 3. common mistakes (a ✓/✗ check list); 4. practice sentences (a numbered list of three). End with a followups block of 2–3 chips offering what to explore next, each at most 40 characters." },
   },
 };
 
