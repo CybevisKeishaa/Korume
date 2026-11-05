@@ -1,4 +1,4 @@
-import { ANSWER_SCHEMA_VERSION, answerV1Schema, GROUNDING_SCHEMA_VERSION, groundingSchema } from "./answer";
+import { answerV1Schema, GROUNDING_SCHEMA_VERSION, groundingSchema } from "./answer";
 import type { MessageRow } from "./store";
 import type { KorumeMessageView } from "./types";
 
@@ -8,7 +8,7 @@ import type { KorumeMessageView } from "./types";
  */
 export function toMessageView(m: MessageRow): KorumeMessageView {
   const assistant = m.role === "ai";
-  const answer = assistant && m.contentSchemaVersion === ANSWER_SCHEMA_VERSION ? answerV1Schema.safeParse(m.contentJson) : null;
+  const answer = assistant && m.contentSchemaVersion === 1 ? answerV1Schema.safeParse(m.contentJson) : null; // v1 rows only until the read path takes v2 (later task)
   const grounding = assistant && m.groundingSchemaVersion === GROUNDING_SCHEMA_VERSION ? groundingSchema.safeParse(m.groundingJson) : null;
   return {
     id: m.id,

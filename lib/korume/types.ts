@@ -1,5 +1,5 @@
 import type { Utf16Span } from "@/lib/analysis/types";
-import type { AnswerV1 } from "./answer";
+import type { Answer } from "./answer";
 
 export interface KorumeAnchorInput { videoId: string; lineId: string; span: Utf16Span | null }
 export interface KorumeAnchorView {
@@ -20,7 +20,7 @@ export interface GroundedEntity {
 }
 export interface KorumeMessageView {
   id: string; turnId: string; role: "user" | "assistant"; text: string;
-  answer: AnswerV1 | null;
+  answer: Answer | null;
   grounding: GroundedEntity[] | null;
   createdAt: string;
 }

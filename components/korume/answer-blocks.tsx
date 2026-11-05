@@ -2,16 +2,16 @@
 
 import { useTranslations } from "@/lib/i18n";
 import { FuriganaText } from "@/components/video-player/furigana-text";
-import type { AnswerV1, Block, Run } from "@/lib/korume/answer";
+import type { Answer, Block, Run } from "@/lib/korume/answer";
 import type { GroundedEntity } from "@/lib/korume/types";
 import { ListenButton } from "./listen-button";
 
 /**
- * Renders an `AnswerV1` (spec §6.1) as plain React text nodes — React escapes every string, so a `<script>` the
+ * Renders an `Answer` (spec §6.1) as plain React text nodes — React escapes every string, so a `<script>` the
  * model wrote is shown as characters, never parsed. There is no HTML or Markdown path in this component.
  */
 export function AnswerBlocks({ answer, grounding, onFollowup }: {
-  answer: AnswerV1;
+  answer: Answer;
   grounding: GroundedEntity[];
   onFollowup?: (text: string) => void;
 }) {
