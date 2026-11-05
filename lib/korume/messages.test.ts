@@ -16,8 +16,23 @@ describe("toMessageView", () => {
     });
   });
 
+  it("reads each row with the schema of its own version", () => {
+    const para = answer.blocks[0];
+    const rich = { blocks: [
+      { type: "heading", level: 1, runs: [{ text: "H" }] },
+      para,
+      { type: "list", style: "bullet", items: [{ runs: [{ text: "a" }] }] },
+      { type: "table", header: [[{ text: "h" }], [{ text: "i" }]], rows: [[[{ text: "c" }], [{ text: "d" }]]] },
+    ] };
+    expect(toMessageView(row({ contentSchemaVersion: 2, contentJson: rich })).answer).toEqual(rich);
+    // a v1 row is read by the v1 schema: heading, list and table are dropped, the paragraph stays
+    expect(toMessageView(row({ contentSchemaVersion: 1, contentJson: rich })).answer).toEqual(answer);
+    expect(toMessageView(row({ contentSchemaVersion: 2, contentJson: answer })).answer).toEqual(answer);
+  });
+
   it("degrades an unknown version or a shape that no longer parses to plain text", () => {
-    expect(toMessageView(row({ contentSchemaVersion: 2 })).answer).toBeNull();
+    expect(toMessageView(row({ contentSchemaVersion: 3 })).answer).toBeNull();
+    expect(toMessageView(row({ contentSchemaVersion: 3 })).text).toBe("Hi");
     expect(toMessageView(row({ contentJson: { blocks: [{ type: "html", html: "<b>" }] } })).answer).toBeNull();
     expect(toMessageView(row({ groundingJson: [{ id: "javascript:x", label: "x", kind: "particle" }] })).grounding).toBeNull();
   });

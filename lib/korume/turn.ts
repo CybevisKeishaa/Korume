@@ -9,7 +9,7 @@ import { readKnowledgeConfig, type KnowledgeConfig } from "@/lib/knowledge/confi
 import { creditsFor, estimateCostUsd, upperBoundCostUsdForTier } from "@/lib/knowledge/pricing";
 import { createSqlKnowledgeStore } from "@/lib/knowledge/store";
 import type { GenerationRow, KnowledgeLocale, KnowledgeStore, PlanTier } from "@/lib/knowledge/types";
-import { answerToPlainText, answerV1Schema, dropUngroundedCards, groundedEntitySchema } from "./answer";
+import { ANSWER_SCHEMA_VERSION, answerToPlainText, answerV1Schema, dropUngroundedCards, groundedEntitySchema } from "./answer";
 import { buildGroundedEntities } from "./grounding";
 import { MAX_RECENT_TURNS, RETRIEVAL_DEADLINE_MS, TOOL_DEADLINE_MS, TURN_RESERVATION_TTL_SECONDS } from "./limits";
 import { toMessageView } from "./messages";
@@ -272,6 +272,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
       sessionId: threadId, turnId, reservationId, generationId,
       credits: tier === "plus" ? creditsFor(spentUsd, config.creditUsdUnit) : 0,
       usd: spentUsd, content, contentJson: answer, groundingJson: sealed, title: threadTitle(text),
+      contentSchemaVersion: ANSWER_SCHEMA_VERSION,
     });
     return {
       status: "answered",

@@ -99,7 +99,7 @@ export function createMemoryKorumeStore(knowledge: MemoryKnowledgeStore, viewer:
       const id = randomUUID();
       messages.push({
         sessionId: args.sessionId, id, turnId: args.turnId, role: "ai", content: args.content,
-        contentJson: args.contentJson, contentSchemaVersion: 1, groundingJson: args.groundingJson, groundingSchemaVersion: 1,
+        contentJson: args.contentJson, contentSchemaVersion: args.contentSchemaVersion, groundingJson: args.groundingJson, groundingSchemaVersion: 1,
         createdAt: now(),
       });
       const charged = await knowledge.store.settle(args.reservationId, args.generationId, args.credits, args.usd);
