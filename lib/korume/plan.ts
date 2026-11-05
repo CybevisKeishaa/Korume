@@ -12,8 +12,15 @@ export const MAX_PLAN_STEPS = 4;
 /** Parse-time ceiling: a longer list is a malformed plan, not something to trim. */
 const MAX_PARSED_STEPS = 8;
 
+export const ANSWER_KINDS = ["quick", "explain", "analyze"] as const;
+export type AnswerKind = (typeof ANSWER_KINDS)[number];
+
+/** A plan without a kind (older shape, failed planner) gets the middle shape. */
+export const planKind = (raw: { kind?: AnswerKind; steps?: unknown }): AnswerKind => raw.kind ?? "explain";
+
 /** The allowlist (spec §5.1). An unknown tool fails the parse and the turn falls back to `fallbackPlan`. */
 export const planSchema = z.object({
+  kind: z.enum(ANSWER_KINDS).optional(),
   steps: z.array(z.discriminatedUnion("tool", [
     z.object({ tool: z.literal("line_analysis") }),
     z.object({ tool: z.literal("dictionary_lookup"), term: z.string() }),

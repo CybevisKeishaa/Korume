@@ -30,7 +30,7 @@ const provider = createGeminiProvider({
   deepModel: process.env.GEMINI_MODEL_DEEP!,
 });
 const { system, user } = answerPrompt({
-  question, locale: "vi", anchor: { lineText, videoTitle: "probe" }, recent: [], retrieval: [], entities: [], depth: { tier, maxBlocks },
+  question, locale: "vi", anchor: { lineText, videoTitle: "probe" }, recent: [], retrieval: [], entities: [], depth: { tier, kind: "explain", maxBlocks },
 });
 
 let http400 = false;

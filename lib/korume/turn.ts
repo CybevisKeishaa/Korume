@@ -108,10 +108,10 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
   const recent = recentTurns(rows, turnId);
 
   const depthCfg = config.askKorumeAnswer[tier];
-  const depth = { tier, maxBlocks: depthCfg.maxBlocks };
+  const depth = { tier, kind: "explain" as const, maxBlocks: depthCfg.maxBlocks }; // Task 2 wires the planner kind
   const planner = plannerPrompt({ question: text, anchor: promptAnchor, recent });
   const planUpper = upperBoundCostUsdForTier(provider.name, "fast", bytes(planner.system, planner.user), PLAN_MAX_TOKENS);
-  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(depth), depthCfg.maxTokens);
+  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(tier, depthCfg.maxBlocks), depthCfg.maxTokens);
   const upperUsd = planUpper + answerUpper;
 
   const reservation = await knowledge.reserve({

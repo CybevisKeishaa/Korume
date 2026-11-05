@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { answerInputBytesUpperBound, ANSWER_DATA_MAX_BYTES, answerPrompt, plannerPrompt, quoteBlock } from "./prompts";
+import { ANSWER_KINDS } from "./plan";
+import { answerFloor, ANSWER_SHAPES, answerInputBytesUpperBound, ANSWER_DATA_MAX_BYTES, answerPrompt, plannerPrompt, quoteBlock } from "./prompts";
 
 describe("quoteBlock", () => {
   it("keeps untrusted text from closing its own block", () => {
@@ -28,8 +29,8 @@ describe("plannerPrompt", () => {
   });
 });
 
-const free = { tier: "free" as const, maxBlocks: 16 };
-const plus = { tier: "plus" as const, maxBlocks: 32 };
+const free = { tier: "free" as const, kind: "explain" as const, maxBlocks: 16 };
+const plus = { tier: "plus" as const, kind: "explain" as const, maxBlocks: 32 };
 
 describe("answerPrompt — today's output (snapshot taken before the learner profile existed)", () => {
   it("is what it was", () => {
@@ -103,7 +104,7 @@ describe("answerPrompt — learner profile (spec §6.4, R4)", () => {
   it("states the nested bounds Gemini cannot see, identically on both tiers", () => {
     const sentence = "Tables have 2 to 4 columns and at most 12 rows, and every cell has text (write \"—\" for an empty one); lists have at most 12 items; do not put numbers or ✓/✗ inside list-item text, the list style adds them.";
     expect(answerPrompt(base).system[0]?.text).toContain(sentence);
-    expect(answerPrompt({ ...base, depth: { tier: "plus", maxBlocks: 32 } }).system[0]?.text).toContain(sentence);
+    expect(answerPrompt({ ...base, depth: { tier: "plus", kind: "explain", maxBlocks: 32 } }).system[0]?.text).toContain(sentence);
   });
 
   it("counts the profile inside the data cap: a result that fits without it is omitted with it", () => {
@@ -125,7 +126,7 @@ describe("answerPrompt - structured depth", () => {
     expect(t).not.toContain("concise");
     for (const b of ["paragraph", "example", "context_card", "followups", "heading", "list", "table"]) expect(t).toContain(b);
     expect(t).toContain("No HTML, no Markdown");
-    expect(t).toContain("short question");
+    expect(t).not.toContain("a short question about one word");
   });
   it("depth block differs by tier; persona is identical (stable cache key)", () => {
     const f = answerPrompt({ ...base, depth: free }).system;
@@ -137,11 +138,38 @@ describe("answerPrompt - structured depth", () => {
     expect(f[0]!.text).toBe(p[0]!.text);
     expect(f.every((b) => b.cacheable)).toBe(true);
   });
-  it("upper bound counts both system blocks, for each tier", () => {
+  it("upper bound is the longest kind's system blocks, for each tier", () => {
     const bytes = (t: string) => Buffer.byteLength(t, "utf8");
-    for (const depth of [free, plus]) {
-      const sys = answerPrompt({ ...base, depth }).system;
-      expect(answerInputBytesUpperBound(depth)).toBe(sys.reduce((n, b) => n + bytes(b.text), 0) + ANSWER_DATA_MAX_BYTES);
+    for (const [tier, maxBlocks] of [["free", 16], ["plus", 32]] as const) {
+      const sizes = ANSWER_KINDS.map((kind) =>
+        answerPrompt({ ...base, depth: { tier, kind, maxBlocks } }).system.reduce((n, b) => n + bytes(b.text), 0) + ANSWER_DATA_MAX_BYTES);
+      expect(answerInputBytesUpperBound(tier, maxBlocks)).toBe(Math.max(...sizes));
     }
+  });
+  it("states each kind's floor, ceiling and elements per tier; persona never varies", () => {
+    const personas = new Set<string>();
+    for (const [tier, maxBlocks] of [["free", 16], ["plus", 32]] as const) {
+      for (const kind of ANSWER_KINDS) {
+        const cell = ANSWER_SHAPES[kind][tier];
+        const { system } = answerPrompt({ ...base, depth: { tier, kind, maxBlocks } });
+        personas.add(system[0]!.text);
+        expect(system[1]!.text).toContain(`at least ${cell.min} blocks`);
+        expect(system[1]!.text).toContain(`at most ${cell.max ?? maxBlocks} blocks`);
+        expect(system[1]!.text).toContain(cell.elements);
+        expect(answerFloor(kind, tier)).toBe(cell.min);
+      }
+    }
+    expect(personas.size).toBe(1);
+  });
+  it("plus analyze asks for the full shape; quick always offers a fuller analysis first", () => {
+    const t = answerPrompt({ ...base, depth: { tier: "plus", kind: "analyze", maxBlocks: 32 } }).system[1]!.text;
+    for (const w of ["level-1", "table", "check list", "numbered list"]) expect(t).toContain(w);
+    for (const tier of ["free", "plus"] as const) {
+      expect(answerPrompt({ ...base, depth: { tier, kind: "quick", maxBlocks: 16 } }).system[1]!.text).toContain("first chip");
+    }
+  });
+  it("planner names the three kinds and asks for kind", () => {
+    const t = plannerPrompt({ question: "x", anchor: null, recent: [] }).system[0]!.text;
+    for (const w of ["quick", "explain", "analyze", "Also return kind"]) expect(t).toContain(w);
   });
 });

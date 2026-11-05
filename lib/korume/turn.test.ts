@@ -112,7 +112,7 @@ describe("runTurn — depth and reservation follow the plan tier", () => {
     return {
       actual: knowledge.reservations[0]?.reservedUsd ?? 0,
       expected: upperBoundCostUsdForTier("anthropic", "fast", planBytes, 512) +
-        upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound({ tier, maxBlocks: cfg.maxBlocks }), cfg.maxTokens),
+        upperBoundCostUsdForTier("anthropic", "deep", answerInputBytesUpperBound(tier, cfg.maxBlocks), cfg.maxTokens),
     };
   };
 
