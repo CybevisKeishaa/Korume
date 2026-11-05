@@ -108,9 +108,11 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
   const promptAnchor: PromptAnchor | null = anchor ? { lineText: anchor.lineText, videoTitle: anchor.videoTitle } : null;
   const recent = recentTurns(rows, turnId);
 
+  // Temporary: Task 6 finishes the turn wiring.
+  const depth = { tier, maxBlocks: config.askKorumeAnswer[tier].maxBlocks };
   const planner = plannerPrompt({ question: text, anchor: promptAnchor, recent });
   const planUpper = upperBoundCostUsdForTier(provider.name, "fast", bytes(planner.system, planner.user), PLAN_MAX_TOKENS);
-  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(), ANSWER_MAX_TOKENS);
+  const answerUpper = upperBoundCostUsdForTier(provider.name, "deep", answerInputBytesUpperBound(depth), ANSWER_MAX_TOKENS);
   const upperUsd = planUpper + answerUpper;
 
   const reservation = await knowledge.reserve({
@@ -200,7 +202,7 @@ export async function runTurn(input: TurnInput, deps: TurnDeps = {}): Promise<Tu
     const prompt = answerPrompt({
       question: text, locale: input.locale, anchor: promptAnchor, recent, learnerProfile,
       retrieval: results.map(({ tool, status, data, errorCode }) => ({ tool, status, data, errorCode })),
-      entities: grounding.map(({ id, label, kind }) => ({ id, label, kind })),
+      entities: grounding.map(({ id, label, kind }) => ({ id, label, kind })), depth,
     });
     started = Date.now();
     let answered;

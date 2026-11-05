@@ -8,6 +8,8 @@
 import { AiError } from "@/lib/ai/errors";
 import { createGeminiProvider } from "@/lib/ai/providers/gemini";
 import { answerV2Schema, capBlocks, MAX_ANSWER_BLOCKS } from "@/lib/korume/answer";
+import { readKnowledgeConfig } from "@/lib/knowledge/config";
+import type { PlanTier } from "@/lib/knowledge/types";
 import { answerPrompt } from "@/lib/korume/prompts";
 
 process.loadEnvFile(".env.local");
@@ -16,7 +18,8 @@ const arg = (name: string, fallback: string) => {
   const i = process.argv.indexOf(`--${name}`);
   return i >= 0 ? process.argv[i + 1]! : fallback;
 };
-const tier = arg("tier", "free");
+const tier = arg("tier", "free") as PlanTier;
+const { maxBlocks, maxTokens } = readKnowledgeConfig(process.env).askKorumeAnswer[tier];
 const runs = Number(arg("runs", "1"));
 const question = arg("question", "Phân tích câu này giúp mình");
 const lineText = arg("line", "間違った使い方のまま、間違った発音のまま、間違った文法のまま、そのまま覚えてしまうっていうのが一番良くないんですね。");
@@ -27,7 +30,7 @@ const provider = createGeminiProvider({
   deepModel: process.env.GEMINI_MODEL_DEEP!,
 });
 const { system, user } = answerPrompt({
-  question, locale: "vi", anchor: { lineText, videoTitle: "probe" }, recent: [], retrieval: [], entities: [],
+  question, locale: "vi", anchor: { lineText, videoTitle: "probe" }, recent: [], retrieval: [], entities: [], depth: { tier, maxBlocks },
 });
 
 let http400 = false;
@@ -35,7 +38,7 @@ for (let i = 1; i <= runs; i++) {
   let status = "ok", types = "", out: number | string = "n/a", table = false, check = false;
   try {
     const res = await provider.generateStructured(
-      { tier: "deep", system, messages: [{ role: "user", content: user }], maxTokens: tier === "plus" ? 4096 : 2048, reasoning: false },
+      { tier: "deep", system, messages: [{ role: "user", content: user }], maxTokens, reasoning: false },
       answerV2Schema,
     );
     const blocks = capBlocks(res.parsed, MAX_ANSWER_BLOCKS).blocks;
