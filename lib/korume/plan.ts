@@ -20,7 +20,8 @@ export const planKind = (raw: { kind?: AnswerKind; steps?: unknown }): AnswerKin
 
 /** The allowlist (spec §5.1). An unknown tool fails the parse and the turn falls back to `fallbackPlan`. */
 export const planSchema = z.object({
-  kind: z.enum(ANSWER_KINDS).optional(),
+  // An invalid kind must not drop good steps: it parses to undefined, which planKind reads as "explain".
+  kind: z.enum(ANSWER_KINDS).optional().catch(undefined),
   steps: z.array(z.discriminatedUnion("tool", [
     z.object({ tool: z.literal("line_analysis") }),
     z.object({ tool: z.literal("dictionary_lookup"), term: z.string() }),

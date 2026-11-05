@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { z } from "zod/v4";
 import { fallbackPlan, planKind, planSchema, validatePlan, type PlanStep } from "./plan";
 
 const anchor = { hasAnchor: true };
@@ -37,7 +38,13 @@ describe("plan kind", () => {
   it("is optional, limited to the three kinds, and defaults to explain", () => {
     expect(planSchema.safeParse({ steps: [], kind: "analyze" }).success).toBe(true);
     expect(planSchema.safeParse({ steps: [] }).success).toBe(true);
-    expect(planSchema.safeParse({ steps: [], kind: "deep" }).success).toBe(false);
+    const bad = planSchema.safeParse({ steps: [{ tool: "line_analysis" }], kind: "deep" });
+    expect(bad.success).toBe(true);
+    if (bad.success) {
+      expect(bad.data.steps).toHaveLength(1);
+      expect(planKind(bad.data)).toBe("explain");
+    }
+    expect(JSON.stringify(z.toJSONSchema(planSchema))).toMatch(/quick.*explain.*analyze/);
     expect(planKind({ steps: [] })).toBe("explain");
     expect(planKind({ steps: [], kind: "quick" })).toBe("quick");
   });

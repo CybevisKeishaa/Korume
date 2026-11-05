@@ -12,7 +12,7 @@ describe("readKnowledgeConfig", () => {
       systemGenerationsPerUserPerDay: 100,
       globalBudgetUsdPerDay: 5,
       creditUsdUnit: 0.001,
-      askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 4096 } },
+      askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 6144 } },
     });
   });
 
@@ -39,12 +39,12 @@ describe("readKnowledgeConfig", () => {
       systemGenerationsPerUserPerDay: 50,
       globalBudgetUsdPerDay: 12.5,
       creditUsdUnit: 0.002,
-      askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 4096 } },
+      askKorumeAnswer: { free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 6144 } },
     });
   });
 
   it("defaults, coerces and bounds the Ask Korume answer depth", () => {
-    expect(readKnowledgeConfig({}).askKorumeAnswer).toEqual({ free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 4096 } });
+    expect(readKnowledgeConfig({}).askKorumeAnswer).toEqual({ free: { maxBlocks: 16, maxTokens: 2048 }, plus: { maxBlocks: 32, maxTokens: 6144 } });
     expect(readKnowledgeConfig({ AI_ASK_KORUME_FREE_MAX_BLOCKS: "12", AI_ASK_KORUME_PLUS_ANSWER_MAX_TOKENS: "3000" }).askKorumeAnswer).toEqual({
       free: { maxBlocks: 12, maxTokens: 2048 },
       plus: { maxBlocks: 32, maxTokens: 3000 },
