@@ -6,7 +6,8 @@ import { seedLearner, type Learner } from "./typography/learner";
  * port-kanji Task 6 / spec §5.1: the inspect modal is `?kanji=<literal>` over any protected page, proven in a real
  * browser before its content exists — open from `/kanji` and from the lesson drawer, ‹ › on one history entry,
  * Esc / ✕ / Back / Forward / refresh / shared link, focus return, the lesson untouched underneath, garbage ignored,
- * and the Review button still a page. One learner for the file (the typography fixture), a fresh context per test.
+ * and the Review button still a page; Task 7: the favorite persists and lands in the "Saved kanji" strip, Add to Review
+ * puts a dictionary-only kanji into the review deck. One learner for the file (the typography fixture), a fresh context per test.
  */
 test.describe.configure({ mode: "serial" });
 test.use({ viewport: { width: 1280, height: 529 } });
@@ -30,8 +31,11 @@ async function open(browser: Browser): Promise<{ context: BrowserContext; page: 
 }
 
 const modal = (page: Page) => page.locator("dialog");
-const glyphLinks = (page: Page) => page.locator("main a[href*='kanji=']");
+// The level grid's glyphs (the "Saved kanji" strip above it opens with from=favorites).
+const glyphLinks = (page: Page) => page.locator("main a[href*='from=level']");
 const glyphOf = async (page: Page, index: number) => ((await glyphLinks(page).nth(index).locator("span").first().textContent()) ?? "").trim();
+// The inspect content repeats the glyph (words, composition): the heading is the one that names the kanji shown.
+const glyph = (page: Page, literal: string) => modal(page).getByRole("heading", { name: literal, exact: true });
 const historyLength = (page: Page) => page.evaluate(() => window.history.length);
 const search = (page: Page) => new URL(page.url()).searchParams;
 const path = (page: Page) => new URL(page.url()).pathname + new URL(page.url()).search;
@@ -47,7 +51,7 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
 
   await glyphLinks(page).nth(0).click();
   await expect(modal(page)).toBeVisible();
-  await expect(modal(page).getByText(first, { exact: true })).toBeVisible();
+  await expect(glyph(page, first)).toBeVisible();
   await expect.poll(() => search(page).get("kanji")).toBe(first);
   expect(search(page).get("from")).toBe("level:N5");
   expect(search(page).get("level")).toBe("N5");
@@ -55,7 +59,7 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
 
   await modal(page).getByRole("button", { name: "Next kanji" }).click();
   await expect.poll(() => search(page).get("kanji")).toBe(second);
-  await expect(modal(page).getByText(second, { exact: true })).toBeVisible();
+  await expect(glyph(page, second)).toBeVisible();
   expect(await historyLength(page)).toBe(entries);
 
   // Keyboard ‹ ›: the focused button stays mounted across the load, so focus stays on it (R10).
@@ -64,12 +68,12 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
   await nextButton.focus();
   await page.keyboard.press("Enter");
   await expect.poll(() => search(page).get("kanji")).toBe(third);
-  await expect(modal(page).getByText(third, { exact: true })).toBeVisible();
+  await expect(glyph(page, third)).toBeVisible();
   await expect(nextButton).toBeFocused();
   await prevButton.focus();
   await page.keyboard.press("Enter");
   await expect.poll(() => search(page).get("kanji")).toBe(second);
-  await expect(modal(page).getByText(second, { exact: true })).toBeVisible();
+  await expect(glyph(page, second)).toBeVisible();
   await expect(prevButton).toBeFocused();
   expect(await historyLength(page)).toBe(entries);
 
@@ -81,7 +85,7 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
   await page.goForward();
   await expect(modal(page)).toBeVisible();
   await expect.poll(() => search(page).get("kanji")).toBe(second);
-  await expect(modal(page).getByText(second, { exact: true })).toBeVisible();
+  await expect(glyph(page, second)).toBeVisible();
 
   await page.goBack();
   await expect(modal(page)).toBeHidden();
@@ -94,8 +98,8 @@ test("2 · a shared link (?kanji= on the first URL): open; ✕ stays on /kanji, 
   const { context, page } = await open(browser);
   await page.goto(`/en/kanji?kanji=${encodeURIComponent("日")}`);
   await expect(modal(page)).toBeVisible();
-  await expect(modal(page).getByText("日", { exact: true })).toBeVisible();
-  await expect(modal(page).getByText("Nhật")).toBeVisible();
+  await expect(glyph(page, "日")).toBeVisible();
+  await expect(modal(page).getByText("Nhật", { exact: true })).toBeVisible();
   await expect(modal(page).getByRole("link", { name: "Open its own page" })).toHaveAttribute("href", /\/kanji\/%E6%97%A5$/);
   await expect(modal(page).getByRole("button", { name: "Next kanji" })).toHaveCount(0); // no `from`, no ‹ ›
 
@@ -114,7 +118,7 @@ test("3 · refresh with ?kanji= reopens the modal, and its close then stays on t
   await expect.poll(() => search(page).get("kanji")).toBe(first);
   await page.reload();
   await expect(modal(page)).toBeVisible();
-  await expect(modal(page).getByText(first, { exact: true })).toBeVisible();
+  await expect(glyph(page, first)).toBeVisible();
   await page.keyboard.press("Escape");
   await expect(modal(page)).toBeHidden();
   await expect.poll(() => path(page)).toBe("/en/kanji?level=N5");
@@ -161,7 +165,7 @@ test("4 · lesson drawer → View full details → modal over the playing lesson
 
   await quickInspect.getByRole("link", { name: "View full details" }).click();
   await expect(modal(page)).toBeVisible();
-  await expect(modal(page).getByText("今", { exact: true })).toBeVisible();
+  await expect(glyph(page, "今")).toBeVisible();
   await expect.poll(() => search(page).get("kanji")).toBe("今");
   expect(new URL(page.url()).pathname).toBe(`/en/shadowing/${learner.lesson.videoId}`);
 
@@ -200,5 +204,75 @@ test("6 · /kanji's Review button is the /kanji/review page, not a modal", async
   await page.locator("main").getByRole("link", { name: "Review", exact: true }).click();
   await expect.poll(() => new URL(page.url()).pathname).toBe("/en/kanji/review");
   await expect(modal(page)).toBeHidden();
+  await context.close();
+});
+
+test("7 · ♡ Favorite persists across reload and shows in the /kanji strip, which reopens it", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("日")}`);
+  const favorite = () => modal(page).getByRole("button", { name: "Favorite" });
+  await expect(favorite()).toHaveAttribute("aria-pressed", "false");
+  await favorite().click();
+  await expect(favorite()).toHaveAttribute("aria-pressed", "true");
+  await expect(modal(page).locator("[aria-live='polite']")).toHaveText("Added to favorites."); // the server said yes
+  await page.reload();
+  await expect(favorite()).toHaveAttribute("aria-pressed", "true");
+  await modal(page).getByRole("button", { name: "Close" }).click();
+  await expect(modal(page)).toBeHidden();
+  const saved = page.getByRole("region", { name: "Saved kanji" }).getByRole("link", { name: /日/ });
+  await expect(saved).toHaveAttribute("href", /from=favorites/);
+  await saved.click();
+  await expect(glyph(page, "日")).toBeVisible();
+  await context.close();
+});
+
+test("8 · + Add to Review on a dictionary-only kanji → 'In review' → it is in /kanji/review", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("𠮟")}`);
+  await expect(glyph(page, "𠮟")).toBeVisible();
+  await expect(modal(page).getByText("Not in your review deck yet.")).toBeVisible();
+  await modal(page).getByRole("button", { name: "Add to Review" }).first().click(); // the header one
+  await expect(modal(page).getByRole("button", { name: "In review" })).toBeDisabled();
+  await expect(modal(page).locator("[aria-live='polite']")).toHaveText("Added to your review deck.");
+  await expect(modal(page).getByText("SRS stage")).toBeVisible();
+  // The default deck is due rows soonest first: the fixture's own due row (if any) comes before 𠮟. Walk the deck.
+  await page.goto("/en/kanji/review");
+  const main = page.locator("main");
+  let seen = false;
+  for (let card = 1; card <= 5 && !seen; card++) {
+    await expect(main.getByText(new RegExp(`^${card} / \\d+$`))).toBeVisible();
+    seen = (await main.getByText("𠮟", { exact: true }).count()) > 0;
+    if (!seen) {
+      await page.keyboard.press("Space");
+      await page.keyboard.press("3");
+    }
+  }
+  expect(seen).toBe(true);
+  await context.close();
+});
+
+// Every block ends above the CTA footer: a column that overflows its row would paint under it without any scroll.
+const blocksOverflow = (page: Page, root: string) =>
+  page.locator(root).evaluate((article) => {
+    const footerTop = (article.querySelector("footer") as HTMLElement).getBoundingClientRect().top;
+    return [...article.querySelectorAll("section[aria-label]")]
+      .filter((section) => section.getBoundingClientRect().bottom > footerTop + 1)
+      .map((section) => section.getAttribute("aria-label"));
+  });
+
+test("9 · one viewport: neither the modal nor the page scrolls at 1280×529, and no block runs under the footer", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  for (const literal of ["語", "学"]) { // the longest Thiều Chửu lines and a three-element composition
+    await page.goto(`/en/kanji?kanji=${encodeURIComponent(literal)}`);
+    await expect(glyph(page, literal)).toBeVisible();
+    const dialog = await modal(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, bottom: el.getBoundingClientRect().bottom }));
+    expect(dialog.scroll).toBeLessThanOrEqual(dialog.client);
+    expect(dialog.bottom).toBeLessThanOrEqual(529);
+    expect(await blocksOverflow(page, "dialog article")).toEqual([]);
+    await page.goto(`/en/kanji/${encodeURIComponent(literal)}`);
+    await expect(page.getByRole("heading", { level: 1, name: literal })).toBeVisible();
+    expect(await page.evaluate(() => (document.scrollingElement?.scrollHeight ?? 0) <= innerHeight)).toBe(true);
+    expect(await blocksOverflow(page, "main article")).toEqual([]);
+  }
   await context.close();
 });

@@ -40,11 +40,11 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     reason: "Ruby annotation is smaller than its base text by definition (HTML <rt>); it is not interface type.",
   },
   {
-    id: "kanji-detail-glyph",
-    file: "app/[locale]/(protected)/(app)/kanji/[id]/page.tsx",
-    match: "font-jp text-5xl",
-    scope: "all",
-    reason: "The kanji specimen shown large as the detail page art; content presentation, not interface type.",
+    id: "kanji-inspect-glyph",
+    file: "components/kanji/kanji-inspect.tsx",
+    match: "<Glyph data-type-exempt",
+    scope: "line-height",
+    reason: "The kanji specimen in the inspect header (modal + page): its 1.4 line box holds the CJK ink the display leading clips; content presentation, not interface type.",
   },
   {
     id: "vocab-detail-glyph",

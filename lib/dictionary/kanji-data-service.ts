@@ -8,6 +8,7 @@ import { getKanjiLearnerState, listKanjiFavorites } from "@/lib/data/kanji-learn
 import { getKanjiExamples, getKanjiLessons } from "@/lib/data/kanji-lessons";
 import { getKanjiList } from "@/lib/data/content";
 import { parseKanjiContext } from "@/lib/kanji/context";
+import { compositionElements } from "@/lib/kanji/composition";
 import type { KanjiInspectPayload, KanjiNeighbors } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
@@ -81,6 +82,21 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     });
   }
 
+  const components = (strokes.data as { components: KanjiComponentNode } | null)?.components ?? EMPTY_COMPONENTS;
+  const elements = compositionElements(components);
+  const componentGlosses: KanjiData["componentGlosses"] = {};
+  if (elements.length > 0) {
+    const { data: glossRows, error } = await supabase
+      .from("dict_kanji")
+      .select("literal, vi_readings, meanings_en")
+      .eq("snapshot_id", snapshotId)
+      .in("literal", elements);
+    if (error) throw error;
+    for (const gloss of (glossRows ?? []) as { literal: string; vi_readings: string[]; meanings_en: string[] }[]) {
+      componentGlosses[gloss.literal] = { hanViet: gloss.vi_readings, meaningEn: gloss.meanings_en[0] ?? null };
+    }
+  }
+
   const row = kanji.data as {
     literal: string;
     on_readings: string[];
@@ -111,7 +127,8 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     tcLines: row.tc_lines,
     oldJlpt: row.jlpt_old,
     strokePaths: stroke?.paths ?? [],
-    components: stroke?.components ?? EMPTY_COMPONENTS,
+    components,
+    componentGlosses,
     commonWords,
     curatedKanjiId: curatedRow?.id ?? null,
     attribution: await getDictionaryAttribution(snapshotId),
@@ -149,6 +166,12 @@ async function getKanjiNeighbors(literal: string, from: string | null): Promise<
   return index < 0 ? null : { prev: list[index - 1] ?? null, next: list[index + 1] ?? null };
 }
 
+function lessonIndexFailed(error: unknown): [] {
+  // eslint-disable-next-line no-console -- server-side diagnostics never reach the client.
+  console.error("[kanji-inspect] lesson index failed:", error);
+  return [];
+}
+
 /** The dictionary data for one kanji plus this learner's favorite and review state (null for an unknown kanji). */
 export async function getKanjiInspectPayload(
   literal: string,
@@ -157,8 +180,9 @@ export async function getKanjiInspectPayload(
   const [data, learner, examples, lessons, neighbors] = await Promise.all([
     getKanjiData(literal),
     getKanjiLearnerState(literal),
-    getKanjiExamples(literal, 0),
-    getKanjiLessons(literal),
+    // The lesson index is a garnish: when it fails, its blocks hide and the kanji still opens.
+    getKanjiExamples(literal, 0).catch(lessonIndexFailed),
+    getKanjiLessons(literal).catch(lessonIndexFailed),
     getKanjiNeighbors(literal, opts.from ?? null),
   ]);
   return data ? { data, learner, examples, lessons, neighbors } : null;

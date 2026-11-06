@@ -6,8 +6,11 @@ const SOURCE_NAMES: Record<Attribution["source"], string> = {
   kanjivg: "KanjiVG",
 };
 
-/** Credits exactly the sources and licences of the active snapshot (spec §4.1) — never hard-coded text. */
-export function DictionaryAttribution({ label, attribution }: { label: string; attribution: Attribution[] }) {
+/**
+ * Credits exactly the sources and licences of the active snapshot (spec §4.1) — never hard-coded text.
+ * `compact` keeps it to one line (the one-viewport inspect): each licence moves into its source link's title.
+ */
+export function DictionaryAttribution({ label, attribution, compact = false }: { label: string; attribution: Attribution[]; compact?: boolean }) {
   if (attribution.length === 0) return null;
   return (
     <footer className="text-caption text-muted-foreground">
@@ -15,10 +18,10 @@ export function DictionaryAttribution({ label, attribution }: { label: string; a
       {attribution.map((item, index) => (
         <span key={item.source}>
           {index > 0 && " · "}
-          <a href={item.url} target="_blank" rel="noopener noreferrer" className="underline-offset-2 hover:underline">
+          <a href={item.url} target="_blank" rel="noopener noreferrer" title={compact ? item.license : undefined} className="underline-offset-2 hover:underline">
             {`${SOURCE_NAMES[item.source]} ${item.version}`}
           </a>
-          {` (${item.license})`}
+          {!compact && ` (${item.license})`}
         </span>
       ))}
     </footer>

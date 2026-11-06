@@ -3,6 +3,7 @@ import { createMockSupabase, eqValue, hasCall, type QueryCall } from "@/test/sup
 import { assertPlainSerializableDto } from "@/test/dto";
 import { createClient } from "@/lib/supabase/server";
 import { getKanjiData, getKanjiInspectPayload } from "./kanji-data-service";
+import type { KanjiComponentNode } from "./types";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
@@ -14,19 +15,22 @@ function record(table: string, calls: QueryCall[]) {
   (recorded[table] ??= []).push(calls);
 }
 
-function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: boolean } = {}) {
-  const { kanji = true, curated = true, strokes = true } = options;
+function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: boolean; components?: KanjiComponentNode; lessonsFail?: boolean } = {}) {
+  const { kanji = true, curated = true, strokes = true, lessonsFail = false } = options;
+  const components = options.components ?? { element: "緑", position: null, children: [] };
+  const lessonError = { data: null, error: { message: "lesson index down" } };
   vi.mocked(createClient).mockReturnValue(
     createMockSupabase({
       user: { id: "u1" },
       rpcs: {
         dict_active_snapshot_id: () => ({ data: SNAPSHOT, error: null }),
-        kanji_lesson_lines: () => ({ data: [{ line_id: "l1", video_id: "v1", lesson_title: "Lesson", text_jp: "緑の森", translation: null, start_time: 1 }], error: null }),
-        kanji_lesson_counts: () => ({ data: [{ video_id: "v1", lesson_title: "Lesson", occurrences: 2 }], error: null }),
+        kanji_lesson_lines: () => lessonsFail ? lessonError : ({ data: [{ line_id: "l1", video_id: "v1", lesson_title: "Lesson", text_jp: "緑の森", translation: null, start_time: 1 }], error: null }),
+        kanji_lesson_counts: () => lessonsFail ? lessonError : ({ data: [{ video_id: "v1", lesson_title: "Lesson", occurrences: 2 }], error: null }),
       },
       tables: {
         dict_kanji: (calls) => {
           record("dict_kanji", calls);
+          if (hasCall(calls, "in")) return { data: [{ literal: "糸", vi_readings: ["Mịch"], meanings_en: ["thread", "silk"] }], error: null };
           if (!hasCall(calls, "maybeSingle")) return { data: [{ literal: "緑", vi_readings: ["Lục"] }], error: null };
           return {
             data: kanji
@@ -49,7 +53,7 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
         dict_kanji_strokes: (calls) => {
           record("dict_kanji_strokes", calls);
           return {
-            data: strokes ? { paths: ["M1,1L2,2", "M3,3L4,4"], components: { element: "緑", position: null, children: [] } } : null,
+            data: strokes ? { paths: ["M1,1L2,2", "M3,3L4,4"], components } : null,
             error: null,
           };
         },
@@ -155,6 +159,26 @@ describe("getKanjiData", () => {
     expect(data).toMatchObject({ meaningVi: null, mnemonic: null, jlpt: null, curatedKanjiId: null, strokePaths: [] });
   });
 
+  it("glosses the composition elements with one in() query on the active dict_kanji", async () => {
+    useDictionary({ components: { element: "緑", position: null, children: [
+      { element: "糸", position: "left", children: [] },
+      { element: null, position: "right", children: [{ element: "⺕", position: null, children: [] }] },
+    ] } });
+    const data = await getKanjiData("緑");
+    expect(data?.componentGlosses).toEqual({ 糸: { hanViet: ["Mịch"], meaningEn: "thread" } });
+    const glossCall = (recorded.dict_kanji ?? []).find((calls) => hasCall(calls, "in")) ?? [];
+    expect(glossCall).toContainEqual({ op: "in", column: "literal", values: ["糸", "⺕"] });
+    expect(eqValue(glossCall, "snapshot_id")).toBe(SNAPSHOT);
+    expect(structuredClone(data)).toEqual(data);
+  });
+
+  it("skips the gloss query for a kanji without elements", async () => {
+    useDictionary();
+    const data = await getKanjiData("緑");
+    expect(data?.componentGlosses).toEqual({});
+    expect((recorded.dict_kanji ?? []).some((calls) => hasCall(calls, "in"))).toBe(false);
+  });
+
   it("returns null for a literal the dictionary does not know", async () => {
     useDictionary({ kanji: false });
     await expect(getKanjiData("緑")).resolves.toBeNull();
@@ -196,6 +220,17 @@ describe("getKanjiInspectPayload", () => {
     expect(payload?.neighbors).toBeNull();
     expect(structuredClone(payload)).toEqual(payload);
     assertPlainSerializableDto(payload);
+  });
+
+  it("degrades a failing lesson index to empty examples and lessons, logging the error", async () => {
+    const error = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    useDictionary({ lessonsFail: true });
+    const payload = await getKanjiInspectPayload("緑");
+    expect(payload?.data.literal).toBe("緑");
+    expect(payload?.examples).toEqual([]);
+    expect(payload?.lessons).toEqual([]);
+    expect(error).toHaveBeenCalledTimes(2);
+    error.mockRestore();
   });
 
   it("is null for an unknown literal", async () => {

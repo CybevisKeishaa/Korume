@@ -38,6 +38,8 @@ export interface KanjiData {
   oldJlpt: number | null;
   strokePaths: string[];
   components: KanjiComponentNode;
+  /** Hán Việt + first English meaning of each composition element that is itself a kanji in the snapshot. */
+  componentGlosses: Record<string, { hanViet: string[]; meaningEn: string | null }>;
   commonWords: KanjiCommonWord[];
   curatedKanjiId: string | null;
   attribution: DictionaryAttribution[];

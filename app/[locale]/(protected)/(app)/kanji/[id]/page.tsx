@@ -1,12 +1,10 @@
-import { Link, redirect } from "@/lib/i18n/navigation";
-import { getLocale, getTranslations } from "@/lib/i18n/server";
+import { redirect } from "@/lib/i18n/navigation";
+import { getLocale } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
 import { getKanjiById } from "@/lib/data/content";
-import { getKanjiData } from "@/lib/dictionary/kanji-data-service";
+import { getKanjiInspectPayload } from "@/lib/dictionary/kanji-data-service";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
-import { StrokeOrder } from "@/components/motion/stroke-order";
-import { DictionaryAttribution } from "@/components/kanji/dictionary-attribution";
-import { Container } from "@/components/ui/container";
+import { KanjiInspect } from "@/components/kanji/kanji-inspect";
 import { StudyPresence } from "@/components/study-time/study-presence";
 
 export const dynamic = "force-dynamic";
@@ -26,73 +24,16 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
 
   const literal = parseKanjiLiteral(params.id);
   if (!literal) notFound();
-  const kanji = await getKanjiData(literal, { commonWords: 10 });
-  if (!kanji) notFound();
-  const t = await getTranslations("kanji");
+  const payload = await getKanjiInspectPayload(literal);
+  if (!payload) notFound();
 
+  // One viewport, no page scroll (owner 2026-11-06): the card takes at most the screen and its blocks fit inside.
   return (
-    <Container className="py-10">
-      <StudyPresence surface="kanji" contextId={kanji.curatedKanjiId} enabled={kanji.curatedKanjiId !== null} />
-      <Link href="/kanji" className="text-body text-muted-foreground hover:text-foreground">
-        {t("backToList")}
-      </Link>
-
-      <div className="mt-6 grid gap-8 md:grid-cols-[240px_1fr]">
-        <div className="w-full max-w-[240px]">
-          <StrokeOrder character={kanji.literal} paths={kanji.strokePaths} />
-          <p className="mt-2 text-center text-caption text-muted-foreground">
-            {t("strokeCount", { count: kanji.strokeCount })}
-            {kanji.jlpt ? ` · ${kanji.jlpt}` : ""}
-            {kanji.grade !== null ? ` · ${t("grade", { grade: kanji.grade })}` : ""}
-            {kanji.frequency !== null ? ` · ${t("frequency", { rank: kanji.frequency })}` : ""}
-          </p>
-        </div>
-
-        <div>
-          <h1 data-type-exempt="kanji-detail-glyph" className="font-jp text-5xl leading-none">{kanji.literal}</h1>
-          <p className="mt-3 text-body-lg">
-            {kanji.meaningsEn.join(", ")}
-            {kanji.meaningVi && <span className="text-muted-foreground"> · {kanji.meaningVi}</span>}
-          </p>
-
-          <dl className="mt-6 space-y-2 text-body">
-            <div className="flex gap-3">
-              <dt className="w-16 shrink-0 text-muted-foreground">{t("onReading")}</dt>
-              <dd className="font-jp">{kanji.onReadings.length ? kanji.onReadings.join("、") : "—"}</dd>
-            </div>
-            <div className="flex gap-3">
-              <dt className="w-16 shrink-0 text-muted-foreground">{t("kunReading")}</dt>
-              <dd className="font-jp">{kanji.kunReadings.length ? kanji.kunReadings.join("、") : "—"}</dd>
-            </div>
-          </dl>
-
-          {kanji.mnemonic && (
-            <div className="mt-6 rounded-lg bg-muted p-4">
-              <p className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{t("mnemonic")}</p>
-              <p className="mt-1 text-body">{kanji.mnemonic}</p>
-            </div>
-          )}
-
-          {kanji.commonWords.length > 0 && (
-            <section className="mt-6">
-              <h2 className="text-caption font-medium uppercase tracking-wide text-muted-foreground">{t("commonWords")}</h2>
-              <ul className="mt-2 space-y-1 text-body">
-                {kanji.commonWords.map((word) => (
-                  <li key={word.entSeq} className="flex flex-wrap gap-x-3">
-                    <span className="font-jp">{word.headword}</span>
-                    <span className="font-jp text-muted-foreground">{word.reading}</span>
-                    <span>{word.glossEn}</span>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          <div className="mt-8">
-            <DictionaryAttribution label={t("dictionarySources")} attribution={kanji.attribution} />
-          </div>
-        </div>
+    <div className="flex max-h-dvh flex-col p-md">
+      <StudyPresence surface="kanji" contextId={payload.data.curatedKanjiId} enabled={payload.data.curatedKanjiId !== null} />
+      <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
+        <KanjiInspect payload={payload} variant="page" />
       </div>
-    </Container>
+    </div>
   );
 }

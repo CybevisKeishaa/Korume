@@ -90,6 +90,7 @@ export function KanjiQuickInspect({ literal, onOpenWord }: { literal: string; on
           </button>
         </div>
         <div className="min-w-0 flex-1 space-y-xs">
+          {kanji.hanViet.length > 0 && <p className="text-body font-semibold text-foreground">{kanji.hanViet.join(", ")}</p>}
           <p className="text-body text-foreground">{kanji.meaningsEn.join(", ")}</p>
           {kanji.meaningVi && <p className="text-body text-foreground">{kanji.meaningVi}</p>}
           <Readings label={t("onReading")} readings={kanji.onReadings} listen={listen} unavailable={unavailable} />
