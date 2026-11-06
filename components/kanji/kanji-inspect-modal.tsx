@@ -17,7 +17,7 @@ function focusAfterClose(opener: Element | null) {
   target.focus();
 }
 
-const navButton = "flex h-control-sm px-sm items-center justify-center rounded-md border border-border text-body text-foreground hover:bg-muted";
+const navButton = "flex h-control-sm px-sm items-center justify-center rounded-md border border-border text-body text-foreground hover:bg-muted aria-disabled:opacity-50";
 
 /**
  * The kanji inspect modal (spec §5.1): `?kanji=<literal>` over any protected page, mounted once in the
@@ -29,7 +29,7 @@ export function KanjiInspectModal() {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const opener = useRef<Element | null>(null);
   const wantOpen = useRef(false);
-  const [loaded, setLoaded] = useState<{ key: string; payload: KanjiInspectPayload | null } | null>(null);
+  const [loaded, setLoaded] = useState<{ key: string; from: string | null; payload: KanjiInspectPayload | null } | null>(null);
   const open = literal !== null;
   const key = `${literal}|${from}`;
 
@@ -54,12 +54,15 @@ export function KanjiInspectModal() {
     fetch(`/api/dictionary/kanji/${encodeURIComponent(literal)}${query}`)
       .then(async (response) => (response.ok ? ((await response.json()) as { data: KanjiInspectPayload }).data : null))
       .catch(() => null)
-      .then((payload) => { if (live) setLoaded({ key, payload }); });
+      .then((payload) => { if (live) setLoaded({ key, from, payload }); });
     return () => { live = false; };
   }, [literal, from, key]);
 
-  const payload = loaded?.key === key ? loaded.payload : null;
-  const neighbors = payload?.neighbors ?? null;
+  const settled = loaded?.key === key;
+  const payload = settled ? loaded.payload : null;
+  // While the next literal loads, ‹ › keep the last list's neighbors (same `from`) so a focused button stays mounted;
+  // they act only once settled. aria-disabled, not disabled: disabling the focused button would drop focus.
+  const neighbors = loaded && loaded.from === from ? loaded.payload?.neighbors ?? null : null;
 
   return (
     <dialog
@@ -79,8 +82,8 @@ export function KanjiInspectModal() {
           <div className="flex items-center justify-between gap-sm">
             {neighbors ? (
               <div className="flex gap-2xs">
-                <button type="button" aria-label={t("inspect.prev")} disabled={!neighbors.prev} onClick={() => neighbors.prev && go(neighbors.prev)} className={navButton}>‹</button>
-                <button type="button" aria-label={t("inspect.next")} disabled={!neighbors.next} onClick={() => neighbors.next && go(neighbors.next)} className={navButton}>›</button>
+                <button type="button" aria-label={t("inspect.prev")} aria-disabled={!settled || !neighbors.prev} onClick={() => settled && neighbors.prev && go(neighbors.prev)} className={navButton}>‹</button>
+                <button type="button" aria-label={t("inspect.next")} aria-disabled={!settled || !neighbors.next} onClick={() => settled && neighbors.next && go(neighbors.next)} className={navButton}>›</button>
               </div>
             ) : <span />}
             <button type="button" aria-label={t("inspect.close")} onClick={close} className={navButton}>✕</button>

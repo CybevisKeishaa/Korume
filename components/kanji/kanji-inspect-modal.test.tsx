@@ -64,6 +64,26 @@ describe("KanjiInspectModal", () => {
     expect(router.replace).toHaveBeenLastCalledWith("/kanji?level=N5&kanji=%E6%9C%88&from=level%3AN5", { scroll: false });
   });
 
+  it("keeps the same ‹ › mounted while the next literal loads, inert until it lands", async () => {
+    serve({ prev: "月", next: "火" });
+    url.search = "level=N5&kanji=%E6%97%A5&from=level%3AN5";
+    const { rerender } = render(<KanjiInspectModal />);
+    const next = await screen.findByRole("button", { name: "Next kanji" });
+    let land: (response: Response) => void = () => undefined;
+    fetchMock.mockImplementationOnce(() => new Promise<Response>((resolve) => { land = resolve; }));
+    url.search = "level=N5&kanji=%E7%81%AB&from=level%3AN5";
+    rerender(<KanjiInspectModal />);
+    expect(screen.getByRole("button", { name: "Next kanji" })).toBe(next); // the same node: focus survives
+    expect(next).toHaveAttribute("aria-disabled", "true");
+    fireEvent.click(next);
+    expect(router.replace).not.toHaveBeenCalled();
+    land(new Response(JSON.stringify({ data: { data: { literal: "火", hanViet: ["Hỏa"] }, neighbors: { prev: "日", next: null } } })));
+    await screen.findByText("Hỏa");
+    expect(screen.getByRole("button", { name: "Next kanji" })).toBe(next);
+    expect(next).toHaveAttribute("aria-disabled", "true"); // the end of the list
+    expect(screen.getByRole("button", { name: "Previous kanji" })).toHaveAttribute("aria-disabled", "false");
+  });
+
   it("hides ‹ › without neighbors and leaves out an absent from", async () => {
     serve(null);
     url.search = "kanji=%E6%97%A5";

@@ -209,6 +209,11 @@ describe("getKanjiInspectPayload", () => {
     expect(payload?.neighbors).toEqual({ prev: "月", next: "火" });
     const listCall = (recorded.kanji ?? []).find((calls) => !hasCall(calls, "maybeSingle")) ?? [];
     expect(eqValue(listCall, "jlpt_level")).toBe("N5");
+    // One deterministic order for the grid and ‹ ›: stroke count, then the character as the tiebreak.
+    expect(listCall.filter((call) => call.op === "order")).toEqual([
+      { op: "order", column: "stroke_count", ascending: true },
+      { op: "order", column: "character", ascending: true },
+    ]);
     expect(structuredClone(payload)).toEqual(payload);
   });
 

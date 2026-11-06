@@ -57,7 +57,9 @@ export async function getKanjiList(level?: JlptLevel): Promise<KanjiListItem[]> 
   let query = supabase
     .from("kanji")
     .select("id, character, jlpt_level, stroke_count, meaning_en, meaning_vi")
-    .order("stroke_count", { ascending: true });
+    .order("stroke_count", { ascending: true })
+    // Many kanji share a stroke count: the tiebreak keeps /kanji's grid and the modal's ‹ › in one order.
+    .order("character", { ascending: true });
   if (level) query = query.eq("jlpt_level", level);
 
   const { data, error } = await query;

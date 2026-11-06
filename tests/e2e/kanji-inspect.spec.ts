@@ -41,8 +41,9 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
   await page.goto("/en/kanji?level=N5");
   const first = await glyphOf(page, 0);
   const second = await glyphOf(page, 1);
+  const third = await glyphOf(page, 2);
   expect(first).not.toBe("");
-  expect(second).not.toBe(first);
+  expect(new Set([first, second, third]).size).toBe(3);
 
   await glyphLinks(page).nth(0).click();
   await expect(modal(page)).toBeVisible();
@@ -55,6 +56,21 @@ test("1 · /kanji?level=N5: click → ‹ › on one entry → Esc is Back, focu
   await modal(page).getByRole("button", { name: "Next kanji" }).click();
   await expect.poll(() => search(page).get("kanji")).toBe(second);
   await expect(modal(page).getByText(second, { exact: true })).toBeVisible();
+  expect(await historyLength(page)).toBe(entries);
+
+  // Keyboard ‹ ›: the focused button stays mounted across the load, so focus stays on it (R10).
+  const nextButton = modal(page).getByRole("button", { name: "Next kanji" });
+  const prevButton = modal(page).getByRole("button", { name: "Previous kanji" });
+  await nextButton.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => search(page).get("kanji")).toBe(third);
+  await expect(modal(page).getByText(third, { exact: true })).toBeVisible();
+  await expect(nextButton).toBeFocused();
+  await prevButton.focus();
+  await page.keyboard.press("Enter");
+  await expect.poll(() => search(page).get("kanji")).toBe(second);
+  await expect(modal(page).getByText(second, { exact: true })).toBeVisible();
+  await expect(prevButton).toBeFocused();
   expect(await historyLength(page)).toBe(entries);
 
   await page.keyboard.press("Escape");
