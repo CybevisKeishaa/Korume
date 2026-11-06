@@ -125,8 +125,8 @@ describe("importDictionaries", () => {
     const { client, calls } = fakeClient({ jmdict: "J", kanjidic: "K", kanjivg: "V" });
     const result = await importDictionaries(client, sources(), { force: true });
     expect(result.status).toBe("activated");
-    const kanji = calls.find((call) => call.table === "dict_kanji")?.rows as { vi_readings: string[] }[];
-    expect(kanji[0]?.vi_readings).toEqual(["Lục"]);
+    const kanji = calls.find((call) => call.table === "dict_kanji")?.rows as { vi_readings: string[] }[] | undefined;
+    expect(kanji?.[0]?.vi_readings).toEqual(["Lục"]);
   });
 
   it("leaves the staging snapshot and never activates when a source fails", async () => {

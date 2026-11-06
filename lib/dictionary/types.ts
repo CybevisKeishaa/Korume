@@ -32,7 +32,9 @@ export interface KanjiData {
   jlpt: string | null;
   /** KANJIDIC2 `vietnam` readings (Han-Viet), as in the source. */
   hanViet: string[];
+  /** Thieu Chuu mnemonic lines from `dict_kanji.tc_lines`; empty until the Thieu Chuu import fills them. */
   tcLines: string[];
+  /** KANJIDIC2 pre-2010 JLPT level (4 easiest to 1 hardest); null when absent. */
   oldJlpt: number | null;
   strokePaths: string[];
   components: KanjiComponentNode;
