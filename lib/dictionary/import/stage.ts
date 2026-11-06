@@ -96,13 +96,13 @@ async function insertBatched<Row>(
 export async function importDictionaries(
   client: SupabaseClient,
   sources: ImportSources,
-  options: { batchSize?: number; log?: (line: string) => void } = {},
+  options: { batchSize?: number; force?: boolean; log?: (line: string) => void } = {},
 ): Promise<ImportResult> {
   const batchSize = options.batchSize ?? 1000;
   const log = options.log ?? (() => undefined);
   const wanted = [sources.jmdict.meta.sha256, sources.kanjidic.meta.sha256, sources.kanjivg.meta.sha256];
   const current = await activeHashes(client);
-  if (current && current.every((hash, index) => hash === wanted[index])) return { status: "no-change" };
+  if (!options.force && current && current.every((hash, index) => hash === wanted[index])) return { status: "no-change" };
 
   // entry_count is provisional until each source has been streamed; it is set before activation.
   const { data: imports, error: importError } = await client
@@ -147,6 +147,7 @@ export async function importDictionaries(
         literal: row.literal,
         on_readings: row.on,
         kun_readings: row.kun,
+        vi_readings: row.vi,
         meanings_en: row.meaningsEn,
         stroke_count: row.strokeCount,
         grade: row.grade,

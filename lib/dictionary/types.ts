@@ -30,6 +30,10 @@ export interface KanjiData {
   frequency: number | null;
   /** The curated `kanji.jlpt_level` (N5…N1); KANJIDIC2 only carries the pre-2010 levels. */
   jlpt: string | null;
+  /** KANJIDIC2 `vietnam` readings (Han-Viet), as in the source. */
+  hanViet: string[];
+  tcLines: string[];
+  oldJlpt: number | null;
   strokePaths: string[];
   components: KanjiComponentNode;
   commonWords: KanjiCommonWord[];

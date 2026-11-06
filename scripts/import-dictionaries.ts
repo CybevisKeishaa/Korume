@@ -4,7 +4,7 @@
  *
  *   npm run dict:import -- --jmdict <JMdict_e.gz> --kanjidic <kanjidic2.xml.gz> --kanjivg <kanjivg-*-main.zip>
  *     --jmdict-version … --jmdict-url … --jmdict-license …     (and the same three for kanjidic, kanjivg)
- *     [--allow-remote]
+ *     [--allow-remote] [--force]   (--force re-imports even when the hashes match)
  *
  * Same three file hashes as the active snapshot → prints `no change`, exit 0. On failure the staging
  * snapshot is left for diagnosis and printed, the active snapshot is untouched, exit 1.
@@ -63,7 +63,7 @@ async function main(): Promise<void> {
         },
         kanjivg: { meta: await meta("kanjivg", files.kanjivg), rows: () => readKanjivgZip(files.kanjivg) },
       },
-      { log: (line) => console.log(line) },
+      { log: (line) => console.log(line), force: process.argv.includes("--force") },
     );
     if (result.status === "no-change") {
       console.log("no change");

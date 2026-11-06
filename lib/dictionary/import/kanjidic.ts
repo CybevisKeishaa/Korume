@@ -4,6 +4,7 @@ export interface KanjidicRow {
   literal: string;
   on: string[];
   kun: string[];
+  vi: string[];
   meaningsEn: string[];
   strokeCount: number;
   grade: number | null;
@@ -20,7 +21,7 @@ export async function* readKanjidic(input: AsyncIterable<Buffer | string>): Asyn
   yield* streamXml<KanjidicRow>(input, {
     open(tag) {
       if (tag.name === "character") {
-        row = { literal: "", on: [], kun: [], meaningsEn: [], strokeCount: 0, grade: null, freq: null, jlptOld: null };
+        row = { literal: "", on: [], kun: [], vi: [], meaningsEn: [], strokeCount: 0, grade: null, freq: null, jlptOld: null };
       } else if (tag.name === "reading") {
         readingType = tag.attributes.r_type;
       } else if (tag.name === "meaning") {
@@ -49,6 +50,7 @@ export async function* readKanjidic(input: AsyncIterable<Buffer | string>): Asyn
         case "reading":
           if (readingType === "ja_on") row.on.push(value);
           else if (readingType === "ja_kun") row.kun.push(value);
+          else if (readingType === "vietnam") row.vi.push(value);
           break;
         case "meaning":
           if (meaningIsEnglish) row.meaningsEn.push(value);

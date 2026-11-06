@@ -17,6 +17,8 @@ const KANJIDIC = `<?xml version="1.0" encoding="UTF-8"?>
 <reading r_type="ja_on">リョク</reading>
 <reading r_type="ja_on">ロク</reading>
 <reading r_type="ja_kun">みどり</reading>
+<reading r_type="vietnam">Nhật</reading>
+<reading r_type="vietnam">Nhựt</reading>
 <meaning>green</meaning>
 <meaning m_lang="fr">vert</meaning>
 </rmgroup><nanori>つか</nanori></reading_meaning>
@@ -40,6 +42,7 @@ describe("readKanjidic", () => {
       literal: "緑",
       on: ["リョク", "ロク"],
       kun: ["みどり"],
+      vi: ["Nhật", "Nhựt"],
       meaningsEn: ["green"],
       strokeCount: 14,
       grade: 3,
@@ -50,6 +53,7 @@ describe("readKanjidic", () => {
       literal: "𠮟",
       on: [],
       kun: [],
+      vi: [],
       meaningsEn: [],
       strokeCount: 5,
       grade: null,

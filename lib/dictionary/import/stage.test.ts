@@ -82,7 +82,7 @@ const ENTRIES: JmdictEntryRow[] = [
   { entSeq: 3, kanjiForms: ["新緑"], kanaForms: ["しんりょく"], senses: [], common: false },
 ];
 const KANJI: KanjidicRow[] = [
-  { literal: "緑", on: ["リョク"], kun: ["みどり"], meaningsEn: ["green"], strokeCount: 14, grade: 3, freq: 1082, jlptOld: 2 },
+  { literal: "緑", on: ["リョク"], kun: ["みどり"], vi: ["Lục"], meaningsEn: ["green"], strokeCount: 14, grade: 3, freq: 1082, jlptOld: 2 },
 ];
 const STROKES: KanjivgRow[] = [{ literal: "緑", paths: ["M1,1"], components: { element: "緑", position: null, children: [] } }];
 
@@ -119,6 +119,14 @@ describe("importDictionaries", () => {
     const counts = calls.filter((call) => call.op === "update").map((call) => call.values);
     expect(counts).toEqual([{ entry_count: 3 }, { entry_count: 1 }, { entry_count: 1 }]);
     expect(calls.at(-1)).toEqual({ op: "rpc", args: { name: "dict_activate_snapshot", args: { p_snapshot: "snap-1" } } });
+  });
+
+  it("force skips the no-change return and stages vi_readings", async () => {
+    const { client, calls } = fakeClient({ jmdict: "J", kanjidic: "K", kanjivg: "V" });
+    const result = await importDictionaries(client, sources(), { force: true });
+    expect(result.status).toBe("activated");
+    const kanji = calls.find((call) => call.table === "dict_kanji")?.rows as { vi_readings: string[] }[];
+    expect(kanji[0]?.vi_readings).toEqual(["Lục"]);
   });
 
   it("leaves the staging snapshot and never activates when a source fails", async () => {

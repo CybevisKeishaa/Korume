@@ -38,7 +38,7 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
   const [kanji, strokes, words, curated] = await Promise.all([
     supabase
       .from("dict_kanji")
-      .select("literal, on_readings, kun_readings, meanings_en, stroke_count, grade, freq")
+      .select("literal, on_readings, kun_readings, meanings_en, stroke_count, grade, freq, vi_readings, tc_lines, jlpt_old")
       .eq("snapshot_id", snapshotId)
       .eq("literal", literal)
       .maybeSingle(),
@@ -84,6 +84,9 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     stroke_count: number;
     grade: number | null;
     freq: number | null;
+    vi_readings: string[];
+    tc_lines: string[];
+    jlpt_old: number | null;
   };
   const stroke = strokes.data as { paths: string[]; components: KanjiComponentNode } | null;
   const curatedRow = curated.data as { id: string; meaning_vi: string | null; mnemonic_text: string | null; jlpt_level: string | null } | null;
@@ -99,6 +102,9 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     grade: row.grade,
     frequency: row.freq,
     jlpt: curatedRow?.jlpt_level ?? null,
+    hanViet: row.vi_readings,
+    tcLines: row.tc_lines,
+    oldJlpt: row.jlpt_old,
     strokePaths: stroke?.paths ?? [],
     components: stroke?.components ?? EMPTY_COMPONENTS,
     commonWords,

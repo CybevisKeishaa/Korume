@@ -53,6 +53,7 @@ const GREEN: KanjiData = {
   grade: 3,
   frequency: 1082,
   jlpt: null,
+  hanViet: [], tcLines: [], oldJlpt: null,
   strokePaths: Array.from({ length: 14 }, (_, i) => `M${i},0L1,1`),
   components: { element: "緑", position: null, children: [] },
   commonWords: [{ entSeq: 1, headword: "緑", reading: "みどり", glossEn: "green; greenery" }],

@@ -12,7 +12,7 @@ vi.mock("@/lib/i18n/navigation", () => ({
 
 const BASE: KanjiData = {
   literal: "緑", onReadings: ["リョク", "ロク"], kunReadings: ["みどり"], meaningsEn: ["green"], meaningVi: null, mnemonic: null,
-  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", strokePaths: ["M10 10L90 90", "M90 10L10 90"],
+  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", hanViet: [], tcLines: [], oldJlpt: null, strokePaths: ["M10 10L90 90", "M90 10L10 90"],
   components: { element: "緑", children: [] } as unknown as KanjiData["components"],
   commonWords: Array.from({ length: 7 }, (_, i) => ({ entSeq: 100 + i, headword: `緑${i}`, reading: "みどり", glossEn: `green ${i}` })),
   curatedKanjiId: null, attribution: [{ source: "kanjivg", version: "main", url: "https://kanjivg.tagaini.net", license: "CC BY-SA 3.0" }],

@@ -224,6 +224,17 @@ begin
 end $$;
 commit;
 
+-- 9. Han-Viet and Thieu Chuu columns: text[] not null default '{}'.
+do $$
+begin
+  if (select count(*) from information_schema.columns
+        where table_schema = 'public' and table_name = 'dict_kanji' and column_name in ('vi_readings', 'tc_lines')
+          and udt_name = '_text' and is_nullable = 'NO' and column_default like '''{}''::text[]%') <> 2 then
+    raise exception 'FAIL 9: dict_kanji.vi_readings / tc_lines are not text[] not null default {}';
+  end if;
+  raise notice 'PASS 9 vi_readings and tc_lines columns';
+end $$;
+
 -- Cleanup, then restore every real snapshot to the status it had before the gate.
 delete from dict_snapshots where jmdict_import_id in (select id from dict_imports where source_version like 'dictgate-%');
 delete from dict_imports where source_version like 'dictgate-%';
