@@ -74,18 +74,21 @@ Deltas kept: no mnemonic image and no lesson thumbnails (no data); composition c
 
 ## Blockers
 
-Owner decisions on Task 7 (asked 2026-11-06, answer at the start of the next session):
-1. Dictionary credit on the inspect = one line (sources + versions); licence names only in the link title.
-2. Thiều Chửu sits beside the meaning card, not under it (§5.2) — the one-viewport rule leaves no height under it.
-3. Long text scrolls inside its own block (Thiều Chửu lines, mnemonic, tab lists) while the dialog/page never scroll.
-4. Composition chip gloss truncates (full text in the tooltip).
-5. `/kanji/[id]` at 1440×900: the card stops at its content height, ~40 % of the viewport empty below.
-6. No mnemonic image / lesson thumbnails (no data); glyph 40 px vs the frame's 48 at 1440.
+None. Owner answered the Task 7 decisions 2026-11-06 ("Đồng ý" to every recommendation):
+- K10 credit: the inspect credit line shows each licence name in visible text (CC BY-SA asks for it), still one line.
+- K11 Thiều Chửu stays beside the meaning card (spec §5.2 "under" superseded).
+- K12 long text may scroll inside its own block; the page/dialog never scroll; every inner scroller is
+  keyboard-reachable (tabIndex 0 + accessible name).
+- K13 composition chip gloss stays truncated; the full text shows on hover AND focus.
+- K14 `/kanji/[id]` fills the viewport (fill + scale, L-051); owner licence: where a screen has empty space,
+  Claude may add useful content of its own design, e.g. ways on to other screens (review, level list, favorites,
+  lessons) — real hrefs only, `PLACEHOLDER_HREF` where no target exists, no fabricated data.
+- K15 no mnemonic image / lesson thumbnails (no data, never fabricated); glyph reaches the frame's 48 px at 1440.
 
 ## Next actions
 
 Session stopped by the owner after Task 7 (2026-11-06). Resume: read the SDD ledger
 `.superpowers/sdd/2026-11-06-port-kanji/progress.md` (git-ignored; resume map with every ruling and deferred minor),
-take the owner's answers on the Task 7 decisions above (a fix round if any changes), then Task 9 (review in focus
+Task 7b fix round for K10–K15, then Task 9 (review in focus
 chrome, plan T9 + owner additions), Task 9b (kanji motion), Task 10 (gates, Thiều Chửu CLI gate removal, whole-branch
 review, owner look). Owner still to run: removal of the 5 merged worktrees (command given in the session).
