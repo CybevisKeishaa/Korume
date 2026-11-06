@@ -17,8 +17,24 @@ export interface KanjiFavorite {
   hanViet: string[];
 }
 
-/** What the kanji inspect surfaces receive: the dictionary data plus this learner's state (Tasks 5-6 add fields). */
+export interface KanjiExample {
+  lineId: string;
+  videoId: string;
+  lessonTitle: string;
+  textJp: string;
+  translation: string | null;
+}
+
+export interface KanjiLessonCount {
+  videoId: string;
+  title: string;
+  count: number;
+}
+
+/** What the kanji inspect surfaces receive: the dictionary data, this learner's state, and the first lesson examples. */
 export interface KanjiInspectPayload {
   data: KanjiData;
   learner: KanjiLearnerState;
+  examples: KanjiExample[];
+  lessons: KanjiLessonCount[];
 }

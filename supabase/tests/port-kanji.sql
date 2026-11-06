@@ -135,6 +135,56 @@ begin
   end if;
 end $$;
 
+-- 7. Lesson examples (task 5): kanji_lesson_lines / kanji_lesson_counts see public lessons and the caller's own
+-- private ones (invoker RLS), never another learner's private lesson, and only the latest transcript per video.
+do $$
+declare
+  a uuid := '4a41e000-0000-4000-8000-00000000000a'; b uuid := '4a41e000-0000-4000-8000-00000000000b';
+  vp uuid; va uuid; vb uuid; t uuid;
+begin
+  insert into videos (youtube_video_id, title, library_access) values ('kg-pub', 'kg-pub', 'FREE') returning id into vp;
+  insert into videos (youtube_video_id, title, library_access, added_by_user_id) values ('kg-a', 'kg-a', 'PRIVATE', a) returning id into va;
+  insert into videos (youtube_video_id, title, library_access, added_by_user_id) values ('kg-b', 'kg-b', 'PRIVATE', b) returning id into vb;
+  insert into transcripts (video_id, source, created_at) values (vp, 'user_submitted', now() - interval '1 day') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 0, '古い緑');
+  insert into transcripts (video_id, source) values (vp, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp, text_translation) values (t, 1, '緑の森', 'green forest'), (t, 2, '青い空', null);
+  insert into transcripts (video_id, source) values (va, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 5, '緑茶'), (t, 3, '新緑');
+  insert into transcripts (video_id, source) values (vb, 'user_submitted') returning id into t;
+  insert into transcript_lines (transcript_id, start_time, text_jp) values (t, 0, '緑色');
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', :'uid_a', true);
+do $$
+begin
+  if (select array_agg(text_jp order by lesson_title, start_time) from kanji_lesson_lines('緑', 10, 0)) is distinct from array['新緑', '緑茶', '緑の森'] then
+    raise exception 'FAIL 7a: lines = %', (select array_agg(text_jp order by lesson_title, start_time) from kanji_lesson_lines('緑', 10, 0));
+  end if;
+  if (select array_agg(text_jp) from kanji_lesson_lines('緑', 1, 1)) is distinct from array['緑茶'] then
+    raise exception 'FAIL 7b: limit/offset paging';
+  end if;
+  if (select array_agg(lesson_title || ':' || occurrences order by occurrences desc, lesson_title) from kanji_lesson_counts('緑', 10))
+     is distinct from array['kg-a:2', 'kg-pub:1'] then
+    raise exception 'FAIL 7c: counts = %', (select array_agg(lesson_title || ':' || occurrences) from kanji_lesson_counts('緑', 10));
+  end if;
+  if (select count(*) from kanji_lesson_counts('緑', 1)) <> 1 then raise exception 'FAIL 7d: count limit'; end if;
+  raise notice 'PASS 7 lesson lines and counts';
+end $$;
+reset role;
+do $$
+begin
+  if has_function_privilege('anon', 'kanji_lesson_lines(text,int,int)', 'execute')
+     or has_function_privilege('anon', 'kanji_lesson_counts(text,int)', 'execute') then
+    raise exception 'FAIL 7e: anon can execute';
+  end if;
+  if not has_function_privilege('authenticated', 'kanji_lesson_lines(text,int,int)', 'execute')
+     or not has_function_privilege('authenticated', 'kanji_lesson_counts(text,int)', 'execute') then
+    raise exception 'FAIL 7f: authenticated cannot execute';
+  end if;
+  raise notice 'PASS 7g execute grants';
+end $$;
+
 -- 5. Erasure: deleting the users row removes that learner's progress rows and only those.
 delete from users where id = :'uid_b';
 do $$

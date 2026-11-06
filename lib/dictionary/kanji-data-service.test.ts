@@ -19,7 +19,11 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
   vi.mocked(createClient).mockReturnValue(
     createMockSupabase({
       user: { id: "u1" },
-      rpcs: { dict_active_snapshot_id: () => ({ data: SNAPSHOT, error: null }) },
+      rpcs: {
+        dict_active_snapshot_id: () => ({ data: SNAPSHOT, error: null }),
+        kanji_lesson_lines: () => ({ data: [{ line_id: "l1", video_id: "v1", lesson_title: "Lesson", text_jp: "緑の森", translation: null, start_time: 1 }], error: null }),
+        kanji_lesson_counts: () => ({ data: [{ video_id: "v1", lesson_title: "Lesson", occurrences: 2 }], error: null }),
+      },
       tables: {
         dict_kanji: (calls) => {
           record("dict_kanji", calls);
@@ -179,6 +183,8 @@ describe("getKanjiInspectPayload", () => {
     const payload = await getKanjiInspectPayload("緑");
     expect(payload?.data.literal).toBe("緑");
     expect(payload?.learner).toEqual({ favorite: true, progress: { stage: 1, reviews: 2, lapses: 0, nextReviewAt: "2026-11-07T00:00:00.000Z" } });
+    expect(payload?.examples).toEqual([{ lineId: "l1", videoId: "v1", lessonTitle: "Lesson", textJp: "緑の森", translation: null }]);
+    expect(payload?.lessons).toEqual([{ videoId: "v1", title: "Lesson", count: 2 }]);
     expect(structuredClone(payload)).toEqual(payload);
     assertPlainSerializableDto(payload);
   });

@@ -5,6 +5,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
 import { getActiveSnapshotId, getDictionaryAttribution } from "@/lib/dictionary/snapshot";
 import { getKanjiLearnerState } from "@/lib/data/kanji-learner";
+import { getKanjiExamples, getKanjiLessons } from "@/lib/data/kanji-lessons";
 import type { KanjiInspectPayload } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
@@ -136,6 +137,11 @@ export async function getKanjiForLearner(rawLiteral: string): Promise<KanjiLooku
 
 /** The dictionary data for one kanji plus this learner's favorite and review state (null for an unknown kanji). */
 export async function getKanjiInspectPayload(literal: string): Promise<KanjiInspectPayload | null> {
-  const [data, learner] = await Promise.all([getKanjiData(literal), getKanjiLearnerState(literal)]);
-  return data ? { data, learner } : null;
+  const [data, learner, examples, lessons] = await Promise.all([
+    getKanjiData(literal),
+    getKanjiLearnerState(literal),
+    getKanjiExamples(literal, 0),
+    getKanjiLessons(literal),
+  ]);
+  return data ? { data, learner, examples, lessons } : null;
 }
