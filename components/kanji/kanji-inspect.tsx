@@ -306,7 +306,8 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
                   {tcOpen ? t("inspect.showLess") : t("inspect.showAll", { count: data.tcLines.length })}
                 </button>
               )}
-              <p className="text-caption text-muted-foreground">{THIEU_CHUU_SOURCE.credit}</p>
+              {/* Mandatory wherever tc lines render (owner ruling R14): the work and the source it was taken from. */}
+              <a href={`https://${THIEU_CHUU_SOURCE.repo}`} target="_blank" rel="noopener noreferrer" className="self-start rounded-sm text-caption text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{THIEU_CHUU_SOURCE.credit}</a>
             </Block>
           )}
           {data.mnemonic && (

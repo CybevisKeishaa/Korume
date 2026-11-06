@@ -64,7 +64,7 @@ describe("KanjiInspect", () => {
     expect(within(block).getByText("Học, bắt chước.")).toBeInTheDocument();
     expect(within(block).getByText("Chỗ học.")).toBeInTheDocument();
     expect(within(block).queryByText("Môn học.")).toBeNull();
-    expect(within(block).getByText("Thiều Chửu, Hán Việt tự điển (1942)")).toBeInTheDocument();
+    expect(within(block).getByRole("link", { name: "Thiều Chửu, Hán Việt tự điển (1942)" })).toHaveAttribute("href", "https://github.com/anhthommo/thonutiengtrung"); // R14
     fireEvent.click(within(block).getByRole("button", { name: "Show all 3 lines" }));
     expect(within(block).getByText("Môn học.")).toBeInTheDocument();
     unmount();

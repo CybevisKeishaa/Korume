@@ -5,7 +5,7 @@
  *   npm run dict:import -- --jmdict <JMdict_e.gz> --kanjidic <kanjidic2.xml.gz> --kanjivg <kanjivg-*-main.zip>
  *     --jmdict-version … --jmdict-url … --jmdict-license …     (and the same three for kanjidic, kanjivg)
  *     [--allow-remote] [--force]   (--force re-imports even when the hashes match)
- *     [--thieu-chuu <dir>]   (local only: Thiều Chửu lines, refused with --allow-remote)
+ *     [--thieu-chuu <dir>]   (Thiều Chửu lines; owner-cleared with a mandatory on-screen credit, spec §9 K6)
  *
  * Same three file hashes as the active snapshot → prints `no change`, exit 0. On failure the staging
  * snapshot is left for diagnosis and printed, the active snapshot is untouched, exit 1.
@@ -40,9 +40,6 @@ async function meta(name: string, file: string): Promise<SourceMeta> {
 }
 
 async function main(): Promise<void> {
-  if (process.argv.includes("--thieu-chuu") && process.argv.includes("--allow-remote")) {
-    throw new Error("Thiều Chửu data is not cleared for a remote database (spec §4.2 license status)");
-  }
   loadEnvConfig(process.cwd());
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
