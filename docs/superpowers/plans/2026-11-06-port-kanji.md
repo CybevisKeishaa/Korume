@@ -121,17 +121,22 @@ Next migration number on master is `053` (last: `20261105000052_korume_answer_sc
   - `THIEU_CHUU_SOURCE = { repo: "github.com/anhthommo/thonutiengtrung", sha: "7357ad9d1aa234d5e7e8514d317e83917746a80b", credit: "Thiều Chửu, Hán Việt tự điển (1942)" } as const`
   - `loadThieuChuu(dir: string): Promise<Map<string, string[]>>` — key = the character, value = `tc` lines.
   - `resolveTcLines(literal: string, index: Map<string, string[]>, oldForms: Record<string, string[]>): TcResolution`
-  - `type TcResolution = { lines: string[]; via: "direct" | "kyujitai" | "none"; unresolved: null | "missing-target" | "chained" }`
+  - `type TcCategory = "direct" | "kyujitai" | "redirect-resolved" | "redirect-unresolved" | "none"`
+  - `type TcResolution = { lines: string[]; category: TcCategory; reason: null | "missing-target" | "chained" }`
+    (`reason` is non-null only for `redirect-unresolved`)
   - `ImportSources.thieuChuu?: { resolve(literal: string): TcResolution }`; `importDictionaries` options gain
     `minTcCoverage?: number` (default `0.95`); `ImportResult` `activated` counts gain
-    `tc: { oldJlpt: number; covered: number; unresolved: string[] }`.
+    `tc: { oldJlpt: number; byCategory: Record<TcCategory, number>; coverage: number; unresolved: { literal: string; reason: "missing-target" | "chained" }[] }`
+    where `coverage = (direct + kyujitai + redirect-resolved) / oldJlpt` — `redirect-unresolved` never counts (spec §4.2).
 
 Source facts (measured 2026-11-06 at the pinned SHA): 64 shards `public/dict/00.json … 3f.json`; shard =
 `codePoint % 64` as two lowercase hex digits; key = code point as lowercase hex without prefix; entry
 `{ e?: …, hv?: string, tc?: string[] }`; 14,024 keys, 10,717 with `tc`. Redirect first lines seen:
 `Giản thể của chữ X.` (1,983), `Dị dạng của chữ X.` (47), `Một dạng của chữ X.` (10), `Một cách viết của chữ X.`,
-`Một dị dạng của chữ X.`; the target may be in `[ ]`. Coverage over the 2,230 old-JLPT kanji: 2,052 direct + 144 via
-kyūjitai = **98.5 %**.
+`Một dị dạng của chữ X.`; the target may be in `[ ]`. Full-set measurement over the 2,230 old-JLPT kanji (spec §4.2 table):
+direct 1,980 · kyujitai 144 · redirect-resolved 66 · redirect-unresolved 6 (all chained: 閲 顔 衆 説 緑 録) · none 34 →
+coverage **2,190 / 2,230 = 98.21 %**. The import in Step 6 must reproduce these numbers exactly (same SHA, same mapping);
+a difference means the implementation diverges from the rule, not that the threshold should move.
 
 - [ ] **Step 1: Download the source** (outside the repo):
   `C:\Users\tplon\Desktop\Japan\Korume\DataKanji\thieu-chuu\` ← the 64 files from
@@ -143,28 +148,33 @@ kyūjitai = **98.5 %**.
   Expected: 296 keys, one with two old forms. Record the revision id in `_source`.
 - [ ] **Step 3: Failing tests.** `kyujitai.test.ts`: 296 keys; `気→["氣"]`, `駅→["驛"]`, `円→["圓"]`, `関→["關"]`.
   `thieu-chuu.test.ts` with an in-memory index:
-  - direct: `日` → its lines, `via: "direct"`;
-  - kyūjitai: `気` absent, `氣` present → `氣`'s lines, `via: "kyujitai"`;
+  - direct: `日` → its lines, `category: "direct"`, `reason: null`;
+  - kyūjitai: `気` absent, `氣` present → `氣`'s lines, `category: "kyujitai"`;
   - redirect: `学: ["Giản thể của chữ 學.", "Bắt chước…"]`, `學: ["Bắt chước…", "Chỗ học…"]` →
-    `["Bắt chước…", "Chỗ học…"]` (target lines first, then the original's remaining lines not already present; the
-    redirect line itself dropped);
+    `["Bắt chước…", "Chỗ học…"]`, `category: "redirect-resolved"` (target lines first, then the original's remaining
+    lines not already present; the redirect line itself dropped);
+  - redirect reached through kyūjitai (old form's first line redirects, target found) → `"redirect-resolved"`;
   - bracket target `Dị dạng của chữ [绿].` resolves `绿`;
-  - missing target → original lines unchanged, `unresolved: "missing-target"`;
-  - chained (target's first line is again a redirect) → original lines unchanged, `unresolved: "chained"`;
-  - none: `畑` → `{ lines: [], via: "none", unresolved: null }`.
+  - missing target → original lines unchanged, `category: "redirect-unresolved"`, `reason: "missing-target"`;
+  - chained (`緑: ["Dị dạng của chữ [绿]."]`, `绿: ["Giản thể của chữ 綠.", …]`) → original lines unchanged,
+    `"redirect-unresolved"`, `reason: "chained"`;
+  - none: `畑` → `{ lines: [], category: "none", reason: null }`.
   `loadThieuChuu` on a temp dir with two tiny shards maps `"65e5"` → `日`.
-  `stage.test.ts`: `tc_lines` carries `resolve(literal).lines`; with `thieuChuu` given and coverage below
-  `minTcCoverage` over rows with `jlptOld !== null`, the import throws `StagingImportError` and
-  `dict_activate_snapshot` is never called.
+  `stage.test.ts`: `tc_lines` carries `resolve(literal).lines`; `byCategory` counts only rows with `jlptOld !== null`;
+  a fixture of 4 old-JLPT rows (1 direct, 1 kyujitai, 1 redirect-resolved, 1 redirect-unresolved) gives
+  `coverage = 0.75`, `unresolved = [{ literal, reason }]`; with `minTcCoverage: 0.8` the import throws
+  `StagingImportError` and `dict_activate_snapshot` is never called; with `0.75` it activates.
 - [ ] **Step 4: Run** → FAIL.
 - [ ] **Step 5: Implement.** Redirect pattern (one constant):
   `/^(?:Giản thể|Dị dạng|Một dạng|Một cách viết|Một dị dạng) của chữ \[?(\p{Script=Han})\]?\.?$/u`. One hop only.
   Coverage is counted while staging `dict_kanji` and checked before activation. CLI: `--thieu-chuu <dir>` wires
   `resolve`; **if `--thieu-chuu` and `--allow-remote` are both present, exit 1 with
-  `Thiều Chửu data is not cleared for a remote database (spec §4.2 license status)`** before any write. Print the
-  coverage and the unresolved literals.
-- [ ] **Step 6: Run** the tests → PASS. Re-import locally with `--force --thieu-chuu <dir>`. Expected log:
-  coverage ≥ 0.95 (≈ 0.985); `select tc_lines from dict_kanji … where literal = '気'` → `氣`'s lines.
+  `Thiều Chửu data is not cleared for a remote database (spec §4.2 license status)`** before any write. Print one
+  line per category, the coverage, and each unresolved literal with its reason.
+- [ ] **Step 6: Run** the tests → PASS. Re-import locally with `--force --thieu-chuu <dir>`. Expected log exactly:
+  `direct 1980`, `kyujitai 144`, `redirect-resolved 66`, `redirect-unresolved 6` (閲 顔 衆 説 緑 録, all `chained`),
+  `none 34`, coverage `0.9821`; then `select tc_lines from dict_kanji … where literal = '気'` → `氣`'s lines. Copy the
+  printed counts into the run-state.
 - [ ] **Step 7:** typecheck, lint. Commit `feat(kanji): Thieu Chuu lines resolved at import (license-gated)`.
 
 ### Task 3: Kanji SRS keyed by literal
@@ -200,8 +210,10 @@ kyūjitai = **98.5 %**.
   - `insert … literal = '日本'` fails the check; `'𠮟'` passes;
   - erase: deleting the `users` row removes the progress rows (`account-erasure.sql` allowlist row unchanged).
 - [ ] **Step 2: Failing unit tests.**
-  - `content.test.ts` (or the schema's existing test): kanji `itemId: "日"` and `"𠮟"` parse; kanji `"abc"`, `"日本"`,
-    a uuid → fail; vocab uuid parses, vocab `"日"` fails.
+  - `content.test.ts` (or the schema's existing test): the old `itemId: z.string().uuid()` is gone (a kanji `"日"`
+    must parse). Valid: kanji `"日"`, `"𠮟"`; vocab uuid. Invalid: kanji `"abc"`, `"日本"`, `""`, a uuid sent as
+    kanji; vocab `"日"`.
+  - `app/api/srs/review/route.test.ts`: each invalid body above → 400 and `submitReview` is never called.
   - `srs.test.ts`: kanji review of a literal absent from the active snapshot's `dict_kanji` → `{ ok: false, status: 400 }`
     with no upsert; a kanji review upserts on `user_id,literal`, increments `reviews`, and increments `lapses` only for
     quality 1; `recordActivity` receives `{ itemType: "kanji", itemId: "日" }`.

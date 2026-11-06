@@ -71,8 +71,9 @@ came from). The importer returns `no-change` when the three source hashes match 
 ### 4.2 Thiều Chửu meaning
 Source: Thiều Chửu, *Hán Việt tự điển* (1942; author died 1954 — public domain in Vietnam, as vi.wikisource marks it).
 Machine-readable copy: `github.com/anhthommo/thonutiengtrung` `public/dict/00.json…3f.json` (64 shards, key = code
-point hex, `hv` = reading, `tc` = Thiều Chửu sense lines). We take **only `tc`** (the public-domain text) and
-**never `e`** (CVDICT-style AI-translated word glosses).
+point hex, `hv` = reading, `tc` = Thiều Chửu sense lines). We take **only the `tc` field containing Thiều Chửu
+entries** and **never `e`** (CVDICT-style AI-translated word glosses). The right to use this digitization is a
+separate question from the 1942 work's status — see the license status below.
 - **License status: UNVERIFIED — production release blocked (owner ruling 2026-11-06).** The repo states no license,
   and the work being public domain does not by itself settle the right to redistribute this digitization. Design,
   importer and UI proceed; the owner asks the repo author for a license / permission to use. Until there is a clear
@@ -80,20 +81,34 @@ point hex, `hv` = reading, `tc` = Thiều Chửu sense lines). We take **only `t
   license (the importer stays the same, only the input changes). The section hides when `tc_lines` is empty, so a
   release without the data needs no code change.
 - Pin the source: download at a fixed commit SHA into `DataKanji/thieu-chuu/` (outside the repo; the importer takes
-  the path). The SHA and the credit line ("Thiều Chửu, Hán Việt tự điển (1942), public domain") are constants next to
+  the path). The SHA (`7357ad9d1aa234d5e7e8514d317e83917746a80b`) and the credit line ("Thiều Chửu, Hán Việt tự điển
+(1942)") are constants next to
   the importer; Thiều Chửu is **not** a fourth `dict_imports` source (that touches six places — my call, builder check Q3).
 - Everything below is resolved **once, at import time**, into a `tc_lines text[] not null default '{}'` column on
   `dict_kanji`, keyed by the Japanese literal. Reading it is part of the existing one-row `dict_kanji` read.
 - Resolution order for a Japanese literal: the literal itself → its kyūjitai form via a mapping table → none.
-  The mapping is the 常用漢字表 old-form list (public government document, ~364 pairs: 気→氣, 駅→驛, 円→圓, 関→關 …),
-  checked in as a small TS/JSON constant with its source cited. A `tc` whose first line is only a redirect
+  The mapping is the 常用漢字表 old-form list (public government document; 296 new forms with an old form, one of
+  them with two: 気→氣, 駅→驛, 円→圓, 関→關 …), extracted mechanically and checked in as a small JSON constant with
+  its source cited. A `tc` whose first line is only a redirect
   ("Giản thể của chữ 學.", "Dị dạng của chữ [绿].") follows the redirect once to the target's lines, keeping any
   remaining lines of the original. One hop only, so loops cannot occur. When the target has no entry, or the
   target's own first line is again a redirect, the original lines are kept unchanged and the literal is listed as
   `redirect-unresolved` (missing target / chained redirect) in the coverage report — never silently dropped.
-- Measured on 2026-11-06: 2,052 / 2,230 old-JLPT kanji match directly; the kyūjitai probes 氣 驛 圓 關 覺 樂 歡 觀 綠
-  all resolve. Japanese-made kanji (畑, 込) have no entry — the section is hidden for them.
-- Proof: the importer reports coverage over the old-JLPT set and fails the import below 95 %.
+- **Coverage definition.** Over the 2,230 old-JLPT kanji (KANJIDIC2 `jlpt` set), each literal falls in exactly one
+  category: `direct` (own entry, first line not a redirect), `kyujitai` (via the old form, not a redirect),
+  `redirect-resolved` (first line a redirect, target found and not itself a redirect), `redirect-unresolved`
+  (missing target or chained), `none` (no entry). **Coverage = (direct + kyujitai + redirect-resolved) / 2,230;
+  `redirect-unresolved` does not count** as a resolved Hán meaning even though its original lines are kept.
+- Measured on 2026-11-06 over the full set (pinned SHA, the 296-pair mapping, the one-hop rule above):
+
+  | direct | kyujitai | redirect-resolved | redirect-unresolved | none | coverage |
+  |---|---|---|---|---|---|
+  | 1,980 | 144 | 66 | 6 | 34 | **2,190 / 2,230 = 98.21 %** |
+
+  The 6 unresolved are all chained (`閲 顔 衆 説 緑 録`: e.g. 緑 → 绿, whose own first line redirects to 綠). The 34
+  `none` are mostly Japanese-made or Japanese-only forms (畑, 込, 枠, 匁 …) — the section is hidden for them.
+- Proof: the importer prints the five counts and the coverage, lists every `redirect-unresolved` literal with its
+  reason, and fails the import (before activation) below 95 %.
 
 ### 4.3 Review keyed by literal (my call — technical, invisible to the owner)
 `user_kanji_progress` is keyed `(user_id, kanji_id → kanji.id)`, i.e. only the 46 curated rows can ever be reviewed,
@@ -108,10 +123,17 @@ so "Add to Review" on a dictionary kanji is impossible today. Change the key to 
     `(user_id, next_review_at)` (`20260712000003_indexes.sql:5`) and RLS policy `kanji_progress_own`
     (`20260712000002_rls.sql:82`, keyed on `user_id`) are unaffected. A DB test asserts row count and every column
     value are identical before/after on seeded rows.
-- `srsReviewSchema.itemId` is `z.string().uuid()` (`lib/validation/content.ts:17`): the schema validates `itemId`
-  **by `itemType` before any query** — vocab keeps the uuid, kanji must pass `parseKanjiLiteral`; any other string is
-  a 400 and never reaches the kanji branch. `submitReview` (`srs.ts:39-44`) then validates a kanji literal against
-  the active snapshot's `dict_kanji`, not the `kanji` table.
+- Validation. **Today** `srsReviewSchema.itemId` is `z.string().uuid()` for both types (`lib/validation/content.ts:17`),
+  which would reject `日` before any literal check. **Replace it** with a schema discriminated on `itemType`:
+  - `vocab`: `itemId` must be a uuid (unchanged behaviour);
+  - `kanji`: `itemId` must satisfy `parseKanjiLiteral(itemId) === itemId` (exactly one Han code point, non-BMP
+    included);
+  - a failure on either branch is a 400 from `/api/srs/review` before any query runs.
+
+  Only after the schema passes does `submitReview` (`srs.ts:39-44`) check that the kanji literal exists in the active
+  snapshot's `dict_kanji` (not the `kanji` table) → 400 when it does not, with no write. Tests: valid `日`, `𠮟`, a
+  vocab uuid; invalid kanji `abc`, `日本`, `""`, a uuid sent as kanji, `日` sent as vocab; a valid literal absent from
+  the snapshot.
 - Queue (my call, builder check Q1): **no `?level=`** ("Ôn tập hôm nay", the default deck) = every due row of the
   user, any literal, then fresh curated kanji; **with `?level=`** = today's behaviour (the level's curated list,
   due first, then fresh), keyed by literal. A dictionary kanji added through "Add to Review" therefore shows in the
