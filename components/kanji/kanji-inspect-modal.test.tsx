@@ -150,6 +150,32 @@ describe("KanjiInspectModal", () => {
     expect(screen.getByRole("status", { name: "Loading kanji…" })).toHaveTextContent("日");
   });
 
+  it("motion: › marks the side the next kanji steps in from; a close keeps the content for its fade, then drops it", async () => {
+    serve({ prev: "月", next: "火" });
+    url.search = "kanji=%E6%97%A5";
+    const { rerender } = render(<KanjiInspectModal />);
+    await screen.findByText("Nhật, Nhựt");
+    expect(dialog()).toHaveClass("kanji-dialog");
+    expect(dialog()).not.toHaveAttribute("data-step"); // the first open just settles in
+    fireEvent.click(screen.getByRole("button", { name: "Next kanji" }));
+    url.search = "kanji=%E7%81%AB";
+    rerender(<KanjiInspectModal />);
+    expect(dialog()).toHaveAttribute("data-step", "next");
+    await screen.findByText("Nhật, Nhựt");
+    fireEvent.click(screen.getByRole("button", { name: "Previous kanji" }));
+    url.search = "kanji=%E6%9C%88";
+    rerender(<KanjiInspectModal />);
+    expect(dialog()).toHaveAttribute("data-step", "prev");
+    url.search = "";
+    rerender(<KanjiInspectModal />);
+    await waitFor(() => expect(dialog().open).toBe(false));
+    expect(dialog()).not.toBeEmptyDOMElement(); // held while the close fades out
+    fireEvent.transitionEnd(screen.getByRole("button", { name: "Close", hidden: true })); // a child's transition is not the close
+    expect(dialog()).not.toBeEmptyDOMElement();
+    fireEvent.transitionEnd(dialog());
+    expect(dialog()).toBeEmptyDOMElement();
+  });
+
   it("closes the dialog when the param goes away", async () => {
     serve(null);
     url.search = "kanji=%E6%97%A5";

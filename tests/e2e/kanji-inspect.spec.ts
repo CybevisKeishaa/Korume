@@ -434,3 +434,142 @@ test("12 · an empty deck (N1 has no curated kanji) is the end state at once, on
   await expect(modal(page)).toBeHidden();
   await context.close();
 });
+
+// Task 9b (owner K4): motion. Samples every frame for a while: the kanji motions that ran, and the worst overflow of the
+// page, the open dialog and the review card. K1 must hold mid-motion, not only at rest.
+type Motion = { ran: string[]; pageOver: number; dialogOver: number; cardOver: number };
+const startSampling = (page: Page, ms = 1500) =>
+  page.evaluate((ms) => {
+    (window as unknown as { __motion: Promise<Motion> }).__motion = new Promise((resolve) => {
+      const ran = new Set<string>();
+      const worst = { pageOver: 0, dialogOver: 0, cardOver: 0 };
+      const begin = performance.now();
+      const over = (el: Element | null) => (el ? el.scrollHeight - el.clientHeight : 0);
+      const tick = () => {
+        for (const a of document.getAnimations()) {
+          if (a.playState !== "running") continue;
+          ran.add(a instanceof CSSAnimation ? a.animationName : a instanceof CSSTransition ? `transition:${a.transitionProperty}` : "other");
+        }
+        const scroller = document.scrollingElement as HTMLElement;
+        worst.pageOver = Math.max(worst.pageOver, scroller.scrollHeight - window.innerHeight, scroller.scrollWidth - window.innerWidth);
+        worst.dialogOver = Math.max(worst.dialogOver, over(document.querySelector("dialog[open]")));
+        worst.cardOver = Math.max(worst.cardOver, over(document.querySelector("main article")));
+        if (performance.now() - begin < ms) requestAnimationFrame(tick);
+        else resolve({ ran: [...ran].sort(), ...worst });
+      };
+      requestAnimationFrame(tick);
+    });
+  }, ms);
+const sampled = (page: Page) => page.evaluate(() => (window as unknown as { __motion: Promise<Motion> }).__motion);
+const kanjiMotions = (motion: Motion) => motion.ran.filter((name) => /^(kanji-|surface-|overlay-|transition:)/.test(name));
+
+/** Waits frame by frame until a `name` animation runs, presses `key` right then: did it act while the motion ran? */
+const pressDuring = (page: Page, name: string, key: string) =>
+  page.evaluate(async ({ name, key }) => {
+    const running = () => document.getAnimations().some((a) => a instanceof CSSAnimation && a.animationName === name && a.playState === "running");
+    for (let i = 0; i < 300 && !running(); i++) await new Promise(requestAnimationFrame);
+    const during = running();
+    window.dispatchEvent(new KeyboardEvent("keydown", { key, bubbles: true }));
+    await new Promise(requestAnimationFrame);
+    return { during, answer: document.querySelector("section[aria-label='Answer']") !== null };
+  }, { name, key });
+
+test("13 · motion (K4): open, ›, ♡, close, reveal, rate → next card all move, and K1 holds mid-motion; keys act during it", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.goto("/en/kanji?level=N5");
+  const first = await glyphOf(page, 0);
+  const second = await glyphOf(page, 1);
+
+  await startSampling(page);
+  await glyphLinks(page).nth(0).click();
+  await expect(glyph(page, first)).toBeVisible();
+  let motion = await sampled(page);
+  console.log(`motion open: ${JSON.stringify(motion)}`);
+  expect(motion.ran).toEqual(expect.arrayContaining(["surface-in", "overlay-in", "kanji-step"]));
+  expect(motion.dialogOver).toBeLessThanOrEqual(0); // the dialog is the one-viewport surface here (the level list below it scrolls)
+
+  await startSampling(page);
+  await modal(page).getByRole("button", { name: "Next kanji" }).click();
+  await expect(glyph(page, second)).toBeVisible();
+  await expect(modal(page)).toHaveAttribute("data-step", "next");
+  motion = await sampled(page);
+  console.log(`motion next: ${JSON.stringify(motion)}`);
+  expect(motion.ran).toContain("kanji-step");
+  expect(motion.dialogOver).toBeLessThanOrEqual(0);
+
+  const favorite = modal(page).getByRole("button", { name: "Favorite" });
+  await startSampling(page, 600);
+  await favorite.click();
+  await expect(favorite).toHaveAttribute("aria-pressed", "true");
+  expect((await sampled(page)).ran).toContain("kanji-pop");
+  await favorite.click(); // leave the learner's favorites as they were
+  await expect(favorite).toHaveAttribute("aria-pressed", "false");
+  await expect(modal(page).getByText("Removed from favorites.")).toBeAttached();
+
+  await startSampling(page, 800);
+  await page.keyboard.press("Escape");
+  await expect(modal(page)).toBeHidden();
+  motion = await sampled(page);
+  console.log(`motion close: ${JSON.stringify(motion)}`);
+  expect(motion.ran).toEqual(expect.arrayContaining(["surface-out", "overlay-out", "transition:overlay"])); // the close fades, held in the top layer
+  await expect(glyphLinks(page).nth(0)).toBeFocused(); // focus still returns to the opener
+  await expect(modal(page)).toBeEmpty(); // the held content goes once the fade ends
+
+  const reviews: unknown[] = [];
+  page.on("request", (request) => { if (request.url().endsWith("/api/srs/review") && request.method() === "POST") reviews.push(request.postDataJSON()); });
+  await page.goto(`/en/kanji/review?focus=${encodeURIComponent("日")}`);
+  await expect(reviewGlyph(page)).toHaveText("日");
+  const total = Number(((await counter(page).textContent()) ?? "").split("/")[1]);
+  expect(total).toBeGreaterThanOrEqual(2);
+
+  await startSampling(page);
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("region", { name: "Answer" }).getByRole("link", { name: "See details" })).toBeFocused();
+  motion = await sampled(page);
+  console.log(`motion reveal: ${JSON.stringify(motion)}`);
+  expect(motion.ran).toContain("kanji-answer-in");
+  expect(motion.pageOver).toBeLessThanOrEqual(0);
+  expect(motion.cardOver).toBeLessThanOrEqual(1);
+
+  // A rating, then a second one at once (during the card's exit): one save, for the card that was rated.
+  await startSampling(page);
+  await page.keyboard.press("3");
+  await page.keyboard.press("1");
+  await expect(counter(page)).toHaveText(`2 / ${total}`);
+  expect(await pressDuring(page, "kanji-card-in", " ")).toEqual({ during: true, answer: true }); // Space while the next card steps in
+  motion = await sampled(page);
+  console.log(`motion rate→next: ${JSON.stringify(motion)}`);
+  expect(kanjiMotions(motion)).toEqual(expect.arrayContaining(["kanji-card-in", "kanji-answer-in"]));
+  expect(motion.pageOver).toBeLessThanOrEqual(0);
+  expect(motion.cardOver).toBeLessThanOrEqual(1);
+  expect(reviews).toEqual([{ itemType: "kanji", itemId: "日", quality: 4 }]);
+  await context.close();
+});
+
+test("14 · reduced motion (OS setting): the same steps change state at once, no kanji motion runs", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.emulateMedia({ reducedMotion: "reduce" });
+  await page.goto("/en/kanji?level=N5");
+  await startSampling(page);
+  await glyphLinks(page).nth(0).click();
+  await expect(modal(page).getByRole("button", { name: "Next kanji" })).toBeVisible();
+  await modal(page).getByRole("button", { name: "Next kanji" }).click();
+  await expect(modal(page)).toHaveAttribute("data-step", "next");
+  await page.keyboard.press("Escape");
+  await expect(modal(page)).toBeHidden();
+  let motion = await sampled(page);
+  console.log(`reduced inspect: ${JSON.stringify(motion)}`);
+  expect(kanjiMotions(motion)).toEqual([]); // test 13 proves this sampler sees each of them when motion is on
+
+  await page.goto(`/en/kanji/review?focus=${encodeURIComponent("日")}`);
+  await expect(reviewGlyph(page)).toHaveText("日");
+  await startSampling(page);
+  await page.keyboard.press("Space");
+  await expect(page.getByRole("region", { name: "Answer" })).toBeVisible();
+  await page.keyboard.press("3");
+  await expect(counter(page)).toHaveText(/^2 \/ \d+$/);
+  motion = await sampled(page);
+  console.log(`reduced review: ${JSON.stringify(motion)}`);
+  expect(kanjiMotions(motion)).toEqual([]);
+  await context.close();
+});

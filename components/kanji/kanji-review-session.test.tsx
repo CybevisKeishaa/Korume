@@ -151,8 +151,9 @@ describe("KanjiReviewSession", () => {
       await waitFor(() => expect(calls.length).toBe(key === "1" ? 1 : 2));
     }
     const end = await screen.findByRole("region", { name: "Deck complete" });
-    expect(within(end).getByText("2", { selector: "dd" })).toBeInTheDocument();
-    expect(within(end).getByText("1", { selector: "dd" })).toBeInTheDocument();
+    // The counts count up (CountUp) and land on the session's numbers.
+    expect(await within(end).findByText("2", { selector: "dd" })).toBeInTheDocument();
+    expect(await within(end).findByText("1", { selector: "dd" })).toBeInTheDocument();
     expect(within(end).getByRole("link", { name: "Back to Kanji" })).toHaveAttribute("href", "/kanji?level=N5");
     expect(within(end).getByRole("link", { name: /日/ })).toHaveAttribute("href", "/kanji/review?level=N5&kanji=%E6%97%A5");
     expect(within(end).getByRole("link", { name: /日/ })).toHaveAccessibleName("日, rated Again");
@@ -162,6 +163,55 @@ describe("KanjiReviewSession", () => {
     expect(screen.getByRole("heading", { name: "Deck complete" })).toHaveFocus();
     fireEvent.keyDown(window, { key: "3" });
     expect(calls).toHaveLength(2);
+  });
+
+  it("reduced motion: the end-of-deck counts are there at once, no count-up", async () => {
+    document.documentElement.setAttribute("data-reduce-motion", "true");
+    try {
+      show([NICHI]);
+      fireEvent.keyDown(window, { key: " " });
+      fireEvent.keyDown(window, { key: "1" });
+      const end = await screen.findByRole("region", { name: "Deck complete" });
+      expect(within(end).getAllByText("1", { selector: "dd" })).toHaveLength(2); // reviewed 1, again 1 — never a 0 frame
+    } finally {
+      document.documentElement.removeAttribute("data-reduce-motion");
+    }
+  });
+
+  it("motion never holds input: the face leaves while the save is in flight, a second rating is ignored, the next card is in the moment the save returns", async () => {
+    let answer!: (ok: boolean) => void;
+    calls = [];
+    vi.stubGlobal("fetch", vi.fn((url: string, init?: RequestInit) => {
+      calls.push({ url, body: JSON.parse(init?.body as string) });
+      return new Promise<Response>((resolve) => { answer = (ok) => resolve({ ok, status: ok ? 200 : 500 } as Response); });
+    }));
+    show();
+    const card = document.querySelector("article") as HTMLElement;
+    expect(card).not.toHaveAttribute("data-leaving");
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.keyDown(window, { key: "3" });
+    expect(card).toHaveAttribute("data-leaving");
+    expect(card.querySelectorAll(":scope > .kanji-face")).toHaveLength(2); // the level row and the face, not the rating row
+    fireEvent.keyDown(window, { key: "1" });
+    expect(calls).toHaveLength(1);
+    answer(true);
+    await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
+    expect(card).not.toHaveAttribute("data-leaving");
+    expect(screen.getByText("学").closest(".kanji-card-in")).not.toBeNull(); // the next face steps in
+    fireEvent.keyDown(window, { key: " " }); // and takes Space at once
+    expect(screen.getByText("Học")).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: "Answer" })).toHaveClass("kanji-answer-in");
+  });
+
+  it("the progress bar tweens by transform, never by width (no layout change mid-motion)", async () => {
+    show();
+    const fill = screen.getByRole("progressbar").firstElementChild as HTMLElement;
+    expect(fill.style.width).toBe("");
+    expect(fill.style.transform).toBe("scaleX(0)");
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.keyDown(window, { key: "3" });
+    await waitFor(() => expect(fill.style.transform).toBe("scaleX(0.5)"));
+    expect(fill).toHaveClass("transition-transform", "duration-base", "ease-out-expo");
   });
 
   it("an empty deck is the end state at once, with the levels to learn from", () => {

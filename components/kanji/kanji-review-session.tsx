@@ -145,16 +145,17 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
             <span className="font-mono text-caption tabular-nums text-muted-foreground">{t("review.cardOf", { current: done ? total : index + 1, total })}</span>
           </div>
           <div role="progressbar" aria-label={t("review.progress")} aria-valuemin={0} aria-valuemax={total} aria-valuenow={reviewed.length} className="mt-xs h-[3px] rounded-full bg-border">
-            <div className="h-full rounded-full bg-primary" style={{ width: `${percent}%` }} />
+            <div className="h-full w-full origin-left rounded-full bg-primary transition-transform duration-base ease-out-expo rtl:origin-right" style={{ transform: `scaleX(${percent / 100})` }} />
           </div>
         </div>
 
-        <article className={cn(narrow, "flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card px-xl py-md md:max-h-[calc(560*var(--density-unit))]")}>
+        {/* Motion (globals.css "Kanji motion"): the face leaves while a rating saves, the next one steps in, the answer slides in. */}
+        <article data-leaving={submitting || undefined} className={cn(narrow, "flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card px-xl py-md md:max-h-[calc(560*var(--density-unit))]")}>
           {done ? (
             <KanjiReviewEnd reviewed={reviewed} backHref={backHref} modalHref={(literal) => kanjiModalHref(pathname, search, literal)} />
           ) : (
             <>
-              <div className="flex shrink-0 items-center justify-between">
+              <div key={index} className="kanji-face kanji-card-in flex shrink-0 items-center justify-between">
                 {card.level ? (
                   <span className="rounded-full border border-border bg-muted px-sm font-mono text-caption">{t("quickInspect.jlpt", { level: card.level })}</span>
                 ) : <span />}
@@ -164,13 +165,13 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                 </span>
               </div>
 
-              <div className="flex min-h-0 flex-1 flex-col">
+              <div className="kanji-face flex min-h-0 flex-1 flex-col">
                 <div aria-live="polite" className="flex min-h-0 flex-1 gap-lg">
-                  <div className="flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]">
+                  <div key={index} className="kanji-card-in flex min-h-0 min-w-0 flex-1 items-center justify-center [container-type:size]">
                     <p lang="ja" data-type-exempt="kanji-review-glyph" className="font-jp text-[length:min(var(--kanji-review-glyph),66cqh)] font-medium leading-[1.5]">{card.literal}</p>
                   </div>
                   {revealed && (
-                    <section aria-label={t("review.answer")} tabIndex={0} className={cn("flex min-h-0 min-w-0 flex-[1.5] flex-col justify-center gap-xs overflow-y-auto rounded-sm", ring)}>
+                    <section aria-label={t("review.answer")} tabIndex={0} className={cn("kanji-answer-in flex min-h-0 min-w-0 flex-[1.5] flex-col justify-center gap-xs overflow-y-auto rounded-sm", ring)}>
                       {card.hanViet.length > 0 && <p className="text-display font-semibold">{card.hanViet.join(", ")}</p>}
                       <p className="text-heading">{card.meaningsEn.join(", ")}</p>
                       <dl className="flex flex-wrap gap-x-xl gap-y-2xs">

@@ -730,6 +730,66 @@
   from { opacity: 0; scale: 0.97; translate: 0 -4px; }
 }
 
+/* Kanji motion (port-kanji Task 9b, owner K4): one vocabulary for the inspect modal and the review, nowhere else.
+   Transform and opacity only, so no box changes size mid-motion (K1); every state change is already in the DOM when
+   its motion starts, so no key waits on one; the reduce-motion blocks below make each of these an instant.
+   - The inspect <dialog> settles in and fades out like `.motion-dialog` (same keyframes). A closed <dialog> leaves the
+     top layer at once, so `display` and `overlay` are held (allow-discrete) for the length of the fade. */
+.kanji-dialog[open] {
+  animation: surface-in var(--duration-base) var(--ease-out-expo) both;
+}
+.kanji-dialog[open]::backdrop {
+  animation: overlay-in var(--duration-base) var(--ease-standard) both;
+}
+.kanji-dialog:not([open]) {
+  animation: surface-out var(--duration-fast) var(--ease-standard) both;
+  pointer-events: none;
+}
+.kanji-dialog:not([open])::backdrop {
+  animation: overlay-out var(--duration-fast) var(--ease-standard) both;
+}
+.kanji-dialog {
+  transition-property: display, overlay;
+  transition-duration: var(--duration-fast);
+  transition-behavior: allow-discrete;
+}
+/* ‹ › (and every other literal change) remounts the content: it steps in from the side it was asked for. */
+.kanji-dialog > article {
+  animation: kanji-step var(--duration-base) var(--ease-out-expo) both;
+}
+.kanji-dialog[data-step="next"] { --kanji-step-x: 12px; }
+.kanji-dialog[data-step="prev"] { --kanji-step-x: -12px; }
+@keyframes kanji-step {
+  from { opacity: 0; translate: var(--kanji-step-x, 0) 0; }
+}
+/* ♡ on, + Add to Review done: the icon answers the click once. */
+.kanji-pop {
+  animation: kanji-pop var(--duration-base) var(--ease-out-expo);
+}
+@keyframes kanji-pop {
+  40% { scale: 1.3; }
+}
+/* Review: a rating sends the face out while the save is in flight (no wait is added: the next card renders the moment
+   the save returns, and the face snaps back, because only the leaving state carries a transition); the next face
+   steps in from the end; a reveal brings the answer in beside the glyph. */
+[data-leaving] > .kanji-face {
+  opacity: 0.35;
+  translate: -12px 0;
+  transition: opacity var(--duration-fast) var(--ease-standard), translate var(--duration-fast) var(--ease-standard);
+}
+.kanji-card-in {
+  animation: kanji-card-in var(--duration-base) var(--ease-out-expo) both;
+}
+@keyframes kanji-card-in {
+  from { opacity: 0; translate: 16px 0; }
+}
+.kanji-answer-in {
+  animation: kanji-answer-in var(--duration-base) var(--ease-out-expo) both;
+}
+@keyframes kanji-answer-in {
+  from { opacity: 0; translate: 8px 0; }
+}
+
 /* Notification panel: light fade + rise on open (notification-bell.tsx). */
 .panel-in {
   animation: panel-in var(--duration-fast) var(--ease-standard) both;
@@ -1323,11 +1383,14 @@
  * ▶ NEGATIVE, not `0s`: with a 0.001ms duration a frame sampled exactly at the
  * animation's start still reads the FROM value. `-1ms` starts it already
  * complete, so `both` holds the TO value from the first frame.
+ *
+ * `::backdrop` is not matched by `*`: without it a <dialog>'s backdrop (the kanji inspect's) still faded in.
  */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
-  *::after {
+  *::after,
+  *::backdrop {
     animation-duration: 0.001ms !important;
     animation-delay: -1ms !important;
     animation-iteration-count: 1 !important;
@@ -1339,7 +1402,8 @@
 
 :root[data-reduce-motion="true"] *,
 :root[data-reduce-motion="true"] *::before,
-:root[data-reduce-motion="true"] *::after {
+:root[data-reduce-motion="true"] *::after,
+:root[data-reduce-motion="true"] *::backdrop {
   animation-duration: 0.001ms !important;
   animation-delay: -1ms !important;
   animation-iteration-count: 1 !important;

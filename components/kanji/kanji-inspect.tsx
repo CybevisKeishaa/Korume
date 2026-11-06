@@ -60,6 +60,8 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
   const [progress, setProgress] = useState<KanjiProgress | null>(payload.learner.progress);
   const [notice, setNotice] = useState<string | null>(null);
   const [announce, setAnnounce] = useState("");
+  // The control the learner just turned on answers with one `kanji-pop` (never on mount: a saved kanji opens still).
+  const [popped, setPopped] = useState<"favorite" | "review" | null>(null);
   const pending = useRef(false);
   const [replayKey, setReplayKey] = useState(0);
   const [tcOpen, setTcOpen] = useState(false);
@@ -95,13 +97,13 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
   const encoded = encodeURIComponent(literal);
   const toggleFavorite = () => {
     const next = !favorite;
-    void act(`/api/kanji/favorites/${encoded}`, next ? "PUT" : "DELETE", () => setFavorite(next), () => setFavorite(!next), t(next ? "inspect.favorited" : "inspect.unfavorited"));
+    void act(`/api/kanji/favorites/${encoded}`, next ? "PUT" : "DELETE", () => { setFavorite(next); setPopped("favorite"); }, () => setFavorite(!next), t(next ? "inspect.favorited" : "inspect.unfavorited"));
   };
   const addToReview = () =>
     void act(
       `/api/kanji/progress/${encoded}`,
       "PUT",
-      () => setProgress({ stage: 0, reviews: 0, lapses: 0, nextReviewAt: new Date().toISOString() }),
+      () => { setProgress({ stage: 0, reviews: 0, lapses: 0, nextReviewAt: new Date().toISOString() }); setPopped("review"); },
       () => setProgress(null),
       t("inspect.addedToReview"),
     );
@@ -168,11 +170,11 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
           {notice && <p role="alert" className="min-w-0 truncate text-caption text-danger-strong">{notice}</p>}
           <p aria-live="polite" className="sr-only">{announce}</p>
           <button type="button" aria-pressed={favorite} onClick={toggleFavorite} className={cn(pill, favorite ? "text-primary-strong" : "text-muted-foreground hover:text-foreground")}>
-            <Heart aria-hidden="true" className={cn("size-icon-sm", favorite && "fill-current")} />
+            <Heart aria-hidden="true" className={cn("size-icon-sm", favorite && "fill-current", favorite && popped === "favorite" && "kanji-pop")} />
             {t("inspect.favorite")}
           </button>
           <button type="button" disabled={progress !== null} onClick={addToReview} className={cn(pill, "font-semibold", progress ? "text-success-strong" : "text-foreground")}>
-            {progress ? <Check aria-hidden="true" className="size-icon-xs" /> : <Plus aria-hidden="true" className="size-icon-xs" />}
+            {progress ? <Check aria-hidden="true" className={cn("size-icon-xs", popped === "review" && "kanji-pop")} /> : <Plus aria-hidden="true" className="size-icon-xs" />}
             {progress ? t("inspect.inReview") : t("inspect.addToReview")}
           </button>
         </div>

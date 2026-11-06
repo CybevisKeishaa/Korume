@@ -21,8 +21,9 @@ function focusAfterClose(opener: Element | null) {
 }
 
 const navButton = "flex size-[var(--control-sm)] items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
-// Centred on KanjiInspect's header row: py-sm, then the glyph's 1.4 line box less the control, halved.
-const overHeader = "absolute top-[calc(var(--space-sm)+(1.4*var(--kanji-inspect-glyph)-var(--control-sm))/2)] flex gap-2xs";
+// Centred on KanjiInspect's header row: py-sm, then the glyph's 1.4 line box less the control, halved. z-10: the content's
+// step-in animation makes it a stacking context that would otherwise paint over (and take the clicks of) these controls.
+const overHeader = "absolute z-10 top-[calc(var(--space-sm)+(1.4*var(--kanji-inspect-glyph)-var(--control-sm))/2)] flex gap-2xs";
 
 /**
  * The kanji inspect modal (spec §5.1): `?kanji=<literal>` over any protected page, mounted once in the
@@ -38,8 +39,13 @@ export function KanjiInspectModal() {
   const wantOpen = useRef(false);
   const [loaded, setLoaded] = useState<{ key: string; from: string | null; payload: KanjiInspectPayload | null } | null>(null);
   const [attempt, setAttempt] = useState(0);
+  // What the dialog shows: the open literal, and the last one until the close has faded out (it is not emptied first).
+  const [view, setView] = useState<{ literal: string; from: string | null } | null>(null);
+  if (literal !== null && (view?.literal !== literal || view.from !== from)) setView({ literal, from });
+  // ‹ › name the side the next kanji steps in from; any other literal change (a composition chip) just fades in.
+  const [step, setStep] = useState<{ to: string; dir: "prev" | "next" } | null>(null);
   const open = literal !== null;
-  const key = `${literal}|${from}`;
+  const key = `${view?.literal}|${view?.from}`;
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -70,7 +76,13 @@ export function KanjiInspectModal() {
   const payload = settled ? loaded.payload : null;
   // While the next literal loads, ‹ › keep the last list's neighbors (same `from`) so a focused button stays mounted;
   // they act only once settled. aria-disabled, not disabled: disabling the focused button would drop focus.
-  const neighbors = loaded && loaded.from === from ? loaded.payload?.neighbors ?? null : null;
+  const neighbors = loaded && loaded.from === view?.from ? loaded.payload?.neighbors ?? null : null;
+  const stepTo = (dir: "prev" | "next") => {
+    const to = settled && neighbors?.[dir];
+    if (!to) return;
+    setStep({ to, dir });
+    go(to);
+  };
 
   return (
     <dialog
@@ -78,30 +90,33 @@ export function KanjiInspectModal() {
       // Explicit, though implicit on <dialog>: page-level key handlers (the lesson workspace's Esc and shortcuts,
       // `isInteractiveTarget`) skip events from inside `[role='dialog']`, so Esc here closes only this modal.
       role="dialog"
-      aria-label={literal ? t("quickInspect.label", { literal }) : undefined}
+      aria-label={view ? t("quickInspect.label", { literal: view.literal }) : undefined}
+      data-step={step && step.to === view?.literal ? step.dir : undefined}
       onCancel={(event) => { event.preventDefault(); close(); }}
       // A close the app did not ask for (the browser's own Esc fallback) still goes through the history rule.
       onClose={() => { if (wantOpen.current) close(); }}
       onClick={(event) => { if (event.target === event.currentTarget) close(); }}
-      className="w-[76vw] max-w-none max-h-[calc(100dvh-2*var(--space-xs))] flex-col overflow-hidden rounded-lg border border-border bg-card p-0 text-foreground backdrop:bg-scrim/60 open:flex"
+      // The close has faded out: the held content goes, so a reopen mounts fresh content as before.
+      onTransitionEnd={(event) => { if (event.target === event.currentTarget && !event.currentTarget.open) setView(null); }}
+      className="kanji-dialog w-[76vw] max-w-none max-h-[calc(100dvh-2*var(--space-xs))] flex-col overflow-hidden rounded-lg border border-border bg-card p-0 text-foreground backdrop:bg-scrim/60 open:flex"
     >
-      {literal && (
+      {view && (
         <>
           {neighbors ? (
             <div className={`${overHeader} start-lg`}>
-              <button type="button" aria-label={t("inspect.prev")} aria-disabled={!settled || !neighbors.prev} onClick={() => settled && neighbors.prev && go(neighbors.prev)} className={navButton}><ChevronLeft aria-hidden="true" className="size-icon-sm" /></button>
-              <button type="button" aria-label={t("inspect.next")} aria-disabled={!settled || !neighbors.next} onClick={() => settled && neighbors.next && go(neighbors.next)} className={navButton}><ChevronRight aria-hidden="true" className="size-icon-sm" /></button>
+              <button type="button" aria-label={t("inspect.prev")} aria-disabled={!settled || !neighbors.prev} onClick={() => stepTo("prev")} className={navButton}><ChevronLeft aria-hidden="true" className="size-icon-sm" /></button>
+              <button type="button" aria-label={t("inspect.next")} aria-disabled={!settled || !neighbors.next} onClick={() => stepTo("next")} className={navButton}><ChevronRight aria-hidden="true" className="size-icon-sm" /></button>
             </div>
           ) : null}
           <div className={`${overHeader} end-lg`}>
-            <Link href={kanjiPageHref(literal)} aria-label={t("inspect.openPage")} title={t("inspect.openPage")} className={navButton}><Maximize2 aria-hidden="true" className="size-icon-sm" /></Link>
+            <Link href={kanjiPageHref(view.literal)} aria-label={t("inspect.openPage")} title={t("inspect.openPage")} className={navButton}><Maximize2 aria-hidden="true" className="size-icon-sm" /></Link>
             <button type="button" aria-label={t("inspect.close")} onClick={close} className={navButton}><X aria-hidden="true" className="size-icon-sm" /></button>
           </div>
           {payload ? (
-            <KanjiInspect key={literal} payload={payload} variant="modal" />
+            <KanjiInspect key={view.literal} payload={payload} variant="modal" />
           ) : settled ? (
             <div role="alert" className="flex flex-col items-center gap-sm px-lg pb-lg pt-[calc(72*var(--density-unit))] text-center">
-              <p lang="ja" className="font-jp text-display font-bold">{literal}</p>
+              <p lang="ja" className="font-jp text-display font-bold">{view.literal}</p>
               <p className="text-body text-muted-foreground">{t("quickInspect.failed")}</p>
               <button type="button" onClick={() => setAttempt(attempt + 1)} className="inline-flex h-control-sm items-center rounded-full border border-border px-md text-body font-medium hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                 {tCommon("actions.retry")}
@@ -110,7 +125,7 @@ export function KanjiInspectModal() {
           ) : (
             <div role="status" aria-label={t("quickInspect.loading")} className="flex flex-col">
               <div className="flex items-center gap-md border-b border-border px-[calc(var(--space-lg)+2*var(--control-sm)+var(--space-2xs))] py-sm">
-                <p lang="ja" className="font-jp text-display font-bold">{literal}</p>
+                <p lang="ja" className="font-jp text-display font-bold">{view.literal}</p>
                 <Skeleton className="h-control-sm w-1/4" />
               </div>
               <div className="grid grid-cols-[0.8fr_1.15fr_0.95fr_1.1fr] gap-sm p-md">

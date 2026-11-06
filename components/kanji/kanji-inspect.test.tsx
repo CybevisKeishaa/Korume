@@ -171,6 +171,24 @@ describe("KanjiInspect", () => {
     expect(screen.queryByRole("img", { name: /recalled/ })).toBeNull();
   });
 
+  it("motion: ♡ on and + Add to Review answer the click with one pop; a kanji already saved opens still", async () => {
+    const icon = (name: string) => screen.getByRole("button", { name }).querySelector("svg") as SVGElement;
+    const { unmount } = show(payload({ learner: { favorite: true, progress: { stage: 1, reviews: 1, lapses: 0, nextReviewAt: null } } }));
+    expect(icon("Favorite")).not.toHaveClass("kanji-pop");
+    expect(icon("In review")).not.toHaveClass("kanji-pop");
+    unmount();
+    fetchMock.mockResolvedValue(new Response("{}", { status: 200 }));
+    show(payload());
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    expect(icon("Favorite")).toHaveClass("kanji-pop");
+    await waitFor(() => expect(screen.getByText("Added to favorites.")).toBeInTheDocument());
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" })); // turning it off does not pop
+    expect(icon("Favorite")).not.toHaveClass("kanji-pop");
+    await waitFor(() => expect(screen.getByText("Removed from favorites.")).toBeInTheDocument());
+    fireEvent.click(screen.getAllByRole("button", { name: "Add to Review" })[0] as HTMLElement);
+    expect(icon("In review")).toHaveClass("kanji-pop");
+  });
+
   it("with reviews the status shows the ring = (reviews − lapses) / reviews and Review Now", () => {
     show(payload({ learner: { favorite: true, progress: { stage: 4, reviews: 10, lapses: 2, nextReviewAt: "2099-01-01T00:00:00.000Z" } } }));
     expect(screen.getByRole("img", { name: "80% recalled" })).toBeInTheDocument();

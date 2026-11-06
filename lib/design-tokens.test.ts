@@ -939,3 +939,35 @@ describe("§9 resolution", () => {
     expect(css).not.toMatch(/\[data-footer-mascot\][^{]*\{[^}]*animation:/);
   });
 });
+
+describe("kanji motion (port-kanji Task 9b, owner K1 + K4)", () => {
+  const start = css.indexOf("/* Kanji motion");
+  const block = css.slice(start, css.indexOf("/* Notification panel", start));
+
+  it("times every animation and transition with the motion tokens, never a literal", () => {
+    // Break caught: a `250ms` or a bare `ease-in` would drift from the app's one motion scale.
+    const timings = [...block.matchAll(/(?:animation|transition)(?:-duration|-timing-function)?:\s*([^;]+);/g)].map((m) => m[1]);
+    expect(start).toBeGreaterThan(0);
+    expect(timings).toHaveLength(10); // L-004: the block's 8 animations, its 1 transition-duration, its 1 shorthand
+    for (const value of timings) {
+      expect(value, value).not.toMatch(/\d+m?s\b|\bease(?:-in|-out|-in-out)?\b(?!-)|linear|cubic-bezier/);
+      expect(value, value).toMatch(/var\(--duration-(?:fast|base)\)|var\(--ease-(?:standard|out-expo)\)/);
+    }
+  });
+
+  it("the reduce-motion kill-switch reaches a <dialog>'s ::backdrop, which `*` does not match", () => {
+    // Break caught (e2e 14, OS reduced motion): the inspect's backdrop still faded in for --duration-base.
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{\s*\*,\s*\*::before,\s*\*::after,\s*\*::backdrop \{/);
+    expect(css).toMatch(/:root\[data-reduce-motion="true"\] \*::backdrop \{/);
+  });
+
+  it("moves only opacity, translate and scale, so no box changes size mid-motion (K1)", () => {
+    // Break caught: a keyframe on width / height / margin would reflow the one-viewport layout while it plays.
+    const frames = [...block.matchAll(/@keyframes ([a-z-]+)\s*\{([\s\S]*?)\n\}/g)];
+    expect(frames.map((m) => m[1])).toEqual(["kanji-step", "kanji-pop", "kanji-card-in", "kanji-answer-in"]);
+    const animated = frames.flatMap((m) => [...(m[2] ?? "").matchAll(/([a-z-]+)\s*:/g)].map((p) => p[1]));
+    expect(animated.length).toBeGreaterThan(0);
+    expect([...new Set(animated)].sort()).toEqual(["opacity", "scale", "translate"]);
+    expect(block).toMatch(/\[data-leaving\] > \.kanji-face \{[^}]*transition: opacity [^;]*, translate [^;]*;/);
+  });
+});

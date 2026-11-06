@@ -5,6 +5,7 @@ import { Link, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/ui/button";
 import { JLPT_LEVELS } from "@/lib/conversation-types";
+import { CountUp } from "@/components/motion/count-up";
 
 export interface Reviewed {
   literal: string;
@@ -35,7 +36,7 @@ export function KanjiReviewEnd({ reviewed, backHref, modalHref }: { reviewed: Re
   }, [empty]);
 
   return (
-    <section aria-labelledby={id} className="grid min-h-0 flex-1 grid-cols-1 gap-xl md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+    <section aria-labelledby={id} className="kanji-card-in grid min-h-0 flex-1 grid-cols-1 gap-xl md:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
       <div className="flex flex-col items-center justify-center gap-md text-center">
         <h2 id={id} ref={heading} tabIndex={-1} className="text-title font-semibold focus-visible:ring-0 focus-visible:ring-offset-0">
           {empty ? t("review.emptyTitle") : t("review.doneTitle")}
@@ -46,11 +47,11 @@ export function KanjiReviewEnd({ reviewed, backHref, modalHref }: { reviewed: Re
           <dl className="flex gap-2xl">
             <div className="flex flex-col-reverse items-center">
               <dt className="text-caption text-muted-foreground">{t("review.reviewed")}</dt>
-              <dd className="text-display font-semibold tabular-nums">{reviewed.length}</dd>
+              <dd className="text-display font-semibold tabular-nums"><CountUp value={reviewed.length} /></dd>
             </div>
             <div className="flex flex-col-reverse items-center">
               <dt className="text-caption text-muted-foreground">{tCommon("srs.again")}</dt>
-              <dd className="text-display font-semibold tabular-nums text-accent-strong">{again}</dd>
+              <dd className="text-display font-semibold tabular-nums text-accent-strong"><CountUp value={again} /></dd>
             </div>
           </dl>
         )}
