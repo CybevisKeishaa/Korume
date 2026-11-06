@@ -79,3 +79,9 @@ describe("kanji.json EN explore (port-kanji Task 7b, owner K14: the page's ways 
     expect(en.explore).toEqual({"levelTitle": "More {level} kanji", "levelAll": "See all {level}", "levelReview": "Review {level}", "library": "Open the kanji library", "savedEmpty": "No saved kanji yet. Save this one to open it again from here.", "saveThis": "Save this kanji"});
   });
 });
+
+describe("kanji.json EN review (port-kanji Task 9, Figma 280:1314 + the owner-approved post-reveal / end-of-deck mock)", () => {
+  it("pins the review screen copy", () => {
+    expect(en.review).toEqual({"practice": "Kanji Practice", "today": "Today's review", "back": "Back to the kanji list", "exit": "Exit study", "currentDeck": "Current deck", "cardOf": "Card {current} of {total}", "progress": "Session progress", "new": "New", "prompt": "Recall the meaning before revealing.", "reveal": "Reveal meaning", "space": "Space", "rateLocked": "Reveal the answer to rate your recall", "rate": "How well did you recall it?", "answer": "Answer", "vietnamese": "Tiếng Việt", "details": "See details", "saveFailed": "Your rating wasn't saved. Check your connection and try again.", "complete": "{percent}% complete", "remaining": "{count, plural, one {# card remaining} other {# cards remaining}}", "streak": "{count, plural, one {# day streak} other {# day streak}}", "encourageStart": "Recall first, then reveal.", "encourage": "You're doing well. Keep going.", "doneTitle": "Deck complete", "emptyTitle": "Nothing to review right now", "emptyBody": "Every kanji in this deck is scheduled for later.", "reviewed": "Reviewed", "backToKanji": "Back to Kanji", "sessionKanji": "This session", "sessionHint": "Open any kanji to look at it again.", "ratedAgain": "{literal}, rated Again", "learnByLevel": "Learn new kanji by level", "library": "Kanji library", "loading": "Loading your deck…"});
+  });
+});

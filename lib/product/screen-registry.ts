@@ -775,11 +775,9 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     impl: "built",
     navGroup: null,
     navOrder: null,
-    specRef: null,
+    specRef: "docs/superpowers/specs/2026-11-06-port-kanji-design.md",
   },
-  // §6.3 — chrome contract diverges in the design (Figma wants focus/
-  // immersive); this repo's actual route sits under (app) — recorded as
-  // measured, not as the design intends.
+  // §6.3 — port-kanji Task 9 moved the route into (focus), the chrome the design asks for.
   {
     screenId: "kanji-lesson-practice-flashcard",
     name: "Kanji lesson practice (flashcard)",
@@ -789,11 +787,11 @@ export const SCREEN_REGISTRY: readonly ScreenEntry[] = [
     repoOnlyReason: null,
     figmaCheckedAt: "2026-08-12",
     route: "/kanji/review",
-    chrome: "app",
+    chrome: "focus",
     impl: "built",
     navGroup: null,
     navOrder: null,
-    specRef: null,
+    specRef: "docs/superpowers/specs/2026-11-06-port-kanji-design.md",
   },
   // §18.1.
   {

@@ -24,7 +24,7 @@ export type { ReviewItem };
  * fixing one copy silently leaves the other stale) outweighs the minor loss
  * of "everything lives under one path" tidiness.
  */
-const GRADES = [
+export const GRADES = [
   { labelKey: "again", quality: 1, key: "1" },
   { labelKey: "hard", quality: 3, key: "2" },
   { labelKey: "good", quality: 4, key: "3" },

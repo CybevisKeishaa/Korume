@@ -82,14 +82,14 @@ describe("getKanjiReviewQueue", () => {
     expect(await literals({ limit: 2 })).toEqual(["日", "二"]);
   });
 
-  it("builds the card from the active snapshot's dict_kanji plus curated meaning_vi / jlpt_level", async () => {
+  it("builds the card from the active snapshot's dict_kanji plus curated meaning_vi / jlpt_level; isNew = no progress row", async () => {
     mock();
     const cards = await getKanjiReviewQueue({ now: NOW, focus: "𠮟", level: "N5" });
     expect(cards[0]).toEqual({
-      literal: "𠮟", hanViet: ["HV-𠮟"], meaningsEn: ["en-𠮟", "x"], meaningVi: null, on: ["on-𠮟"], kun: ["kun-𠮟"], level: null,
+      literal: "𠮟", hanViet: ["HV-𠮟"], meaningsEn: ["en-𠮟", "x"], meaningVi: null, on: ["on-𠮟"], kun: ["kun-𠮟"], level: null, isNew: false,
     });
     expect(cards[2]).toEqual({
-      literal: "一", hanViet: ["HV-一"], meaningsEn: ["en-一", "x"], meaningVi: "một", on: ["on-一"], kun: ["kun-一"], level: "N5",
+      literal: "一", hanViet: ["HV-一"], meaningsEn: ["en-一", "x"], meaningVi: "một", on: ["on-一"], kun: ["kun-一"], level: "N5", isNew: true,
     });
   });
 

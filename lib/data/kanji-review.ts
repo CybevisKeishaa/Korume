@@ -13,6 +13,8 @@ export interface KanjiReviewCard {
   on: string[];
   kun: string[];
   level: string | null;
+  /** No progress row yet: the learner meets this kanji for the first time. */
+  isNew: boolean;
 }
 
 /** Literals per `in` lookup: 100 kanji keep the request line far inside its ~8 KB budget (see user-export.ts). */
@@ -95,6 +97,7 @@ export async function getKanjiReviewQueue({
       on: row.on_readings,
       kun: row.kun_readings,
       level: curatedRow?.jlpt_level ?? null,
+      isNew: !scheduledAt.has(literal),
     }];
   });
 }

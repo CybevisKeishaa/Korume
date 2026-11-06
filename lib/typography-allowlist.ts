@@ -47,6 +47,13 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     reason: "The kanji specimen in the inspect header (modal + page): drawn at the frame's 48 on the 1440 canvas (--kanji-inspect-glyph, above the display step), its 1.4 line box holds the CJK ink; content presentation, not interface type.",
   },
   {
+    id: "kanji-review-glyph",
+    file: "components/kanji/kanji-review-session.tsx",
+    match: 'data-type-exempt="kanji-review-glyph"',
+    scope: "all",
+    reason: "The kanji being recalled on the review card: drawn at the frame's 140 on the 1536 canvas (--kanji-review-glyph, capped to the card face's height so the screen stays one viewport), its 1.5 line box holds the CJK ink (at 124px a 1.4 box clipped 電 by 2px in the G4 gate); content presentation, not interface type.",
+  },
+  {
     id: "vocab-detail-glyph",
     file: "app/[locale]/(protected)/(app)/vocab/[id]/page.tsx",
     match: "font-jp text-4xl",

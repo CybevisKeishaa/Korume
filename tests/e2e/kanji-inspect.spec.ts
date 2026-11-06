@@ -7,7 +7,7 @@ import { seedLearner, type Learner } from "./typography/learner";
  * browser before its content exists — open from `/kanji` and from the lesson drawer, ‹ › on one history entry,
  * Esc / ✕ / Back / Forward / refresh / shared link, focus return, the lesson untouched underneath, garbage ignored,
  * and the Review button still a page; Task 7: the favorite persists and lands in the "Saved kanji" strip, Add to Review
- * puts a dictionary-only kanji into the review deck. One learner for the file (the typography fixture), a fresh context per test.
+ * puts a dictionary-only kanji into the review deck; Task 9: the review in the (focus) chrome, one viewport in every state. One learner for the file (the typography fixture), a fresh context per test.
  */
 test.describe.configure({ mode: "serial" });
 test.use({ viewport: { width: 1280, height: 529 } });
@@ -330,5 +330,107 @@ test("10 · keyboard: an inner scroller takes focus and scrolls with keys (K12);
   await chip.focus();
   expect(await chip.evaluate((el) => el.matches(":focus-visible"))).toBe(true);
   expect(await gloss.evaluate(clipped)).toBe(false);
+  await context.close();
+});
+
+// Task 9 (owner K1): the review screen is one viewport — no page scroll, the card holds its content, the footer
+// sits under the card, the glyph is the frame's specimen capped to the card face.
+const reviewFit = (page: Page) =>
+  page.evaluate(() => {
+    const card = document.querySelector("main article") as HTMLElement;
+    const footer = document.querySelector("main footer") as HTMLElement;
+    const glyphEl = document.querySelector("[data-type-exempt='kanji-review-glyph']") as HTMLElement | null;
+    const answer = card.querySelector("section[aria-label='Answer']") as HTMLElement | null;
+    return {
+      scroll: document.scrollingElement?.scrollHeight ?? 0,
+      inner: window.innerHeight,
+      cardOverflow: card.scrollHeight - card.clientHeight,
+      footerBelowCard: footer.getBoundingClientRect().top >= card.getBoundingClientRect().bottom - 0.5,
+      footerBottom: footer.getBoundingClientRect().bottom,
+      cardH: Math.round(card.getBoundingClientRect().height),
+      glyphPx: glyphEl ? parseFloat(getComputedStyle(glyphEl).fontSize) : null,
+      answer: answer ? `${answer.scrollHeight}/${answer.clientHeight}` : null,
+    };
+  });
+
+async function expectOneViewport(page: Page, state: string, viewport: { width: number; height: number }) {
+  const fit = await reviewFit(page);
+  console.log(`K1 ${state} @${viewport.width}x${viewport.height}: ${JSON.stringify(fit)}`);
+  expect(fit.scroll, state).toBeLessThanOrEqual(fit.inner);
+  expect(fit.cardOverflow, state).toBeLessThanOrEqual(1);
+  expect(fit.footerBelowCard, state).toBe(true);
+  expect(fit.footerBottom, state).toBeLessThanOrEqual(viewport.height);
+  await page.screenshot({ path: test.info().outputPath(`review-${state}-${viewport.width}x${viewport.height}.png`) });
+}
+
+const reviewGlyph = (page: Page) => page.locator("[data-type-exempt='kanji-review-glyph']");
+const counter = (page: Page) => page.locator("main header").getByText(/^\d+ \/ \d+$/);
+
+test("11 · /kanji/review?focus=𠮟 in (focus): 𠮟 first; Space reveals, 3 rates → the next card; the deck to its end; one viewport in every state at 1280×529 and 1440×900", async ({ browser }) => {
+  test.setTimeout(240_000);
+  for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900 }]) {
+    const { context, page } = await open(browser, viewport);
+    await page.goto(`/en/kanji/review?focus=${encodeURIComponent("𠮟")}`);
+    await expect(reviewGlyph(page)).toHaveText("𠮟");
+    await expect(counter(page)).toHaveText(/^1 \/ \d+$/);
+    // The (focus) chrome: the Main nav is the collapsed rail, and the (app) layout's main is not mounted.
+    await expect(page.getByRole("navigation", { name: "Main" })).toHaveAttribute("data-collapsed", "true");
+    await expect(page.locator("main#main-content")).toHaveCount(0);
+    for (const name of ["Again", "Hard", "Good", "Easy"]) await expect(page.getByRole("button", { name: new RegExp(`^${name}`) })).toBeDisabled();
+    expect((await reviewFit(page)).glyphPx).toBeGreaterThan(48 * (viewport.width / 1440));
+    await expectOneViewport(page, "pre-reveal", viewport);
+
+    await page.keyboard.press("Space");
+    const answer = page.getByRole("region", { name: "Answer" });
+    await expect(answer).toBeVisible();
+    await expect(answer.getByRole("link", { name: "See details" })).toBeFocused();
+    await expect(answer.getByRole("link", { name: "See details" })).toHaveAttribute("href", /kanji=%F0%A0%AE%9F/);
+    await expectOneViewport(page, "post-reveal", viewport);
+
+    await page.keyboard.press("3");
+    await expect(counter(page)).toHaveText(/^2 \/ \d+$/);
+    await expect(reviewGlyph(page)).not.toHaveText("𠮟");
+    const total = Number(((await counter(page).textContent()) ?? "").split("/")[1]);
+    for (let card = 2; card <= total; card++) {
+      await expect(counter(page)).toHaveText(`${card} / ${total}`);
+      await page.keyboard.press("Space");
+      await expect(page.getByRole("region", { name: "Answer" })).toBeVisible();
+      // 𠮟 is dictionary-only (no Hán Việt, no curated Vietnamese); a curated card carries every answer field.
+      if (card === 2) await expectOneViewport(page, "post-reveal-curated", viewport);
+      await page.keyboard.press(card % 4 === 0 ? "1" : "3");
+    }
+    const end = page.getByRole("region", { name: "Deck complete" });
+    await expect(end).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Deck complete" })).toBeFocused();
+    await expect(end.getByRole("link", { name: "Back to Kanji" })).toHaveAttribute("href", "/en/kanji");
+    await expectOneViewport(page, "end-of-deck", viewport);
+
+    // A session kanji opens the inspect over the finished deck; closing it leaves the summary as it was.
+    await end.getByRole("link", { name: /𠮟/ }).click();
+    await expect(glyph(page, "𠮟")).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(modal(page)).toBeHidden();
+    await expect(end).toBeVisible();
+    await context.close();
+  }
+});
+
+test("12 · an empty deck (N1 has no curated kanji) is the end state at once, one viewport; Esc leaves for /kanji; /kanji/日 is still the page", async ({ browser }) => {
+  for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900 }]) {
+    const { context, page } = await open(browser, viewport);
+    await page.goto("/en/kanji/review?level=N1");
+    const end = page.getByRole("region", { name: "Nothing to review right now" });
+    await expect(end).toBeVisible();
+    await expect(counter(page)).toHaveText("0 / 0");
+    await expect(end.getByRole("link", { name: "N3" })).toHaveAttribute("href", "/en/kanji?level=N3");
+    await expectOneViewport(page, "empty-deck", viewport);
+    await page.keyboard.press("Escape");
+    await expect.poll(() => path(page)).toBe("/en/kanji");
+    await context.close();
+  }
+  const { context, page } = await open(browser);
+  await page.goto(`/en/kanji/${encodeURIComponent("日")}`);
+  await expect(page.getByRole("heading", { level: 1, name: "日" })).toBeVisible();
+  await expect(modal(page)).toBeHidden();
   await context.close();
 });

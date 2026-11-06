@@ -129,6 +129,12 @@ describe("screen registry invariants", () => {
     // written here on purpose (L-002).
     const SPEC_REF_PATTERN =
       /^(japanese-learning-app-spec\.md §\d+(\.\d+)*|decision-register\.md [AP]\d+)$/;
+    // A ported screen cites its port design (port-dashboard; port-kanji plan Task 9 for the inspect and the review).
+    const PORT_DESIGNS: Record<string, string> = {
+      dashboard: "docs/superpowers/specs/2026-10-08-port-dashboard-design.md",
+      "kanji-inspect": "docs/superpowers/specs/2026-11-06-port-kanji-design.md",
+      "kanji-lesson-practice-flashcard": "docs/superpowers/specs/2026-11-06-port-kanji-design.md",
+    };
     // Vacuous by construction: zero spec-only rows exist (spec §5.6), so the
     // spec-only branch below runs zero times. Proven instead by
     // mutation-check — CLAUDE.md §7, spec §8.2; the four red outputs for this
@@ -141,8 +147,8 @@ describe("screen registry invariants", () => {
       if (entry.kind === "spec-only") {
         expect(entry.specRef, entry.screenId).not.toBeNull();
         expect(entry.specRef, entry.screenId).toMatch(SPEC_REF_PATTERN);
-      } else if (entry.screenId === "dashboard") {
-        expect(entry.specRef).toBe("docs/superpowers/specs/2026-10-08-port-dashboard-design.md");
+      } else if (entry.screenId in PORT_DESIGNS) {
+        expect(entry.specRef, entry.screenId).toBe(PORT_DESIGNS[entry.screenId]);
       } else {
         expect(entry.specRef, entry.screenId).toBeNull();
       }
