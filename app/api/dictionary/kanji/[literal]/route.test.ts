@@ -5,7 +5,7 @@ vi.mock("@/lib/dictionary/kanji-data-service", () => ({ getKanjiForLearner }));
 
 import { GET } from "./route";
 
-const call = (literal: string) => GET(new Request("http://test/api/dictionary/kanji/x"), { params: { literal } });
+const call = (literal: string, search = "") => GET(new Request(`http://test/api/dictionary/kanji/x${search}`), { params: { literal } });
 
 describe("GET /api/dictionary/kanji/[literal]", () => {
   it("returns the data envelope", async () => {
@@ -13,7 +13,13 @@ describe("GET /api/dictionary/kanji/[literal]", () => {
     const response = await call("緑");
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual({ data: { literal: "緑" } });
-    expect(getKanjiForLearner).toHaveBeenCalledWith("緑");
+    expect(getKanjiForLearner).toHaveBeenCalledWith("緑", null);
+  });
+
+  it("passes ?from= through for the neighbors", async () => {
+    getKanjiForLearner.mockResolvedValue({ ok: true, data: { literal: "緑" } });
+    await call("緑", "?from=level%3AN5");
+    expect(getKanjiForLearner).toHaveBeenLastCalledWith("緑", "level:N5");
   });
 
   it.each([400, 401, 404])("maps status %i", async (status) => {

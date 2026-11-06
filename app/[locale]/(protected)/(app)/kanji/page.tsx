@@ -8,6 +8,8 @@ import { jlptLevelSchema } from "@/lib/validation/content";
 import { LevelTabs } from "@/components/learning/level-tabs";
 import { Container } from "@/components/ui/container";
 import { buttonStyles } from "@/components/ui/button";
+import { kanjiModalHref } from "@/lib/kanji/href";
+import { formatKanjiContext } from "@/lib/kanji/context";
 
 export async function generateMetadata({
   params,
@@ -28,6 +30,8 @@ export default async function KanjiPage({
   const tCommon = await getTranslations("common");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
   const kanji = await getKanjiList(level);
+  // A glyph opens the inspect modal over this list; with a level, ‹ › walk that level (spec §5.1).
+  const from = level ? formatKanjiContext({ kind: "level", level }) : undefined;
 
   return (
     <>
@@ -55,7 +59,8 @@ export default async function KanjiPage({
         {kanji.map((k) => (
           <li key={k.id}>
             <Link
-              href={`/kanji/${encodeURIComponent(k.character)}`}
+              href={kanjiModalHref("/kanji", level ? `level=${level}` : "", k.character, from)}
+              scroll={false}
               className="flex h-full flex-col items-center rounded-lg border border-border bg-card p-4 text-center transition-colors hover:border-primary"
             >
               <span className="font-jp text-display">{k.character}</span>

@@ -16,7 +16,8 @@ import { resetKanjiCacheForTests } from "@/components/kanji/kanji-quick-inspect"
 import { ThemeProvider } from "@/components/providers/theme-provider";
 
 vi.mock("@/lib/i18n/navigation", () => ({
-  Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+  // `scroll` is a next/link prop, not an <a> attribute.
+  Link: ({ children, scroll, ...props }: React.ComponentProps<"a"> & { scroll?: boolean }) => <a data-scroll={scroll} {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
   // The header renders the mode bar (Shadowing · Summary) since 2026-10-04; it reads the locale-less path.
   usePathname: () => "/shadowing/video-1",

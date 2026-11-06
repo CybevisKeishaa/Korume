@@ -24,5 +24,11 @@
     "ttsUnavailable": "Speech is not available right now",
     "jlpt": "JLPT {level}",
     "viewFullDetails": "View full details"
+  },
+  "inspect": {
+    "openPage": "Open its own page",
+    "prev": "Previous kanji",
+    "next": "Next kanji",
+    "close": "Close"
   }
 }

@@ -4,9 +4,11 @@ import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
 import { getActiveSnapshotId, getDictionaryAttribution } from "@/lib/dictionary/snapshot";
-import { getKanjiLearnerState } from "@/lib/data/kanji-learner";
+import { getKanjiLearnerState, listKanjiFavorites } from "@/lib/data/kanji-learner";
 import { getKanjiExamples, getKanjiLessons } from "@/lib/data/kanji-lessons";
-import type { KanjiInspectPayload } from "@/lib/kanji/learner-types";
+import { getKanjiList } from "@/lib/data/content";
+import { parseKanjiContext } from "@/lib/kanji/context";
+import type { KanjiInspectPayload, KanjiNeighbors } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
 const EMPTY_COMPONENTS: KanjiComponentNode = { element: null, position: null, children: [] };
@@ -124,24 +126,40 @@ export type KanjiLookupResult =
 const LOOKUP_LIMIT = { limit: 60, windowMs: 60_000 };
 
 /** `GET /api/dictionary/kanji/[literal]` for a signed-in learner (QuickInspect). */
-export async function getKanjiForLearner(rawLiteral: string): Promise<KanjiLookupResult> {
+export async function getKanjiForLearner(rawLiteral: string, from: string | null = null): Promise<KanjiLookupResult> {
   const user = await requireUser(createClient());
   if (!user) return { ok: false, status: 401 };
   const literal = parseKanjiLiteral(rawLiteral);
   if (!literal) return { ok: false, status: 400 };
   const limited = rateLimit(`dictionary-kanji:${user.id}`, LOOKUP_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
-  const payload = await getKanjiInspectPayload(literal);
+  const payload = await getKanjiInspectPayload(literal, { from });
   return payload ? { ok: true, data: payload } : { ok: false, status: 404 };
 }
 
+/** ‹ › for the modal: the literal's neighbors in the `from` list (level order = `/kanji`'s, favorites newest first). */
+async function getKanjiNeighbors(literal: string, from: string | null): Promise<KanjiNeighbors | null> {
+  const context = parseKanjiContext(from);
+  if (!context) return null;
+  const list =
+    context.kind === "level"
+      ? (await getKanjiList(context.level)).map((item) => item.character)
+      : (await listKanjiFavorites()).map((item) => item.literal);
+  const index = list.indexOf(literal);
+  return index < 0 ? null : { prev: list[index - 1] ?? null, next: list[index + 1] ?? null };
+}
+
 /** The dictionary data for one kanji plus this learner's favorite and review state (null for an unknown kanji). */
-export async function getKanjiInspectPayload(literal: string): Promise<KanjiInspectPayload | null> {
-  const [data, learner, examples, lessons] = await Promise.all([
+export async function getKanjiInspectPayload(
+  literal: string,
+  opts: { from?: string | null } = {},
+): Promise<KanjiInspectPayload | null> {
+  const [data, learner, examples, lessons, neighbors] = await Promise.all([
     getKanjiData(literal),
     getKanjiLearnerState(literal),
     getKanjiExamples(literal, 0),
     getKanjiLessons(literal),
+    getKanjiNeighbors(literal, opts.from ?? null),
   ]);
-  return data ? { data, learner, examples, lessons } : null;
+  return data ? { data, learner, examples, lessons, neighbors } : null;
 }

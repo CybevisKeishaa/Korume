@@ -6,9 +6,12 @@ import { ThemeProvider } from "@/components/providers/theme-provider";
 import { KanjiQuickInspect, resetKanjiCacheForTests } from "./kanji-quick-inspect";
 
 vi.mock("@/lib/i18n/navigation", () => ({
-  Link: ({ children, ...props }: React.ComponentProps<"a">) => <a {...props}>{children}</a>,
+  // `scroll` is a next/link prop, not an <a> attribute.
+  Link: ({ children, scroll, ...props }: React.ComponentProps<"a"> & { scroll?: boolean }) => <a data-scroll={scroll} {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
+  usePathname: () => "/shadowing/v1",
 }));
+vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("tab=notes") }));
 
 const BASE: KanjiData = {
   literal: "緑", onReadings: ["リョク", "ロク"], kunReadings: ["みどり"], meaningsEn: ["green"], meaningVi: null, mnemonic: null,
@@ -50,7 +53,8 @@ describe("KanjiQuickInspect", () => {
     expect(words).toHaveLength(5);
     fireEvent.click(words[1] as HTMLElement);
     expect(onOpenWord).toHaveBeenCalledWith(BASE.commonWords[1]);
-    expect(within(card).getByRole("link", { name: "View full details" })).toHaveAttribute("href", "/kanji/%E7%B7%91");
+    expect(within(card).getByRole("link", { name: "View full details" })).toHaveAttribute("href", "/shadowing/v1?tab=notes&kanji=%E7%B7%91");
+    expect(within(card).getByRole("link", { name: "View full details" })).toHaveAttribute("data-scroll", "false");
     expect(within(card).getByRole("link", { name: "KanjiVG main" })).toHaveAttribute("href", "https://kanjivg.tagaini.net");
   });
 

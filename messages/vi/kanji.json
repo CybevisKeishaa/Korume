@@ -24,5 +24,11 @@
     "ttsUnavailable": "Hiện chưa phát âm được",
     "jlpt": "JLPT {level}",
     "viewFullDetails": "Xem đầy đủ"
+  },
+  "inspect": {
+    "openPage": "Mở trang riêng",
+    "prev": "Kanji trước",
+    "next": "Kanji sau",
+    "close": "Đóng"
   }
 }

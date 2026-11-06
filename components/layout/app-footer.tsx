@@ -4,12 +4,10 @@ import { getTranslations } from "@/lib/i18n/server";
 import { getNewsletterState } from "@/lib/data/newsletter";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { APP_STORE_URL, PLAY_STORE_URL } from "@/lib/app-stores";
+import { PLACEHOLDER_HREF as PLACEHOLDER } from "@/lib/placeholder-href";
 import { AppFooterIcon } from "./app-footer-icon";
 import { BackToTop } from "./back-to-top";
 import { FooterNewsletter } from "./footer-newsletter";
-
-// ponytail: every label without a page yet opens the landing page; each becomes its real href when the page exists.
-const PLACEHOLDER = "/";
 
 /**
  * Figma Footer `203:13813` on the outer app pages (spec docs/superpowers/specs/2026-10-13-app-footer-design.md).

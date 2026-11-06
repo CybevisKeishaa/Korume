@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { redirect } from "@/lib/i18n/navigation";
 import { AmbientProvider } from "@/components/companion/ambient-provider";
+import { KanjiInspectModal } from "@/components/kanji/kanji-inspect-modal";
 import { PreferencesProvider } from "@/components/providers/preferences-provider";
 import { StudyTimezoneDetector } from "@/components/providers/study-timezone-detector";
 import { getStudyTimezoneOrFallback } from "@/lib/time/study-timezone-fallback";
@@ -46,7 +48,11 @@ export default async function ProtectedLayout({
       <script dangerouslySetInnerHTML={{ __html: appearanceScript(preferences) }} />
       <PreferencesProvider initial={preferences}>
         <StudyTimezoneDetector needsDetection={studyTimezone.needsDetection} />
-        <AmbientProvider>{children}</AmbientProvider>
+        <AmbientProvider>
+          {children}
+          {/* `?kanji=<literal>` over every protected page (port-kanji spec §5.1); useSearchParams needs the boundary. */}
+          <Suspense fallback={null}><KanjiInspectModal /></Suspense>
+        </AmbientProvider>
       </PreferencesProvider>
     </>
   );

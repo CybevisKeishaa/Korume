@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Link, useTranslations } from "@/lib/i18n";
+import { useSearchParams } from "next/navigation";
+import { Link, usePathname, useTranslations } from "@/lib/i18n";
+import { kanjiModalHref } from "@/lib/kanji/href";
 import type { KanjiCommonWord, KanjiData } from "@/lib/dictionary/types";
 import { StrokeOrder } from "@/components/motion/stroke-order";
 import { TtsButton } from "@/components/speech/tts-button";
@@ -50,10 +52,12 @@ function Readings({ label, readings, listen, unavailable }: { label: string; rea
 /**
  * KanjiQuickInspect (spec §6.5): the active snapshot's kanji in the drawer — glyph and stroke order with
  * Replay, On/Kun with TTS, meanings (+ the curated Vietnamese meaning and mnemonic when they exist), stats,
- * up to five common words, a link to the full page, and the dictionary attribution.
+ * up to five common words, a link that opens the inspect modal, and the dictionary attribution.
  */
 export function KanjiQuickInspect({ literal, onOpenWord }: { literal: string; onOpenWord(word: KanjiCommonWord): void }) {
   const t = useTranslations("kanji");
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
   const [loaded, setLoaded] = useState<{ literal: string; value: Loaded } | null>(null);
   const [replayKey, setReplayKey] = useState(0);
   useEffect(() => {
@@ -122,7 +126,8 @@ export function KanjiQuickInspect({ literal, onOpenWord }: { literal: string; on
           </ul>
         </div>
       )}
-      <Link href={`/kanji/${encodeURIComponent(kanji.literal)}`} className="inline-flex text-caption font-medium text-primary-strong underline-offset-2 hover:underline">
+      {/* Opens the inspect modal over the lesson, which stays as it is underneath (spec §5.1). */}
+      <Link href={kanjiModalHref(pathname, search, kanji.literal)} scroll={false} className="inline-flex text-caption font-medium text-primary-strong underline-offset-2 hover:underline">
         {t("quickInspect.viewFullDetails")}
       </Link>
       <DictionaryAttribution label={t("dictionarySources")} attribution={kanji.attribution} />

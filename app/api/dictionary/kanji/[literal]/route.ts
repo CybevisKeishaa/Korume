@@ -3,10 +3,11 @@ import { getKanjiForLearner } from "@/lib/dictionary/kanji-data-service";
 
 const MESSAGES: Record<number, string> = { 400: "Invalid kanji", 401: "Unauthorized", 404: "Not found" };
 
-/** GET /api/dictionary/kanji/[literal] — KanjiQuickInspect data from the active dictionary snapshot. */
-export async function GET(_request: Request, { params }: { params: { literal: string } }) {
+/** GET /api/dictionary/kanji/[literal]?from= — KanjiQuickInspect / inspect-modal data from the active dictionary snapshot. */
+export async function GET(request: Request, { params }: { params: { literal: string } }) {
   try {
-    const result = await getKanjiForLearner(params.literal);
+    // `?from=` (spec §5.1): the context list whose neighbors ‹ › walk; validated in the service.
+    const result = await getKanjiForLearner(params.literal, new URL(request.url).searchParams.get("from"));
     if (result.ok) return NextResponse.json({ data: result.data });
     if (result.status === 429) {
       return NextResponse.json(

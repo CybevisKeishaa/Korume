@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { createMockSupabase, eqValue, type QueryCall } from "@/test/supabase-mock";
+import { createMockSupabase, eqValue, hasCall, type QueryCall } from "@/test/supabase-mock";
 import { assertPlainSerializableDto } from "@/test/dto";
 import { createClient } from "@/lib/supabase/server";
 import { getKanjiData, getKanjiInspectPayload } from "./kanji-data-service";
@@ -27,6 +27,7 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
       tables: {
         dict_kanji: (calls) => {
           record("dict_kanji", calls);
+          if (!hasCall(calls, "maybeSingle")) return { data: [{ literal: "緑", vi_readings: ["Lục"] }], error: null };
           return {
             data: kanji
               ? {
@@ -68,12 +69,17 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
         },
         kanji: (calls) => {
           record("kanji", calls);
+          // getKanjiList (the level context): a list, in the page's order.
+          if (!hasCall(calls, "maybeSingle")) return { data: ["月", "緑", "火"].map((character) => ({ id: character, character })), error: null };
           return {
             data: curated ? { id: "k-curated", meaning_vi: "xanh lá", mnemonic_text: "sợi chỉ xanh", jlpt_level: "N3" } : null,
             error: null,
           };
         },
-        user_kanji_favorites: () => ({ data: { literal: "緑" }, error: null }),
+        user_kanji_favorites: (calls) =>
+          hasCall(calls, "maybeSingle")
+            ? { data: { literal: "緑" }, error: null }
+            : { data: [{ literal: "緑" }, { literal: "水" }], error: null },
         user_kanji_progress: () => ({ data: { srs_stage: 1, reviews: 2, lapses: 0, next_review_at: "2026-11-07T00:00:00.000Z" }, error: null }),
         dict_snapshots: () => ({
           data: { jmdict_import_id: "j", kanjidic_import_id: "k", kanjivg_import_id: "v" },
@@ -170,7 +176,9 @@ describe("getKanjiForLearner", () => {
     await expect(getKanjiForLearner("緑")).resolves.toEqual({ ok: false, status: 429, retryAfter: 3_000 });
     expect(rateLimit).toHaveBeenLastCalledWith("dictionary-kanji:u1", { limit: 60, windowMs: 60_000 });
     const found = await getKanjiForLearner("%E7%B7%91");
-    expect(found).toMatchObject({ ok: true, data: { data: { literal: "緑" }, learner: { favorite: true } } });
+    expect(found).toMatchObject({ ok: true, data: { data: { literal: "緑" }, learner: { favorite: true }, neighbors: null } });
+    const withContext = await getKanjiForLearner("緑", "level:N5");
+    expect(withContext).toMatchObject({ ok: true, data: { neighbors: { prev: "月", next: "火" } } });
 
     useDictionary({ kanji: false });
     await expect(getKanjiForLearner("緑")).resolves.toEqual({ ok: false, status: 404 });
@@ -185,6 +193,7 @@ describe("getKanjiInspectPayload", () => {
     expect(payload?.learner).toEqual({ favorite: true, progress: { stage: 1, reviews: 2, lapses: 0, nextReviewAt: "2026-11-07T00:00:00.000Z" } });
     expect(payload?.examples).toEqual([{ lineId: "l1", videoId: "v1", lessonTitle: "Lesson", textJp: "緑の森", translation: null }]);
     expect(payload?.lessons).toEqual([{ videoId: "v1", title: "Lesson", count: 2 }]);
+    expect(payload?.neighbors).toBeNull();
     expect(structuredClone(payload)).toEqual(payload);
     assertPlainSerializableDto(payload);
   });
@@ -192,5 +201,32 @@ describe("getKanjiInspectPayload", () => {
   it("is null for an unknown literal", async () => {
     useDictionary({ kanji: false });
     await expect(getKanjiInspectPayload("緑")).resolves.toBeNull();
+  });
+
+  it("gives neighbors in the level list's order", async () => {
+    useDictionary();
+    const payload = await getKanjiInspectPayload("緑", { from: "level:N5" });
+    expect(payload?.neighbors).toEqual({ prev: "月", next: "火" });
+    const listCall = (recorded.kanji ?? []).find((calls) => !hasCall(calls, "maybeSingle")) ?? [];
+    expect(eqValue(listCall, "jlpt_level")).toBe("N5");
+    expect(structuredClone(payload)).toEqual(payload);
+  });
+
+  it("gives neighbors in the favorites order, null at the ends", async () => {
+    useDictionary();
+    const payload = await getKanjiInspectPayload("緑", { from: "favorites" });
+    expect(payload?.neighbors).toEqual({ prev: null, next: "水" });
+  });
+
+  it.each([null, "level:N9", "x"])("has no neighbors for from=%s", async (from) => {
+    useDictionary();
+    const payload = await getKanjiInspectPayload("緑", { from });
+    expect(payload?.neighbors).toBeNull();
+  });
+
+  it("has no neighbors when the kanji is not in the context list", async () => {
+    useDictionary();
+    const payload = await getKanjiInspectPayload("日", { from: "level:N5" }); // the mock list is 月 緑 火
+    expect(payload?.neighbors).toBeNull();
   });
 });
