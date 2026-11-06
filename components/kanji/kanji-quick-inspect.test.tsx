@@ -23,7 +23,7 @@ function serve(kanji: KanjiData) {
   fetchMock = vi.fn(async (input: RequestInfo | URL) => {
     const url = String(input);
     if (url === "/api/speech/tts") return new Response(new Blob(["x"]), { status: 200 });
-    return new Response(JSON.stringify({ data: kanji }), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify({ data: { data: kanji, learner: { favorite: false, progress: null } } }), { status: 200, headers: { "Content-Type": "application/json" } });
   });
   vi.stubGlobal("fetch", fetchMock);
 }

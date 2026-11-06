@@ -89,6 +89,52 @@ begin
   raise notice 'PASS 4 mission keys by literal';
 end $$;
 
+-- 6. user_kanji_favorites: own rows only, no update grant, one-code-point check, newest-first created_at.
+do $$
+declare a uuid := '4a41e000-0000-4000-8000-00000000000a'; b uuid := '4a41e000-0000-4000-8000-00000000000b';
+begin
+  begin
+    insert into user_kanji_favorites (user_id, literal) values (a, '日本');
+    raise exception 'FAIL 6a: a two-character literal was accepted';
+  exception when check_violation then raise notice 'PASS 6a two characters rejected'; end;
+  if has_table_privilege('authenticated', 'user_kanji_favorites', 'update') then
+    raise exception 'FAIL 6b: authenticated can update';
+  end if;
+  if not (select relrowsecurity from pg_class where oid = 'user_kanji_favorites'::regclass) then
+    raise exception 'FAIL 6c: RLS off';
+  end if;
+  insert into user_kanji_favorites (user_id, literal) values (a, '𠮟'), (b, '一');
+end $$;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', :'uid_a', true);
+do $$
+declare a uuid := '4a41e000-0000-4000-8000-00000000000a'; b uuid := '4a41e000-0000-4000-8000-00000000000b';
+begin
+  if (select count(*) from user_kanji_favorites) <> 1 or exists (select 1 from user_kanji_favorites where user_id = b) then
+    raise exception 'FAIL 6d: another learner''s favorite is visible';
+  end if;
+  insert into user_kanji_favorites (user_id, literal) values (a, '二');
+  begin
+    insert into user_kanji_favorites (user_id, literal) values (b, '三');
+    raise exception 'FAIL 6e: inserted a row for another user';
+  exception when insufficient_privilege then raise notice 'PASS 6e foreign insert refused'; end;
+  begin
+    update user_kanji_favorites set literal = '三' where user_id = a;
+    raise exception 'FAIL 6f: update allowed';
+  exception when insufficient_privilege then raise notice 'PASS 6f update refused'; end;
+  delete from user_kanji_favorites where literal = '二';
+  delete from user_kanji_favorites where user_id = b;
+  if (select count(*) from user_kanji_favorites) <> 1 then raise exception 'FAIL 6g: own delete failed'; end if;
+  raise notice 'PASS 6 favorites RLS';
+end $$;
+reset role;
+do $$
+begin
+  if (select count(*) from user_kanji_favorites where user_id = '4a41e000-0000-4000-8000-00000000000b') <> 1 then
+    raise exception 'FAIL 6h: delete reached another learner''s row';
+  end if;
+end $$;
+
 -- 5. Erasure: deleting the users row removes that learner's progress rows and only those.
 delete from users where id = :'uid_b';
 do $$
@@ -96,6 +142,10 @@ begin
   if exists (select 1 from user_kanji_progress where user_id = '4a41e000-0000-4000-8000-00000000000b')
      or (select count(*) from user_kanji_progress where user_id = '4a41e000-0000-4000-8000-00000000000a') <> 3 then
     raise exception 'FAIL 5: user delete did not cascade exactly';
+  end if;
+  if exists (select 1 from user_kanji_favorites where user_id = '4a41e000-0000-4000-8000-00000000000b')
+     or (select count(*) from user_kanji_favorites where user_id = '4a41e000-0000-4000-8000-00000000000a') <> 1 then
+    raise exception 'FAIL 5b: favorites did not cascade exactly';
   end if;
   raise notice 'PASS 5 cascade on user delete';
 end $$;

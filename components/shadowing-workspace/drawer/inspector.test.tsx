@@ -65,7 +65,7 @@ beforeEach(() => {
     const url = String(input);
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
     if (url.includes("/api/lines/line-1/analysis")) return json({ data: ANALYSIS });
-    if (url.startsWith("/api/dictionary/kanji/")) return failKanji ? json({ error: "x" }, 500) : json({ data: KANJI });
+    if (url.startsWith("/api/dictionary/kanji/")) return failKanji ? json({ error: "x" }, 500) : json({ data: { data: KANJI, learner: { favorite: false, progress: null } } });
     if (url.startsWith("/api/dictionary/gloss?")) return json({ data: { entSeq: 0, status: "missing", glossesVi: [], note: null, source: null } });
     if (url === "/api/dictionary/gloss" && init?.method === "POST") {
       const entryId = (JSON.parse(String(init.body)) as { entryId: number }).entryId;

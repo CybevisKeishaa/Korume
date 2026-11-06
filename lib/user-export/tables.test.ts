@@ -75,7 +75,7 @@ describe("USER_EXPORT_TABLES covers everything a reader owns", () => {
 
   it("reaches the whole schema, not an empty or truncated slice", () => {
     expect(BODIES.size).toBeGreaterThan(40);
-    expect(direct.size).toBe(39); // 2026-10-07: +learning_outcomes, +study_sessions; 2026-10-08: +daily_missions
+    expect(direct.size).toBe(40); // 2026-11-06: +user_kanji_favorites; 2026-10-07: +learning_outcomes, +study_sessions; 2026-10-08: +daily_missions
     expect(viaParent.size).toBe(4); // 2026-10-08: +daily_mission_items
     // A positive control: a table everyone can read must NOT be collected, or
     // the regex is matching something other than ownership.
@@ -128,12 +128,13 @@ describe("export pagination uses the primary-key order declared by the schema", 
     );
 
     // 2026-10-07: +learning_outcomes, +study_sessions; 2026-10-08: +daily_missions, +daily_mission_items
-    expect(tables.size).toBe(39);
-    expect(declaredKeys.size).toBe(39);
+    expect(tables.size).toBe(40);
+    expect(declaredKeys.size).toBe(40);
     for (const table of tables) {
       expect(Object.hasOwn(PRIMARY_KEY_COLUMNS, table), `${table} needs a paging key`).toBe(true);
       expect(PRIMARY_KEY_COLUMNS[table], `${table}'s paging key must match the schema`).toEqual(
-        declaredKeys.get(table),
+        // The scanner reads create table only; migration 20261106000055 re-keyed this table by ALTER.
+        table === "user_kanji_progress" ? ["user_id", "literal"] : declaredKeys.get(table),
       );
     }
   });

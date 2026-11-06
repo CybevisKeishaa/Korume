@@ -22,6 +22,7 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
   daily_missions: ["id"],
   daily_mission_items: ["id"],
   user_kanji_progress: ["user_id", "literal"],
+  user_kanji_favorites: ["user_id", "literal"],
   user_vocab_progress: ["user_id", "vocab_id"],
   user_grammar_progress: ["user_id", "grammar_id"],
   user_reading_attempts: ["id"],

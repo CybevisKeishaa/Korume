@@ -16,7 +16,7 @@ insert into erasure_fk_allowlist values
   ('public.daily_missions','user_id','c'),
   ('public.notifications','user_id','c'), ('public.peer_review_shares','user_id','c'), ('public.peer_reviews','reviewer_id','c'),
   ('public.companion_memories','user_id','c'), ('public.user_lesson_library','user_id','c'), ('public.account_deletion_requests','user_id','c'),
-  ('public.lesson_creation_jobs','requester_user_id','c'), ('public.user_preferences','user_id','c'), ('public.user_saved_collections','user_id','c'),
+  ('public.lesson_creation_jobs','requester_user_id','c'), ('public.user_preferences','user_id','c'), ('public.user_saved_collections','user_id','c'), ('public.user_kanji_favorites','user_id','c'),
   ('public.sentence_marks','user_id','c'), ('public.user_lesson_bookmarks','user_id','c'), ('public.ai_usage_charges','user_id','c'),
   ('public.sentence_notes','user_id','c'), ('public.lesson_notes','user_id','c'), ('public.lesson_reflections','user_id','c'),
   ('public.videos','added_by_user_id','n'), -- erased-user PRIVATE lessons are removed by the function
@@ -126,6 +126,7 @@ begin
  insert into public.forum_comments(post_id,user_id,content) values(post,a,'keep');
  insert into public.collections(slug,title,kind) values('erasuregate-shelf','Erasure gate shelf','shelf') returning id into coll;
  insert into public.user_saved_collections(user_id,collection_id) values(a,coll);
+ insert into public.user_kanji_favorites(user_id,literal) values(a,'一');
  insert into public.lesson_reflections(user_id,video_id,locale,analysis_fingerprint,evidence_fingerprint,schema_version,generator_version,status)
    values(a,v2,'vi','erasure-analysis','erasure-evidence',1,1,'pending');
  insert into public.lesson_creation_jobs(requester_user_id,origin,requested_library_access,youtube_video_id) values(a,'learner','PRIVATE','ERASUREGT01');
@@ -143,7 +144,7 @@ begin
    ('public.ai_reservations','requested_by_user_id'),('public.ai_generations','requested_by_user_id'),
    ('public.ai_usage_charges','user_id'),('public.user_preferences','user_id'),('public.sentence_marks','user_id'),
    ('public.user_lesson_bookmarks','user_id'),('public.conversation_sessions','user_id'),('public.shadowing_sessions','user_id'),
-   ('public.user_saved_collections','user_id'),('public.lesson_reflections','user_id'),('public.lesson_creation_jobs','requester_user_id')
+   ('public.user_saved_collections','user_id'),('public.user_kanji_favorites','user_id'),('public.lesson_reflections','user_id'),('public.lesson_creation_jobs','requester_user_id')
  ) s(relation, column_name) loop
    execute format('select count(*) from %s where %I = $1', r.relation, r.column_name) into n using a;
    if n = 0 then raise exception 'positive control: % has no seeded row for A', r.relation; end if;

@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, eqValue, type QueryCall } from "@/test/supabase-mock";
 import { assertPlainSerializableDto } from "@/test/dto";
 import { createClient } from "@/lib/supabase/server";
-import { getKanjiData } from "./kanji-data-service";
+import { getKanjiData, getKanjiInspectPayload } from "./kanji-data-service";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true, retryAfter: 0 })) }));
@@ -69,6 +69,8 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
             error: null,
           };
         },
+        user_kanji_favorites: () => ({ data: { literal: "緑" }, error: null }),
+        user_kanji_progress: () => ({ data: { srs_stage: 1, reviews: 2, lapses: 0, next_review_at: "2026-11-07T00:00:00.000Z" }, error: null }),
         dict_snapshots: () => ({
           data: { jmdict_import_id: "j", kanjidic_import_id: "k", kanjivg_import_id: "v" },
           error: null,
@@ -164,9 +166,25 @@ describe("getKanjiForLearner", () => {
     await expect(getKanjiForLearner("緑")).resolves.toEqual({ ok: false, status: 429, retryAfter: 3_000 });
     expect(rateLimit).toHaveBeenLastCalledWith("dictionary-kanji:u1", { limit: 60, windowMs: 60_000 });
     const found = await getKanjiForLearner("%E7%B7%91");
-    expect(found).toMatchObject({ ok: true, data: { literal: "緑" } });
+    expect(found).toMatchObject({ ok: true, data: { data: { literal: "緑" }, learner: { favorite: true } } });
 
     useDictionary({ kanji: false });
     await expect(getKanjiForLearner("緑")).resolves.toEqual({ ok: false, status: 404 });
+  });
+});
+
+describe("getKanjiInspectPayload", () => {
+  it("carries the learner state and survives structuredClone unchanged", async () => {
+    useDictionary();
+    const payload = await getKanjiInspectPayload("緑");
+    expect(payload?.data.literal).toBe("緑");
+    expect(payload?.learner).toEqual({ favorite: true, progress: { stage: 1, reviews: 2, lapses: 0, nextReviewAt: "2026-11-07T00:00:00.000Z" } });
+    expect(structuredClone(payload)).toEqual(payload);
+    assertPlainSerializableDto(payload);
+  });
+
+  it("is null for an unknown literal", async () => {
+    useDictionary({ kanji: false });
+    await expect(getKanjiInspectPayload("緑")).resolves.toBeNull();
   });
 });

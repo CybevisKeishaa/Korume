@@ -21,7 +21,7 @@ function loadKanji(literal: string): Promise<KanjiData> {
   if (!pending) {
     pending = fetch(`/api/dictionary/kanji/${encodeURIComponent(literal)}`).then(async (response) => {
       if (!response.ok) throw new Error(`kanji ${response.status}`);
-      return ((await response.json()) as { data: KanjiData }).data;
+      return ((await response.json()) as { data: { data: KanjiData } }).data.data;
     });
     pending.catch(() => cache.delete(literal));
     cache.set(literal, pending);

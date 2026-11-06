@@ -36,6 +36,7 @@ export const USER_EXPORT_TABLES: readonly UserExportTable[] = [
     via: { parent: "daily_missions", column: "mission_id", parentKey: "id" },
   },
   { table: "user_kanji_progress", userColumn: "user_id" },
+  { table: "user_kanji_favorites", userColumn: "user_id" },
   { table: "user_vocab_progress", userColumn: "user_id" },
   { table: "user_grammar_progress", userColumn: "user_id" },
   { table: "user_reading_attempts", userColumn: "user_id" },

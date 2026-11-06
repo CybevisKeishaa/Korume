@@ -4,6 +4,8 @@ import { requireUser } from "@/lib/data/videos";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
 import { getActiveSnapshotId, getDictionaryAttribution } from "@/lib/dictionary/snapshot";
+import { getKanjiLearnerState } from "@/lib/data/kanji-learner";
+import type { KanjiInspectPayload } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
 const EMPTY_COMPONENTS: KanjiComponentNode = { element: null, position: null, children: [] };
@@ -114,7 +116,7 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
 }
 
 export type KanjiLookupResult =
-  | { ok: true; data: KanjiData }
+  | { ok: true; data: KanjiInspectPayload }
   | { ok: false; status: 400 | 401 | 404 }
   | { ok: false; status: 429; retryAfter: number };
 
@@ -128,6 +130,12 @@ export async function getKanjiForLearner(rawLiteral: string): Promise<KanjiLooku
   if (!literal) return { ok: false, status: 400 };
   const limited = rateLimit(`dictionary-kanji:${user.id}`, LOOKUP_LIMIT);
   if (!limited.ok) return { ok: false, status: 429, retryAfter: limited.retryAfter };
-  const data = await getKanjiData(literal);
-  return data ? { ok: true, data } : { ok: false, status: 404 };
+  const payload = await getKanjiInspectPayload(literal);
+  return payload ? { ok: true, data: payload } : { ok: false, status: 404 };
+}
+
+/** The dictionary data for one kanji plus this learner's favorite and review state (null for an unknown kanji). */
+export async function getKanjiInspectPayload(literal: string): Promise<KanjiInspectPayload | null> {
+  const [data, learner] = await Promise.all([getKanjiData(literal), getKanjiLearnerState(literal)]);
+  return data ? { data, learner } : null;
 }
