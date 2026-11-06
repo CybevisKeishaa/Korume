@@ -1,7 +1,10 @@
 import { redirect } from "@/lib/i18n/navigation";
 import { getLocale } from "@/lib/i18n/server";
 import { notFound } from "next/navigation";
-import { getKanjiById } from "@/lib/data/content";
+import { getKanjiById, getKanjiList } from "@/lib/data/content";
+import { listKanjiFavorites } from "@/lib/data/kanji-learner";
+import { jlptLevelSchema } from "@/lib/validation/content";
+import type { KanjiExplore } from "@/lib/kanji/learner-types";
 import { getKanjiInspectPayload } from "@/lib/dictionary/kanji-data-service";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
 import { KanjiInspect } from "@/components/kanji/kanji-inspect";
@@ -26,13 +29,19 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
   if (!literal) notFound();
   const payload = await getKanjiInspectPayload(literal);
   if (!payload) notFound();
+  const level = jlptLevelSchema.safeParse(payload.data.jlpt).data;
+  const [levelList, favorites] = await Promise.all([level ? getKanjiList(level) : null, listKanjiFavorites()]);
+  const explore: KanjiExplore = {
+    level: level && levelList ? { level, literals: levelList.map((item) => item.character) } : null,
+    favorites,
+  };
 
-  // One viewport, no page scroll (owner 2026-11-06): the card takes at most the screen and its blocks fit inside.
+  // One viewport, no page scroll, and the card fills it (owner 2026-11-06, K14; L-051): its blocks fit inside.
   return (
-    <div className="flex max-h-dvh flex-col p-md">
+    <div className="flex h-dvh flex-col p-md">
       <StudyPresence surface="kanji" contextId={payload.data.curatedKanjiId} enabled={payload.data.curatedKanjiId !== null} />
       <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-        <KanjiInspect payload={payload} variant="page" />
+        <KanjiInspect payload={payload} variant="page" explore={explore} />
       </div>
     </div>
   );

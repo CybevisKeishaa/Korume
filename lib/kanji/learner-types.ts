@@ -37,6 +37,12 @@ export interface KanjiNeighbors {
   next: string | null;
 }
 
+/** The `/kanji/[literal]` page's ways on (owner K14): the curated level list it belongs to, and the saved kanji. */
+export interface KanjiExplore {
+  level: { level: string; literals: string[] } | null;
+  favorites: KanjiFavorite[];
+}
+
 /** What the kanji inspect surfaces receive: the dictionary data, this learner's state, and the first lesson examples. */
 export interface KanjiInspectPayload {
   data: KanjiData;

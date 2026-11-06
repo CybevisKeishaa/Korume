@@ -221,7 +221,7 @@ time; "View more examples" loads the next 3. "Appears in lessons": distinct less
 | My status | SRS stage, reviews, next review; ring = (reviews − lapses) / reviews; `Review Now` | whole card replaced by an "Add to Review" prompt when the kanji has no progress row |
 | Composition | KanjiVG `components` tree → element chips → the kanji | element meaning from `dict_kanji` when the element is itself a kanji |
 | Mnemonic | curated `mnemonic_text` | hidden when empty |
-| Nghĩa Hán (Thiều Chửu) | `dict_kanji.tc_lines`, first 2 shown, expandable | new block, not in the frame; placed under the meaning card; credit "Thiều Chửu, Hán Việt tự điển" |
+| Nghĩa Hán (Thiều Chửu) | `dict_kanji.tc_lines`, first 2 shown, expandable | new block, not in the frame; placed beside the meaning card (owner K11, 2026-11-06: one viewport leaves no height under it); credit "Thiều Chửu, Hán Việt tự điển" |
 | Common words | top 5 ranked JMdict words: headword, reading, English gloss, TTS | existing data |
 | Example sentences / Appears in lessons | §4.5 | each block hidden when empty; an empty state line when both are |
 | Bottom actions | Study this Kanji → `/kanji/review?focus=<literal>`; Open Vocabulary, Practice Writing, Find Similar Kanji → `/` placeholder (one PLACEHOLDER constant) | owner rule (2026-10-13, restated 2026-11-06): frame CTAs kept as links — not removed, not plain text, not disabled; unbuilt targets link to `/`. `/vocab` is hidden by A10, so Open Vocabulary has no destination yet |

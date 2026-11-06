@@ -9,18 +9,21 @@ import { kanjiModalHref } from "@/lib/kanji/href";
 import { compositionElements } from "@/lib/kanji/composition";
 import { PLACEHOLDER_HREF } from "@/lib/placeholder-href";
 import { THIEU_CHUU_SOURCE } from "@/lib/dictionary/thieu-chuu-source";
-import type { KanjiExample, KanjiInspectPayload, KanjiProgress } from "@/lib/kanji/learner-types";
+import type { KanjiExample, KanjiExplore, KanjiInspectPayload, KanjiProgress } from "@/lib/kanji/learner-types";
 import { StrokeOrder } from "@/components/motion/stroke-order";
 import { TtsButton } from "@/components/speech/tts-button";
 import { buttonStyles } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DictionaryAttribution } from "./dictionary-attribution";
+import { KanjiInspectExplore } from "./kanji-inspect-explore";
 
 const PAGE = 3;
 const pill = "inline-flex h-control-sm shrink-0 items-center gap-2xs rounded-full border border-border bg-background px-sm text-caption font-medium transition-colors hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-background";
 const well = "rounded-md bg-background";
 // `h-icon-md` is no theme key (L-053): the arbitrary var is a real height that tailwind-merge swaps for h-control-sm.
 const smallTts = "h-[var(--icon-md)]";
+// A block whose long content scrolls inside it is a tab stop with a name and a ring (owner K12): keys scroll it too.
+const scroller = "overflow-y-auto rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 
 const hanVietLine = (hanViet: string[], english: string | null) =>
   [hanViet.join(", ").toLocaleUpperCase("vi"), english].filter(Boolean).join(" · ");
@@ -38,9 +41,10 @@ function Block({ label, h: H, className, children }: { label: string; h: "h2" | 
  * The kanji inspect content from Figma `28:2041` (spec §5.2), one component for the `?kanji=` modal and the
  * `/kanji/[literal]` page. One viewport, no scroll (owner 2026-11-06): the frame's blocks sit in four columns —
  * stroke order + my status | meaning + composition | Thiều Chửu + mnemonic | words / examples / lessons in tabs — and long
- * content (Thiều Chửu, a tab list) scrolls inside its own bounded block, never the page or the dialog.
+ * content (Thiều Chửu, a tab list) scrolls inside its own bounded block, never the page or the dialog. The page
+ * passes `explore`: on a tall screen a second row under columns 1–3 holds its ways on (`KanjiInspectExplore`).
  */
-export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayload; variant: "modal" | "page" }) {
+export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInspectPayload; variant: "modal" | "page"; explore?: KanjiExplore }) {
   const t = useTranslations("kanji");
   const format = useFormatter();
   const pathname = usePathname();
@@ -126,6 +130,8 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
       : format.dateTime(new Date(progress.nextReviewAt), { day: "numeric", month: "short" })
     : "—";
   const examples = pages[page] ?? [];
+  // The tall page: each of columns 1–3 ends in a card that reaches the explore row, so the row reads as one band.
+  const column = cn("flex min-h-0 flex-col gap-sm", explore && "[@media(min-height:800px)]:[&>section:last-child]:grow");
   const tabs = [
     data.commonWords.length > 0 && "words",
     payload.examples.length > 0 && "examples",
@@ -152,7 +158,7 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
             <ChevronLeft aria-hidden="true" className="size-icon-sm" />
           </Link>
         )}
-        <Glyph data-type-exempt="kanji-inspect-glyph" lang="ja" className="shrink-0 font-jp text-display font-bold leading-[1.4]">{literal}</Glyph>
+        <Glyph data-type-exempt="kanji-inspect-glyph" lang="ja" className="shrink-0 font-jp text-[length:var(--kanji-inspect-glyph)] font-bold leading-[1.4]">{literal}</Glyph>
         <TtsButton text={literal} label={listen(literal)} unavailableLabel={unavailable} className="shrink-0 rounded-full bg-muted/60" />
         <div className="min-w-0">
           <p lang="ja" title={readings} className="truncate font-jp text-caption text-muted-foreground">{readings}</p>
@@ -172,8 +178,8 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
         </div>
       </header>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,1.1fr)] grid-rows-[minmax(0,1fr)] gap-sm p-md">
-        <div className="flex min-h-0 flex-col gap-sm">
+      <div className={cn("grid min-h-0 flex-1 grid-cols-[minmax(0,0.8fr)_minmax(0,1.15fr)_minmax(0,0.95fr)_minmax(0,1.1fr)] grid-rows-[minmax(0,1fr)] gap-sm p-md", explore && "[@media(min-height:800px)]:grid-rows-[minmax(0,auto)_minmax(0,1fr)]")}>
+        <div className={column}>
           {data.strokePaths.length > 0 && (
             <Block label={t("inspect.strokeOrder")} h={H}>
               <div className="relative mx-auto w-full max-w-[calc(104*var(--density-unit))]">
@@ -205,14 +211,14 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
                   <dd className="font-semibold text-primary-strong">{nextReview}</dd>
                 </dl>
               </div>
-              <Link href="/kanji/review" className={buttonStyles({ size: "sm", className: "w-full rounded-full font-semibold" })}>
+              <Link href="/kanji/review" className={buttonStyles({ size: "sm", className: "mt-auto w-full rounded-full font-semibold" })}>
                 {t("inspect.reviewNow")}
               </Link>
             </Block>
           ) : (
             <Block label={t("inspect.status")} h={H}>
               <p className="text-body text-muted-foreground">{t("inspect.notInReview")}</p>
-              <button type="button" onClick={addToReview} className={buttonStyles({ size: "sm", className: "w-full rounded-full font-semibold" })}>
+              <button type="button" onClick={addToReview} className={buttonStyles({ size: "sm", className: "mt-auto w-full rounded-full font-semibold" })}>
                 <Plus aria-hidden="true" className="size-icon-xs" />
                 {t("inspect.addToReview")}
               </button>
@@ -220,7 +226,7 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
           )}
         </div>
 
-        <div className="flex min-h-0 flex-col gap-sm">
+        <div className={column}>
           <Block label={t("inspect.meaning")} h={H}>
             <p className="text-body font-semibold">{data.meaningsEn.join(", ")}</p>
             {data.meaningVi && <p className="text-body">{data.meaningVi}</p>}
@@ -256,20 +262,20 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
           </Block>
           {elements.length > 0 && (
             <Block label={t("inspect.composition")} h={H} className="min-h-0 shrink">
-              <ol className="flex min-h-0 flex-wrap items-center gap-2xs overflow-y-auto">
+              <ol tabIndex={0} aria-label={t("inspect.composition")} className={cn("flex min-h-0 flex-wrap items-center gap-2xs", scroller)}>
                 {elements.map((element, index) => {
                   const gloss = data.componentGlosses[element];
                   const chip = (
                     <>
                       <span lang="ja" className="font-jp text-body-lg font-bold">{element}</span>
-                      {gloss && <span className="max-w-full truncate text-caption text-muted-foreground">{hanVietLine(gloss.hanViet, gloss.meaningEn)}</span>}
+                      {gloss && <span className="max-w-full truncate text-center text-caption text-muted-foreground group-focus-visible:whitespace-normal">{hanVietLine(gloss.hanViet, gloss.meaningEn)}</span>}
                     </>
                   );
                   return (
                     <li key={element} className="flex min-w-0 items-center gap-2xs">
                       {index > 0 && <span aria-hidden="true" className="text-caption font-bold text-muted-foreground">+</span>}
                       {gloss ? (
-                        <Link href={kanjiModalHref(pathname, search, element)} scroll={false} title={hanVietLine(gloss.hanViet, gloss.meaningEn)} className={cn(well, "flex min-w-0 max-w-[calc(72*var(--density-unit))] flex-col items-center px-xs py-2xs hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>{chip}</Link>
+                        <Link href={kanjiModalHref(pathname, search, element)} scroll={false} title={hanVietLine(gloss.hanViet, gloss.meaningEn)} className={cn(well, "group flex min-w-0 max-w-[calc(72*var(--density-unit))] flex-col items-center px-xs py-2xs hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>{chip}</Link>
                       ) : (
                         <span className={cn(well, "flex flex-col items-center px-xs py-2xs")}>{chip}</span>
                       )}
@@ -285,10 +291,10 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
           )}
         </div>
 
-        <div className="flex min-h-0 flex-col gap-sm">
+        <div className={column}>
           {data.tcLines.length > 0 && (
             <Block label={t("inspect.thieuChuu")} h={H} className="min-h-0 shrink">
-              <ul className="min-h-0 space-y-2xs overflow-y-auto text-body">
+              <ul tabIndex={0} aria-label={t("inspect.thieuChuu")} className={cn("min-h-0 space-y-2xs text-body", scroller)}>
                 {(tcOpen ? data.tcLines : data.tcLines.slice(0, 2)).map((line, index) => (
                   <li key={index}>{line}</li>
                 ))}
@@ -303,12 +309,12 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
           )}
           {data.mnemonic && (
             <Block label={t("mnemonic")} h={H} className="min-h-0 shrink">
-              <p className="min-h-0 overflow-y-auto text-body text-muted-foreground">{data.mnemonic}</p>
+              <p tabIndex={0} role="group" aria-label={t("mnemonic")} className={cn("min-h-0 text-body text-muted-foreground", scroller)}>{data.mnemonic}</p>
             </Block>
           )}
         </div>
 
-        <section aria-label={t("inspect.usage")} className="flex min-h-0 flex-col rounded-lg border border-border p-sm">
+        <section aria-label={t("inspect.usage")} className={cn("flex min-h-0 flex-col rounded-lg border border-border p-sm", explore && "[@media(min-height:800px)]:row-span-2")}>
           {tabs.length > 0 && (
             <Tabs defaultValue={tabs[0]} className="flex min-h-0 flex-1 flex-col">
               <TabsList className="self-start">
@@ -316,7 +322,7 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
                   <TabsTrigger key={tab} value={tab} className="text-caption">{t(`inspect.${tab}` as "inspect.words")}</TabsTrigger>
                 ))}
               </TabsList>
-              <TabsContent value="words" className="mt-xs min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden">
+              <TabsContent value="words" className={cn("mt-xs min-h-0 flex-1 data-[state=inactive]:hidden", scroller)}>
                 <ul className="space-y-2xs">
                   {data.commonWords.slice(0, 5).map((word) => (
                     <li key={word.entSeq} className={cn(well, "flex items-center gap-xs px-sm py-2xs")}>
@@ -332,8 +338,8 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
                   ))}
                 </ul>
               </TabsContent>
-              <TabsContent value="examples" className="mt-xs flex min-h-0 flex-1 flex-col gap-xs data-[state=inactive]:hidden">
-                <ul className="min-h-0 flex-1 space-y-2xs overflow-y-auto">
+              <TabsContent value="examples" className="mt-xs flex min-h-0 flex-1 flex-col gap-xs rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring data-[state=inactive]:hidden">
+                <ul tabIndex={0} aria-label={t("inspect.examples")} className={cn("min-h-0 flex-1 space-y-2xs", scroller)}>
                   {examples.map((example) => (
                     <li key={example.lineId}>
                       <Link href={`/shadowing/${example.videoId}?line=${example.lineId}`} className={cn(well, "block px-sm py-2xs hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>
@@ -357,7 +363,7 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
                   </button>
                 </div>
               </TabsContent>
-              <TabsContent value="lessons" className="mt-xs min-h-0 flex-1 overflow-y-auto data-[state=inactive]:hidden">
+              <TabsContent value="lessons" className={cn("mt-xs min-h-0 flex-1 data-[state=inactive]:hidden", scroller)}>
                 <ul className="space-y-2xs">
                   {payload.lessons.map((lesson) => (
                     <li key={lesson.videoId}>
@@ -380,6 +386,7 @@ export function KanjiInspect({ payload, variant }: { payload: KanjiInspectPayloa
             <p className="mt-xs text-body text-muted-foreground">{t("inspect.noLessons")}</p>
           )}
         </section>
+        {explore && <KanjiInspectExplore literal={literal} hanViet={data.hanViet} favorite={favorite} onFavorite={toggleFavorite} explore={explore} h={H} />}
       </div>
 
       <footer className="shrink-0 space-y-2xs border-t border-border px-lg py-sm">

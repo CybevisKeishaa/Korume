@@ -21,8 +21,8 @@ function focusAfterClose(opener: Element | null) {
 }
 
 const navButton = "flex size-[var(--control-sm)] items-center justify-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring aria-disabled:opacity-50 aria-disabled:hover:bg-transparent";
-// Centred on KanjiInspect's header row: py-sm (12) + the glyph's 56 line (1.4 x 40), less the 36 control, halved.
-const overHeader = "absolute top-[calc(22*var(--density-unit))] flex gap-2xs";
+// Centred on KanjiInspect's header row: py-sm, then the glyph's 1.4 line box less the control, halved.
+const overHeader = "absolute top-[calc(var(--space-sm)+(1.4*var(--kanji-inspect-glyph)-var(--control-sm))/2)] flex gap-2xs";
 
 /**
  * The kanji inspect modal (spec §5.1): `?kanji=<literal>` over any protected page, mounted once in the

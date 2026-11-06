@@ -1,9 +1,10 @@
 import { fireEvent, screen, waitFor, within } from "@testing-library/react";
 import { render } from "@/test/render";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { KanjiInspectPayload } from "@/lib/kanji/learner-types";
+import type { KanjiExplore, KanjiInspectPayload } from "@/lib/kanji/learner-types";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { KanjiInspect } from "./kanji-inspect";
+import { licenceName } from "./dictionary-attribution";
 
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ children, scroll, ...props }: React.ComponentProps<"a"> & { scroll?: boolean }) => <a data-scroll={scroll} {...props}>{children}</a>,
@@ -11,6 +12,9 @@ vi.mock("@/lib/i18n/navigation", () => ({
   usePathname: () => "/kanji",
 }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("level=N5") }));
+
+// The licence text as the importer stores it (dict_imports.license).
+const KANJIVG_LICENCE = "KanjiVG, Copyright (C) Ulrich Apel, Creative Commons Attribution-ShareAlike 3.0 (http://kanjivg.tagaini.net)";
 
 function payload(overrides: { data?: Partial<KanjiInspectPayload["data"]> } & Partial<Omit<KanjiInspectPayload, "data">> = {}): KanjiInspectPayload {
   const { data, ...rest } = overrides;
@@ -27,7 +31,7 @@ function payload(overrides: { data?: Partial<KanjiInspectPayload["data"]> } & Pa
       componentGlosses: { 子: { hanViet: ["Tử"], meaningEn: "child" } },
       commonWords: [{ entSeq: 1, headword: "学生", reading: "がくせい", glossEn: "student" }],
       curatedKanjiId: null,
-      attribution: [{ source: "kanjivg", version: "main", url: "https://kanjivg.tagaini.net", license: "CC BY-SA 3.0" }],
+      attribution: [{ source: "kanjivg", version: "main", url: "https://kanjivg.tagaini.net", license: KANJIVG_LICENCE }],
       ...data,
     },
     learner: { favorite: false, progress: null },
@@ -38,8 +42,8 @@ function payload(overrides: { data?: Partial<KanjiInspectPayload["data"]> } & Pa
   };
 }
 
-const show = (p: KanjiInspectPayload, variant: "modal" | "page" = "modal") =>
-  render(<ThemeProvider><KanjiInspect payload={p} variant={variant} /></ThemeProvider>);
+const show = (p: KanjiInspectPayload, variant: "modal" | "page" = "modal", explore?: KanjiExplore) =>
+  render(<ThemeProvider><KanjiInspect payload={p} variant={variant} explore={explore} /></ThemeProvider>);
 
 let fetchMock: ReturnType<typeof vi.fn>;
 beforeEach(() => {
@@ -191,6 +195,97 @@ describe("KanjiInspect", () => {
     }
     expect(screen.getByRole("tab", { name: "Words" })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /Study this Kanji/ })).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "KanjiVG main" })).toHaveAttribute("title", "CC BY-SA 3.0"); // compact: licence on the link
+    // compact (K10): the licence's short name stays visible on its one line; the full licence text is the link title.
+    expect(screen.getByRole("link", { name: "KanjiVG main" })).toHaveAttribute("title", KANJIVG_LICENCE);
+    expect(screen.getByText("Dictionary data:").closest("footer")).toHaveTextContent("Dictionary data: KanjiVG main (CC BY-SA 3.0)");
+  });
+
+  it("licenceName: a Creative Commons licence by its short name, anything else as stored", () => {
+    expect(licenceName("EDRDG Licence: Creative Commons Attribution-ShareAlike 4.0 (https://www.edrdg.org/edrdg/licence.html)")).toBe("CC BY-SA 4.0");
+    expect(licenceName(KANJIVG_LICENCE)).toBe("CC BY-SA 3.0");
+    expect(licenceName("Creative Commons Attribution-NonCommercial-NoDerivatives 4.0")).toBe("CC BY-NC-ND 4.0");
+    expect(licenceName("Creative Commons Zero-Thing 1.0")).toBe("Creative Commons Zero-Thing 1.0");
+    expect(licenceName("Public domain")).toBe("Public domain");
+  });
+
+  it("every inner scroller is a named tab stop with a focus ring (K12)", () => {
+    const first = payload().examples[0] as KanjiInspectPayload["examples"][number];
+    show(payload({ data: { mnemonic: "A child under a roof, studying." }, examples: [first] }));
+    const scrollers = [
+      screen.getByRole("list", { name: "Composition" }),
+      screen.getByRole("list", { name: "Classical meaning (Thiều Chửu)" }),
+      screen.getByRole("group", { name: "Mnemonic" }),
+      screen.getByRole("tabpanel", { name: "Words" }),
+    ];
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Examples" }));
+    scrollers.push(screen.getByRole("list", { name: "Examples" }));
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "In lessons" }));
+    scrollers.push(screen.getByRole("tabpanel", { name: "In lessons" }));
+    expect(scrollers).toHaveLength(6);
+    for (const scroller of scrollers) {
+      expect(scroller).toHaveAttribute("tabindex", "0");
+      expect(scroller.className).toContain("overflow-y-auto");
+      expect(scroller.className).toContain("focus-visible:ring-2");
+    }
+  });
+
+  it("a composition chip's full gloss is its accessible name, and keyboard focus unwraps the truncated line (K13)", () => {
+    show(payload({ data: { componentGlosses: { 子: { hanViet: ["Tử", "Tí"], meaningEn: "child, sign of the rat, 11PM-1AM, first sign of Chinese zodiac" } } } }));
+    const chip = screen.getByRole("link", { name: /^子\s?TỬ, TÍ · child, sign of the rat, 11PM-1AM, first sign of Chinese zodiac$/ });
+    expect(chip.className).toContain("group");
+    const gloss = within(chip).getByText("TỬ, TÍ · child, sign of the rat, 11PM-1AM, first sign of Chinese zodiac");
+    expect(gloss.className).toContain("truncate");
+    expect(gloss.className).toContain("group-focus-visible:whitespace-normal");
+  });
+
+  it("the glyph is drawn at the frame's specimen size, not a type step (K15)", () => {
+    show(payload());
+    expect(screen.getByRole("heading", { level: 2, name: "学" }).className).toContain("text-[length:var(--kanji-inspect-glyph)]");
+  });
+});
+
+describe("KanjiInspect page ways on (K14)", () => {
+  const explore = (over: Partial<KanjiExplore> = {}): KanjiExplore => ({
+    level: { level: "N5", literals: ["一", "学", "日"] },
+    favorites: [{ literal: "日", hanViet: ["Nhật"] }],
+    ...over,
+  });
+
+  it("the level row: every kanji of the level opens its page, this one is current; the level list and its review", () => {
+    show(payload(), "page", explore());
+    const level = screen.getByRole("region", { name: "More N5 kanji" });
+    expect(within(level).getAllByRole("link").map((link) => link.getAttribute("href"))).toEqual([
+      "/kanji?level=N5", "/kanji/review?level=N5", "/kanji/%E4%B8%80", "/kanji/%E5%AD%A6", "/kanji/%E6%97%A5",
+    ]);
+    expect(within(level).getByRole("link", { name: "学" })).toHaveAttribute("aria-current", "page");
+    expect(within(level).getByRole("link", { name: "一" })).not.toHaveAttribute("aria-current");
+    expect(within(level).getByRole("list", { name: "More N5 kanji" })).toHaveAttribute("tabindex", "0");
+  });
+
+  it("the saved row follows the header ♡ at once, and links the library", async () => {
+    show(payload(), "page", explore());
+    const saved = screen.getByRole("region", { name: "Saved kanji" });
+    expect(within(saved).getByRole("link", { name: "Open the kanji library" })).toHaveAttribute("href", "/kanji");
+    expect(within(saved).getByRole("link", { name: /^日\s?Nhật$/ })).toHaveAttribute("href", "/kanji/%E6%97%A5");
+    expect(within(saved).queryByRole("link", { name: /^学/ })).toBeNull();
+    fireEvent.click(screen.getByRole("button", { name: "Favorite" }));
+    const items = within(saved).getAllByRole("listitem").map((item) => item.textContent);
+    expect(items).toEqual(["学Học", "日Nhật"]); // newest first
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(1));
+  });
+
+  it("a dictionary-only kanji has no level row; no saved kanji is an invitation that saves this one; the modal has neither", async () => {
+    const { unmount } = show(payload(), "page", explore({ level: null, favorites: [] }));
+    expect(screen.queryByRole("region", { name: /More .* kanji/ })).toBeNull();
+    const saved = screen.getByRole("region", { name: "Saved kanji" });
+    expect(within(saved).getByText("No saved kanji yet. Save this one to open it again from here.")).toBeInTheDocument();
+    fireEvent.click(within(saved).getByRole("button", { name: "Save this kanji" }));
+    expect(fetchMock).toHaveBeenCalledWith("/api/kanji/favorites/%E5%AD%A6", { method: "PUT" });
+    expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "true");
+    expect(within(saved).getByRole("link", { name: /^学\s?Học$/ })).toHaveAttribute("aria-current", "page");
+    await waitFor(() => expect(screen.getByText("Added to favorites.")).toBeInTheDocument());
+    unmount();
+    show(payload());
+    expect(screen.queryByRole("region", { name: "Saved kanji" })).toBeNull();
   });
 });

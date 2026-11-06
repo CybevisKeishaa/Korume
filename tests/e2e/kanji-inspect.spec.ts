@@ -24,8 +24,8 @@ test.beforeAll(async ({ browser }) => {
 });
 test.afterAll(async () => { await learner?.cleanup(); });
 
-async function open(browser: Browser): Promise<{ context: BrowserContext; page: Page }> {
-  const context = await browser.newContext({ storageState: session, viewport: { width: 1280, height: 529 }, locale: "en" });
+async function open(browser: Browser, viewport = { width: 1280, height: 529 }): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext({ storageState: session, viewport, locale: "en" });
   await context.route(/youtube\.com|youtube-nocookie\.com|ytimg\.com|googlevideo\.com/, (route) => route.abort());
   return { context, page: await context.newPage() };
 }
@@ -260,19 +260,75 @@ const blocksOverflow = (page: Page, root: string) =>
       .map((section) => section.getAttribute("aria-label"));
   });
 
-test("9 · one viewport: neither the modal nor the page scrolls at 1280×529, and no block runs under the footer", async ({ browser }) => {
-  const { context, page } = await open(browser);
-  for (const literal of ["語", "学"]) { // the longest Thiều Chửu lines and a three-element composition
-    await page.goto(`/en/kanji?kanji=${encodeURIComponent(literal)}`);
-    await expect(glyph(page, literal)).toBeVisible();
-    const dialog = await modal(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, bottom: el.getBoundingClientRect().bottom }));
-    expect(dialog.scroll).toBeLessThanOrEqual(dialog.client);
-    expect(dialog.bottom).toBeLessThanOrEqual(529);
-    expect(await blocksOverflow(page, "dialog article")).toEqual([]);
-    await page.goto(`/en/kanji/${encodeURIComponent(literal)}`);
-    await expect(page.getByRole("heading", { level: 1, name: literal })).toBeVisible();
-    expect(await page.evaluate(() => (document.scrollingElement?.scrollHeight ?? 0) <= innerHeight)).toBe(true);
-    expect(await blocksOverflow(page, "main article")).toEqual([]);
+// The credit's line count (K10: one line) and the glyph's computed size (K15: the frame's 48 at 1440, scaled with the app).
+const inspectShape = (page: Page, root: string) =>
+  page.locator(root).evaluate((article) => {
+    const credit = article.querySelector("footer footer") as HTMLElement;
+    const glyphEl = article.querySelector("[data-type-exempt='kanji-inspect-glyph']") as HTMLElement;
+    return {
+      creditLines: Math.round(credit.getBoundingClientRect().height / parseFloat(getComputedStyle(credit).lineHeight)),
+      credit: credit.textContent ?? "",
+      glyphPx: parseFloat(getComputedStyle(glyphEl).fontSize),
+    };
+  });
+
+test("9 · one viewport at 1280×529 and 1440×900: nothing scrolls, the page card fills the screen, no block runs under the footer, a one-line credit, the 48 glyph", async ({ browser }) => {
+  for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900 }]) {
+    const { context, page } = await open(browser, viewport);
+    const step = 16 * (viewport.width / 1440); // --space-md at this width (density unit = 100vw / 1440 up to 1440)
+    for (const literal of ["日", "語", "学"]) { // a plain kanji, the longest Thiều Chửu lines, a three-element composition
+      await page.goto(`/en/kanji?kanji=${encodeURIComponent(literal)}`);
+      await expect(glyph(page, literal)).toBeVisible();
+      const dialog = await modal(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, bottom: el.getBoundingClientRect().bottom }));
+      expect(dialog.scroll).toBeLessThanOrEqual(dialog.client);
+      expect(dialog.bottom).toBeLessThanOrEqual(viewport.height);
+      expect(await blocksOverflow(page, "dialog article")).toEqual([]);
+      const inModal = await inspectShape(page, "dialog article");
+      expect(inModal.creditLines).toBe(1);
+      expect(inModal.credit).toMatch(/\(CC BY-SA \d\.\d\)/);
+      expect(inModal.glyphPx).toBeCloseTo(48 * (viewport.width / 1440), 1);
+
+      await page.goto(`/en/kanji/${encodeURIComponent(literal)}`);
+      await expect(page.getByRole("heading", { level: 1, name: literal })).toBeVisible();
+      const fill = await page.evaluate(() => ({
+        scroll: document.scrollingElement?.scrollHeight ?? 0,
+        cardBottom: (document.querySelector("main article")?.parentElement as HTMLElement).getBoundingClientRect().bottom,
+      }));
+      expect(fill.scroll).toBeLessThanOrEqual(viewport.height);
+      expect(fill.cardBottom).toBeGreaterThanOrEqual(viewport.height - step - 0.5);
+      expect(await blocksOverflow(page, "main article")).toEqual([]);
+      const onPage = await inspectShape(page, "main article");
+      expect(onPage.creditLines).toBe(1);
+      expect(onPage.glyphPx).toBeCloseTo(48 * (viewport.width / 1440), 1);
+      // K14: the ways on fill the tall screen, and give way to the core blocks at 529.
+      const saved = page.getByRole("region", { name: "Saved kanji" });
+      if (viewport.height >= 800) await expect(saved).toBeVisible();
+      else await expect(saved).toBeHidden();
+    }
+    await context.close();
   }
+});
+
+test("10 · keyboard: an inner scroller takes focus and scrolls with keys (K12); a focused chip shows its whole gloss (K13)", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("語")}`);
+  await expect(glyph(page, "語")).toBeVisible();
+  const lines = modal(page).getByRole("list", { name: "Classical meaning (Thiều Chửu)" });
+  expect(await lines.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true); // it does overflow at 529
+  await lines.focus();
+  await expect(lines).toBeFocused();
+  await page.keyboard.press("PageDown");
+  await expect.poll(() => lines.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("学")}`);
+  await expect(glyph(page, "学")).toBeVisible();
+  const chip = modal(page).getByRole("list", { name: "Composition" }).getByRole("link").first();
+  const gloss = chip.locator("span").last();
+  const clipped = (el: HTMLElement) => el.scrollWidth > el.clientWidth;
+  expect(await gloss.evaluate(clipped)).toBe(true); // truncated at rest
+  await page.keyboard.press("Shift"); // a key press first, so the script focus below counts as keyboard focus
+  await chip.focus();
+  expect(await chip.evaluate((el) => el.matches(":focus-visible"))).toBe(true);
+  expect(await gloss.evaluate(clipped)).toBe(false);
   await context.close();
 });

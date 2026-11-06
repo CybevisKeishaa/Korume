@@ -73,5 +73,13 @@
     "unfavorited": "Đã bỏ khỏi yêu thích.",
     "addedToReview": "Đã thêm vào bộ ôn tập."
   },
-  "saved": "Kanji đã lưu"
+  "saved": "Kanji đã lưu",
+  "explore": {
+    "levelTitle": "Kanji cùng cấp {level}",
+    "levelAll": "Xem tất cả {level}",
+    "levelReview": "Ôn tập {level}",
+    "library": "Mở thư viện kanji",
+    "savedEmpty": "Chưa có kanji nào được lưu. Lưu chữ này để mở lại nhanh từ đây.",
+    "saveThis": "Lưu chữ này"
+  }
 }

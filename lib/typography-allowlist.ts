@@ -43,8 +43,8 @@ export const TYPE_EXEMPTIONS: readonly TypeExemption[] = [
     id: "kanji-inspect-glyph",
     file: "components/kanji/kanji-inspect.tsx",
     match: "<Glyph data-type-exempt",
-    scope: "line-height",
-    reason: "The kanji specimen in the inspect header (modal + page): its 1.4 line box holds the CJK ink the display leading clips; content presentation, not interface type.",
+    scope: "all",
+    reason: "The kanji specimen in the inspect header (modal + page): drawn at the frame's 48 on the 1440 canvas (--kanji-inspect-glyph, above the display step), its 1.4 line box holds the CJK ink; content presentation, not interface type.",
   },
   {
     id: "vocab-detail-glyph",

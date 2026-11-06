@@ -5,6 +5,9 @@ import type { KanjiData } from "@/lib/dictionary/types";
 const mocks = vi.hoisted(() => ({
   getKanjiInspectPayload: vi.fn(),
   getKanjiById: vi.fn(),
+  getKanjiList: vi.fn(),
+  listKanjiFavorites: vi.fn(),
+  explore: vi.fn(),
   redirect: vi.fn((): never => {
     throw new Error("NEXT_REDIRECT");
   }),
@@ -15,14 +18,18 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
 vi.mock("@/lib/dictionary/kanji-data-service", () => ({ getKanjiInspectPayload: mocks.getKanjiInspectPayload }));
-vi.mock("@/lib/data/content", () => ({ getKanjiById: mocks.getKanjiById }));
+vi.mock("@/lib/data/content", () => ({ getKanjiById: mocks.getKanjiById, getKanjiList: mocks.getKanjiList }));
+vi.mock("@/lib/data/kanji-learner", () => ({ listKanjiFavorites: mocks.listKanjiFavorites }));
 vi.mock("@/lib/i18n/navigation", () => ({
   Link: ({ href, ...props }: React.ComponentProps<"a">) => <a href={href} {...props} />,
   redirect: mocks.redirect,
 }));
 // The content is KanjiInspect's own test; here only what the page hands it.
 vi.mock("@/components/kanji/kanji-inspect", () => ({
-  KanjiInspect: ({ payload, variant }: { payload: { data: { literal: string } }; variant: string }) => <h1 data-variant={variant}>{payload.data.literal}</h1>,
+  KanjiInspect: ({ payload, variant, explore }: { payload: { data: { literal: string } }; variant: string; explore: unknown }) => {
+    mocks.explore(explore);
+    return <h1 data-variant={variant}>{payload.data.literal}</h1>;
+  },
 }));
 vi.mock("@/lib/i18n/server", () => ({ getLocale: vi.fn().mockResolvedValue("en") }));
 
@@ -54,7 +61,11 @@ const GREEN: KanjiData = {
 
 const inspect = (data: KanjiData) => ({ data, learner: { favorite: false, progress: null }, examples: [], lessons: [], neighbors: null });
 
-beforeEach(() => vi.clearAllMocks());
+beforeEach(() => {
+  vi.clearAllMocks();
+  mocks.listKanjiFavorites.mockResolvedValue([{ literal: "日", hanViet: ["Nhật"] }]);
+  mocks.getKanjiList.mockResolvedValue([{ character: "一" }, { character: "緑" }]);
+});
 
 describe("KanjiDetailPage", () => {
   it("tracks a curated kanji with its row id", async () => {
@@ -68,6 +79,22 @@ describe("KanjiDetailPage", () => {
     expect(presence).toHaveBeenCalledWith(expect.objectContaining({ surface: "kanji", contextId: null, enabled: false }), expect.anything());
     expect(mocks.getKanjiInspectPayload).toHaveBeenCalledWith("緑");
     expect(screen.getByRole("heading", { level: 1, name: "緑" })).toHaveAttribute("data-variant", "page");
+  });
+
+  it("hands the page its ways on (K14): a curated kanji's level list and the saved kanji, plain data", async () => {
+    mocks.getKanjiInspectPayload.mockResolvedValue(inspect({ ...GREEN, jlpt: "N3" }));
+    render(await KanjiDetailPage({ params: { id: "緑" } }));
+    expect(mocks.getKanjiList).toHaveBeenCalledWith("N3");
+    const explore = { level: { level: "N3", literals: ["一", "緑"] }, favorites: [{ literal: "日", hanViet: ["Nhật"] }] };
+    expect(mocks.explore).toHaveBeenCalledWith(explore);
+    expect(structuredClone(explore)).toEqual(explore);
+  });
+
+  it("a dictionary-only kanji gets no level list", async () => {
+    mocks.getKanjiInspectPayload.mockResolvedValue(inspect(GREEN));
+    render(await KanjiDetailPage({ params: { id: "緑" } }));
+    expect(mocks.getKanjiList).not.toHaveBeenCalled();
+    expect(mocks.explore).toHaveBeenCalledWith({ level: null, favorites: [{ literal: "日", hanViet: ["Nhật"] }] });
   });
 
   it("decodes a percent-encoded literal", async () => {
