@@ -18,6 +18,7 @@ vi.mock("@/lib/supabase/service", () => ({ createServiceClient: vi.fn() }));
 vi.mock("@/lib/data/missions", () => mission);
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn(async () => { order.push("record"); return { ok: true }; }) }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn(async () => ({ ...DEFAULT_PREFERENCES })) }));
+vi.mock("@/lib/dictionary/snapshot", () => ({ getActiveSnapshotId: vi.fn(async () => "snap-1") }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(() => ({ ok: true })) }));
 vi.mock("@/lib/data/companion", () => ({ captureFirstVideoCompleted: vi.fn(() => Promise.resolve()) }));
 
@@ -30,6 +31,7 @@ import { lineTextHash } from "@/lib/dictation/chunk";
 
 const USER = { id: "11111111-1111-4111-8111-111111111111" };
 const VIDEO = "22222222-2222-4222-8222-222222222222";
+const KANJI = "日";
 const LINE = "33333333-3333-4333-8333-333333333333";
 const WRITES = new Set(["insert", "update", "upsert", "delete"]);
 /** A Word Bank-reliable line: 毎日 | 日本語を | 勉強しました。 */
@@ -77,10 +79,10 @@ afterEach(() => vi.restoreAllMocks());
 describe("pre-write mission ensure (spec M1)", () => {
   it("srs review: ensure before the progress upsert, claim after the outcome", async () => {
     install(USER, {
-      kanji: table("kanji", { id: VIDEO }),
+      dict_kanji: table("dict_kanji", { literal: KANJI }),
       user_kanji_progress: table("user_kanji_progress", { srs_stage: 0, interval_days: 0, ease_factor: 2.5 }),
     });
-    await expect(submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: true });
+    await expect(submitReview({ itemType: "kanji", itemId: KANJI, quality: 4 })).resolves.toMatchObject({ ok: true });
     expect(order).toEqual(["ensure", "write:user_kanji_progress", "record", "claim"]);
   });
 
@@ -88,11 +90,11 @@ describe("pre-write mission ensure (spec M1)", () => {
     vi.spyOn(console, "error").mockImplementation(() => undefined);
     mission.ensureDailyMission.mockRejectedValueOnce(new Error("mission unavailable"));
     install(USER, {
-      kanji: table("kanji", { id: VIDEO }),
+      dict_kanji: table("dict_kanji", { literal: KANJI }),
       user_kanji_progress: table("user_kanji_progress", { srs_stage: 0, interval_days: 0, ease_factor: 2.5 }),
     });
 
-    await expect(submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: true });
+    await expect(submitReview({ itemType: "kanji", itemId: KANJI, quality: 4 })).resolves.toMatchObject({ ok: true });
 
     expect(order).toEqual(["write:user_kanji_progress", "record", "claim"]);
   });
@@ -143,7 +145,7 @@ describe("pre-write mission ensure (spec M1)", () => {
 
   it("invalid requests never ensure: signed out, unknown card, bad audio, missing line", async () => {
     install(null, {});
-    await submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 });
+    await submitReview({ itemType: "kanji", itemId: KANJI, quality: 4 });
     await reviewMiningCard({ cardId: VIDEO, quality: 4 });
     await createSession({ videoId: VIDEO, lineId: LINE, audio: audio() });
     await submitListeningAttempt(submitBody);
@@ -159,7 +161,7 @@ describe("pre-write mission ensure (spec M1)", () => {
 
   it("unknown references never create a mission or write", async () => {
     install(USER, {
-      kanji: table("kanji"),
+      dict_kanji: table("dict_kanji"),
       videos: table("videos"),
       transcript_lines: table("transcript_lines"),
       user_kanji_progress: table("user_kanji_progress"),
@@ -168,7 +170,7 @@ describe("pre-write mission ensure (spec M1)", () => {
       user_video_progress: table("user_video_progress", { user_id: USER.id, video_id: VIDEO, last_watched_position: 1 }),
     });
 
-    await expect(submitReview({ itemType: "kanji", itemId: VIDEO, quality: 4 })).resolves.toMatchObject({ ok: false, status: 400 });
+    await expect(submitReview({ itemType: "kanji", itemId: KANJI, quality: 4 })).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(createSession({ videoId: VIDEO, lineId: LINE, audio: audio() })).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(submitListeningAttempt(submitBody)).resolves.toMatchObject({ ok: false, status: 400 });
     await expect(updateProgress(VIDEO, { position: 1, completed: true })).resolves.toMatchObject({ ok: false, status: 400 });

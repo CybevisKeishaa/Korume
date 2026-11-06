@@ -72,7 +72,7 @@ describe("recordActivity", () => {
     vi.mocked(readPreferences).mockResolvedValue({ ...DEFAULT_PREFERENCES, learningSchedule: "weekdays" as const, scheduleDays: [1, 2, 3, 4, 5] });
     const supabase = mockService({ ...BASE_TABLES, ...NO_BADGES_TABLES });
 
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
 
     expect(result.ok).toBe(true);
     expect(supabase.rpcCalls).toContainEqual({
@@ -83,7 +83,7 @@ describe("recordActivity", () => {
 
   it("awards xp on a fresh outcome", async () => {
     mockService({ ...BASE_TABLES, ...NO_BADGES_TABLES });
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
     expect(result).toEqual({ ok: true, xpAwarded: 5, newBadges: [], leveledUp: false });
   });
 
@@ -131,11 +131,11 @@ describe("recordActivity", () => {
       badges: () => ({ data: [{ id: "streak-3", name: "three", criteria: { type: "streak", days: 3 } }], error: null }),
     };
     mockService(tables, FRESH_AWARD, { current_streak: 3, longest_streak: 3, last_active: "2026-07-12" });
-    const earned = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const earned = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
     expect(earned.newBadges).toEqual(["streak-3"]);
 
     mockService(tables, FRESH_AWARD, { current_streak: 2, longest_streak: 9, last_active: "2026-07-12" });
-    const notYet = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const notYet = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
     expect(notYet.newBadges).toEqual([]);
   });
 
@@ -170,7 +170,7 @@ describe("recordActivity", () => {
       badges: () => ({ data: [{ id: "streak-7", name: "seven", criteria: { type: "streak", days: 7 } }], error: null }),
     }, FRESH_AWARD, { current_streak: 0, longest_streak: 7, last_active: "2026-07-01" });
 
-    await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
 
     expect(badgeCalls.length).toBeGreaterThan(0);
     expect(hasOp(badgeCalls, "delete")).toBe(false);
@@ -188,7 +188,7 @@ describe("recordActivity", () => {
       ...NO_BADGES_TABLES,
     }, { ...DUPLICATE_AWARD, had_outcome_today: false });
 
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
 
     expect(result).toMatchObject({ ok: true, xpAwarded: 0 });
     expect(kanjiQueried).toBe(true);
@@ -205,7 +205,7 @@ describe("recordActivity", () => {
       ...NO_BADGES_TABLES,
     }, DUPLICATE_AWARD);
 
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
 
     expect(result).toEqual({ ok: true, xpAwarded: 0, newBadges: [], leveledUp: false });
     expect(kanjiQueried).toBe(false);
@@ -217,7 +217,7 @@ describe("recordActivity", () => {
     mockService({}, "error");
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
-    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "k1" }, now: NOW });
+    const result = await recordActivity({ userId: USER_ID, source: "srs_review", parts: { itemType: "kanji", itemId: "日" }, now: NOW });
 
     expect(result).toEqual({ ok: false, xpAwarded: 0, newBadges: [], leveledUp: false });
     expect(consoleError).toHaveBeenCalled();

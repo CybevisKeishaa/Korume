@@ -2,6 +2,7 @@ import "server-only";
 import { createClient } from "@/lib/supabase/server";
 import { requireUser } from "@/lib/data/videos";
 import { getReviewQueue } from "@/lib/data/srs";
+import { getKanjiReviewQueue } from "@/lib/data/kanji-review";
 import { levelForXp, type LevelInfo } from "@/lib/gamification";
 import { readPreferences } from "@/lib/data/preferences";
 import { getStreak } from "@/lib/data/streak";
@@ -15,8 +16,8 @@ import { studyDate } from "@/lib/time/study-day";
  */
 
 /**
- * Cap passed to `getReviewQueue` when counting due items for the dashboard.
- * `getReviewQueue` returns a due-then-fresh queue capped at this limit; the
+ * Cap passed to `getReviewQueue` / `getKanjiReviewQueue` when counting due items for the dashboard.
+ * Each returns a due-then-fresh queue capped at this limit; the
  * current N5/N4 catalogs (20260712000005_content_n5_n4.sql) are well under
  * this bound, so the count is exact today — revisit (or add a dedicated
  * count query) if the catalog grows past it.
@@ -123,7 +124,7 @@ export async function getUserStats(): Promise<GetUserStatsResult> {
 
   const [vocabDue, kanjiDue] = await Promise.all([
     getReviewQueue("vocab", undefined, SRS_DUE_COUNT_LIMIT),
-    getReviewQueue("kanji", undefined, SRS_DUE_COUNT_LIMIT),
+    getKanjiReviewQueue({ limit: SRS_DUE_COUNT_LIMIT }),
   ]);
 
   return {

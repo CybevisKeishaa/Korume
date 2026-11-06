@@ -98,13 +98,13 @@ test("E2 (focus) is the rail and never overwrites the (app) choice", async ({ pa
 test("E3 the review badge drops right after a saved review, same route", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 529 });
   await register(page);
-  // /kanji/review without ?level= applies no level filter (getReviewQueue("kanji", undefined)), and due cards come
-  // first, so any kanji seeded as due is the first card.
-  const kanji = await lesson.admin.from("kanji").select("id").order("id").limit(1).single();
+  // /kanji/review without ?level= is the default deck (getKanjiReviewQueue): every due row first, so any kanji
+  // seeded as due is the first card.
+  const kanji = await lesson.admin.from("kanji").select("character").order("id").limit(1).single();
   if (kanji.error) throw kanji.error;
   const earlier = "2020-01-01T00:00:00.000Z"; // long past, so due; a literal (e2e sources never read the clock)
   const seeded = await lesson.admin.from("user_kanji_progress").insert({
-    user_id: userId, kanji_id: kanji.data.id, srs_stage: 1, next_review_at: earlier, last_reviewed_at: earlier,
+    user_id: userId, literal: kanji.data.character, srs_stage: 1, next_review_at: earlier, last_reviewed_at: earlier,
   });
   if (seeded.error) throw seeded.error;
   await page.goto("/en/kanji/review");

@@ -8,6 +8,7 @@ import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 vi.mock("@/lib/data/gamification", () => ({ recordActivity: vi.fn().mockResolvedValue(undefined) }));
+vi.mock("@/lib/dictionary/snapshot", () => ({ getActiveSnapshotId: vi.fn().mockResolvedValue("snap-1") }));
 vi.mock("@/lib/data/missions", () => ({ ensureDailyMission: vi.fn().mockResolvedValue(null), claimActiveMission: vi.fn().mockResolvedValue(undefined) }));
 // Spread the real module so INITIAL_STATE and REVIEW_FREQUENCY_MULTIPLIER stay the
 // ones in sm2.ts. Restating them here would make the assertion below check the mock
@@ -38,13 +39,13 @@ describe("submitReview preferences", () => {
     const supabase = createMockSupabase({
       user: { id: "u1" },
       tables: {
-        kanji: () => ({ data: { id: "k1" }, error: null }),
+        dict_kanji: () => ({ data: { literal: "日" }, error: null }),
         user_kanji_progress: () => ({ data: { srs_stage: 2, interval_days: 10, ease_factor: 2.5 }, error: null }),
       },
     });
     vi.mocked(createClient).mockReturnValue(supabase as unknown as ReturnType<typeof createClient>);
 
-    await submitReview({ itemType: "kanji", itemId: "k1", quality: 4 }, new Date("2026-09-22T00:00:00Z"));
+    await submitReview({ itemType: "kanji", itemId: "日", quality: 4 }, new Date("2026-09-22T00:00:00Z"));
 
     expect(reviewItem).toHaveBeenCalledWith(expect.anything(), 4, expect.any(Date), REVIEW_FREQUENCY_MULTIPLIER.relaxed);
   });

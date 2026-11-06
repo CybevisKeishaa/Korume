@@ -8,11 +8,13 @@ vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
 // exercises the stats/badge aggregation, matching the isolation precedent in
 // lib/data/jlpt.test.ts (which mocks recordActivity for the same reason).
 vi.mock("@/lib/data/srs", () => ({ getReviewQueue: vi.fn() }));
+vi.mock("@/lib/data/kanji-review", () => ({ getKanjiReviewQueue: vi.fn() }));
 vi.mock("@/lib/time/study-timezone", () => ({ getStudyTimezone: vi.fn() }));
 vi.mock("@/lib/data/preferences", () => ({ readPreferences: vi.fn() }));
 
 import { getUserStats } from "./user-stats";
 import { getReviewQueue } from "@/lib/data/srs";
+import { getKanjiReviewQueue, type KanjiReviewCard } from "@/lib/data/kanji-review";
 import { getStudyTimezone } from "@/lib/time/study-timezone";
 import { readPreferences } from "@/lib/data/preferences";
 import { DEFAULT_PREFERENCES } from "@/lib/preferences/options";
@@ -42,6 +44,8 @@ const item = (id: string): ReviewItem => ({ id, front: id, back: id });
 beforeEach(() => {
   vi.mocked(createClient).mockReset();
   vi.mocked(getReviewQueue).mockReset();
+  vi.mocked(getKanjiReviewQueue).mockReset();
+  vi.mocked(getKanjiReviewQueue).mockResolvedValue([]);
   vi.mocked(getStudyTimezone).mockReset();
   vi.mocked(getStudyTimezone).mockResolvedValue({ timeZone: "America/Los_Angeles", needsDetection: false });
   vi.mocked(readPreferences).mockReset();
@@ -146,13 +150,17 @@ describe("getUserStats", () => {
       badges: () => ({ data: [], error: null }),
       user_badges: () => ({ data: [], error: null }),
     });
-    vi.mocked(getReviewQueue).mockImplementation(async (itemType: string) =>
-      itemType === "vocab" ? [item("v1"), item("v2")] : [item("k1")],
-    );
+    vi.mocked(getReviewQueue).mockResolvedValue([item("v1"), item("v2")]);
+    // A dictionary-only kanji (not in the curated table) due for review counts like any other.
+    const shikaru: KanjiReviewCard = { literal: "𠮟", hanViet: [], meaningsEn: ["scold"], meaningVi: null, on: [], kun: [], level: null };
+    vi.mocked(getKanjiReviewQueue).mockResolvedValue([shikaru]);
 
     const result = await getUserStats();
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.data.srsDueCount).toBe(3);
+    expect(getReviewQueue).toHaveBeenCalledTimes(1);
+    expect(getReviewQueue).toHaveBeenCalledWith("vocab", undefined, 2000);
+    expect(getKanjiReviewQueue).toHaveBeenCalledWith({ limit: 2000 });
   });
 });

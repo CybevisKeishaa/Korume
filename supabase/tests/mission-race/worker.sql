@@ -7,7 +7,7 @@ select ensure_daily_mission(
   '[]'::jsonb
 ) as mission_id \gset
 insert into learning_outcomes (user_id, source_type, item_key)
-select :'user_id'::uuid, 'srs_review', 'kanji:' || kanji_id::text
+select :'user_id'::uuid, 'srs_review', 'kanji:' || literal
 from user_kanji_progress where user_id = :'user_id'::uuid;
 select pg_advisory_lock_shared(7303);
 select * from claim_daily_mission(:'user_id'::uuid, :'mission_id'::uuid, 50);

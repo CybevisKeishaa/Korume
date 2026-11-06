@@ -16,11 +16,11 @@ export async function buildBadgeSnapshot(
   // successful reviews) rather than inventing a second "known" definition.
   const { data: kanjiRows, error: kanjiError } = await supabase
     .from("user_kanji_progress")
-    .select("kanji_id")
+    .select("literal")
     .eq("user_id", userId)
     .gte("srs_stage", MASTERY_THRESHOLD);
   if (kanjiError) throw kanjiError;
-  const kanjiLearned = ((kanjiRows ?? []) as { kanji_id: string }[]).length;
+  const kanjiLearned = ((kanjiRows ?? []) as { literal: string }[]).length;
 
   // Outcome totals/counts: no GROUP BY available through the query builder
   // without a migration (out of scope for this task), so this fetches every

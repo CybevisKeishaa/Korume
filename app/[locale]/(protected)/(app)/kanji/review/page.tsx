@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import type { Locale } from "@/lib/i18n";
 import { getTranslations } from "@/lib/i18n/server";
-import { getReviewQueue } from "@/lib/data/srs";
+import { getKanjiReviewQueue } from "@/lib/data/kanji-review";
 import { jlptLevelSchema } from "@/lib/validation/content";
 import { ReviewSession } from "@/components/learning/review-session";
 import { Container } from "@/components/ui/container";
@@ -19,11 +19,15 @@ export async function generateMetadata({
 export default async function KanjiReviewPage({
   searchParams,
 }: {
-  searchParams: { level?: string };
+  searchParams: { level?: string; focus?: string };
 }) {
   const t = await getTranslations("kanji");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
-  const items = await getReviewQueue("kanji", level);
+  const items = (await getKanjiReviewQueue({ level, focus: searchParams.focus })).map((card) => ({
+    id: card.literal,
+    front: card.literal,
+    back: card.meaningsEn.join(", "),
+  }));
 
   return (
     <Container className="max-w-xl py-12">

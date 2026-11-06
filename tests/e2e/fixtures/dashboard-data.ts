@@ -24,13 +24,13 @@ export async function seedDashboardData(
   userId: string,
   lesson: WorkspaceData,
 ): Promise<{ cleanup(): Promise<void> }> {
-  const kanji = await admin.from("kanji").select("id").order("id").limit(1).single();
+  const kanji = await admin.from("kanji").select("character").order("id").limit(1).single();
   if (kanji.error) throw kanji.error;
   const now = new Date();
   const earlier = new Date(now.getTime() - 8 * 86_400_000).toISOString();
   const cleanup = async () => {
     const results = await Promise.all([
-      admin.from("user_kanji_progress").delete().eq("user_id", userId).eq("kanji_id", kanji.data.id),
+      admin.from("user_kanji_progress").delete().eq("user_id", userId).eq("literal", kanji.data.character),
       admin.from("user_video_progress").delete().eq("user_id", userId).eq("video_id", lesson.videoId),
       admin.from("sentence_mining_cards").delete().eq("user_id", userId).eq("video_id", lesson.videoId),
       admin.from("dictation_attempts").delete().eq("user_id", userId).eq("video_id", lesson.videoId),
@@ -48,7 +48,7 @@ export async function seedDashboardData(
     );
     const seeded = await Promise.all([
       admin.from("user_kanji_progress").insert({
-        user_id: userId, kanji_id: kanji.data.id, srs_stage: 1,
+        user_id: userId, literal: kanji.data.character, srs_stage: 1,
         next_review_at: earlier, last_reviewed_at: earlier,
       }),
       admin.from("user_video_progress").insert({ user_id: userId, video_id: lesson.videoId, last_watched_position: 30 }),

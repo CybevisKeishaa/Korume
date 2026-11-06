@@ -21,7 +21,7 @@ export const PRIMARY_KEY_COLUMNS: Record<string, readonly string[]> = {
   study_sessions: ["id"],
   daily_missions: ["id"],
   daily_mission_items: ["id"],
-  user_kanji_progress: ["user_id", "kanji_id"],
+  user_kanji_progress: ["user_id", "literal"],
   user_vocab_progress: ["user_id", "vocab_id"],
   user_grammar_progress: ["user_id", "grammar_id"],
   user_reading_attempts: ["id"],
@@ -180,7 +180,8 @@ export const HISTORY_SOURCES = [
     kind: "review",
     dateColumn: "last_reviewed_at",
     detailColumn: "srs_stage",
-    join: { select: "last_reviewed_at, srs_stage, kanji ( character )", label: "kanji", labelColumn: "character" },
+    // Keyed by the literal itself since 055: no join, the row is its own label.
+    join: { select: "last_reviewed_at, srs_stage, literal", label: null, labelColumn: "literal" },
   },
   {
     table: "user_vocab_progress",
@@ -232,7 +233,7 @@ export async function myLearningHistoryCsv(now: Date = new Date()): Promise<Hist
       // A row the reader has not reached yet has no date, and a history line
       // with an empty date cannot be sorted or read. Skipped, not invented.
       if (typeof date !== "string") continue;
-      const joined = row[source.join.label] as Record<string, unknown> | null;
+      const joined = (source.join.label ? row[source.join.label] : row) as Record<string, unknown> | null;
       rows.push({
         date,
         kind: source.kind,

@@ -176,9 +176,9 @@ describe("myLearningHistoryCsv", () => {
   const historyRows: Record<string, unknown[]> = {
     user_video_progress: [{ completed_at: "2026-09-20T08:00:00Z", videos: { title: "Lesson A" } }],
     user_kanji_progress: [
-      { last_reviewed_at: "2026-09-22T08:00:00Z", srs_stage: 4, kanji: { character: "日" } },
+      { last_reviewed_at: "2026-09-22T08:00:00Z", srs_stage: 4, literal: "日" },
       // No review yet: no date, so no history line.
-      { last_reviewed_at: null, srs_stage: 0, kanji: { character: "月" } },
+      { last_reviewed_at: null, srs_stage: 0, literal: "月" },
     ],
     user_vocab_progress: [],
     user_grammar_progress: [

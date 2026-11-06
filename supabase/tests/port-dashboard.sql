@@ -379,12 +379,9 @@ rollback;
 -- card null or past, including exactly at p_at; a caller passing another learner's id sees nothing of theirs.
 begin;
 do $$
-declare a uuid := current_setting('dashgate.a')::uuid; k1 uuid; k2 uuid; k3 uuid; vid uuid;
+declare a uuid := current_setting('dashgate.a')::uuid; k1 text := '㐀'; k2 text := '㐁'; k3 text := '㐂'; vid uuid;
 begin
-  insert into kanji (character) values ('㐀') returning id into k1;
-  insert into kanji (character) values ('㐁') returning id into k2;
-  insert into kanji (character) values ('㐂') returning id into k3;
-  insert into user_kanji_progress (user_id, kanji_id, next_review_at, last_reviewed_at) values
+  insert into user_kanji_progress (user_id, literal, next_review_at, last_reviewed_at) values
     (a, k1, now() - interval '1 hour', '2026-10-07T00:00:00Z'), (a, k2, now() + interval '1 day', null), (a, k3, null, null);
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-d12', 'd12', 'FREE') returning id into vid;
   insert into sentence_mining_cards (user_id, video_id, target_word, sentence_jp, source_ref, next_review_at) values
@@ -433,9 +430,8 @@ declare a uuid := current_setting('dashgate.a')::uuid; m1 uuid; m2 uuid; vid uui
 begin
   delete from daily_missions where user_id = a;
   -- 25 due kanji rows.
-  insert into kanji (character) select chr(13312 + 100 + i) from generate_series(1, 25) i on conflict do nothing;
-  insert into user_kanji_progress (user_id, kanji_id, next_review_at)
-    select a, k.id, now() - interval '1 hour' from kanji k where k.character in (select chr(13312 + 100 + i) from generate_series(1, 25) i);
+  insert into user_kanji_progress (user_id, literal, next_review_at)
+    select a, chr(13312 + 100 + i), now() - interval '1 hour' from generate_series(1, 25) i;
   -- A FREE lesson in progress with 4 lines, a PLUS lesson (no subscription), a FREE lesson with no transcript.
   insert into videos (youtube_video_id, title, library_access) values ('dashgate-m2', 'm2', 'FREE') returning id into vid;
   insert into transcripts (video_id, source) values (vid, 'user_submitted') returning id into t;
@@ -514,13 +510,11 @@ rollback;
 -- M3/M4 progress and claim (rollback). The reward is XP only: never a learning_outcomes row (S5, D11).
 begin;
 do $$
-declare a uuid := current_setting('dashgate.a')::uuid; m uuid; k1 uuid; k2 uuid; xp0 int; r record; item uuid; w_end timestamptz;
+declare a uuid := current_setting('dashgate.a')::uuid; m uuid; k1 text := '㑀'; k2 text := '㑁'; xp0 int; r record; item uuid; w_end timestamptz;
 begin
   delete from daily_missions where user_id = a;
   delete from user_kanji_progress where user_id = a;
-  insert into kanji (character) values ('㑀') returning id into k1;
-  insert into kanji (character) values ('㑁') returning id into k2;
-  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values (a, k1, now() - interval '1 hour'), (a, k2, null);
+  insert into user_kanji_progress (user_id, literal, next_review_at) values (a, k1, now() - interval '1 hour'), (a, k2, null);
   m := ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]');
   select id into item from daily_mission_items where mission_id = m and type = 'review';
   select window_end into w_end from daily_missions where id = m;
@@ -644,14 +638,13 @@ rollback;
 -- order (review first, ensure after) freezes nothing — exactly why the five writers ensure first.
 begin;
 do $$
-declare a uuid := current_setting('dashgate.a')::uuid; k uuid; m uuid;
+declare a uuid := current_setting('dashgate.a')::uuid; k text := '㒀'; m uuid;
 begin
   delete from daily_missions where user_id = a;
   delete from user_kanji_progress where user_id = a;
-  insert into kanji (character) values ('㒀') returning id into k;
-  insert into user_kanji_progress (user_id, kanji_id, next_review_at) values (a, k, now() - interval '1 hour');
+  insert into user_kanji_progress (user_id, literal, next_review_at) values (a, k, now() - interval '1 hour');
   m := ensure_daily_mission(a, array['kanji'], '{"review":20,"shadow_lines":3,"dictation_lines":5}', '[]');
-  update user_kanji_progress set next_review_at = now() + interval '1 day' where user_id = a and kanji_id = k;
+  update user_kanji_progress set next_review_at = now() + interval '1 day' where user_id = a and literal = k;
   insert into learning_outcomes (user_id, source_type, item_key) values (a, 'srs_review', 'kanji:' || k);
   if (select current || '/' || target from daily_mission_item_progress(m) where type = 'review') is distinct from '1/1' then
     raise exception 'FAIL dashboard M1 ensure-first did not count the reviewed card';
