@@ -22,6 +22,9 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
 - Kanji lapse = quality below the SM-2 pass threshold (0–2).
 - The shared local DB already carries migration 055 (owner-approved); master code in the main checkout errors on
   kanji/dashboard until this branch merges.
+- SRS (owner 2026-11-06): keep `lib/srs/sm2.ts` for kanji review; rating buttons show no interval sublabel (spec §6);
+  Anki learning steps / FSRS deferred to a separate evaluation. Post-reveal mock revised accordingly; owner approval
+  of the Task 8 mock pending.
 - "See all lessons" link NOT rendered: `/shadowing?q=` is applied by `getShadowingHub` as `ilike("title", ...)` on video titles only (lib/data/shadowing-hub.ts:138), not transcript text.
 
 ## Verification

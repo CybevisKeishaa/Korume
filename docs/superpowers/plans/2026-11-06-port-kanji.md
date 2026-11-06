@@ -412,7 +412,7 @@ progress row the status card is replaced by the Add-to-Review prompt; with `revi
 - [ ] **Step 1:** Read `280:1314` (Figma file `IwFHZDZdHW7qsSFiNbWrkd`) for the card, rating row and footer.
 - [ ] **Step 2:** Build one static HTML mock using the app's CSS tokens with three states side by side: pre-reveal
   (as drawn), **post-reveal** (spec §6 fields: Hán Việt large, English meaning, on/kun, curated `meaning_vi` when
-  present, "Xem chi tiết", rating row enabled with SM-2 intervals), **end of deck** (reviewed count, again count,
+  present, "Xem chi tiết", rating row enabled — label, icon, key hint, no interval sublabel per spec §6), **end of deck** (reviewed count, again count,
   back to `/kanji`). Real data for `日` and `学` from the local DB; no invented text.
 - [ ] **Step 3:** Screenshot at 1280×529, send to the owner, **stop**. Task 9 starts only after the owner approves;
   record the approval (and any change requested) in the run-state.

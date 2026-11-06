@@ -235,8 +235,11 @@ existing "view full details" link opens the modal (§5.1). The video is not paus
 
 - Move `/kanji/review` into the `(focus)` group: slim bar `← · Korume | Kanji Practice · <deck label> n / N · ✕ Exit`.
 - Deck label: `JLPT N5…N1` when `?level=`, "Ôn tập hôm nay" otherwise; `?focus=<literal>` puts that kanji first.
-- Card: badge row, glyph, "Recall the meaning before revealing", `Reveal meaning`. Rating row (Again/Hard/Good/Easy
-  with the SM-2 intervals from `lib/srs`) disabled until reveal.
+- Card: badge row, glyph, "Recall the meaning before revealing", `Reveal meaning`. Rating row (Again/Hard/Good/Easy:
+  label, Figma icon, key hint 1–4, **no interval sublabel**) disabled until reveal. Owner ruling 2026-11-06: classic
+  SM-2 gives every passing grade the same interval at reps 0 and 1 and ±1 day after, so a sublabel misleads; the
+  scheduler stays `lib/srs/sm2.ts` (state in the DB, no cache as source of truth); Anki-style learning steps / FSRS
+  are a later, separate evaluation (backlog), re-adding sublabels only when grades really differ.
 - **Post-reveal state is not drawn.** Content (pinned here, the single source for card fields): Hán Việt (large),
   English meaning, on/kun, curated `meaning_vi` when present, link "Xem chi tiết" → inspect modal; rating row
   enabled; keys 1–4 rate, Space reveals. **Gate (owner ruling 2026-11-06):** the plan has its own step — build a
