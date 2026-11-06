@@ -283,6 +283,7 @@ describe("KanjiInspect page ways on (K14)", () => {
     expect(fetchMock).toHaveBeenCalledWith("/api/kanji/favorites/%E5%AD%A6", { method: "PUT" });
     expect(screen.getByRole("button", { name: "Favorite" })).toHaveAttribute("aria-pressed", "true");
     expect(within(saved).getByRole("link", { name: /^学\s?Học$/ })).toHaveAttribute("aria-current", "page");
+    expect(within(saved).getByRole("list", { name: "Saved kanji" })).toHaveFocus(); // the button unmounted: focus moves, not to body
     await waitFor(() => expect(screen.getByText("Added to favorites.")).toBeInTheDocument());
     unmount();
     show(payload());

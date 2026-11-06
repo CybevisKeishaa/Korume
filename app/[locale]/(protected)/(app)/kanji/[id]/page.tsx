@@ -30,7 +30,11 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
   const payload = await getKanjiInspectPayload(literal);
   if (!payload) notFound();
   const level = jlptLevelSchema.safeParse(payload.data.jlpt).data;
-  const [levelList, favorites] = await Promise.all([level ? getKanjiList(level) : null, listKanjiFavorites()]);
+  // The ways-on row is extra: a failed fetch drops its row, never the page.
+  const [levelList, favorites] = await Promise.all([
+    level ? getKanjiList(level).catch(() => null) : null,
+    listKanjiFavorites().catch(() => []),
+  ]);
   const explore: KanjiExplore = {
     level: level && levelList ? { level, literals: levelList.map((item) => item.character) } : null,
     favorites,
@@ -41,7 +45,7 @@ export default async function KanjiDetailPage({ params }: { params: { id: string
     <div className="flex h-dvh flex-col p-md">
       <StudyPresence surface="kanji" contextId={payload.data.curatedKanjiId} enabled={payload.data.curatedKanjiId !== null} />
       <div className="flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card">
-        <KanjiInspect payload={payload} variant="page" explore={explore} />
+        <KanjiInspect key={literal} payload={payload} variant="page" explore={explore} />
       </div>
     </div>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef } from "react";
 import { Heart } from "lucide-react";
 import { Link, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
@@ -32,6 +33,8 @@ function Way({ title, h: H, links, className, children }: { title: string; h: "h
 export function KanjiInspectExplore({ literal, hanViet, favorite, onFavorite, explore, h }: { literal: string; hanViet: string[]; favorite: boolean; onFavorite: () => void; explore: KanjiExplore; h: "h2" | "h3" }) {
   const t = useTranslations("kanji");
   const { level } = explore;
+  // "Save this kanji" unmounts once the strip fills: hand keyboard focus to the strip instead of dropping it on body.
+  const focusStrip = useRef(false);
   // The ♡ in the header changes the strip at once: newest first, as the /kanji strip orders it.
   const listed = explore.favorites.some((item) => item.literal === literal);
   const saved: KanjiFavorite[] = favorite
@@ -68,7 +71,15 @@ export function KanjiInspectExplore({ literal, hanViet, favorite, onFavorite, ex
       )}
       <Way title={t("saved")} h={h} className={level ? "col-span-1" : "col-span-3"} links={[{ href: "/kanji", label: t("explore.library") }]}>
         {saved.length > 0 ? (
-          <ul tabIndex={0} aria-label={t("saved")} className={cn("grid min-h-0 grid-cols-[repeat(auto-fill,minmax(calc(64*var(--density-unit)),1fr))] content-start gap-2xs overflow-y-auto rounded-sm", focusRing)}>
+          <ul
+            ref={(el) => {
+              if (el && focusStrip.current) {
+                focusStrip.current = false;
+                el.focus();
+              }
+            }}
+            tabIndex={0}
+            aria-label={t("saved")} className={cn("grid min-h-0 grid-cols-[repeat(auto-fill,minmax(calc(64*var(--density-unit)),1fr))] content-start gap-2xs overflow-y-auto rounded-sm", focusRing)}>
             {saved.map((item) => (
               <li key={item.literal}>
                 <Link href={kanjiPageHref(item.literal)} aria-current={item.literal === literal ? "page" : undefined} className={tile}>
@@ -82,7 +93,7 @@ export function KanjiInspectExplore({ literal, hanViet, favorite, onFavorite, ex
           <div className="flex flex-col items-start gap-xs">
             <p className="text-body text-muted-foreground">{t("explore.savedEmpty")}</p>
             {/* The empty strip is an invitation: the same toggle as the header ♡. */}
-            <button type="button" onClick={onFavorite} className={cn("inline-flex h-control-sm items-center gap-2xs rounded-full border border-border bg-background px-sm text-caption font-medium text-foreground hover:bg-muted active:bg-border", focusRing)}>
+            <button type="button" onClick={() => { focusStrip.current = true; onFavorite(); }}className={cn("inline-flex h-control-sm items-center gap-2xs rounded-full border border-border bg-background px-sm text-caption font-medium text-foreground hover:bg-muted active:bg-border", focusRing)}>
               <Heart aria-hidden="true" className="size-icon-sm" />
               {t("explore.saveThis")}
             </button>

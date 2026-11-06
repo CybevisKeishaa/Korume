@@ -30,7 +30,8 @@ export default async function KanjiPage({
   const t = await getTranslations("kanji");
   const tCommon = await getTranslations("common");
   const level = jlptLevelSchema.safeParse(searchParams.level).data;
-  const [kanji, favorites] = await Promise.all([getKanjiList(level), listKanjiFavorites()]);
+  // The favorites strip is extra: its failure hides the strip, not the list.
+  const [kanji, favorites] = await Promise.all([getKanjiList(level), listKanjiFavorites().catch(() => [])]);
   const search = level ? `level=${level}` : "";
   // A glyph opens the inspect modal over this list; with a level, ‹ › walk that level (spec §5.1).
   const from = level ? formatKanjiContext({ kind: "level", level }) : undefined;

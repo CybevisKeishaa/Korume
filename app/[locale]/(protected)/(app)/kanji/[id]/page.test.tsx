@@ -90,6 +90,14 @@ describe("KanjiDetailPage", () => {
     expect(structuredClone(explore)).toEqual(explore);
   });
 
+  it("a failed ways-on fetch drops that row, never the page", async () => {
+    mocks.getKanjiInspectPayload.mockResolvedValue(inspect({ ...GREEN, jlpt: "N3" }));
+    mocks.getKanjiList.mockRejectedValue(new Error("db down"));
+    mocks.listKanjiFavorites.mockRejectedValue(new Error("db down"));
+    render(await KanjiDetailPage({ params: { id: "緑" } }));
+    expect(mocks.explore).toHaveBeenCalledWith({ level: null, favorites: [] });
+  });
+
   it("a dictionary-only kanji gets no level list", async () => {
     mocks.getKanjiInspectPayload.mockResolvedValue(inspect(GREEN));
     render(await KanjiDetailPage({ params: { id: "緑" } }));
