@@ -1,8 +1,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import { join } from "node:path";
 
-export { THIEU_CHUU_SOURCE } from "../thieu-chuu-source";
-
 export type TcCategory = "direct" | "kyujitai" | "redirect-resolved" | "redirect-unresolved" | "none";
 export type TcResolution = { lines: string[]; category: TcCategory; reason: null | "missing-target" | "chained" };
 

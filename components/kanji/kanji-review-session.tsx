@@ -99,7 +99,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing || event.defaultPrevented || notOurs(event.target)) return;
-      if (event.key === "Escape") return router.push("/kanji");
+      if (event.key === "Escape") return router.push(backHref);
       if (done) return;
       if (event.key === " " && !revealed) {
         if (event.target instanceof Element && event.target.closest("button, a[href]")) return;
@@ -114,7 +114,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [revealed, done, grade, router]);
+  }, [revealed, done, grade, router, backHref]);
 
   return (
     <div className="flex min-h-dvh flex-col md:h-dvh">

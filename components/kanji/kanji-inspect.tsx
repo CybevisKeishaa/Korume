@@ -277,7 +277,7 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
                     <li key={element} className="flex min-w-0 items-center gap-2xs">
                       {index > 0 && <span aria-hidden="true" className="text-caption font-bold text-muted-foreground">+</span>}
                       {gloss ? (
-                        <Link href={kanjiModalHref(pathname, search, element)} scroll={false} title={hanVietLine(gloss.hanViet, gloss.meaningEn)} className={cn(well, "group flex min-w-0 max-w-[calc(72*var(--density-unit))] flex-col items-center px-xs py-2xs hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>{chip}</Link>
+                        <Link href={kanjiModalHref(pathname, search, element)} scroll={false} replace={variant === "modal"} title={hanVietLine(gloss.hanViet, gloss.meaningEn)} className={cn(well, "group flex min-w-0 max-w-[calc(72*var(--density-unit))] flex-col items-center px-xs py-2xs hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring")}>{chip}</Link>
                       ) : (
                         <span className={cn(well, "flex flex-col items-center px-xs py-2xs")}>{chip}</span>
                       )}

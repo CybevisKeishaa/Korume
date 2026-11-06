@@ -237,7 +237,7 @@ describe("KanjiReviewSession", () => {
     expect(push).not.toHaveBeenCalled();
     dialog.remove();
     fireEvent.keyDown(window, { key: "Escape" });
-    expect(push).toHaveBeenCalledWith("/kanji");
+    expect(push).toHaveBeenCalledWith("/kanji?level=N5"); // the ← link's list, not always /kanji
   });
 
   it("the deck is fixed for the session: a new `cards` prop (the server re-renders on ?kanji=) does not reshuffle it", async () => {

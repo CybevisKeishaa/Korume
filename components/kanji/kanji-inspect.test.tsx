@@ -7,7 +7,7 @@ import { KanjiInspect } from "./kanji-inspect";
 import { licenceName } from "./dictionary-attribution";
 
 vi.mock("@/lib/i18n/navigation", () => ({
-  Link: ({ children, scroll, ...props }: React.ComponentProps<"a"> & { scroll?: boolean }) => <a data-scroll={scroll} {...props}>{children}</a>,
+  Link: ({ children, scroll, replace, ...props }: React.ComponentProps<"a"> & { scroll?: boolean; replace?: boolean }) => <a data-scroll={scroll} data-replace={replace} {...props}>{children}</a>,
   useRouter: () => ({ refresh: vi.fn() }),
   usePathname: () => "/kanji",
 }));
@@ -22,7 +22,7 @@ function payload(overrides: { data?: Partial<KanjiInspectPayload["data"]> } & Pa
     data: {
       literal: "学", onReadings: ["ガク"], kunReadings: ["まな.ぶ"], meaningsEn: ["study", "learning"], meaningVi: null, mnemonic: null,
       strokeCount: 8, grade: 1, frequency: 63, jlpt: null, hanViet: ["Học"],
-      tcLines: ["Học, bắt chước.", "Chỗ học.", "Môn học."], oldJlpt: 4,
+      tcLines: ["tc-1", "tc-2", "tc-3"], oldJlpt: 4,
       strokePaths: ["M1 1L2 2", "M3 3L4 4"],
       components: { element: "学", position: null, children: [
         { element: null, position: "top", children: [{ element: "⺍", position: null, children: [] }, { element: "冖", position: null, children: [] }] },
@@ -61,12 +61,12 @@ describe("KanjiInspect", () => {
   it("Thiều Chửu: first 2 lines, expand to all, credit; absent when tcLines is []", () => {
     const { unmount } = show(payload());
     const block = screen.getByRole("region", { name: "Classical meaning (Thiều Chửu)" });
-    expect(within(block).getByText("Học, bắt chước.")).toBeInTheDocument();
-    expect(within(block).getByText("Chỗ học.")).toBeInTheDocument();
-    expect(within(block).queryByText("Môn học.")).toBeNull();
+    expect(within(block).getByText("tc-1")).toBeInTheDocument();
+    expect(within(block).getByText("tc-2")).toBeInTheDocument();
+    expect(within(block).queryByText("tc-3")).toBeNull();
     expect(within(block).getByRole("link", { name: "Thiều Chửu, Hán Việt tự điển (1942)" })).toHaveAttribute("href", "https://github.com/anhthommo/thonutiengtrung"); // R14
     fireEvent.click(within(block).getByRole("button", { name: "Show all 3 lines" }));
-    expect(within(block).getByText("Môn học.")).toBeInTheDocument();
+    expect(within(block).getByText("tc-3")).toBeInTheDocument();
     unmount();
     show(payload({ data: { tcLines: [] } }));
     expect(screen.queryByRole("region", { name: "Classical meaning (Thiều Chửu)" })).toBeNull();
@@ -93,6 +93,8 @@ describe("KanjiInspect", () => {
     expect(within(block).getByText("冖")).toBeInTheDocument();
     expect(within(block).getByRole("link", { name: /子/ })).toHaveAttribute("href", "/kanji?level=N5&kanji=%E5%AD%90");
     expect(within(block).getByText("TỬ · child")).toBeInTheDocument();
+    // In the modal a chip replaces the entry (like ‹ ›), so one ✕ / Esc / Back still closes it.
+    expect(within(block).getByRole("link", { name: /子/ })).toHaveAttribute("data-replace", "true");
   });
 
   it("examples and lessons are absent when empty, and one empty-state line when both are", () => {

@@ -14,8 +14,8 @@ export type { ReviewItem };
 
 /**
  * Anki-style grades mapped to SM-2 quality (0–5). `labelKey` is the leaf
- * under `common.srs.*` — this component is shared by `/kanji/review` and
- * `/vocab/review` (Task 8), which is why its strings live in `common`, not a
+ * under `common.srs.*` — this component serves `/vocab/review`; kanji review
+ * (`components/kanji/kanji-review-session.tsx`) reuses `GRADES` and the same keys, which is why its strings live in `common`, not a
  * per-module namespace (CLAUDE.md P4). `components/video-player/
  * mining-review-session.tsx` (Task 12) mirrors this component and consumes
  * the same keys. Its "Back" link and error fallback reuse the pre-existing

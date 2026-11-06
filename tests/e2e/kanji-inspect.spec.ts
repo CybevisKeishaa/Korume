@@ -573,3 +573,16 @@ test("14 · reduced motion (OS setting): the same steps change state at once, no
   expect(kanjiMotions(motion)).toEqual([]);
   await context.close();
 });
+
+test("15 · a composition chip in the modal replaces the entry: no history added, one Esc closes", async ({ browser }) => {
+  const { context, page } = await open(browser);
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("語")}`);
+  await expect(modal(page)).toBeVisible();
+  const entries = await historyLength(page);
+  await modal(page).getByRole("region", { name: "Composition" }).getByRole("link").first().click();
+  await expect.poll(() => search(page).get("kanji")).not.toBe("語");
+  expect(await historyLength(page)).toBe(entries);
+  await page.keyboard.press("Escape");
+  await expect(modal(page)).toBeHidden();
+  await context.close();
+});

@@ -17,7 +17,7 @@ const CURATED = [
   { id: "c1", character: "一", jlpt_level: "N5", stroke_count: 1, meaning_en: "one", meaning_vi: "một" },
   { id: "c2", character: "二", jlpt_level: "N5", stroke_count: 2, meaning_en: "two", meaning_vi: "hai" },
   { id: "c3", character: "山", jlpt_level: "N5", stroke_count: 3, meaning_en: "mountain", meaning_vi: null },
-  { id: "c4", character: "会", jlpt_level: "N4", stroke_count: 6, meaning_en: "meet", meaning_vi: "hội" },
+  { id: "c4", character: "会", jlpt_level: "N4", stroke_count: 6, meaning_en: "meet", meaning_vi: "vi-1" },
 ];
 const PROGRESS: { literal: string; next_review_at: string | null }[] = [
   { literal: "𠮟", next_review_at: ago(1 * H) },
