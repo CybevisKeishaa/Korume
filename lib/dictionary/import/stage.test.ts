@@ -4,6 +4,7 @@ import { importDictionaries, StagingImportError, type ImportSources } from "./st
 import type { JmdictEntryRow } from "./jmdict";
 import type { KanjidicRow } from "./kanjidic";
 import type { KanjivgRow } from "./kanjivg";
+import type { TcCategory, TcResolution } from "./thieu-chuu";
 
 type Call = { op: string; table?: string; rows?: unknown[]; args?: unknown; values?: unknown };
 
@@ -135,5 +136,43 @@ describe("importDictionaries", () => {
     expect(failure).toBeInstanceOf(StagingImportError);
     expect((failure as StagingImportError).snapshotId).toBe("snap-1");
     expect(calls.some((call) => (call.args as { name?: string })?.name === "dict_activate_snapshot")).toBe(false);
+  });
+
+  describe("Thieu Chuu coverage", () => {
+    const row = (literal: string): KanjidicRow => ({ ...(KANJI[0] as KanjidicRow), literal, jlptOld: 2 });
+    const CATEGORY: Record<string, TcCategory> = { a: "direct", b: "kyujitai", c: "redirect-resolved", d: "redirect-unresolved" };
+    const thieuChuu = {
+      resolve: (literal: string): TcResolution => ({
+        lines: [`L-${literal}`],
+        category: CATEGORY[literal] ?? "none",
+        reason: literal === "d" ? "chained" : null,
+      }),
+    };
+    const run = (minTcCoverage?: number) => {
+      const { client, calls } = fakeClient(null);
+      const src = { ...sources(), kanjidic: { meta: meta("K"), rows: () => of([row("a"), row("b"), row("c"), row("d"), { ...row("e"), jlptOld: null }]) }, thieuChuu };
+      return { calls, promise: importDictionaries(client, src, { minTcCoverage }) };
+    };
+    const activated = (calls: Call[]) => calls.some((call) => (call.args as { name?: string })?.name === "dict_activate_snapshot");
+
+    it("stages tc_lines and reports coverage over old-JLPT rows only", async () => {
+      const { calls, promise } = run(0.75);
+      const result = await promise;
+      const kanji = calls.find((call) => call.table === "dict_kanji")?.rows as { tc_lines: string[] }[];
+      expect(kanji[0]?.tc_lines).toEqual(["L-a"]);
+      expect(result.status === "activated" && result.counts.tc).toEqual({
+        oldJlpt: 4,
+        byCategory: { direct: 1, kyujitai: 1, "redirect-resolved": 1, "redirect-unresolved": 1, none: 0 },
+        coverage: 0.75,
+        unresolved: [{ literal: "d", reason: "chained" }],
+      });
+      expect(activated(calls)).toBe(true);
+    });
+
+    it("throws below the threshold and never activates", async () => {
+      const { calls, promise } = run(0.8);
+      await expect(promise).rejects.toBeInstanceOf(StagingImportError);
+      expect(activated(calls)).toBe(false);
+    });
   });
 });

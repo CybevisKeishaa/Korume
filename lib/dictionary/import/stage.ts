@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { JmdictEntryRow } from "./jmdict";
 import type { KanjidicRow } from "./kanjidic";
 import type { KanjivgRow } from "./kanjivg";
+import type { TcCategory, TcResolution } from "./thieu-chuu";
 import { rankKanjiWords, type KanjiWordCandidate } from "./kanji-words";
 
 export interface SourceMeta {
@@ -20,6 +21,14 @@ export interface ImportSources {
   jmdict: Source<JmdictEntryRow>;
   kanjidic: Source<KanjidicRow>;
   kanjivg: Source<KanjivgRow>;
+  thieuChuu?: { resolve(literal: string): TcResolution };
+}
+
+export interface TcReport {
+  oldJlpt: number;
+  byCategory: Record<TcCategory, number>;
+  coverage: number;
+  unresolved: { literal: string; reason: "missing-target" | "chained" }[];
 }
 
 export type ImportResult =
@@ -27,7 +36,7 @@ export type ImportResult =
   | {
       status: "activated";
       snapshotId: string;
-      counts: { jmdict: number; kanjidic: number; kanjivg: number; kanjiWords: number };
+      counts: { jmdict: number; kanjidic: number; kanjivg: number; kanjiWords: number; tc?: TcReport };
     };
 
 /** The staging snapshot is kept for diagnosis (`npm run dict:gc` purges it after a day); the active one was never touched. */
@@ -96,7 +105,7 @@ async function insertBatched<Row>(
 export async function importDictionaries(
   client: SupabaseClient,
   sources: ImportSources,
-  options: { batchSize?: number; force?: boolean; log?: (line: string) => void } = {},
+  options: { batchSize?: number; force?: boolean; minTcCoverage?: number; log?: (line: string) => void } = {},
 ): Promise<ImportResult> {
   const batchSize = options.batchSize ?? 1000;
   const log = options.log ?? (() => undefined);
@@ -138,6 +147,12 @@ export async function importDictionaries(
 
   try {
     const literals = new Set<string>();
+    const tc: TcReport = {
+      oldJlpt: 0,
+      byCategory: { direct: 0, kyujitai: 0, "redirect-resolved": 0, "redirect-unresolved": 0, none: 0 },
+      coverage: 0,
+      unresolved: [],
+    };
     const kanjidic = await insertBatched(
       client,
       "dict_kanji",
@@ -145,6 +160,7 @@ export async function importDictionaries(
       (row) => ({
         snapshot_id: snapshotId,
         literal: row.literal,
+        tc_lines: sources.thieuChuu?.resolve(row.literal).lines ?? [],
         on_readings: row.on,
         kun_readings: row.kun,
         vi_readings: row.vi,
@@ -155,9 +171,26 @@ export async function importDictionaries(
         jlpt_old: row.jlptOld,
       }),
       batchSize,
-      (row) => literals.add(row.literal),
+      (row) => {
+        literals.add(row.literal);
+        const resolution = sources.thieuChuu?.resolve(row.literal);
+        if (!resolution) return;
+        if (row.jlptOld === null) return;
+        tc.oldJlpt += 1;
+        tc.byCategory[resolution.category] += 1;
+        if (resolution.reason) tc.unresolved.push({ literal: row.literal, reason: resolution.reason });
+      },
     );
     log(`kanjidic2 ${kanjidic}`);
+    if (sources.thieuChuu) {
+      const covered = tc.oldJlpt - tc.byCategory.none - tc.byCategory["redirect-unresolved"];
+      tc.coverage = tc.oldJlpt ? covered / tc.oldJlpt : 0;
+      for (const [category, n] of Object.entries(tc.byCategory)) log(`${category} ${n}`);
+      log(`coverage ${tc.coverage.toFixed(4)}`);
+      for (const { literal, reason } of tc.unresolved) log(`unresolved ${literal} ${reason}`);
+      const min = options.minTcCoverage ?? 0.95;
+      if (tc.coverage < min) throw new Error(`Thieu Chuu coverage ${tc.coverage.toFixed(4)} is below ${min}`);
+    }
 
     const kanjivg = await insertBatched(
       client,
@@ -229,7 +262,7 @@ export async function importDictionaries(
 
     const { error: activateError } = await client.rpc("dict_activate_snapshot", { p_snapshot: snapshotId });
     fail("dict_activate_snapshot", activateError);
-    return { status: "activated", snapshotId, counts: { jmdict, kanjidic, kanjivg, kanjiWords } };
+    return { status: "activated", snapshotId, counts: { jmdict, kanjidic, kanjivg, kanjiWords, ...(sources.thieuChuu ? { tc } : {}) } };
   } catch (error) {
     throw new StagingImportError(snapshotId, error);
   }

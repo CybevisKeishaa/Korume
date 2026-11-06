@@ -5,6 +5,7 @@
  *   npm run dict:import -- --jmdict <JMdict_e.gz> --kanjidic <kanjidic2.xml.gz> --kanjivg <kanjivg-*-main.zip>
  *     --jmdict-version … --jmdict-url … --jmdict-license …     (and the same three for kanjidic, kanjivg)
  *     [--allow-remote] [--force]   (--force re-imports even when the hashes match)
+ *     [--thieu-chuu <dir>]   (local only: Thiều Chửu lines, refused with --allow-remote)
  *
  * Same three file hashes as the active snapshot → prints `no change`, exit 0. On failure the staging
  * snapshot is left for diagnosis and printed, the active snapshot is untouched, exit 1.
@@ -17,6 +18,8 @@ import { createClient } from "@supabase/supabase-js";
 import { readJmdict } from "../lib/dictionary/import/jmdict";
 import { readKanjidic } from "../lib/dictionary/import/kanjidic";
 import { readKanjivgZip } from "../lib/dictionary/import/kanjivg";
+import { loadThieuChuu, resolveTcLines } from "../lib/dictionary/import/thieu-chuu";
+import kyujitai from "../lib/dictionary/import/kyujitai.json";
 import { importDictionaries, type SourceMeta } from "../lib/dictionary/import/stage";
 
 function arg(name: string): string {
@@ -37,6 +40,9 @@ async function meta(name: string, file: string): Promise<SourceMeta> {
 }
 
 async function main(): Promise<void> {
+  if (process.argv.includes("--thieu-chuu") && process.argv.includes("--allow-remote")) {
+    throw new Error("Thiều Chửu data is not cleared for a remote database (spec §4.2 license status)");
+  }
   loadEnvConfig(process.cwd());
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -47,6 +53,7 @@ async function main(): Promise<void> {
   const client = createClient(url, serviceKey, { auth: { persistSession: false, autoRefreshToken: false } });
 
   const files = { jmdict: arg("jmdict"), kanjidic: arg("kanjidic"), kanjivg: arg("kanjivg") };
+  const tcIndex = process.argv.includes("--thieu-chuu") ? await loadThieuChuu(arg("thieu-chuu")) : null;
   let peakRss = process.memoryUsage().rss;
   const sampler = setInterval(() => {
     peakRss = Math.max(peakRss, process.memoryUsage().rss);
@@ -62,6 +69,7 @@ async function main(): Promise<void> {
           rows: () => readKanjidic(createReadStream(files.kanjidic).pipe(createGunzip())),
         },
         kanjivg: { meta: await meta("kanjivg", files.kanjivg), rows: () => readKanjivgZip(files.kanjivg) },
+        ...(tcIndex && { thieuChuu: { resolve: (literal: string) => resolveTcLines(literal, tcIndex, kyujitai.pairs) } }),
       },
       { log: (line) => console.log(line), force: process.argv.includes("--force") },
     );
