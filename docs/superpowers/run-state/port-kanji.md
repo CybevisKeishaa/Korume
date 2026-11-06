@@ -13,8 +13,13 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
 
 - Task 1: Han-Viet readings from KANJIDIC2 + dict import --force (`28c5d684`, fix `f7157bb6`).
 - Task 2: Thieu Chuu lines resolved at import, license-gated (`772ae5f0`).
-- Task 3: SRS progress keyed by literal (`9428cce3`) — review pending.
-- Task 7: inspect content from the 28:2041 frame — see the measure below.
+- Task 3: SRS progress keyed by literal (`9428cce3`), review clean.
+- Task 4: favorites + add to review (`56452f7d`), review clean.
+- Task 5: lesson examples + appears-in-lessons (`3dec3dda`), review clean.
+- Task 6: inspect modal as a `?kanji=` param (`e332073c`, fix `5ef57f36`), review clean after 1 fix round.
+- Task 7: inspect content from the 28:2041 frame (`c37e2288`), review clean — owner decisions pending (below).
+- Task 8: post-reveal mock approved by the owner 2026-11-06 (no interval sublabels; SM-2 kept).
+- Owner decisions K1–K9 recorded in spec §9 + decision-register §3c (`42c5e912`).
 
 ## Contracts and decisions
 
@@ -24,8 +29,7 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
 - The shared local DB already carries migration 055 (owner-approved); master code in the main checkout errors on
   kanji/dashboard until this branch merges.
 - SRS (owner 2026-11-06): keep `lib/srs/sm2.ts` for kanji review; rating buttons show no interval sublabel (spec §6);
-  Anki learning steps / FSRS deferred to a separate evaluation. Post-reveal mock revised accordingly; owner approval
-  of the Task 8 mock pending.
+  Anki learning steps / FSRS deferred to a separate evaluation. Post-reveal mock approved.
 - Task 7 inspect content (owner 2026-11-06 addenda): ONE viewport, no page/dialog scroll at 1280×529 and 1440×900,
   type only on the `--text-*` tokens, no motion, every §5.2 block kept. Layout: header (‹ › · glyph · TTS · kana line ·
   HÁN VIỆT · English · ♡ · + Review · ⤢ page · ✕) / four columns — stroke order + my status | meaning + composition |
@@ -70,8 +74,18 @@ Deltas kept: no mnemonic image and no lesson thumbnails (no data); composition c
 
 ## Blockers
 
-None. Owner gate at Task 8 (post-reveal mock).
+Owner decisions on Task 7 (asked 2026-11-06, answer at the start of the next session):
+1. Dictionary credit on the inspect = one line (sources + versions); licence names only in the link title.
+2. Thiều Chửu sits beside the meaning card, not under it (§5.2) — the one-viewport rule leaves no height under it.
+3. Long text scrolls inside its own block (Thiều Chửu lines, mnemonic, tab lists) while the dialog/page never scroll.
+4. Composition chip gloss truncates (full text in the tooltip).
+5. `/kanji/[id]` at 1440×900: the card stops at its content height, ~40 % of the viewport empty below.
+6. No mnemonic image / lesson thumbnails (no data); glyph 40 px vs the frame's 48 at 1440.
 
 ## Next actions
 
-Close Task 3 review, then Task 4 (favorites + add to review).
+Session stopped by the owner after Task 7 (2026-11-06). Resume: read the SDD ledger
+`.superpowers/sdd/2026-11-06-port-kanji/progress.md` (git-ignored; resume map with every ruling and deferred minor),
+take the owner's answers on the Task 7 decisions above (a fix round if any changes), then Task 9 (review in focus
+chrome, plan T9 + owner additions), Task 9b (kanji motion), Task 10 (gates, Thiều Chửu CLI gate removal, whole-branch
+review, owner look). Owner still to run: removal of the 5 merged worktrees (command given in the session).
