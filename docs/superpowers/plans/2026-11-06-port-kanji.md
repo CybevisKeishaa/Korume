@@ -181,7 +181,8 @@ a difference means the implementation diverges from the rule, not that the thres
 
 **Files:**
 - Create: `supabase/migrations/20261106000054_kanji_progress_literal.sql`, `lib/data/kanji-review.ts`,
-  `lib/data/kanji-review.test.ts`, `supabase/tests/port-kanji.sql`, `scripts/verify-port-kanji-gate.ps1`
+  `lib/data/kanji-review.test.ts`, `app/api/srs/review/route.test.ts` (none exists today),
+  `supabase/tests/port-kanji.sql`, `scripts/verify-port-kanji-gate.ps1`
 - Modify: `package.json` (`"verify:db:kanji": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/verify-port-kanji-gate.ps1"`),
   `lib/validation/content.ts`, `lib/data/srs.ts`, `lib/data/user-stats.ts`, `lib/data/badge-snapshot.ts`,
   `lib/data/user-export.ts`, `app/[locale]/(protected)/(app)/kanji/review/page.tsx` (switch to the new queue only),
