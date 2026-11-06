@@ -176,6 +176,24 @@ describe("KanjiInspectModal", () => {
     expect(dialog()).toBeEmptyDOMElement();
   });
 
+  it("motion: without a transitionend the held content still goes, and a later open of the ‹ › target just settles in", async () => {
+    serve({ prev: "月", next: "火" });
+    url.search = "kanji=%E6%97%A5";
+    const { rerender } = render(<KanjiInspectModal />);
+    await screen.findByText("Nhật, Nhựt");
+    fireEvent.click(screen.getByRole("button", { name: "Next kanji" }));
+    url.search = "kanji=%E7%81%AB";
+    rerender(<KanjiInspectModal />);
+    expect(dialog()).toHaveAttribute("data-step", "next");
+    url.search = "";
+    rerender(<KanjiInspectModal />);
+    await waitFor(() => expect(dialog().open).toBe(false));
+    await waitFor(() => expect(dialog()).toBeEmptyDOMElement(), { timeout: 1000 }); // no transitionend fired
+    url.search = "kanji=%E7%81%AB";
+    rerender(<KanjiInspectModal />);
+    expect(dialog()).not.toHaveAttribute("data-step");
+  });
+
   it("closes the dialog when the param goes away", async () => {
     serve(null);
     url.search = "kanji=%E6%97%A5";

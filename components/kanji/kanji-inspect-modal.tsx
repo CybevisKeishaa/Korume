@@ -59,6 +59,13 @@ export function KanjiInspectModal() {
       focusAfterClose(opener.current);
       opener.current = null;
     }
+    if (open) return;
+    // A later open of the same kanji (list, chip, URL) settles in, not slides from the last ‹ › side.
+    setStep(null);
+    // transitionend releases the held content; this is the fallback where it never fires (no discrete transitions,
+    // a hidden tab), so a reopen never reuses stale content. Cleared by a reopen.
+    const release = setTimeout(() => setView(null), 400);
+    return () => clearTimeout(release);
   }, [open]);
 
   useEffect(() => {
