@@ -74,12 +74,11 @@ Machine-readable copy: `github.com/anhthommo/thonutiengtrung` `public/dict/00.js
 point hex, `hv` = reading, `tc` = Thiều Chửu sense lines). We take **only the `tc` field containing Thiều Chửu
 entries** and **never `e`** (CVDICT-style AI-translated word glosses). The right to use this digitization is a
 separate question from the 1942 work's status — see the license status below.
-- **License status: UNVERIFIED — production release blocked (owner ruling 2026-11-06).** The repo states no license,
-  and the work being public domain does not by itself settle the right to redistribute this digitization. Design,
-  importer and UI proceed; the owner asks the repo author for a license / permission to use. Until there is a clear
-  basis, `tc_lines` must not ship in a production release; if none comes, find an alternative source with a clear
-  license (the importer stays the same, only the input changes). The section hides when `tc_lines` is empty, so a
-  release without the data needs no code change.
+- **License status: production use APPROVED by the owner with credit (owner ruling 2026-11-06, later the same day;
+  supersedes the earlier "UNVERIFIED — production release blocked").** The repo states no license; the owner accepts
+  that and rules "cứ ghi cre vào là được": wherever `tc_lines` render, the credit line `THIEU_CHUU_SOURCE.credit` plus
+  the source repo is visible. The CLI refusal of `--thieu-chuu` with `--allow-remote` is removed (§9). The section
+  still hides when `tc_lines` is empty.
 - Pin the source: download at a fixed commit SHA into `DataKanji/thieu-chuu/` (outside the repo; the importer takes
   the path). The SHA (`7357ad9d1aa234d5e7e8514d317e83917746a80b`) and the credit line ("Thiều Chửu, Hán Việt tự điển
 (1942)") are constants next to
@@ -272,3 +271,46 @@ task order (data first is suggested: §4.1 → §4.2 → §4.3 → §4.4 → rou
 review).
 
 Not reopened (owner 2026-11-06): CTAs link to `/`, kanji SRS identity = literal, default review deck semantics.
+
+## 9. Owner decisions during execution (2026-11-06) — binding
+
+Recorded so they survive the session; `docs/product/decision-register.md` indexes them (K1–K9).
+
+**Built in this branch**
+- **K1 One viewport.** Every kanji screen (inspect modal, `/kanji/[id]`, `/kanji/review` incl. post-reveal and
+  end-of-deck) fits one viewport with no page or dialog scroll at 1280×529 and 1440×900. Solved with multi-column
+  layout, tabs and in-place state switches — never by shrinking type below the shared `--text-*` steps or dropping
+  content. If it cannot be done without hurting content or usability: stop, screenshot, owner decides.
+- **K2 Design skills applied.** The installed design skills (`frontend-design` = "claude-design", and the
+  elayadesign `redesign-existing-projects` / `design-to-motion`) are used to design layout, hierarchy, typography,
+  spacing, colour and UX — not only as critique. Values stay Korume's (tokens, Figma frames, app theme).
+- **K3 Full states.** Loading, empty, error (with retry), hover, focus-visible, active, disabled and keyboard
+  interaction on every kanji surface.
+- **K4 Motion for the kanji scope only** (plan Task 9b): modal open/close, ‹ › kanji change, ♡ favorite,
+  Add to Review, card reveal, rating → next card, progress, end-of-deck. `prefers-reduced-motion` respected. No motion
+  added to screens outside the kanji scope.
+- **K5 SRS stays SM-2.** One scheduler (`lib/srs/sm2.ts`) for kanji and vocab; no second scheduler; existing users'
+  schedules and progress unchanged; SRS state lives in the DB (cache only speeds things up). Rating buttons show no
+  interval sublabel (§6) because classic SM-2 does not yet produce meaningful per-button intervals.
+- **K6 Thiều Chửu cleared with credit** (§4.2): production use allowed; the credit is mandatory where it renders.
+
+**Direction for later specs (not built here)** — Serena backlog `feature_backlog_deferred` items 22–24
+- **K7 Review modes.** Korume aims at four: Flashcard, Multiple choice, Cloze (a Japanese sentence with one word
+  missing, the full Vietnamese translation shown, options to fill in) and Listen-and-type. This branch ships only the
+  kanji Flashcard, but the review session must not be locked to flashcards: it keeps a prompt → answer → grade seam,
+  modes share the knowledge data and the SRS, and each mode gets its own answer evaluation — correct/wrong is NOT
+  mapped to Good/Easy automatically until a rule is specified. Cloze sentences come from the learner's own lesson
+  lines + translations, never model-written sentences.
+- **K8 Library / curriculum.** Model `JLPT → series (giáo trình) → lesson (unit) → items (vocab / kanji) → study and
+  practice` (e.g. N3 → Mimikara → Bài 01). Curriculum progress is independent of SRS: finishing a lesson can send its
+  items to the learner's review schedule, then they are reviewed from the shared queue. Supports both Korume-built
+  paths (from sources Korume may use) and the learner's own imported material; items carry an **image** field. The
+  owner will import a self-curated textbook and vouches for its rights. Inside a unit the learner selects items and
+  chooses (1) review — into SRS — or (2) print vocabulary, reusing the existing print-vocabulary mode with the unit
+  as a new source. Before that spec: read `screen-inventory.md` §6 (Kanji Library `280:3`) and the capability-map
+  domain nouns; do not duplicate them.
+- **K9 Anki-style learning steps / FSRS** are a later upgrade for both card types at once (one extra DB column,
+  existing schedules preserved). Reference: the owner's Anki deck uses learn 1m/10m, relearn 10m, graduate 1d/4d,
+  ease 250 %, hard ×1.2, easy ×1.3.
+
+Order after this branch: finish port-kanji (Task 7 → 9 → 9b → 10), then specs for review modes and Library.

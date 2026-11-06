@@ -23,7 +23,10 @@ is a `?kanji=` query param read by a client component mounted in the `(protected
   Edit/Write tools on worktree paths.
 - No Vietnamese meaning text from a model, anywhere (code, seed, messages, tests). Hán Việt = KANJIDIC2
   `r_type="vietnam"`; classical meaning = Thiều Chửu `tc` only, never the `e` field.
-- Thiều Chửu license is UNVERIFIED: `tc_lines` must not reach a production database (Task 2 enforces it in the CLI).
+- Thiều Chửu: production use approved by the owner with a mandatory credit line (spec §4.2, §9 K6); Task 10 removes
+  the Task 2 CLI refusal.
+- Owner decisions K1–K9 (spec §9) bind every remaining task: one viewport without shrinking type (K1), design skills
+  applied (K2), full states + keyboard (K3), kanji-only motion (K4), SM-2 unchanged (K5), review seam (K7).
 - Frame CTAs without a destination (Open Vocabulary, Practice Writing, Find Similar Kanji) are links to `/` via one
   `PLACEHOLDER_HREF` constant — not removed, not plain text, not disabled. `/vocab` stays hidden (A10).
 - Type on the shared `--text-*` tokens (L-052); layout scales to the frame (L-051); app theme, not the frame's dark.
@@ -445,6 +448,23 @@ Space reveals, 1–4 rate; rating disabled until reveal.
 - [ ] **Step 5: E2E** (extend `kanji-inspect.spec.ts`): `/kanji/review?focus=𠮟` → `𠮟` first; reveal, rate →
   next card; the `(focus)` rail is present and the `(app)` nav is not; `/kanji/日` still renders the page (static
   `review` vs dynamic `[id]` across groups). Run the typography gate. Commit `feat(kanji): review in focus chrome`.
+- Owner additions (spec §9): the whole review screen (pre-reveal, post-reveal, end of deck) fits one viewport at
+  1280×529 and 1440×900 without shrinking type (K1, proven by a Playwright scroll-height check); design skills applied
+  (K2); full states + keyboard (K3); rating buttons without interval sublabels (§6); `KanjiReviewSession` keeps a
+  prompt → answer → grade seam where flashcard's answer step is the self-reveal, with no automatic correct/wrong →
+  grade mapping (K7) — no further abstraction.
+
+### Task 9b: Kanji motion (owner, spec §9 K4)
+
+- Scope: only the kanji surfaces — inspect modal open/close, ‹ › kanji change, ♡ favorite and Add to Review feedback,
+  review card reveal, rating → card exit / next card enter, progress tween, end-of-deck count-up.
+- Use the existing `--duration-*` / `--ease-*` tokens and the installed `framer-motion`; design with the
+  `design-to-motion` and `frontend-design` skills (K2). `prefers-reduced-motion` turns every transition into an
+  instant state change (unit-tested via the existing reduce-motion switch).
+- Motion never changes layout size (K1 still holds mid-animation) and never delays input: keys 1–4 / Space / Esc work
+  during a transition.
+- Proof: unit tests for the reduced-motion path; Playwright: E2E specs still pass, and a recorded run of open → ‹ › →
+  reveal → rate → end of deck for the owner. Commit `feat(kanji): motion for inspect and review`.
 
 ### Task 10: Whole-branch gate and owner look
 
@@ -452,5 +472,8 @@ Space reveals, 1–4 rate; rating disabled until reveal.
   `npx vitest run --minWorkers=1 --maxWorkers=2`, every `verify:db:*` touched (`kanji`, `dictionary`, `dashboard`,
   `erasure`, `profile`), `npm run verify:protocol`, `npx playwright test` (record pre-existing master reds separately).
 - [ ] **Step 2:** Whole-branch review (Opus), fix round, re-run Step 1.
-- [ ] **Step 3:** Update the run-state (commits, verification numbers, open: Thiều Chửu license, the ~34 old-JLPT
+- [ ] **Step 1b:** Thiều Chửu cleared (spec §9 K6): remove the `--thieu-chuu` + `--allow-remote` refusal in
+  `scripts/import-dictionaries.ts` (and its doc text), keep the credit line, add a test that the credit renders
+  whenever `tcLines` is non-empty.
+- [ ] **Step 3:** Update the run-state (commits, verification numbers, open: the ~34 old-JLPT
   kanji with no Thiều Chửu lines, the `redirect-unresolved` list). Owner Chrome look of inspect (modal + page) and review; merge only on the owner's word.

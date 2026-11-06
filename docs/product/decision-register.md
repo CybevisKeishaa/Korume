@@ -274,6 +274,24 @@ Full reasoning: `ia-proposal.md` §5.
 
 ---
 
+## 3c. Kanji port and learning direction — ✅ `LOCKED` (owner, 2026-11-06)
+
+| # | Decision | Where the reasoning lives |
+|---|---|---|
+| K1 | **Kanji screens fit one viewport, no scroll** (1280×529, 1440×900) — columns/tabs/in-place states, never smaller type or dropped content; if impossible, stop and ask | `specs/2026-11-06-port-kanji-design.md` §9 |
+| K2 | **Design skills are applied, not only critique**, values stay Korume's | same §9 |
+| K3 | **Full UX states + keyboard** on every kanji surface | same §9 |
+| K4 | **Motion for the kanji scope only**, reduce-motion respected | same §9; plan Task 9b |
+| K5 | **SRS stays SM-2, one scheduler, state in the DB**; no interval sublabels on rating buttons | same §9, §6 |
+| K6 | **Thiều Chửu cleared for production with a mandatory credit** | same §4.2, §9 |
+| K7 | **Four review modes are the direction** (flashcard, multiple choice, cloze with VN sentence, listen-and-type); session keeps a prompt → answer → grade seam; no automatic correct/wrong → grade mapping | same §9; backlog item 22 |
+| K8 | **Library: JLPT → series → lesson/unit → items**, progress independent of SRS, Korume paths + learner imports, image field, unit selection → review or print vocabulary | same §9; backlog item 23 |
+| K9 | **Anki learning steps / FSRS later**, both card types at once, schedules preserved | same §9; backlog item 24 |
+
+K7–K8 move the §4 "four new kanji domain nouns" item from undecided to *direction set, spec pending*.
+
+---
+
 ## 4. Still `OPEN`
 
 **Structure — must be answered before or during the IA review:** none. All four IA blockers and all
