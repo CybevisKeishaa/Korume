@@ -12,6 +12,7 @@ import { GRADES } from "@/components/learning/review-session";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
 import { KanjiReviewEnd, type Reviewed } from "./kanji-review-end";
 
+const AGAIN = GRADES[0].quality;
 const ICONS = { again: RotateCcw, hard: Zap, good: Check, easy: ChevronRight } as const;
 const ring = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const quiet = cn("inline-flex items-center gap-2xs rounded-full text-muted-foreground hover:text-foreground", ring);
@@ -47,6 +48,9 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
   const [failed, setFailed] = useState<number | null>(null);
   const [reviewed, setReviewed] = useState<Reviewed[]>([]);
   const details = useRef<HTMLAnchorElement>(null);
+  const retry = useRef<HTMLButtonElement>(null);
+  // Set synchronously: a key press and a click in one tick must not POST the same card twice.
+  const inFlight = useRef(false);
 
   const card = deck[index];
   const done = !card;
@@ -58,9 +62,15 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
     if (revealed) details.current?.focus();
   }, [revealed]);
 
+  // A failed save disables the button that was pressed: focus goes to Retry, not to body.
+  useEffect(() => {
+    if (failed !== null) retry.current?.focus();
+  }, [failed]);
+
   const grade = useCallback(
     async (quality: number) => {
-      if (!card || submitting) return;
+      if (!card || inFlight.current) return;
+      inFlight.current = true;
       setSubmitting(true);
       setFailed(null);
       try {
@@ -71,23 +81,24 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
         });
         if (!res.ok) throw new Error(`Review failed (${res.status})`);
         window.dispatchEvent(new Event(REVIEW_SUBMITTED_EVENT));
-        setReviewed((list) => [...list, { literal: card.literal, again: quality === GRADES[0].quality }]);
+        setReviewed((list) => [...list, { literal: card.literal, again: quality === AGAIN }]);
         setRevealed(false);
         setIndex((i) => i + 1);
       } catch (e) {
         console.error(e); // the raw text never reaches the DOM (it is neither translated nor useful to a learner)
         setFailed(quality);
       } finally {
+        inFlight.current = false;
         setSubmitting(false);
       }
     },
-    [card, submitting],
+    [card],
   );
 
   // Space reveals (a focused button or link keeps its own Space), 1–4 rate once revealed, Esc leaves.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
-      if (event.ctrlKey || event.metaKey || event.altKey || event.defaultPrevented || notOurs(event.target)) return;
+      if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing || event.defaultPrevented || notOurs(event.target)) return;
       if (event.key === "Escape") return router.push("/kanji");
       if (done) return;
       if (event.key === " " && !revealed) {
@@ -200,7 +211,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                 {failed !== null ? (
                   <p role="alert" className="flex items-center justify-center gap-sm text-caption text-danger-strong">
                     {t("review.saveFailed")}
-                    <button type="button" onClick={() => void grade(failed)} disabled={submitting} className={cn("rounded-sm font-medium text-foreground underline underline-offset-2", ring)}>
+                    <button ref={retry} type="button" onClick={() => void grade(failed)} disabled={submitting} className={cn("rounded-sm font-medium text-foreground underline underline-offset-2", ring)}>
                       {tCommon("actions.retry")}
                     </button>
                   </p>

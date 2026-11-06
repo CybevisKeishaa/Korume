@@ -38,6 +38,9 @@ export default async function KanjiReviewPage({ searchParams }: { searchParams: 
 
   return (
     <KanjiReviewSession
+      // A new deck (another ?level= / ?focus=, e.g. the inspect's "Study" link over this page) is a new session;
+      // `?kanji=` is not in the key, so opening the inspect keeps the running one.
+      key={`${level ?? ""}|${searchParams.focus ?? ""}`}
       cards={cards}
       deckLabel={level ? t("quickInspect.jlpt", { level }) : t("review.today")}
       streak={streak}

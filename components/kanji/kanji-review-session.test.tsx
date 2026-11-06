@@ -90,6 +90,23 @@ describe("KanjiReviewSession", () => {
     expect(grade(/^Good/)).toBeDisabled();
   });
 
+  it("two rating keys in one tick POST the card once and advance one card", async () => {
+    show();
+    fireEvent.keyDown(window, { key: " " });
+    fireEvent.keyDown(window, { key: "3" });
+    fireEvent.keyDown(window, { key: "4" });
+    await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
+    expect(calls).toHaveLength(1);
+  });
+
+  it("a held key (auto-repeat) is ignored: holding Esc does not push again and again", () => {
+    show();
+    fireEvent.keyDown(window, { key: "Escape", repeat: true });
+    fireEvent.keyDown(window, { key: " ", repeat: true });
+    expect(push).not.toHaveBeenCalled();
+    expect(screen.queryByText("Nhật")).not.toBeInTheDocument();
+  });
+
   it("the footer counts the session down and shows the day streak", async () => {
     show();
     const footer = document.querySelector("footer") as HTMLElement;
@@ -116,6 +133,7 @@ describe("KanjiReviewSession", () => {
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Your rating wasn't saved.");
     expect(screen.getByText("1 / 2")).toBeInTheDocument();
+    await waitFor(() => expect(within(alert).getByRole("button", { name: "Try again" })).toHaveFocus()); // not body
     await userEvent.click(within(alert).getByRole("button", { name: "Try again" }));
     await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
     expect(calls.map((c) => c.body)).toEqual([

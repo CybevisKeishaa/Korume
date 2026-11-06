@@ -4,13 +4,13 @@ import { useEffect, useId, useRef } from "react";
 import { Link, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { buttonStyles } from "@/components/ui/button";
+import { JLPT_LEVELS } from "@/lib/conversation-types";
 
 export interface Reviewed {
   literal: string;
   again: boolean;
 }
 
-const LEVELS = ["N5", "N4", "N3", "N2", "N1"] as const;
 const ring = "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
 const tile = cn("relative flex size-[calc(48*var(--density-unit))] items-center justify-center rounded-md bg-background hover:bg-muted active:bg-border", ring);
 const wayOn = cn("rounded-sm text-body font-medium text-primary-strong underline-offset-2 hover:underline", ring);
@@ -64,7 +64,7 @@ export function KanjiReviewEnd({ reviewed, backHref, modalHref }: { reviewed: Re
         </div>
         {empty ? (
           <ul className="flex flex-wrap gap-xs">
-            {LEVELS.map((level) => (
+            {JLPT_LEVELS.map((level) => (
               <li key={level}>
                 <Link href={`/kanji?level=${level}`} className={cn(tile, "font-mono text-body font-medium")}>{level}</Link>
               </li>
