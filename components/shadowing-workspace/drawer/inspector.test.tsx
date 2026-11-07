@@ -47,7 +47,7 @@ const ANALYSIS: LexicalLineAnalysisDto = {
 };
 const KANJI: KanjiData = {
   literal: "緑", onReadings: ["リョク"], kunReadings: ["みどり"], meaningsEn: ["green"], meaningVi: null, mnemonic: null,
-  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", hanViet: [], tcLines: [], oldJlpt: null, strokePaths: ["M1 1L2 2"],
+  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", hanViet: [], viFromHvdic: false, oldJlpt: null, strokePaths: ["M1 1L2 2"],
   components: { element: "緑", children: [] } as unknown as KanjiData["components"], componentGlosses: {},
   commonWords: [{ entSeq: 30, headword: "緑色", reading: "みどりいろ", glossEn: "green colour" }],
   curatedKanjiId: null, attribution: [{ source: "kanjivg", version: "main", url: "https://kanjivg.tagaini.net", license: "CC BY-SA 3.0" }],

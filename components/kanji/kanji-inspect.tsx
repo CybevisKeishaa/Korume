@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { BookOpen, Check, ChevronDown, ChevronLeft, Heart, PenLine, Play, Plus, RotateCcw, Search } from "lucide-react";
 import { Link, useFormatter, usePathname, useTranslations } from "@/lib/i18n";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { kanjiModalHref } from "@/lib/kanji/href";
 import { compositionElements } from "@/lib/kanji/composition";
 import { PLACEHOLDER_HREF } from "@/lib/placeholder-href";
-import { THIEU_CHUU_SOURCE } from "@/lib/dictionary/thieu-chuu-source";
+import { HVDIC_SOURCE } from "@/lib/dictionary/vi-meaning";
 import type { KanjiExample, KanjiExplore, KanjiInspectPayload, KanjiProgress } from "@/lib/kanji/learner-types";
 import { StrokeOrder } from "@/components/motion/stroke-order";
 import { TtsButton } from "@/components/speech/tts-button";
@@ -28,6 +28,22 @@ const scroller = "overflow-y-auto rounded-sm focus-visible:outline-none focus-vi
 const hanVietLine = (hanViet: string[], english: string | null) =>
   [hanViet.join(", ").toLocaleUpperCase("vi"), english].filter(Boolean).join(" · ");
 
+/** Whether the element's content is taller than its box, re-measured on every resize. */
+function useOverflows<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  const [overflows, setOverflows] = useState(false);
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const measure = () => setOverflows(element.scrollHeight > element.clientHeight + 1);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, []);
+  return [ref, overflows] as const;
+}
+
 function Block({ label, h: H, className, children }: { label: string; h: "h2" | "h3"; className?: string; children: React.ReactNode }) {
   return (
     <section aria-label={label} className={cn("flex shrink-0 flex-col gap-2xs rounded-lg border border-border p-sm", className)}>
@@ -40,8 +56,8 @@ function Block({ label, h: H, className, children }: { label: string; h: "h2" | 
 /**
  * The kanji inspect content from Figma `28:2041` (spec §5.2), one component for the `?kanji=` modal and the
  * `/kanji/[literal]` page. One viewport, no scroll (owner 2026-11-06): the frame's blocks sit in four columns —
- * stroke order + my status | meaning + composition | Thiều Chửu + mnemonic | words / examples / lessons in tabs — and long
- * content (Thiều Chửu, a tab list) scrolls inside its own bounded block, never the page or the dialog. The page
+ * stroke order + my status | meaning + composition | Vietnamese meaning + mnemonic | words / examples / lessons in tabs — and long
+ * content (the Vietnamese meaning, a tab list) scrolls inside its own bounded block, never the page or the dialog. The page
  * passes `explore`: on a tall screen a second row under columns 1–3 holds its ways on (`KanjiInspectExplore`).
  */
 export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInspectPayload; variant: "modal" | "page"; explore?: KanjiExplore }) {
@@ -64,7 +80,7 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
   const [popped, setPopped] = useState<"favorite" | "review" | null>(null);
   const pending = useRef(false);
   const [replayKey, setReplayKey] = useState(0);
-  const [tcOpen, setTcOpen] = useState(false);
+  const [viRef, viOverflows] = useOverflows<HTMLParagraphElement>();
   const [pages, setPages] = useState<KanjiExample[][]>([payload.examples]);
   const [page, setPage] = useState(0);
   const [examplesEnd, setExamplesEnd] = useState(payload.examples.length < PAGE);
@@ -231,7 +247,6 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
         <div className={column}>
           <Block label={t("inspect.meaning")} h={H}>
             <p className="text-body font-semibold">{data.meaningsEn.join(", ")}</p>
-            {data.meaningVi && <p className="text-body">{data.meaningVi}</p>}
             <dl className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-x-sm gap-y-2xs text-body">
               {[[t("onReading"), data.onReadings], [t("kunReading"), data.kunReadings]].map(([label, list]) =>
                 (list as string[]).length > 0 ? (
@@ -294,20 +309,14 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
         </div>
 
         <div className={column}>
-          {data.tcLines.length > 0 && (
-            <Block label={t("inspect.thieuChuu")} h={H} className="min-h-0 shrink">
-              <ul tabIndex={0} aria-label={t("inspect.thieuChuu")} className={cn("min-h-0 space-y-2xs text-body", scroller)}>
-                {(tcOpen ? data.tcLines : data.tcLines.slice(0, 2)).map((line, index) => (
-                  <li key={index}>{line}</li>
-                ))}
-              </ul>
-              {data.tcLines.length > 2 && (
-                <button type="button" onClick={() => setTcOpen(!tcOpen)} className="self-start text-caption font-medium text-primary-strong underline-offset-2 hover:underline">
-                  {tcOpen ? t("inspect.showLess") : t("inspect.showAll", { count: data.tcLines.length })}
-                </button>
+          {data.meaningVi && (
+            <Block label={t("inspect.vietnamese")} h={H} className="min-h-0 shrink">
+              {/* A tab stop only while the text overflows (owner 2026-11-07: no focus box on what cannot scroll). */}
+              <p ref={viRef} tabIndex={viOverflows ? 0 : undefined} role="group" aria-label={t("inspect.vietnamese")} className={cn("min-h-0 text-body", scroller)}>{data.meaningVi}</p>
+              {/* K16: the credit wherever the imported (hvdic) meaning renders. */}
+              {data.viFromHvdic && (
+                <a href={HVDIC_SOURCE.url} target="_blank" rel="noopener noreferrer" className="self-start rounded-sm text-caption text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{HVDIC_SOURCE.credit}</a>
               )}
-              {/* Mandatory wherever tc lines render (owner ruling R14): the work and the source it was taken from. */}
-              <a href={`https://${THIEU_CHUU_SOURCE.repo}`} target="_blank" rel="noopener noreferrer" className="self-start rounded-sm text-caption text-muted-foreground underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">{THIEU_CHUU_SOURCE.credit}</a>
             </Block>
           )}
           {data.mnemonic && (

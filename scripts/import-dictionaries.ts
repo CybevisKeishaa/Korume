@@ -5,12 +5,15 @@
  *   npm run dict:import -- --jmdict <JMdict_e.gz> --kanjidic <kanjidic2.xml.gz> --kanjivg <kanjivg-*-main.zip>
  *     --jmdict-version … --jmdict-url … --jmdict-license …     (and the same three for kanjidic, kanjivg)
  *     [--allow-remote] [--force]   (--force re-imports even when the hashes match)
- *     [--thieu-chuu <dir>]   (Thiều Chửu lines; owner-cleared with a mandatory on-screen credit, spec §9 K6)
+ *     [--thieu-chuu <dir>]   (Thiều Chửu lines; stored, no longer shown since owner ruling K16)
+ * Every run stages `vi_meanings` from the committed `hvdic-pho-thong.json` + `vi-meaning-overrides.json` (K16).
  *
  * Same three file hashes as the active snapshot → prints `no change`, exit 0. On failure the staging
  * snapshot is left for diagnosis and printed, the active snapshot is untouched, exit 1.
  */
 import { createReadStream } from "node:fs";
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
 import { createHash } from "node:crypto";
 import { createGunzip } from "node:zlib";
 import { loadEnvConfig } from "@next/env";
@@ -19,7 +22,9 @@ import { readJmdict } from "../lib/dictionary/import/jmdict";
 import { readKanjidic } from "../lib/dictionary/import/kanjidic";
 import { readKanjivgZip } from "../lib/dictionary/import/kanjivg";
 import { loadThieuChuu, resolveTcLines } from "../lib/dictionary/import/thieu-chuu";
+import { resolveViMeaning, type HvdicIndex } from "../lib/dictionary/import/hvdic";
 import kyujitai from "../lib/dictionary/import/kyujitai.json";
+import viOverrides from "../lib/dictionary/import/vi-meaning-overrides.json";
 import { importDictionaries, type SourceMeta } from "../lib/dictionary/import/stage";
 
 function arg(name: string): string {
@@ -51,6 +56,9 @@ async function main(): Promise<void> {
 
   const files = { jmdict: arg("jmdict"), kanjidic: arg("kanjidic"), kanjivg: arg("kanjivg") };
   const tcIndex = process.argv.includes("--thieu-chuu") ? await loadThieuChuu(arg("thieu-chuu")) : null;
+  // Read, not imported: a 1 MB JSON import would make tsc infer a type for every entry.
+  const hvdic = (JSON.parse(await readFile(join(process.cwd(), "lib/dictionary/import/hvdic-pho-thong.json"), "utf8")) as { entries: HvdicIndex }).entries;
+  const overrides: Record<string, string[]> = viOverrides.entries;
   let peakRss = process.memoryUsage().rss;
   const sampler = setInterval(() => {
     peakRss = Math.max(peakRss, process.memoryUsage().rss);
@@ -67,6 +75,7 @@ async function main(): Promise<void> {
         },
         kanjivg: { meta: await meta("kanjivg", files.kanjivg), rows: () => readKanjivgZip(files.kanjivg) },
         ...(tcIndex && { thieuChuu: { resolve: (literal: string) => resolveTcLines(literal, tcIndex, kyujitai.pairs) } }),
+        viMeanings: { resolve: (literal, viReadings) => resolveViMeaning(literal, viReadings, hvdic, kyujitai.pairs, overrides) },
       },
       { log: (line) => console.log(line), force: process.argv.includes("--force") },
     );

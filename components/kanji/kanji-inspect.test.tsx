@@ -20,9 +20,9 @@ function payload(overrides: { data?: Partial<KanjiInspectPayload["data"]> } & Pa
   const { data, ...rest } = overrides;
   return {
     data: {
-      literal: "学", onReadings: ["ガク"], kunReadings: ["まな.ぶ"], meaningsEn: ["study", "learning"], meaningVi: null, mnemonic: null,
+      literal: "学", onReadings: ["ガク"], kunReadings: ["まな.ぶ"], meaningsEn: ["study", "learning"], mnemonic: null,
       strokeCount: 8, grade: 1, frequency: 63, jlpt: null, hanViet: ["Học"],
-      tcLines: ["tc-1", "tc-2", "tc-3"], oldJlpt: 4,
+      meaningVi: "vi-1; vi-2", viFromHvdic: true, oldJlpt: 4,
       strokePaths: ["M1 1L2 2", "M3 3L4 4"],
       components: { element: "学", position: null, children: [
         { element: null, position: "top", children: [{ element: "⺍", position: null, children: [] }, { element: "冖", position: null, children: [] }] },
@@ -58,18 +58,35 @@ describe("KanjiInspect", () => {
     expect(screen.getByText("HỌC · study, learning")).toBeInTheDocument();
   });
 
-  it("Thiều Chửu: first 2 lines, expand to all, credit; absent when tcLines is []", () => {
+  it("Vietnamese meaning block: the hvdic glosses with their credit, never Thiều Chửu (K16)", () => {
     const { unmount } = show(payload());
-    const block = screen.getByRole("region", { name: "Classical meaning (Thiều Chửu)" });
-    expect(within(block).getByText("tc-1")).toBeInTheDocument();
-    expect(within(block).getByText("tc-2")).toBeInTheDocument();
-    expect(within(block).queryByText("tc-3")).toBeNull();
-    expect(within(block).getByRole("link", { name: "Thiều Chửu, Hán Việt tự điển (1942)" })).toHaveAttribute("href", "https://github.com/anhthommo/thonutiengtrung"); // R14
-    fireEvent.click(within(block).getByRole("button", { name: "Show all 3 lines" }));
-    expect(within(block).getByText("tc-3")).toBeInTheDocument();
+    const block = screen.getByRole("region", { name: "Vietnamese meaning" });
+    expect(within(block).getByText("vi-1; vi-2")).toBeInTheDocument();
+    expect(screen.getAllByText("vi-1; vi-2")).toHaveLength(1); // not repeated in the meaning card
+    expect(within(block).getByRole("link", { name: "Từ điển Hán Nôm (hvdic.thivien.net)" })).toHaveAttribute("href", "https://hvdic.thivien.net");
+    expect(document.body.textContent).not.toMatch(/Thiều Chửu|Hán Việt tự điển/);
     unmount();
-    show(payload({ data: { tcLines: [] } }));
-    expect(screen.queryByRole("region", { name: "Classical meaning (Thiều Chửu)" })).toBeNull();
+    const curated = show(payload({ data: { meaningVi: "vi-curated", viFromHvdic: false } }));
+    expect(within(screen.getByRole("region", { name: "Vietnamese meaning" })).getByText("vi-curated")).toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: /hvdic/ })).toBeNull();
+    curated.unmount();
+    show(payload({ data: { meaningVi: null, viFromHvdic: false } }));
+    expect(screen.queryByRole("region", { name: "Vietnamese meaning" })).toBeNull();
+  });
+
+  it("the Vietnamese meaning is a named tab stop only while it overflows its block", () => {
+    const { unmount } = show(payload());
+    expect(screen.getByRole("group", { name: "Vietnamese meaning" })).not.toHaveAttribute("tabindex");
+    unmount();
+    const height = vi.spyOn(HTMLElement.prototype, "scrollHeight", "get").mockReturnValue(200);
+    const client = vi.spyOn(HTMLElement.prototype, "clientHeight", "get").mockReturnValue(80);
+    show(payload());
+    const text = screen.getByRole("group", { name: "Vietnamese meaning" });
+    expect(text).toHaveAttribute("tabindex", "0");
+    expect(text.className).toContain("overflow-y-auto");
+    expect(text.className).toContain("focus-visible:ring-2");
+    height.mockRestore();
+    client.mockRestore();
   });
 
   it("N3 badge only with a curated jlpt; 常用 iff grade ≤ 8; old JLPT n級", () => {
@@ -210,7 +227,7 @@ describe("KanjiInspect", () => {
   it("page variant renders the same blocks, glyph as the h1", () => {
     show(payload(), "page");
     expect(screen.getByRole("heading", { level: 1, name: "学" })).toBeInTheDocument();
-    for (const name of ["Stroke order", "Meaning", "My status", "Classical meaning (Thiều Chửu)", "Composition"]) {
+    for (const name of ["Stroke order", "Meaning", "My status", "Vietnamese meaning", "Composition"]) {
       expect(screen.getByRole("region", { name })).toBeInTheDocument();
     }
     expect(screen.getByRole("tab", { name: "Words" })).toBeInTheDocument();
@@ -233,7 +250,6 @@ describe("KanjiInspect", () => {
     show(payload({ data: { mnemonic: "A child under a roof, studying." }, examples: [first] }));
     const scrollers = [
       screen.getByRole("list", { name: "Composition" }),
-      screen.getByRole("list", { name: "Classical meaning (Thiều Chửu)" }),
       screen.getByRole("group", { name: "Mnemonic" }),
       screen.getByRole("tabpanel", { name: "Words" }),
     ];
@@ -241,7 +257,7 @@ describe("KanjiInspect", () => {
     scrollers.push(screen.getByRole("list", { name: "Examples" }));
     fireEvent.mouseDown(screen.getByRole("tab", { name: "In lessons" }));
     scrollers.push(screen.getByRole("tabpanel", { name: "In lessons" }));
-    expect(scrollers).toHaveLength(6);
+    expect(scrollers).toHaveLength(5);
     for (const scroller of scrollers) {
       expect(scroller).toHaveAttribute("tabindex", "0");
       expect(scroller.className).toContain("overflow-y-auto");

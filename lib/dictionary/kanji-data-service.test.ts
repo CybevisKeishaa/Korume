@@ -15,8 +15,8 @@ function record(table: string, calls: QueryCall[]) {
   (recorded[table] ??= []).push(calls);
 }
 
-function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: boolean; components?: KanjiComponentNode; lessonsFail?: boolean } = {}) {
-  const { kanji = true, curated = true, strokes = true, lessonsFail = false } = options;
+function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: boolean; components?: KanjiComponentNode; lessonsFail?: boolean; viMeanings?: string[] } = {}) {
+  const { kanji = true, curated = true, strokes = true, lessonsFail = false, viMeanings = ["vi-1", "vi-2"] } = options;
   const components = options.components ?? { element: "緑", position: null, children: [] };
   const lessonError = { data: null, error: { message: "lesson index down" } };
   vi.mocked(createClient).mockReturnValue(
@@ -43,7 +43,7 @@ function useDictionary(options: { kanji?: boolean; curated?: boolean; strokes?: 
                   grade: 3,
                   freq: 1082,
                   vi_readings: ["Lục"],
-                  tc_lines: ["line one"],
+                  vi_meanings: viMeanings,
                   jlpt_old: 2,
                 }
               : null,
@@ -131,7 +131,7 @@ describe("getKanjiData", () => {
       grade: 3,
       frequency: 1082,
       hanViet: ["Lục"],
-      tcLines: ["line one"],
+      viFromHvdic: false,
       oldJlpt: 2,
       jlpt: "N3",
       strokePaths: ["M1,1L2,2", "M3,3L4,4"],
@@ -156,7 +156,9 @@ describe("getKanjiData", () => {
   it("works without a curated row and without stroke geometry", async () => {
     useDictionary({ curated: false, strokes: false });
     const data = await getKanjiData("緑");
-    expect(data).toMatchObject({ meaningVi: null, mnemonic: null, jlpt: null, curatedKanjiId: null, strokePaths: [] });
+    expect(data).toMatchObject({ meaningVi: "vi-1; vi-2", viFromHvdic: true, mnemonic: null, jlpt: null, curatedKanjiId: null, strokePaths: [] });
+    useDictionary({ curated: false, viMeanings: [] });
+    expect(await getKanjiData("緑")).toMatchObject({ meaningVi: null, viFromHvdic: false });
   });
 
   it("glosses the composition elements with one in() query on the active dict_kanji", async () => {

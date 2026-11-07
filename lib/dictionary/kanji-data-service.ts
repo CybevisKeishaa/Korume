@@ -9,6 +9,7 @@ import { getKanjiExamples, getKanjiLessons } from "@/lib/data/kanji-lessons";
 import { getKanjiList } from "@/lib/data/content";
 import { parseKanjiContext } from "@/lib/kanji/context";
 import { compositionElements } from "@/lib/kanji/composition";
+import { viMeaning } from "@/lib/dictionary/vi-meaning";
 import type { KanjiInspectPayload, KanjiNeighbors } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
@@ -32,7 +33,7 @@ function commonWord(literal: string, entry: EntryRow): KanjiCommonWord {
 
 /**
  * Everything the app knows about one kanji, from the active dictionary snapshot plus the hand-written
- * `kanji` table's Vietnamese meaning and mnemonic (spec §5.2). Shared by KanjiQuickInspect and
+ * `kanji` table's Vietnamese meaning (first, K16) and mnemonic (spec §5.2). Shared by KanjiQuickInspect and
  * `/kanji/[literal]`, so the later full Kanji-inspect port reuses it.
  */
 export async function getKanjiData(literal: string, opts: { commonWords?: number } = {}): Promise<KanjiData | null> {
@@ -44,7 +45,7 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
   const [kanji, strokes, words, curated] = await Promise.all([
     supabase
       .from("dict_kanji")
-      .select("literal, on_readings, kun_readings, meanings_en, stroke_count, grade, freq, vi_readings, tc_lines, jlpt_old")
+      .select("literal, on_readings, kun_readings, meanings_en, stroke_count, grade, freq, vi_readings, vi_meanings, jlpt_old")
       .eq("snapshot_id", snapshotId)
       .eq("literal", literal)
       .maybeSingle(),
@@ -106,7 +107,7 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     grade: number | null;
     freq: number | null;
     vi_readings: string[];
-    tc_lines: string[];
+    vi_meanings: string[];
     jlpt_old: number | null;
   };
   const stroke = strokes.data as { paths: string[]; components: KanjiComponentNode } | null;
@@ -117,14 +118,13 @@ export async function getKanjiData(literal: string, opts: { commonWords?: number
     onReadings: row.on_readings,
     kunReadings: row.kun_readings,
     meaningsEn: row.meanings_en,
-    meaningVi: curatedRow?.meaning_vi ?? null,
+    ...viMeaning(curatedRow?.meaning_vi, row.vi_meanings),
     mnemonic: curatedRow?.mnemonic_text ?? null,
     strokeCount: row.stroke_count,
     grade: row.grade,
     frequency: row.freq,
     jlpt: curatedRow?.jlpt_level ?? null,
     hanViet: row.vi_readings,
-    tcLines: row.tc_lines,
     oldJlpt: row.jlpt_old,
     strokePaths: stroke?.paths ?? [],
     components,

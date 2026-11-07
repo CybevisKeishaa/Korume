@@ -276,7 +276,7 @@ test("9 · one viewport at 1280×529 and 1440×900: nothing scrolls, the page ca
   for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900 }]) {
     const { context, page } = await open(browser, viewport);
     const step = 16 * (viewport.width / 1440); // --space-md at this width (density unit = 100vw / 1440 up to 1440)
-    for (const literal of ["日", "語", "学"]) { // a plain kanji, the longest Thiều Chửu lines, a three-element composition
+    for (const literal of ["日", "当", "学"]) { // a plain kanji, the longest Vietnamese meaning (hvdic, K16), a three-element composition
       await page.goto(`/en/kanji?kanji=${encodeURIComponent(literal)}`);
       await expect(glyph(page, literal)).toBeVisible();
       const dialog = await modal(page).evaluate((el) => ({ scroll: el.scrollHeight, client: el.clientHeight, bottom: el.getBoundingClientRect().bottom }));
@@ -309,11 +309,15 @@ test("9 · one viewport at 1280×529 and 1440×900: nothing scrolls, the page ca
   }
 });
 
-test("10 · keyboard: an inner scroller takes focus and scrolls with keys (K12); a focused chip shows its whole gloss (K13)", async ({ browser }) => {
+test("10 · keyboard: an overflowing inner scroller takes focus and scrolls with keys (K12), one that fits is no tab stop; a focused chip shows its whole gloss (K13)", async ({ browser }) => {
   const { context, page } = await open(browser);
-  await page.goto(`/en/kanji?kanji=${encodeURIComponent("語")}`);
-  await expect(glyph(page, "語")).toBeVisible();
-  const lines = modal(page).getByRole("list", { name: "Classical meaning (Thiều Chửu)" });
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("日")}`);
+  await expect(glyph(page, "日")).toBeVisible();
+  await expect(modal(page).getByRole("group", { name: "Vietnamese meaning" })).not.toHaveAttribute("tabindex");
+  await page.goto(`/en/kanji?kanji=${encodeURIComponent("当")}`);
+  await expect(glyph(page, "当")).toBeVisible();
+  const lines = modal(page).getByRole("group", { name: "Vietnamese meaning" });
+  await expect(lines).toHaveAttribute("tabindex", "0");
   expect(await lines.evaluate((el) => el.scrollHeight > el.clientHeight)).toBe(true); // it does overflow at 529
   await lines.focus();
   await expect(lines).toBeFocused();
@@ -397,7 +401,7 @@ test("11 · /kanji/review?focus=𠮟 in (focus): 𠮟 first; Space reveals, 3 ra
       await expect(counter(page)).toHaveText(`${card} / ${total}`);
       await page.keyboard.press("Space");
       await expect(page.getByRole("region", { name: "Answer" })).toBeVisible();
-      // 𠮟 is dictionary-only (no Hán Việt, no curated Vietnamese); a curated card carries every answer field.
+      // 𠮟 is dictionary-only (no Hán Việt, no Vietnamese meaning); a curated card carries every answer field.
       if (card === 2) await expectOneViewport(page, "post-reveal-curated", viewport);
       await page.keyboard.press(card % 4 === 0 ? "1" : "3");
     }

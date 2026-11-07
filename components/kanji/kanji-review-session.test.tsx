@@ -18,8 +18,8 @@ vi.mock("@/lib/i18n/navigation", () => ({
 }));
 vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("level=N5") }));
 
-const NICHI: KanjiReviewCard = { literal: "日", hanViet: ["Nhật"], meaningsEn: ["day", "sun", "Japan"], meaningVi: "ngày", on: ["ニチ", "ジツ"], kun: ["ひ", "-び"], level: "N5", isNew: false };
-const GAKU: KanjiReviewCard = { literal: "学", hanViet: ["Học"], meaningsEn: ["study"], meaningVi: null, on: ["ガク"], kun: ["まな.ぶ"], level: "N5", isNew: true };
+const NICHI: KanjiReviewCard = { literal: "日", hanViet: ["Nhật"], meaningsEn: ["day", "sun", "Japan"], meaningVi: "ngày", viFromHvdic: false, on: ["ニチ", "ジツ"], kun: ["ひ", "-び"], level: "N5", isNew: false };
+const GAKU: KanjiReviewCard = { literal: "学", hanViet: ["Học"], meaningsEn: ["study"], meaningVi: null, viFromHvdic: false, on: ["ガク"], kun: ["まな.ぶ"], level: "N5", isNew: true };
 const CARDS = [NICHI, GAKU];
 
 const show = (cards = CARDS, streak: number | null = 7) =>
@@ -77,6 +77,17 @@ describe("KanjiReviewSession", () => {
     expect(screen.getByRole("link", { name: "See details" })).toHaveAttribute("href", "/kanji/review?level=N5&kanji=%E6%97%A5");
     for (const name of [/^Again/, /^Hard/, /^Good/, /^Easy/]) expect(grade(name)).toBeEnabled();
     expect(screen.getByRole("article")).toHaveFocus(); // the card, not See details (owner 2026-11-07: no ring, no clipped box)
+    expect(screen.queryByText("Từ điển Hán Nôm (hvdic.thivien.net)")).toBeNull(); // curated: no hvdic credit
+  });
+
+  it("an imported (hvdic) Vietnamese meaning shows on the Vietnamese line, clamped, with its credit (K16)", () => {
+    show([{ ...GAKU, meaningVi: "vi-1; vi-2", viFromHvdic: true }]);
+    fireEvent.keyDown(window, { key: " " });
+    const line = screen.getByText("vi-1; vi-2");
+    expect(line.closest("p")).toHaveTextContent("Tiếng Việt");
+    expect(line).toHaveClass("line-clamp-2");
+    expect(line).toHaveAttribute("title", "vi-1; vi-2");
+    expect(screen.getByText("Từ điển Hán Nôm (hvdic.thivien.net)")).toBeInTheDocument();
   });
 
   it("`3` after the reveal posts quality 4 for the literal and moves to the next card", async () => {

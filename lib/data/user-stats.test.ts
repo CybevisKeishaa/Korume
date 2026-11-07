@@ -152,7 +152,7 @@ describe("getUserStats", () => {
     });
     vi.mocked(getReviewQueue).mockResolvedValue([item("v1"), item("v2")]);
     // A dictionary-only kanji (not in the curated table) due for review counts like any other.
-    const shikaru: KanjiReviewCard = { literal: "𠮟", hanViet: [], meaningsEn: ["scold"], meaningVi: null, on: [], kun: [], level: null, isNew: false };
+    const shikaru: KanjiReviewCard = { literal: "𠮟", hanViet: [], meaningsEn: ["scold"], meaningVi: null, viFromHvdic: false, on: [], kun: [], level: null, isNew: false };
     vi.mocked(getKanjiReviewQueue).mockResolvedValue([shikaru]);
 
     const result = await getUserStats();

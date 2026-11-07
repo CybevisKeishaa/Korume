@@ -130,6 +130,17 @@ describe("importDictionaries", () => {
     expect(kanji?.[0]?.vi_readings).toEqual(["Lục"]);
   });
 
+  it("stages vi_meanings from the resolver, given the literal and its Han-Viet readings", async () => {
+    const { client, calls } = fakeClient(null);
+    const viMeanings = { resolve: (literal: string, viReadings: string[]) => [`vi-${literal}`, ...viReadings] };
+    await importDictionaries(client, { ...sources(), viMeanings });
+    const kanji = calls.find((call) => call.table === "dict_kanji")?.rows as { vi_meanings: string[] }[];
+    expect(kanji[0]?.vi_meanings).toEqual(["vi-緑", "Lục"]);
+    const { client: bare, calls: bareCalls } = fakeClient(null);
+    await importDictionaries(bare, sources());
+    expect((bareCalls.find((call) => call.table === "dict_kanji")?.rows as { vi_meanings: string[] }[])[0]?.vi_meanings).toEqual([]);
+  });
+
   it("leaves the staging snapshot and never activates when a source fails", async () => {
     const { client, calls } = fakeClient(null);
     const failure = await importDictionaries(client, sources(1)).catch((error: unknown) => error);

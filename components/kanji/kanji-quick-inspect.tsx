@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import { Link, usePathname, useTranslations } from "@/lib/i18n";
 import { kanjiModalHref } from "@/lib/kanji/href";
 import type { KanjiCommonWord, KanjiData } from "@/lib/dictionary/types";
+import { HVDIC_SOURCE } from "@/lib/dictionary/vi-meaning";
 import { StrokeOrder } from "@/components/motion/stroke-order";
 import { TtsButton } from "@/components/speech/tts-button";
 import { DictionaryAttribution } from "./dictionary-attribution";
@@ -93,6 +94,7 @@ export function KanjiQuickInspect({ literal, onOpenWord }: { literal: string; on
           {kanji.hanViet.length > 0 && <p className="text-body font-semibold text-foreground">{kanji.hanViet.join(", ")}</p>}
           <p className="text-body text-foreground">{kanji.meaningsEn.join(", ")}</p>
           {kanji.meaningVi && <p className="text-body text-foreground">{kanji.meaningVi}</p>}
+          {kanji.viFromHvdic && <p className="text-caption text-muted-foreground">{HVDIC_SOURCE.credit}</p>}
           <Readings label={t("onReading")} readings={kanji.onReadings} listen={listen} unavailable={unavailable} />
           <Readings label={t("kunReading")} readings={kanji.kunReadings} listen={listen} unavailable={unavailable} />
           <p className="text-caption text-muted-foreground">

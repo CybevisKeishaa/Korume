@@ -3,13 +3,16 @@ import { createClient } from "@/lib/supabase/server";
 import { getKanjiList } from "@/lib/data/content";
 import { getActiveSnapshotId } from "@/lib/dictionary/snapshot";
 import { parseKanjiLiteral } from "@/lib/dictionary/literal";
+import { viMeaning } from "@/lib/dictionary/vi-meaning";
 import type { JlptLevel } from "@/lib/validation/content";
 
 export interface KanjiReviewCard {
   literal: string;
   hanViet: string[];
   meaningsEn: string[];
+  /** Curated `meaning_vi`, else the imported `vi_meanings` (K16); `viFromHvdic` → its credit shows. */
   meaningVi: string | null;
+  viFromHvdic: boolean;
   on: string[];
   kun: string[];
   level: string | null;
@@ -23,6 +26,7 @@ const DICT_CHUNK_SIZE = 100;
 interface DictKanjiRow {
   literal: string;
   vi_readings: string[];
+  vi_meanings: string[];
   meanings_en: string[];
   on_readings: string[];
   kun_readings: string[];
@@ -74,7 +78,7 @@ export async function getKanjiReviewQueue({
     chunks.map((chunk) =>
       supabase
         .from("dict_kanji")
-        .select("literal, vi_readings, meanings_en, on_readings, kun_readings")
+        .select("literal, vi_readings, vi_meanings, meanings_en, on_readings, kun_readings")
         .eq("snapshot_id", snapshotId)
         .in("literal", chunk),
     ),
@@ -93,7 +97,7 @@ export async function getKanjiReviewQueue({
       literal,
       hanViet: row.vi_readings,
       meaningsEn: row.meanings_en,
-      meaningVi: curatedRow?.meaning_vi ?? null,
+      ...viMeaning(curatedRow?.meaning_vi, row.vi_meanings),
       on: row.on_readings,
       kun: row.kun_readings,
       level: curatedRow?.jlpt_level ?? null,

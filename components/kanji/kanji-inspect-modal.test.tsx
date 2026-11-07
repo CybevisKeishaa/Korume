@@ -13,7 +13,7 @@ function full(literal: string, hanViet: string[], neighbors: KanjiNeighbors | nu
     data: {
       data: {
         literal, onReadings: [], kunReadings: [], meaningsEn: ["sun"], meaningVi: null, mnemonic: null, strokeCount: 4, grade: null,
-        frequency: null, jlpt: null, hanViet, tcLines: [], oldJlpt: null, strokePaths: [],
+        frequency: null, jlpt: null, hanViet, viFromHvdic: false, oldJlpt: null, strokePaths: [],
         components: { element: literal, position: null, children: [] }, componentGlosses: {}, commonWords: [], curatedKanjiId: null, attribution: [],
       },
       learner: { favorite: false, progress: null }, examples: [], lessons: [], neighbors,

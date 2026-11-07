@@ -22,6 +22,8 @@ export interface ImportSources {
   kanjidic: Source<KanjidicRow>;
   kanjivg: Source<KanjivgRow>;
   thieuChuu?: { resolve(literal: string): TcResolution };
+  /** The K16 Vietnamese meaning (override file, then hvdic); absent → `{}`. */
+  viMeanings?: { resolve(literal: string, viReadings: string[]): string[] };
 }
 
 export interface TcReport {
@@ -164,6 +166,7 @@ export async function importDictionaries(
         on_readings: row.on,
         kun_readings: row.kun,
         vi_readings: row.vi,
+        vi_meanings: sources.viMeanings?.resolve(row.literal, row.vi) ?? [],
         meanings_en: row.meaningsEn,
         stroke_count: row.strokeCount,
         grade: row.grade,

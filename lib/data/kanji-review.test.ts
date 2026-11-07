@@ -26,7 +26,7 @@ const PROGRESS: { literal: string; next_review_at: string | null }[] = [
   { literal: "山", next_review_at: ago(-24 * H) }, // scheduled tomorrow: held back
 ];
 const dict = (literal: string) => ({
-  literal, vi_readings: [`HV-${literal}`], meanings_en: [`en-${literal}`, "x"], on_readings: [`on-${literal}`], kun_readings: [`kun-${literal}`],
+  literal, vi_readings: [`HV-${literal}`], vi_meanings: literal === "𠮟" ? [] : [`vi-${literal}`], meanings_en: [`en-${literal}`, "x"], on_readings: [`on-${literal}`], kun_readings: [`kun-${literal}`],
 });
 const DICT = ["一", "二", "山", "会", "𠮟", "日"].map(dict);
 
@@ -86,11 +86,16 @@ describe("getKanjiReviewQueue", () => {
     mock();
     const cards = await getKanjiReviewQueue({ now: NOW, focus: "𠮟", level: "N5" });
     expect(cards[0]).toEqual({
-      literal: "𠮟", hanViet: ["HV-𠮟"], meaningsEn: ["en-𠮟", "x"], meaningVi: null, on: ["on-𠮟"], kun: ["kun-𠮟"], level: null, isNew: false,
+      literal: "𠮟", hanViet: ["HV-𠮟"], meaningsEn: ["en-𠮟", "x"], meaningVi: null, viFromHvdic: false, on: ["on-𠮟"], kun: ["kun-𠮟"], level: null, isNew: false,
     });
     expect(cards[2]).toEqual({
-      literal: "一", hanViet: ["HV-一"], meaningsEn: ["en-一", "x"], meaningVi: "một", on: ["on-一"], kun: ["kun-一"], level: "N5", isNew: true,
+      literal: "一", hanViet: ["HV-一"], meaningsEn: ["en-一", "x"], meaningVi: "một", viFromHvdic: false, on: ["on-一"], kun: ["kun-一"], level: "N5", isNew: true,
     });
+    // No curated meaning_vi (山) or no curated row (日): the imported vi_meanings, credited (K16).
+    const [yama] = await getKanjiReviewQueue({ now: NOW, focus: "山" });
+    expect(yama).toMatchObject({ meaningVi: "vi-山", viFromHvdic: true });
+    const [nichi] = await getKanjiReviewQueue({ now: NOW, focus: "日" });
+    expect(nichi).toMatchObject({ meaningVi: "vi-日", viFromHvdic: true });
   });
 
   it("a literal the snapshot lacks has no card", async () => {

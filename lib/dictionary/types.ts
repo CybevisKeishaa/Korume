@@ -22,8 +22,10 @@ export interface KanjiData {
   onReadings: string[];
   kunReadings: string[];
   meaningsEn: string[];
-  /** From the hand-written `kanji` table when the character exists there. */
+  /** Curated `kanji.meaning_vi`, else `dict_kanji.vi_meanings` (owner ruling K16, `viMeaning`). */
   meaningVi: string | null;
+  /** `meaningVi` came from the import, so the hvdic credit shows with it. */
+  viFromHvdic: boolean;
   mnemonic: string | null;
   strokeCount: number;
   grade: number | null;
@@ -32,8 +34,6 @@ export interface KanjiData {
   jlpt: string | null;
   /** KANJIDIC2 `vietnam` readings (Han-Viet), as in the source. */
   hanViet: string[];
-  /** Thieu Chuu mnemonic lines from `dict_kanji.tc_lines`; empty until the Thieu Chuu import fills them. */
-  tcLines: string[];
   /** KANJIDIC2 pre-2010 JLPT level (4 easiest to 1 hardest); null when absent. */
   oldJlpt: number | null;
   strokePaths: string[];

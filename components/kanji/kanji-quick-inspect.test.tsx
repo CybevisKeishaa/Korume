@@ -15,7 +15,7 @@ vi.mock("next/navigation", () => ({ useSearchParams: () => new URLSearchParams("
 
 const BASE: KanjiData = {
   literal: "緑", onReadings: ["リョク", "ロク"], kunReadings: ["みどり"], meaningsEn: ["green"], meaningVi: null, mnemonic: null,
-  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", hanViet: ["Lục"], tcLines: [], oldJlpt: null, strokePaths: ["M10 10L90 90", "M90 10L10 90"],
+  strokeCount: 14, grade: 3, frequency: 1300, jlpt: "N2", hanViet: ["Lục"], viFromHvdic: false, oldJlpt: null, strokePaths: ["M10 10L90 90", "M90 10L10 90"],
   components: { element: "緑", children: [] } as unknown as KanjiData["components"], componentGlosses: {},
   commonWords: Array.from({ length: 7 }, (_, i) => ({ entSeq: 100 + i, headword: `緑${i}`, reading: "みどり", glossEn: `green ${i}` })),
   curatedKanjiId: null, attribution: [{ source: "kanjivg", version: "main", url: "https://kanjivg.tagaini.net", license: "CC BY-SA 3.0" }],
@@ -64,6 +64,14 @@ describe("KanjiQuickInspect", () => {
     render(<ThemeProvider><KanjiQuickInspect literal="緑" onOpenWord={vi.fn()} /></ThemeProvider>);
     expect(await screen.findByText("màu xanh lá")).toBeInTheDocument();
     expect(screen.getByText("Silk dyed green.")).toBeInTheDocument();
+    expect(screen.queryByText("Từ điển Hán Nôm (hvdic.thivien.net)")).toBeNull();
+  });
+
+  it("an imported (hvdic) Vietnamese meaning comes with its credit (K16)", async () => {
+    serve({ ...BASE, meaningVi: "vi-1; vi-2", viFromHvdic: true });
+    render(<ThemeProvider><KanjiQuickInspect literal="緑" onOpenWord={vi.fn()} /></ThemeProvider>);
+    expect(await screen.findByText("vi-1; vi-2")).toBeInTheDocument();
+    expect(screen.getByText("Từ điển Hán Nôm (hvdic.thivien.net)")).toBeInTheDocument();
   });
 
   it("draws the stroke geometry and Replay redraws it", async () => {

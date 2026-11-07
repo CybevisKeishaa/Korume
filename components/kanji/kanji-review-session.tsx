@@ -7,6 +7,7 @@ import { Link, usePathname, useRouter, useTranslations } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import { kanjiModalHref } from "@/lib/kanji/href";
 import type { KanjiReviewCard } from "@/lib/data/kanji-review";
+import { HVDIC_SOURCE } from "@/lib/dictionary/vi-meaning";
 import { REVIEW_SUBMITTED_EVENT } from "@/lib/nav/nav-state";
 import { GRADES } from "@/components/learning/review-session";
 import { useStudyPresence } from "@/components/study-time/use-study-presence";
@@ -191,11 +192,14 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                         )}
                       </dl>
                       {card.meaningVi && (
+                        // Two lines at most so the answer still fits the card (an hvdic list can run long); the full
+                        // text is the title and the inspect's (See details).
                         <p className="flex items-baseline gap-xs">
-                          <span className="text-caption text-muted-foreground">{t("review.vietnamese")}</span>
-                          <span className="text-body-lg">{card.meaningVi}</span>
+                          <span className="shrink-0 text-caption text-muted-foreground">{t("review.vietnamese")}</span>
+                          <span title={card.meaningVi} className="line-clamp-2 text-body-lg">{card.meaningVi}</span>
                         </p>
                       )}
+                      {card.viFromHvdic && <p className="text-caption text-muted-foreground">{HVDIC_SOURCE.credit}</p>}
                       <Link href={kanjiModalHref(pathname, search, card.literal)} scroll={false} className={cn("self-start rounded-sm text-body text-primary-strong underline underline-offset-2 focus-visible:ring-inset", ring)}>
                         {t("review.details")}
                       </Link>
