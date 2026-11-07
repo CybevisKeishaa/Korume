@@ -20,6 +20,11 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
 - Task 7: inspect content from the 28:2041 frame (`c37e2288`), review clean — owner decisions pending (below).
 - Task 8: post-reveal mock approved by the owner 2026-11-06 (no interval sublabels; SM-2 kept).
 - Owner decisions K1–K9 recorded in spec §9 + decision-register §3c (`42c5e912`).
+- Task 7b: owner decisions K10–K15 on the inspect (`ea90aa0f`, fix `05180e33`), review clean.
+- Task 9: kanji review in `(focus)` (`384348d6`, fix `ffb6a178`), review clean.
+- Task 9b: kanji motion (`5f7f846d`, fix `e2bf75e9`), review clean.
+- Task 10: Thiều Chửu cleared + credit links its source (`28b29309`); whole-branch review (Opus) fixes `229fbb33`;
+  gate fixes `6fdf199c` (ICU plurals, token-scale) and `2de6b9b5` (E2E on the new review UI).
 
 ## Contracts and decisions
 
@@ -36,8 +41,7 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
   Thiều Chửu + mnemonic | Words / Examples / In lessons tabs (examples page 3 at a time in place) / four CTAs +
   one-line dictionary credit. Thiều Chửu moved beside the meaning card, not under it (no height under it at 529).
   Long content scrolls only inside its own block (Thiều Chửu lines, mnemonic, a tab list, composition chips).
-- Dictionary credit on the inspect is `DictionaryAttribution compact`: source + version links, licence in the link
-  `title` (the full inline licence text took 3 lines). Owner to confirm this is enough credit; quick inspect unchanged.
+- Dictionary credit on the inspect is `DictionaryAttribution compact`: one line, licence short names visible (K10).
 - "See all lessons" link NOT rendered: `/shadowing?q=` is applied by `getShadowingHub` as `ilike("title", ...)` on video titles only (lib/data/shadowing-hub.ts:138), not transcript text.
 
 ## Task 7 measure (Playwright in a real Chromium, prod build of this worktree, learner fixture, vi locale)
@@ -65,8 +69,15 @@ Deltas kept: no mnemonic image and no lesson thumbnails (no data); composition c
 
 ## Verification
 
-- `npx vitest run lib/dictionary lib/data lib/validation --minWorkers=1 --maxWorkers=2`
-- `npm run verify:db:dictionary`, `npm run verify:db:kanji`, `npm run verify:db:dashboard`, `npm run verify:db:erasure`
+Tip `2de6b9b5` (2026-11-07): typecheck 0, lint exit 0, verify:protocol valid, verify:db kanji / dictionary / dashboard /
+erasure / profile PASS; full vitest 6855/6858 → the 3 branch-made reds fixed (`6fdf199c`, 703 targeted green); full
+Playwright 253 passed, branch-made reds fixed and re-run green (app-nav 12/12, dashboard, kanji-inspect, summary 5).
+Not this branch (it touches none of these areas): landing-page :287/:608/:700/:751, summary :29 and
+shadowing-intelligence 5 (AI-on `.env.local`), route-group-provider-identity (no "E2E Seed Video" on /shadowing in the
+local DB), korume 1 (flaky, green on re-run).
+
+Open after merge (owner / backlog): xp_events.source_id not re-keyed by 055; quick inspect fetches the full inspect
+payload; ~34 old-JLPT kanji without Thiều Chửu lines + the `redirect-unresolved` list; deferred minors in the SDD ledger.
 
 ## Working tree and environment
 
@@ -87,8 +98,5 @@ None. Owner answered the Task 7 decisions 2026-11-06 ("Đồng ý" to every reco
 
 ## Next actions
 
-Session stopped by the owner after Task 7 (2026-11-06). Resume: read the SDD ledger
-`.superpowers/sdd/2026-11-06-port-kanji/progress.md` (git-ignored; resume map with every ruling and deferred minor),
-Task 7b fix round for K10–K15, then Task 9 (review in focus
-chrome, plan T9 + owner additions), Task 9b (kanji motion), Task 10 (gates, Thiều Chửu CLI gate removal, whole-branch
-review, owner look). Owner still to run: removal of the 5 merged worktrees (command given in the session).
+Owner Chrome look of the inspect (modal + `/kanji/[literal]` page), review (`/kanji/review`, `?level=N5`) and the
+motion; merge only on the owner's word. Owner still to run: removal of the 5 merged worktrees.
