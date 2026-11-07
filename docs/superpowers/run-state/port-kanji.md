@@ -114,8 +114,8 @@ None. Owner answered the Task 7 decisions 2026-11-06 ("Đồng ý" to every reco
 
 Resume (session stopped by the owner 2026-11-07, tip `8f4aff20`):
 1. **Owner review of the Vietnamese meaning overrides** — draft of 1266 rows (misleading 987, too-long 221, empty 32,
-   wrong-reading 26) at `%TEMP%/claude/f5351b3c0e063440/cbb8b313-fdbb-4959-9033-e1dd60f8ab46/scratchpad/`
-   `vi-meaning-proposals.csv` + `vi-meaning-overrides.draft.json` (rebuild: `scripts/build.py` from `scripts/p00..p11.tsv`).
+   wrong-reading 26) at `.superpowers/sdd/2026-11-06-port-kanji/vi-meanings/` (git-ignored copy)
+   `vi-meaning-proposals.csv` + `vi-meaning-overrides.draft.json` (rebuild: `build.py` from `p00..p11.tsv`, same folder; paths inside build.py point at the old scratchpad).
    Owner picks: review all / only jlpt_old 4+3 (148) / partial. Open owner calls: 梅 (mơ, not mai), plant/animal names
    (萩 槙 椋 柾 柊 蕗 樺 柚 鯛 鮎 紬), 奈, 伊, bracket notes "(kính ngữ)". Then copy the approved entries into
    `lib/dictionary/import/vi-meaning-overrides.json`, re-import with `--force`, check 乗 区 参 駅 図 当.
