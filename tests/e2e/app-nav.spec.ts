@@ -113,8 +113,9 @@ test("E3 the review badge drops right after a saved review, same route", async (
   const url = page.url();
   const navigations: string[] = [];
   page.on("framenavigated", (frame) => { if (frame === page.mainFrame()) navigations.push(frame.url()); });
-  await page.getByRole("button", { name: /show answer/i }).click();
-  await page.getByRole("button", { name: /good/i }).click();
+  // Kanji review is the (focus) flashcard since port-kanji Task 9: reveal, then rate.
+  await page.getByRole("button", { name: /reveal meaning/i }).click();
+  await page.getByRole("button", { name: /^good/i }).click();
   await expect(review).toHaveAccessibleName("Review");
   expect(page.url()).toBe(url);
   expect(navigations).toEqual([]);
@@ -154,7 +155,7 @@ async function overlaysOnTop(page: Page) {
   await nav(page).getByRole("link", { name: "Kanji", exact: true }).focus();
   expect(await topmostInside(page, '[role="tooltip"]')).toMatchObject({ inside: true, topmost: true });
   await page.getByRole("button", { name: /^Notifications/ }).click();
-  expect(await topmostInside(page, '[role="dialog"]')).toMatchObject({ inside: true });
+  expect(await topmostInside(page, '[role="dialog"]:not(dialog)')).toMatchObject({ inside: true });
   await page.keyboard.press("Escape");
 }
 

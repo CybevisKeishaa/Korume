@@ -116,7 +116,7 @@ for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900
       await expect(area(page, "quick")).toContainText(dashboard.quick.due.replace("{count}", "2"));
       await geometry(page);
       await page.goto("/en/kanji/review");
-      await page.getByRole("button", { name: common.srs.showAnswer }).click();
+      await page.getByRole("button", { name: /Reveal meaning/ }).click(); // kanji review in (focus), port-kanji Task 9
       const saved = page.waitForResponse((response) => new URL(response.url()).pathname === "/api/srs/review" && response.request().method() === "POST");
       await page.getByRole("button", { name: common.srs.good, exact: false }).click();
       expect((await saved).status()).toBe(200);

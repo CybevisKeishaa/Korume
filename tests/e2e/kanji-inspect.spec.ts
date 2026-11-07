@@ -425,7 +425,7 @@ test("12 · an empty deck (N1 has no curated kanji) is the end state at once, on
     await expect(end.getByRole("link", { name: "N3" })).toHaveAttribute("href", "/en/kanji?level=N3");
     await expectOneViewport(page, "empty-deck", viewport);
     await page.keyboard.press("Escape");
-    await expect.poll(() => path(page)).toBe("/en/kanji");
+    await expect.poll(() => path(page)).toBe("/en/kanji?level=N1"); // Esc goes back to the deck's own list
     await context.close();
   }
   const { context, page } = await open(browser);
