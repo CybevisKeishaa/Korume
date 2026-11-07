@@ -97,16 +97,17 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
     [card],
   );
 
-  // Space reveals (a focused button or link keeps its own Space), 1–4 rate once revealed, Esc leaves.
+  // Space flips the card both ways (owner 2026-11-07; a focused button or link keeps its own Space), 1–4 rate once
+  // revealed, Esc leaves.
   useEffect(() => {
     function onKey(event: KeyboardEvent) {
       if (event.ctrlKey || event.metaKey || event.altKey || event.repeat || event.isComposing || event.defaultPrevented || notOurs(event.target)) return;
       if (event.key === "Escape") return router.push(backHref);
       if (done) return;
-      if (event.key === " " && !revealed) {
+      if (event.key === " " && !submitting) {
         if (event.target instanceof Element && event.target.closest("button, a[href]")) return;
         event.preventDefault();
-        return setRevealed(true);
+        return setRevealed((shown) => !shown);
       }
       const match = revealed ? GRADES.find((g) => g.key === event.key) : undefined;
       if (match) {
@@ -116,7 +117,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [revealed, done, grade, router, backHref]);
+  }, [revealed, done, submitting, grade, router, backHref]);
 
   return (
     <div className="flex min-h-dvh flex-col md:h-dvh">
@@ -201,7 +202,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                 {!revealed && (
                   <div className="flex shrink-0 flex-col items-center gap-xs pt-xs">
                     <p className="text-body text-muted-foreground">{t("review.prompt")}</p>
-                    <button type="button" autoFocus onClick={() => setRevealed(true)} aria-keyshortcuts="Space" className={cn("inline-flex h-control-sm items-center gap-xs rounded-full border border-border bg-muted px-md text-body font-medium hover:bg-secondary active:translate-y-px", ring)}>
+                    <button type="button" onClick={() => setRevealed(true)} aria-keyshortcuts="Space" className={cn("inline-flex h-control-sm items-center gap-xs rounded-full border border-border bg-muted px-md text-body font-medium hover:bg-secondary active:translate-y-px", ring)}>
                       <Eye aria-hidden="true" className="size-icon-sm" />
                       {t("review.reveal")}
                       <kbd className="font-mono text-caption text-muted-foreground">{t("review.space")}</kbd>

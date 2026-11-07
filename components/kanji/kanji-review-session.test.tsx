@@ -101,6 +101,20 @@ describe("KanjiReviewSession", () => {
     expect(screen.getByRole("article")).toHaveFocus();
   });
 
+  it("Space flips the card back and forth; the rating row follows it (owner 2026-11-07)", () => {
+    show();
+    fireEvent.keyDown(window, { key: " " });
+    expect(screen.getByText("Nhật")).toBeInTheDocument();
+    expect(grade(/^Good/)).toBeEnabled();
+    fireEvent.keyDown(window, { key: " " });
+    expect(screen.queryByText("Nhật")).not.toBeInTheDocument();
+    expect(grade(/^Good/)).toBeDisabled();
+    fireEvent.keyDown(window, { key: "3" });
+    expect(calls).toHaveLength(0);
+    fireEvent.keyDown(window, { key: " " });
+    expect(screen.getByText("Nhật")).toBeInTheDocument();
+  });
+
   it("two rating keys in one tick POST the card once and advance one card", async () => {
     show();
     fireEvent.keyDown(window, { key: " " });
