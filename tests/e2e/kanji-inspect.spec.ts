@@ -383,11 +383,13 @@ test("11 · /kanji/review?focus=𠮟 in (focus): 𠮟 first; Space reveals, 3 ra
     await page.keyboard.press("Space");
     const answer = page.getByRole("region", { name: "Answer" });
     await expect(answer).toBeVisible();
-    await expect(answer.getByRole("link", { name: "See details" })).toBeFocused();
+    // Owner 2026-11-07: the card takes focus (no ring on See details), so Space keeps working card after card.
+    await expect(page.getByRole("article")).toBeFocused();
     await expect(answer.getByRole("link", { name: "See details" })).toHaveAttribute("href", /kanji=%F0%A0%AE%9F/);
     await expectOneViewport(page, "post-reveal", viewport);
 
-    await page.keyboard.press("3");
+    // A rating clicked with the mouse must not keep focus: the loop below reveals card 2 with Space.
+    await page.getByRole("button", { name: /^Good/ }).click();
     await expect(counter(page)).toHaveText(/^2 \/ \d+$/);
     await expect(reviewGlyph(page)).not.toHaveText("𠮟");
     const total = Number(((await counter(page).textContent()) ?? "").split("/")[1]);
@@ -524,7 +526,7 @@ test("13 · motion (K4): open, ›, ♡, close, reveal, rate → next card all m
 
   await startSampling(page);
   await page.keyboard.press("Space");
-  await expect(page.getByRole("region", { name: "Answer" }).getByRole("link", { name: "See details" })).toBeFocused();
+  await expect(page.getByRole("article")).toBeFocused();
   motion = await sampled(page);
   console.log(`motion reveal: ${JSON.stringify(motion)}`);
   expect(motion.ran).toContain("kanji-answer-in");

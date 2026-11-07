@@ -76,7 +76,7 @@ describe("KanjiReviewSession", () => {
     expect(screen.getByText("ngày")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "See details" })).toHaveAttribute("href", "/kanji/review?level=N5&kanji=%E6%97%A5");
     for (const name of [/^Again/, /^Hard/, /^Good/, /^Easy/]) expect(grade(name)).toBeEnabled();
-    expect(screen.getByRole("link", { name: "See details" })).toHaveFocus(); // never a rating button: a 2nd Space must not rate
+    expect(screen.getByRole("article")).toHaveFocus(); // the card, not See details (owner 2026-11-07: no ring, no clipped box)
   });
 
   it("`3` after the reveal posts quality 4 for the literal and moves to the next card", async () => {
@@ -88,6 +88,17 @@ describe("KanjiReviewSession", () => {
     expect(screen.getByText("学")).toBeInTheDocument();
     expect(screen.getByText("New")).toBeInTheDocument();
     expect(grade(/^Good/)).toBeDisabled();
+  });
+
+  it("every card reveals with Space, also after a rating clicked with the mouse (owner 2026-11-07)", async () => {
+    show();
+    await userEvent.click(screen.getByRole("button", { name: /Reveal meaning/ }));
+    await userEvent.click(grade(/^Good/));
+    await waitFor(() => expect(screen.getByText("2 / 2")).toBeInTheDocument());
+    expect(screen.getByRole("article")).toHaveFocus(); // not the clicked (now disabled) rating button
+    await userEvent.keyboard(" ");
+    expect(screen.getByText("Học")).toBeInTheDocument();
+    expect(screen.getByRole("article")).toHaveFocus();
   });
 
   it("two rating keys in one tick POST the card once and advance one card", async () => {

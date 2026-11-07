@@ -47,7 +47,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
   const [submitting, setSubmitting] = useState(false);
   const [failed, setFailed] = useState<number | null>(null);
   const [reviewed, setReviewed] = useState<Reviewed[]>([]);
-  const details = useRef<HTMLAnchorElement>(null);
+  const face = useRef<HTMLElement>(null);
   const retry = useRef<HTMLButtonElement>(null);
   // Set synchronously: a key press and a click in one tick must not POST the same card twice.
   const inFlight = useRef(false);
@@ -57,10 +57,12 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
   const total = deck.length;
   const percent = total === 0 ? 0 : Math.round((reviewed.length / total) * 100);
 
-  // The reveal button just unmounted: focus lands on the answer's link, not a rating button (a second Space must not rate).
+  // Owner 2026-11-07: focus lands on the card itself (no ring, not a control) after a reveal and after every rating,
+  // so the reveal button / a clicked rating button never keeps it — Space reveals the next card, 1–4 rate, every time.
+  // The end of deck focuses its own heading instead.
   useEffect(() => {
-    if (revealed) details.current?.focus();
-  }, [revealed]);
+    if (!done) face.current?.focus({ preventScroll: true });
+  }, [revealed, done]); // a rating always un-reveals, so this also runs after every rating
 
   // A failed save disables the button that was pressed: focus goes to Retry, not to body.
   useEffect(() => {
@@ -150,7 +152,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
         </div>
 
         {/* Motion (globals.css "Kanji motion"): the face leaves while a rating saves, the next one steps in, the answer slides in. */}
-        <article data-leaving={submitting || undefined} className={cn(narrow, "flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card px-xl py-md md:max-h-[calc(560*var(--density-unit))]")}>
+        <article ref={face} tabIndex={-1} data-leaving={submitting || undefined} className={cn(narrow, "outline-none flex min-h-0 flex-1 flex-col rounded-lg border border-border bg-card px-xl py-md md:max-h-[calc(560*var(--density-unit))]")}>
           {done ? (
             <KanjiReviewEnd reviewed={reviewed} backHref={backHref} modalHref={(literal) => kanjiModalHref(pathname, search, literal)} />
           ) : (
@@ -190,7 +192,7 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                           <span className="text-body-lg">{card.meaningVi}</span>
                         </p>
                       )}
-                      <Link ref={details} href={kanjiModalHref(pathname, search, card.literal)} scroll={false} className={cn("self-start rounded-sm text-body text-primary-strong underline underline-offset-2", ring)}>
+                      <Link href={kanjiModalHref(pathname, search, card.literal)} scroll={false} className={cn("self-start rounded-sm text-body text-primary-strong underline underline-offset-2 focus-visible:ring-inset", ring)}>
                         {t("review.details")}
                       </Link>
                     </section>
