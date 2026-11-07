@@ -14,7 +14,7 @@ export async function GET(request: Request) {
     if (!query.success) return NextResponse.json({ error: "Invalid request" }, { status: 400 });
     const user = await requireUser(createClient());
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    const limited = rateLimit(`kanji-search:${user.id}`, { limit: 60, windowMs: 60_000 });
+    const limited = rateLimit(`kanji-search:${user.id}`, { limit: 120, windowMs: 60_000 });
     if (!limited.ok) {
       return NextResponse.json(
         { error: "Too many requests, slow down" },

@@ -28,7 +28,7 @@ describe("GET /api/kanji/search", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toEqual(body);
     expect(searchKanjiInSnapshot).toHaveBeenCalledWith("日本語");
-    expect(rateLimit).toHaveBeenCalledWith("kanji-search:u1", { limit: 60, windowMs: 60_000 });
+    expect(rateLimit).toHaveBeenCalledWith("kanji-search:u1", { limit: 120, windowMs: 60_000 }); // search-as-you-type
   });
 
   it.each([null, "", "   ", "x".repeat(41)])("q=%j is 400 and searches nothing", async (q) => {

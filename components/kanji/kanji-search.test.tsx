@@ -87,7 +87,7 @@ describe("KanjiSearch", () => {
     expect(push).toHaveBeenCalledWith(`/kanji/${encodeURIComponent("語")}`);
   });
 
-  it("Enter with nothing highlighted opens a single typed kanji (non-BMP too), and nothing for a longer query", async () => {
+  it("Enter with nothing highlighted opens a single typed kanji (non-BMP too), else the first result once listed", async () => {
     render(<KanjiSearch />);
     type("𠮟");
     key("Enter");
@@ -95,7 +95,10 @@ describe("KanjiSearch", () => {
     push.mockReset();
     type("日本語");
     key("Enter");
-    expect(push).not.toHaveBeenCalled();
+    expect(push).not.toHaveBeenCalled(); // nothing listed yet
+    await screen.findByRole("listbox");
+    key("Enter");
+    expect(push).toHaveBeenCalledWith(`/kanji/${encodeURIComponent("日")}`);
   });
 
   it("debounces typing into one request and aborts a request the next query made stale", async () => {
@@ -177,5 +180,22 @@ describe("KanjiSearch", () => {
     fireEvent.keyDown(other, { key: "/" });
     expect(other).toHaveFocus();
     expect(box()).toHaveAttribute("aria-keyshortcuts", "/");
+    // Inside the inspect modal (a dialog over the page) `/` is not the page search's.
+    const dialog = document.createElement("div");
+    dialog.setAttribute("role", "dialog");
+    const inside = document.createElement("button");
+    dialog.append(inside);
+    document.body.append(dialog);
+    other.focus();
+    fireEvent.keyDown(inside, { key: "/" });
+    expect(box()).not.toHaveFocus();
+    dialog.remove();
+  });
+
+  it("Esc on an empty, closed box is left to the page (not swallowed)", () => {
+    render(<KanjiSearch />);
+    const event = new KeyboardEvent("keydown", { key: "Escape", bubbles: true, cancelable: true });
+    box().dispatchEvent(event);
+    expect(event.defaultPrevented).toBe(false);
   });
 });

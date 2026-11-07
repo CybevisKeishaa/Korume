@@ -65,7 +65,9 @@ export function KanjiSearch() {
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey || typingIn(event.target)) return;
+      // Not inside the inspect modal (or any dialog) open over the page: its own keys win.
+      const inDialog = event.target instanceof Element && event.target.closest('[role="dialog"], dialog') !== null;
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey || inDialog || typingIn(event.target)) return;
       event.preventDefault();
       inputRef.current?.focus();
     };
@@ -75,7 +77,7 @@ export function KanjiSearch() {
 
   const shown = state.status === "done" ? state.response : state.status === "loading" ? state.previous : null;
   const results = shown?.results ?? [];
-  const tiles = shown?.mode === "chars" && [...shown.query].length > 1;
+  const tiles = shown?.mode === "chars" && results.length > 1;
   const expanded = open && trimmed !== "";
   const optionId = (index: number) => `${id}-option-${index}`;
 
@@ -92,14 +94,17 @@ export function KanjiSearch() {
       if (count === 0) return;
       setActive((current) => (event.key === "ArrowDown" ? (current + 1) % count : current <= 0 ? count - 1 : current - 1));
     } else if (event.key === "Enter") {
-      const highlighted = expanded ? results[active] : undefined;
+      // Nothing highlighted: Enter takes the first result (a typed single kanji still goes straight to its page).
+      const highlighted = expanded ? results[active] ?? results[0] : undefined;
       const typed = parseKanjiLiteral(trimmed);
       if (highlighted || typed) {
         event.preventDefault();
         go(highlighted?.literal ?? (typed as string));
       }
     } else if (event.key === "Escape") {
+      if (!expanded && query === "") return; // nothing to close or clear: Esc stays the page's
       event.preventDefault();
+      event.stopPropagation();
       if (expanded) setOpen(false);
       else setQuery("");
       setActive(-1);
@@ -122,7 +127,7 @@ export function KanjiSearch() {
         type="text"
         role="combobox"
         aria-label={t("search.label")}
-        aria-expanded={expanded}
+        aria-expanded={expanded && results.length > 0}
         aria-controls={listId}
         aria-autocomplete="list"
         aria-activedescendant={expanded && active >= 0 ? optionId(active) : undefined}
