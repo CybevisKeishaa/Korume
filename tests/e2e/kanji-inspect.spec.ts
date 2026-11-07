@@ -592,3 +592,44 @@ test("15 · a composition chip in the modal replaces the entry: no history added
   await expect(modal(page)).toBeHidden();
   await context.close();
 });
+
+// Task 12 (owner 2026-11-07): the page searches other kanji from its header band; the list overlays (K1 holds open).
+test("16 · /kanji/日 search: nothing focused on load; 日本語 → three tiles, ↓ ↓ Enter → /kanji/本; ngữ lists 語; one viewport with the list open at 1280×529 and 1440×900", async ({ browser }) => {
+  for (const viewport of [{ width: 1280, height: 529 }, { width: 1440, height: 900 }]) {
+    const { context, page } = await open(browser, viewport);
+    await page.goto(`/en/kanji/${encodeURIComponent("日")}`);
+    await expect(page.getByRole("heading", { level: 1, name: "日" })).toBeVisible();
+    const box = page.getByRole("combobox", { name: "Search kanji" });
+    await expect(box).toBeVisible();
+    expect(await page.evaluate(() => document.activeElement === document.body)).toBe(true);
+
+    await box.fill("日本語");
+    const tiles = page.getByRole("listbox", { name: "Kanji in 日本語" });
+    await expect(tiles.getByRole("option")).toHaveCount(3);
+    expect(await tiles.getByRole("option").locator("[lang='ja']").allTextContents()).toEqual(["日", "本", "語"]);
+    const fit = await page.evaluate(() => {
+      const list = document.querySelector("[role='listbox']") as HTMLElement;
+      return { scroll: document.scrollingElement?.scrollHeight ?? 0, listBottom: list.getBoundingClientRect().bottom };
+    });
+    expect(fit.scroll).toBeLessThanOrEqual(viewport.height);
+    expect(fit.listBottom).toBeLessThanOrEqual(viewport.height);
+    expect(await blocksOverflow(page, "main article")).toEqual([]);
+    await page.screenshot({ path: test.info().outputPath(`search-open-${viewport.width}x${viewport.height}.png`) });
+
+    await box.press("ArrowDown");
+    await box.press("ArrowDown");
+    await expect(box).toHaveAttribute("aria-activedescendant", (await tiles.getByRole("option").nth(1).getAttribute("id")) ?? "");
+    await box.press("Enter");
+    await expect(page).toHaveURL(new RegExp(`/en/kanji/${encodeURIComponent("本")}$`));
+    await expect(page.getByRole("heading", { level: 1, name: "本" })).toBeVisible();
+
+    const next = page.getByRole("combobox", { name: "Search kanji" });
+    await next.fill("ngữ");
+    const rows = page.getByRole("listbox", { name: "Search kanji" });
+    await expect(rows.getByRole("option").filter({ hasText: "語" }).first()).toBeVisible();
+    expect(await page.evaluate(() => document.scrollingElement?.scrollHeight ?? 0)).toBeLessThanOrEqual(viewport.height);
+    await rows.getByRole("option").filter({ hasText: "語" }).first().click();
+    await expect(page).toHaveURL(new RegExp(`/en/kanji/${encodeURIComponent("語")}$`));
+    await context.close();
+  }
+});

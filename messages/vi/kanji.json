@@ -114,5 +114,14 @@
     "learnByLevel": "Học kanji mới theo cấp",
     "library": "Thư viện kanji",
     "loading": "Đang tải bộ thẻ…"
+  },
+  "search": {
+    "label": "Tìm kanji",
+    "placeholder": "Kanji, cách đọc, Hán Việt hoặc nghĩa",
+    "charsOf": "Các chữ trong {query}",
+    "results": "{count, plural, other {Tìm thấy {count} kanji}}",
+    "empty": "Không tìm thấy kanji nào",
+    "loading": "Đang tìm…",
+    "failed": "Không tìm được. Hãy thử lại."
   }
 }

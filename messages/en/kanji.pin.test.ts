@@ -74,6 +74,12 @@ describe("kanji.json EN inspect (port-kanji Task 7, Figma 28:2041 copy)", () => 
   });
 });
 
+describe("kanji.json EN search (port-kanji Task 12, owner 2026-11-07: search other kanji from the kanji page)", () => {
+  it("pins the search box, its result header and its states", () => {
+    expect(en.search).toEqual({"label": "Search kanji", "placeholder": "Kanji, reading, Hán Việt or meaning", "charsOf": "Kanji in {query}", "results": "{count, plural, one {{count} kanji found} other {{count} kanji found}}", "empty": "No kanji found", "loading": "Searching…", "failed": "Couldn't search. Try again."});
+  });
+});
+
 describe("kanji.json EN explore (port-kanji Task 7b, owner K14: the page's ways on)", () => {
   it("pins the level and saved rows' copy", () => {
     expect(en.explore).toEqual({"levelTitle": "More {level} kanji", "levelAll": "See all {level}", "levelReview": "Review {level}", "library": "Open the kanji library", "savedEmpty": "No saved kanji yet. Save this one to open it again from here.", "saveThis": "Save this kanji"});

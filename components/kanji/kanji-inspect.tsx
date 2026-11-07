@@ -16,6 +16,7 @@ import { buttonStyles } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DictionaryAttribution } from "./dictionary-attribution";
 import { KanjiInspectExplore } from "./kanji-inspect-explore";
+import { KanjiSearch } from "./kanji-search";
 
 const PAGE = 3;
 const pill = "inline-flex h-control-sm shrink-0 items-center gap-2xs rounded-full border border-border bg-background px-sm text-caption font-medium transition-colors hover:bg-muted active:bg-border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-default disabled:hover:bg-background";
@@ -182,7 +183,9 @@ export function KanjiInspect({ payload, variant, explore }: { payload: KanjiInsp
           <p lang="ja" title={readings} className="truncate font-jp text-caption text-muted-foreground">{readings}</p>
           <p className="truncate text-body font-semibold">{hanVietLine(data.hanViet, data.meaningsEn.join(", "))}</p>
         </div>
-        <div className="ms-auto flex min-w-0 items-center gap-xs">
+        {/* Task 12: the page searches other kanji from its header band, so K1's one viewport holds (the list overlays). */}
+        {variant === "page" && <div className="ms-auto flex flex-1 justify-end"><KanjiSearch /></div>}
+        <div className={cn("flex min-w-0 items-center gap-xs", variant === "modal" && "ms-auto")}>
           {notice && <p role="alert" className="min-w-0 truncate text-caption text-danger-strong">{notice}</p>}
           <p aria-live="polite" className="sr-only">{announce}</p>
           <button type="button" aria-pressed={favorite} onClick={toggleFavorite} className={cn(pill, favorite ? "text-primary-strong" : "text-muted-foreground hover:text-foreground")}>

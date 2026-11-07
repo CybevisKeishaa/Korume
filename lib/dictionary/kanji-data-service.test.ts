@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createMockSupabase, eqValue, hasCall, type QueryCall } from "@/test/supabase-mock";
 import { assertPlainSerializableDto } from "@/test/dto";
 import { createClient } from "@/lib/supabase/server";
-import { getKanjiData, getKanjiInspectPayload } from "./kanji-data-service";
+import { getKanjiData, getKanjiInspectPayload, searchKanjiInSnapshot } from "./kanji-data-service";
 import type { KanjiComponentNode } from "./types";
 
 vi.mock("@/lib/supabase/server", () => ({ createClient: vi.fn() }));
@@ -270,5 +270,71 @@ describe("getKanjiInspectPayload", () => {
     useDictionary();
     const payload = await getKanjiInspectPayload("日", { from: "level:N5" }); // the mock list is 月 緑 火
     expect(payload?.neighbors).toBeNull();
+  });
+});
+
+describe("searchKanjiInSnapshot (Task 12)", () => {
+  // 1500 kanji: past PostgREST's 1000-row cap, so an unpaged read would lose the tail (L-041).
+  const SNAPSHOT_ROWS = Array.from({ length: 1500 }, (_, i) => ({
+    literal: String.fromCodePoint(0x4e00 + i), on_readings: [], kun_readings: [], meanings_en: [`m${i}`],
+    vi_readings: [], vi_meanings: [`vi-${i}`], freq: i + 1, stroke_count: 5,
+  }));
+
+  function useSnapshot(snapshotId: string | null, curated: { character: string; meaning_vi: string }[] = []) {
+    const reads: QueryCall[][] = [];
+    const curatedReads: QueryCall[][] = [];
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        enforcePostgrestCap: true,
+        rpcs: { dict_active_snapshot_id: () => ({ data: snapshotId, error: null }) },
+        tables: {
+          dict_kanji: (calls) => { reads.push(calls); return { data: SNAPSHOT_ROWS, error: null }; },
+          kanji: (calls) => { curatedReads.push(calls); return { data: curated, error: null }; },
+        },
+      }) as unknown as ReturnType<typeof createClient>,
+    );
+    return { reads, curatedReads };
+  }
+
+  it("pages the whole active snapshot in a total order, so a kanji past row 1000 is found", async () => {
+    const { reads } = useSnapshot("snap-paged");
+    const response = await searchKanjiInSnapshot("m1400");
+    expect(response).toEqual({ query: "m1400", mode: "text", results: [{ literal: String.fromCodePoint(0x4e00 + 1400), hanViet: [], meaningVi: "vi-1400", meaningEn: "m1400" }] });
+    expect(reads).toHaveLength(2);
+    for (const calls of reads) {
+      expect(eqValue(calls, "snapshot_id")).toBe("snap-paged");
+      expect(calls.filter((call) => call.op === "order")).toEqual([{ op: "order", column: "literal", ascending: true }]);
+    }
+    expect(reads.map((calls) => calls.find((call) => call.op === "range"))).toEqual([
+      { op: "range", from: 0, to: 999 },
+      { op: "range", from: 1000, to: 1999 },
+    ]);
+  });
+
+  it("reads the snapshot once per snapshot id, the curated meaning on every search", async () => {
+    const { reads, curatedReads } = useSnapshot("snap-cached", [{ character: "一", meaning_vi: "vi-own" }]);
+    expect((await searchKanjiInSnapshot("一")).results[0]?.meaningVi).toBe("vi-own");
+    expect((await searchKanjiInSnapshot("vi-own")).results.map((r) => r.literal)).toEqual(["一"]);
+    expect(reads).toHaveLength(2); // the two pages of the first search only
+    expect(curatedReads).toHaveLength(2);
+    expect(curatedReads[0]?.find((call) => call.op === "range")).toEqual({ op: "range", from: 0, to: 999 });
+  });
+
+  it("a failed snapshot read is not cached", async () => {
+    vi.mocked(createClient).mockReturnValue(
+      createMockSupabase({
+        rpcs: { dict_active_snapshot_id: () => ({ data: "snap-retry", error: null }) },
+        tables: { dict_kanji: () => ({ data: null, error: { message: "down" } }), kanji: () => ({ data: [], error: null }) },
+      }) as unknown as ReturnType<typeof createClient>,
+    );
+    await expect(searchKanjiInSnapshot("一")).rejects.toEqual({ message: "down" });
+    const { reads } = useSnapshot("snap-retry");
+    expect((await searchKanjiInSnapshot("一")).results).toHaveLength(1);
+    expect(reads.length).toBeGreaterThan(0);
+  });
+
+  it("before the first import: no results", async () => {
+    useSnapshot(null);
+    await expect(searchKanjiInSnapshot("日本語")).resolves.toEqual({ query: "日本語", mode: "chars", results: [] });
   });
 });

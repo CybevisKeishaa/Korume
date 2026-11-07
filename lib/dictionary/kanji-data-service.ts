@@ -10,6 +10,8 @@ import { getKanjiList } from "@/lib/data/content";
 import { parseKanjiContext } from "@/lib/kanji/context";
 import { compositionElements } from "@/lib/kanji/composition";
 import { viMeaning } from "@/lib/dictionary/vi-meaning";
+import { fetchAllPages } from "@/lib/data/query-pagination";
+import { buildKanjiSearchIndex, classifyKanjiQuery, searchKanji, type KanjiSearchIndex, type KanjiSearchResponse } from "@/lib/kanji/search";
 import type { KanjiInspectPayload, KanjiNeighbors } from "@/lib/kanji/learner-types";
 import type { KanjiCommonWord, KanjiComponentNode, KanjiData } from "@/lib/dictionary/types";
 
@@ -186,4 +188,65 @@ export async function getKanjiInspectPayload(
     getKanjiNeighbors(literal, opts.from ?? null),
   ]);
   return data ? { data, learner, examples, lessons, neighbors } : null;
+}
+
+interface SearchRow {
+  literal: string;
+  on_readings: string[];
+  kun_readings: string[];
+  meanings_en: string[];
+  vi_readings: string[];
+  vi_meanings: string[];
+  freq: number | null;
+  stroke_count: number;
+}
+
+/**
+ * The active snapshot's kanji, read once per snapshot id (a staged snapshot never changes) and kept for the process.
+ * ponytail: ~13k rows held in memory (a few MB) for the one long-running instance; a SQL search if that ever matters.
+ */
+let searchIndex: { snapshotId: string; index: Promise<KanjiSearchIndex> } | null = null;
+
+function getKanjiSearchIndex(snapshotId: string): Promise<KanjiSearchIndex> {
+  if (searchIndex?.snapshotId === snapshotId) return searchIndex.index;
+  const supabase = createClient();
+  const index = fetchAllPages<SearchRow>((from, to) =>
+    supabase
+      .from("dict_kanji")
+      .select("literal, on_readings, kun_readings, meanings_en, vi_readings, vi_meanings, freq, stroke_count")
+      .eq("snapshot_id", snapshotId)
+      .order("literal", { ascending: true })
+      .range(from, to),
+  ).then((rows) =>
+    buildKanjiSearchIndex(rows.map((row) => ({
+      literal: row.literal,
+      onReadings: row.on_readings,
+      kunReadings: row.kun_readings,
+      meaningsEn: row.meanings_en,
+      viReadings: row.vi_readings,
+      viMeanings: row.vi_meanings,
+      freq: row.freq,
+      strokeCount: row.stroke_count,
+    }))),
+  );
+  searchIndex = { snapshotId, index };
+  // A failed read is retried by the next search, never served from the cache.
+  index.catch(() => {
+    if (searchIndex?.index === index) searchIndex = null;
+  });
+  return index;
+}
+
+/** `GET /api/kanji/search` (Task 12): kanji of the active snapshot; the curated meaning is read fresh (admins edit it). */
+export async function searchKanjiInSnapshot(query: string): Promise<KanjiSearchResponse> {
+  const snapshotId = await getActiveSnapshotId();
+  if (!snapshotId) return { query, mode: classifyKanjiQuery(query).mode, results: [] };
+  const supabase = createClient();
+  const [index, curated] = await Promise.all([
+    getKanjiSearchIndex(snapshotId),
+    fetchAllPages<{ character: string; meaning_vi: string }>((from, to) =>
+      supabase.from("kanji").select("character, meaning_vi").not("meaning_vi", "is", null).order("character", { ascending: true }).range(from, to),
+    ),
+  ]);
+  return searchKanji(index, new Map(curated.map((row) => [row.character, row.meaning_vi])), query);
 }

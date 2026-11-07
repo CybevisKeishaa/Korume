@@ -114,5 +114,14 @@
     "learnByLevel": "Learn new kanji by level",
     "library": "Kanji library",
     "loading": "Loading your deck…"
+  },
+  "search": {
+    "label": "Search kanji",
+    "placeholder": "Kanji, reading, Hán Việt or meaning",
+    "charsOf": "Kanji in {query}",
+    "results": "{count, plural, one {{count} kanji found} other {{count} kanji found}}",
+    "empty": "No kanji found",
+    "loading": "Searching…",
+    "failed": "Couldn't search. Try again."
   }
 }

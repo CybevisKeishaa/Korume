@@ -237,6 +237,17 @@ describe("KanjiInspect", () => {
     expect(screen.getByText("Dictionary data:").closest("footer")).toHaveTextContent("Dictionary data: KanjiVG main (CC BY-SA 3.0)");
   });
 
+  it("the page's header band carries the kanji search (Task 12), the modal's does not; nothing takes focus on load", () => {
+    const { unmount } = show(payload(), "page");
+    const search = screen.getByRole("combobox", { name: "Search kanji" });
+    expect(search.closest("header")).not.toBeNull();
+    expect(search).not.toHaveFocus();
+    expect(document.activeElement).toBe(document.body);
+    unmount();
+    show(payload(), "modal");
+    expect(screen.queryByRole("combobox")).toBeNull();
+  });
+
   it("licenceName: a Creative Commons licence by its short name, anything else as stored", () => {
     expect(licenceName("EDRDG Licence: Creative Commons Attribution-ShareAlike 4.0 (https://www.edrdg.org/edrdg/licence.html)")).toBe("CC BY-SA 4.0");
     expect(licenceName(KANJIVG_LICENCE)).toBe("CC BY-SA 3.0");

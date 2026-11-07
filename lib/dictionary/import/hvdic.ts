@@ -20,7 +20,7 @@ const TONES = /[̣̀́̃̉]/gu;
  * KANJIDIC2 writes the new orthography (hòa, kí) and hvdic the old (hoà, ký): the key keeps every letter and the tone
  * but not where the tone sits, and reads a final y after a consonant as i.
  */
-function readingKey(reading: string): string {
+export function readingKey(reading: string): string {
   const nfd = reading.normalize("NFD").toLocaleLowerCase("vi");
   const tone = nfd.match(TONES)?.join("") ?? "";
   return `${nfd.replace(TONES, "").replace(/(?<=[bcdđghklmnpqrstvx])y$/u, "i")}${tone}`.normalize("NFC");
