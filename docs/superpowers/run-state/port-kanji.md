@@ -67,6 +67,14 @@ Deltas kept: no mnemonic image and no lesson thumbnails (no data); composition c
 (full text in the chip title, chip opens that kanji); no radical/component tag (KanjiVG import keeps no such flag);
 "See all lessons" not rendered (above). E2E `kanji-inspect.spec.ts` test 9 re-proves the no-scroll rule on 語 and 学.
 
+- K16 (owner 2026-11-07, after the Chrome look): Thiều Chửu reads too archaic for most learners — it is NOT shown
+  anywhere any more (no "show old meaning" toggle). The Vietnamese meaning is hvdic "Từ điển phổ thông" (short modern
+  glosses; data via KanjiDictVN `hvcache/` pinned `d95c2bff`), reading-matched to the KANJIDIC2 Hán Việt, kyūjitai
+  fallback, curated `meaning_vi` first, then an override file. Licence is not a gate (owner: "không cần có license,
+  nguồn đủ là được"); credit "Từ điển Hán Nôm (hvdic.thivien.net)" shown anyway. Gaps (16 jōyō without a gloss) and
+  glosses that mislead for Japanese (e.g. 駅 "ngựa trạm", 図 "vẽ, mưu toan") are drafted by Claude in a sheet the owner
+  reviews before import — owner-approved exception to the no-model-Vietnamese rule, only via that review.
+
 ## Verification
 
 Tip `2de6b9b5` (2026-11-07): typecheck 0, lint exit 0, verify:protocol valid, verify:db kanji / dictionary / dashboard /
