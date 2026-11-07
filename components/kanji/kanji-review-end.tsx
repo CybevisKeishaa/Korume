@@ -72,7 +72,7 @@ export function KanjiReviewEnd({ reviewed, backHref, modalHref }: { reviewed: Re
             ))}
           </ul>
         ) : (
-          <ul tabIndex={0} aria-label={t("review.sessionKanji")} className={cn("flex min-h-0 flex-wrap content-start gap-xs overflow-y-auto rounded-sm", ring)}>
+          <ul aria-label={t("review.sessionKanji")} className="flex min-h-0 flex-wrap content-start gap-xs overflow-y-auto">
             {reviewed.map((item) => (
               <li key={item.literal}>
                 <Link href={modalHref(item.literal)} scroll={false} aria-label={item.again ? t("review.ratedAgain", { literal: item.literal }) : undefined} className={tile}>

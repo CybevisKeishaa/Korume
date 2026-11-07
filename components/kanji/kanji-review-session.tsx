@@ -174,7 +174,10 @@ export function KanjiReviewSession({ cards, deckLabel, streak, backHref }: { car
                     <p lang="ja" data-type-exempt="kanji-review-glyph" className="font-jp text-[length:min(var(--kanji-review-glyph),66cqh)] font-medium leading-[1.5]">{card.literal}</p>
                   </div>
                   {revealed && (
-                    <section aria-label={t("review.answer")} tabIndex={0} className={cn("kanji-answer-in flex min-h-0 min-w-0 flex-[1.5] flex-col justify-center gap-xs overflow-y-auto rounded-sm", ring)}>
+                    <section
+                      // Not a tab stop (owner 2026-11-07: no focus box on the flashcard): the answer fits the card at
+                      // 1280×529 and 1440×900. ponytail: re-add tabIndex if an answer can ever overflow.
+                      aria-label={t("review.answer")} className="kanji-answer-in flex min-h-0 min-w-0 flex-[1.5] flex-col justify-center gap-xs overflow-y-auto">
                       {card.hanViet.length > 0 && <p className="text-display font-semibold">{card.hanViet.join(", ")}</p>}
                       <p className="text-heading">{card.meaningsEn.join(", ")}</p>
                       <dl className="flex flex-wrap gap-x-xl gap-y-2xs">
