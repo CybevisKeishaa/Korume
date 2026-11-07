@@ -25,6 +25,12 @@ port-kanji: Kanji inspect modal + review, Han-Viet readings, Thieu Chuu. Branch 
 - Task 9b: kanji motion (`5f7f846d`, fix `e2bf75e9`), review clean.
 - Task 10: Thiều Chửu cleared + credit links its source (`28b29309`); whole-branch review (Opus) fixes `229fbb33`;
   gate fixes `6fdf199c` (ICU plurals, token-scale) and `2de6b9b5` (E2E on the new review UI).
+- Owner Chrome look 2026-11-07: review focus parks invisibly on the card, Space flips both ways, no focus box on
+  non-controls (`00830851`, `69119c52`, `6d302494`).
+- Task 11 (K16): Vietnamese meaning from hvdic phổ thông, Thiều Chửu not shown (`f3f4c538`); local import snapshot
+  `c056da5a` (jōyō 2120/2136 with `vi_meanings`; `tc_lines` empty in the active snapshot — import ran without
+  `--thieu-chuu`, harmless since TC is not shown).
+- Task 12: kanji search on `/kanji/[literal]` (`8aba6f34`, review fixes `7d34325e`, E2E test 10 measure-driven `8f4aff20`).
 
 ## Contracts and decisions
 
@@ -106,5 +112,17 @@ None. Owner answered the Task 7 decisions 2026-11-06 ("Đồng ý" to every reco
 
 ## Next actions
 
-Owner Chrome look of the inspect (modal + `/kanji/[literal]` page), review (`/kanji/review`, `?level=N5`) and the
-motion; merge only on the owner's word. Owner still to run: removal of the 5 merged worktrees.
+Resume (session stopped by the owner 2026-11-07, tip `8f4aff20`):
+1. **Owner review of the Vietnamese meaning overrides** — draft of 1266 rows (misleading 987, too-long 221, empty 32,
+   wrong-reading 26) at `%TEMP%\claude5351b3c0e063440\cbb8b313-fdbb-4959-9033-e1dd60f8ab46\scratchpad\`
+   `vi-meaning-proposals.csv` + `vi-meaning-overrides.draft.json` (rebuild: `scriptsuild.py` from `p00..p11.tsv`).
+   Owner picks: review all / only jlpt_old 4+3 (148) / partial. Open owner calls: 梅 (mơ, not mai), plant/animal names
+   (萩 槙 椋 柾 柊 蕗 樺 柚 鯛 鮎 紬), 奈, 伊, bracket notes "(kính ngữ)". Then copy the approved entries into
+   `lib/dictionary/import/vi-meaning-overrides.json`, re-import with `--force`, check 乗 区 参 駅 図 当.
+   If the scratchpad is gone, regenerate the review sheet (Task 11 report) and redraft.
+2. **E2E red to fix first:** `kanji-inspect.spec.ts` test 16 passes alone (3/3) but fails in the full serial file:
+   `blocksOverflow` reports "My status" past the footer on `/kanji/日` at 1280×529 after earlier tests put 日 in review
+   (status card grows). Hypothesis (unverified): the Task 12 search grew the page header 72 → 82 px. Measure the page
+   with 日 in review at 529; fix the header (search must not add height) or the status card, re-run the whole file.
+3. Then: full kanji + typography E2E, owner Chrome look (search, Vietnamese meaning, review), merge on the owner's word.
+   Owner still to run: removal of the 5 merged worktrees.
